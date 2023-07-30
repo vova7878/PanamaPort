@@ -12,8 +12,6 @@ import static com.v7878.unsafe.Utils.searchConstructor;
 import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
 
-import android.os.Build;
-
 import androidx.annotation.Keep;
 
 import java.lang.invoke.MethodHandle;
@@ -35,8 +33,7 @@ import java.util.Objects;
 public class Reflection {
     static {
         // SDK version checks
-        assert_(CORRECT_SDK_INT >= Build.VERSION_CODES.O, IllegalStateException::new);
-        assert_(CORRECT_SDK_INT <= 34, IllegalStateException::new);
+        assert_(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 34, AssertionError::new);
     }
 
     @Keep

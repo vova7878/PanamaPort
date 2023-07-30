@@ -62,8 +62,7 @@ public class AndroidUnsafe {
     public static final int ADDRESS_SIZE = addressSize();
 
     static {
-        assert_((ADDRESS_SIZE == 4) || (ADDRESS_SIZE == 8),
-                () -> new RuntimeException("ADDRESS_SIZE must be equal to 4 or 8"));
+        assert_((ADDRESS_SIZE == 4) || (ADDRESS_SIZE == 8), AssertionError::new);
     }
 
     public static final boolean IS64BIT = ADDRESS_SIZE == 8;
