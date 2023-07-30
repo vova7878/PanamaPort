@@ -13,3 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "AndroidUnsafe"
+include ':keep_annotation'

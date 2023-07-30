@@ -20,6 +20,7 @@ android {
 }
 
 dependencies {
+    compileOnly project(':keep_annotation')
     implementation 'com.github.vova7878:SunUnsafeWrapper:v0.0.1'
     implementation 'com.github.vova7878:DexFile:master-SNAPSHOT'
     implementation 'com.github.vova7878:AndroidMisc:v0.0.1'
