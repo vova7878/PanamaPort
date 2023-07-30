@@ -429,64 +429,40 @@ public class AndroidUnsafe {
         }
     }
 
-    public static long getWordO(Object obj, long offset, boolean is_64_bit) {
-        return is_64_bit ? getLongO(obj, offset) : getIntO(obj, offset) & 0xffffffffL;
-    }
-
     public static long getWordO(Object obj, long offset) {
-        return getWordO(obj, offset, IS64BIT);
+        return IS64BIT ? getLongO(obj, offset) : getIntO(obj, offset) & 0xffffffffL;
     }
 
-    public static void putWordO(Object obj, long offset, long value, boolean is_64_bit) {
-        if (is_64_bit) {
+    public static void putWordO(Object obj, long offset, long value) {
+        if (IS64BIT) {
             putLongO(obj, offset, value);
         } else {
             putIntO(obj, offset, (int) value);
         }
     }
 
-    public static void putWordO(Object obj, long offset, long value) {
-        putWordO(obj, offset, value, IS64BIT);
-    }
-
-    public static long getWordN(long address, boolean is_64_bit) {
-        return is_64_bit ? getLongN(address) : getIntN(address) & 0xffffffffL;
-    }
-
     public static long getWordN(long address) {
-        return getWordN(address, IS64BIT);
+        return IS64BIT ? getLongN(address) : getIntN(address) & 0xffffffffL;
     }
 
-    public static void putWordN(long address, long value, boolean is_64_bit) {
-        if (is_64_bit) {
+    public static void putWordN(long address, long value) {
+        if (IS64BIT) {
             putLongN(address, value);
         } else {
             putIntN(address, (int) value);
         }
     }
 
-    public static void putWordN(long address, long value) {
-        putWordN(address, value, IS64BIT);
-    }
-
-    public static long getWord(Object obj, long offset, boolean is_64_bit) {
-        return is_64_bit ? getLong(obj, offset) : getInt(obj, offset) & 0xffffffffL;
-    }
-
     public static long getWord(Object obj, long offset) {
-        return getWord(obj, offset, IS64BIT);
+        return IS64BIT ? getLong(obj, offset) : getInt(obj, offset) & 0xffffffffL;
     }
 
-    public static void putWord(Object obj, long offset, long value, boolean is_64_bit) {
-        if (is_64_bit) {
+    public static void putWord(Object obj, long offset, long value) {
+        if (IS64BIT) {
             putLong(obj, offset, value);
         } else {
             putInt(obj, offset, (int) value);
         }
-    }
-
-    public static void putWord(Object obj, long offset, long value) {
-        putWord(obj, offset, value, IS64BIT);
     }
 
     public static Object getObject(Object obj, long offset) {
@@ -625,22 +601,14 @@ public class AndroidUnsafe {
         return (char) getShortUnaligned(obj, offset, order);
     }
 
-    public static long getWordUnaligned(Object obj, long offset, ByteOrder order, boolean is_64_bit) {
-        return is_64_bit ? getLongUnaligned(obj, offset, order)
+    public static long getWordUnaligned(Object obj, long offset, ByteOrder order) {
+        return IS64BIT ? getLongUnaligned(obj, offset, order)
                 : getIntUnaligned(obj, offset, order) & 0xffffffffL;
     }
 
-    public static long getWordUnaligned(Object obj, long offset, ByteOrder order) {
-        return getWordUnaligned(obj, offset, order, IS64BIT);
-    }
-
-    public static long getWordUnaligned(Object obj, long offset, boolean is_64_bit) {
-        return is_64_bit ? getLongUnaligned(obj, offset)
-                : getIntUnaligned(obj, offset) & 0xffffffffL;
-    }
-
     public static long getWordUnaligned(Object obj, long offset) {
-        return getWordUnaligned(obj, offset, IS64BIT);
+        return IS64BIT ? getLongUnaligned(obj, offset)
+                : getIntUnaligned(obj, offset) & 0xffffffffL;
     }
 
     private static byte pick(byte le, byte be) {
@@ -783,28 +751,20 @@ public class AndroidUnsafe {
         putShortUnaligned(o, offset, (short) value, order);
     }
 
-    public static void putWordUnaligned(Object obj, long offset, long value, ByteOrder order, boolean is_64_bit) {
-        if (is_64_bit) {
+    public static void putWordUnaligned(Object obj, long offset, long value, ByteOrder order) {
+        if (IS64BIT) {
             putLongUnaligned(obj, offset, value, order);
         } else {
             putIntUnaligned(obj, offset, (int) value, order);
         }
     }
 
-    public static void putWordUnaligned(Object obj, long offset, long value, ByteOrder order) {
-        putWordUnaligned(obj, offset, value, order, IS64BIT);
-    }
-
-    public static void putWordUnaligned(Object obj, long offset, long value, boolean is_64_bit) {
-        if (is_64_bit) {
+    public static void putWordUnaligned(Object obj, long offset, long value) {
+        if (IS64BIT) {
             putLongUnaligned(obj, offset, value);
         } else {
             putIntUnaligned(obj, offset, (int) value);
         }
-    }
-
-    public static void putWordUnaligned(Object obj, long offset, long value) {
-        putWordUnaligned(obj, offset, value, IS64BIT);
     }
 
     public static void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes) {
