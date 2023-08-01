@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.library' version '8.0.2'
+    id 'maven-publish'
 }
 
 android {
@@ -25,4 +26,14 @@ dependencies {
     implementation 'com.github.vova7878:DexFile:master-SNAPSHOT'
     implementation 'com.github.vova7878:AndroidMisc:v0.0.1'
     //compileOnly 'com.github.vova7878:OptimizationAnnotations:v0.0.1'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version project.version
+        }
+    }
 }
