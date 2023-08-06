@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = "PanamaPort"
 include ':keep_annotation'
 include ':AndroidUnsafe'
+include ':AndroidPanama'

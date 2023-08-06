@@ -1,0 +1,45 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
+
+android {
+    namespace 'com.v7878.foreign'
+    compileSdk 33
+
+    defaultConfig {
+        minSdk 26
+
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_19
+        targetCompatibility JavaVersion.VERSION_19
+    }
+
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
+    }
+}
+
+dependencies {
+    implementation project(path: ':AndroidUnsafe')
+    implementation 'com.github.vova7878:SunCleanerStub:v0.0.1'
+    implementation 'com.github.vova7878:AndroidMisc:v0.0.1'
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version project.version
+            afterEvaluate {
+                from components.release
+            }
+        }
+    }
+}
