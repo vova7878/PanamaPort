@@ -25,10 +25,6 @@
  */
 package java.lang.foreign;
 
-import jdk.internal.foreign.Utils;
-
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.SequenceLayout;
 import java.util.Objects;
 import java.util.Optional;
 

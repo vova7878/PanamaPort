@@ -25,15 +25,6 @@
  */
 package java.lang.foreign;
 
-import jdk.internal.vm.annotation.ForceInline;
-
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SequenceLayout;
-import java.lang.foreign.StructLayout;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -41,6 +32,8 @@ import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
+
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * This class provide support for constructing layout paths; that is, starting from a root path (see {@link #rootPath(MemoryLayout)},
@@ -101,14 +94,14 @@ public class LayoutPath {
 
     public LayoutPath sequenceElement() {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
-        SequenceLayout seq = (SequenceLayout)layout;
+        SequenceLayout seq = (SequenceLayout) layout;
         MemoryLayout elem = seq.elementLayout();
         return LayoutPath.nestedPath(elem, offset, addStride(elem.byteSize()), addBound(seq.elementCount()), derefAdapters, this);
     }
 
     public LayoutPath sequenceElement(long start, long step) {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
-        SequenceLayout seq = (SequenceLayout)layout;
+        SequenceLayout seq = (SequenceLayout) layout;
         checkSequenceBounds(seq, start);
         MemoryLayout elem = seq.elementLayout();
         long elemSize = elem.byteSize();
@@ -117,27 +110,27 @@ public class LayoutPath {
                 start + 1;
         long maxIndex = Math.ceilDiv(nelems, Math.abs(step));
         return LayoutPath.nestedPath(elem, offset + (start * elemSize),
-                                     addStride(elemSize * step), addBound(maxIndex), derefAdapters, this);
+                addStride(elemSize * step), addBound(maxIndex), derefAdapters, this);
     }
 
     public LayoutPath sequenceElement(long index) {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
-        SequenceLayout seq = (SequenceLayout)layout;
+        SequenceLayout seq = (SequenceLayout) layout;
         checkSequenceBounds(seq, index);
         long elemSize = seq.elementLayout().byteSize();
         long elemOffset = elemSize * index;
-        return LayoutPath.nestedPath(seq.elementLayout(), offset + elemOffset, strides, bounds, derefAdapters,this);
+        return LayoutPath.nestedPath(seq.elementLayout(), offset + elemOffset, strides, bounds, derefAdapters, this);
     }
 
     public LayoutPath groupElement(String name) {
         check(GroupLayout.class, "attempting to select a group element from a non-group layout");
-        GroupLayout g = (GroupLayout)layout;
+        GroupLayout g = (GroupLayout) layout;
         long offset = 0;
         MemoryLayout elem = null;
         for (int i = 0; i < g.memberLayouts().size(); i++) {
             MemoryLayout l = g.memberLayouts().get(i);
             if (l.name().isPresent() &&
-                l.name().get().equals(name)) {
+                    l.name().get().equals(name)) {
                 elem = l;
                 break;
             } else if (g instanceof StructLayout) {
@@ -152,7 +145,7 @@ public class LayoutPath {
 
     public LayoutPath groupElement(long index) {
         check(GroupLayout.class, "attempting to select a group element from a non-group layout");
-        GroupLayout g = (GroupLayout)layout;
+        GroupLayout g = (GroupLayout) layout;
         long elemSize = g.memberLayouts().size();
         long offset = 0;
         MemoryLayout elem = null;
@@ -229,7 +222,7 @@ public class LayoutPath {
 
     public MethodHandle offsetHandle() {
         MethodHandle mh = MethodHandles.identity(long.class);
-        for (int i = strides.length - 1; i >=0; i--) {
+        for (int i = strides.length - 1; i >= 0; i--) {
             MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i], bounds[i]);
             // (J, ...) -> J to (J, J, ...) -> J
             // i.e. new coord is prefixed. Last coord will correspond to innermost layout

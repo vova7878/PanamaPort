@@ -25,24 +25,18 @@
  */
 package java.lang.foreign;
 
-import jdk.internal.foreign.Utils;
-import jdk.internal.misc.Unsafe;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
-import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
-import sun.invoke.util.Wrapper;
-
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import jdk.internal.misc.Unsafe;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -60,7 +54,8 @@ import java.util.Optional;
 public final class ValueLayouts {
 
     // Suppresses default constructor, ensuring non-instantiability.
-    private ValueLayouts() {}
+    private ValueLayouts() {
+    }
 
     abstract sealed static class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
 
@@ -331,13 +326,13 @@ public final class ValueLayouts {
 
         @Override
         OfAddressImpl dup(ByteOrder order, long byteAlignment, Optional<String> name) {
-            return new OfAddressImpl(order, byteSize(), byteAlignment,targetLayout, name);
+            return new OfAddressImpl(order, byteSize(), byteAlignment, targetLayout, name);
         }
 
         @Override
         public boolean equals(Object other) {
             return super.equals(other) &&
-                    Objects.equals(((OfAddressImpl)other).targetLayout, this.targetLayout);
+                    Objects.equals(((OfAddressImpl) other).targetLayout, this.targetLayout);
         }
 
         @Override
@@ -395,8 +390,9 @@ public final class ValueLayouts {
      *     <li>{@link ValueLayout.OfDouble}, for {@code double.class}</li>
      *     <li>{@link ValueLayout.OfAddress}, for {@code MemorySegment.class}</li>
      * </ul>
+     *
      * @param carrier the value layout carrier.
-     * @param order the value layout's byte order.
+     * @param order   the value layout's byte order.
      * @return a value layout with the given Java carrier and byte-order.
      * @throws IllegalArgumentException if the carrier type is not supported.
      */

@@ -53,8 +53,8 @@ public final class WrongThreadException extends RuntimeException {
     /**
      * Constructs a WrongThreadException with the given detail message and cause.
      *
-     * @param  message the detail message, can be null
-     * @param  cause the cause, can be null
+     * @param message the detail message, can be null
+     * @param cause   the cause, can be null
      */
     public WrongThreadException(String message, Throwable cause) {
         super(message, cause);
@@ -65,7 +65,7 @@ public final class WrongThreadException extends RuntimeException {
      * message of {@code (cause==null ? null : cause.toString())} (which
      * typically contains the class and detail message of {@code cause}).
      *
-     * @param  cause the cause, can be null
+     * @param cause the cause, can be null
      */
     public WrongThreadException(Throwable cause) {
         super(cause);

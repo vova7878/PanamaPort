@@ -31,9 +31,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Function;
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.SlicingAllocator;
-import jdk.internal.foreign.Utils;
+
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -43,10 +41,10 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * {@code SegmentAllocator} is a {@linkplain FunctionalInterface functional interface}. Clients can easily obtain a new
  * segment allocator by using either a lambda expression or a method reference:
- *
- * {@snippet lang=java :
+ * <p>
+ * {@snippet lang = java:
  * SegmentAllocator autoAllocator = (byteSize, byteAlignment) -> Arena.ofAuto().allocate(byteSize, byteAlignment);
- * }
+ *}
  * <p>
  * This interface defines factories for commonly used allocators:
  * <ul>
@@ -69,11 +67,10 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * Clients should consider using an {@linkplain Arena arena} instead, which, provides strong thread-safety,
  * lifetime and non-overlapping guarantees.
- *
  * @since 19
  */
 @FunctionalInterface
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public interface SegmentAllocator {
 
     /**
@@ -90,10 +87,10 @@ public interface SegmentAllocator {
      * the string, such as {@link MemorySegment#getUtf8String(long)}, the string
      * will appear truncated when read again.
      *
-     * @implSpec the default implementation for this method copies the contents of the provided Java string
-     * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
      * @param str the Java string to be converted into a C string.
      * @return a new native segment containing the converted C string.
+     * @implSpec the default implementation for this method copies the contents of the provided Java string
+     * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
      */
     default MemorySegment allocateUtf8String(String str) {
         Objects.requireNonNull(str);
@@ -102,10 +99,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given byte value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
+     * @param value  the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
      */
     default MemorySegment allocate(ValueLayout.OfByte layout, byte value) {
         Objects.requireNonNull(layout);
@@ -117,10 +115,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given char value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
+     * @param value  the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
      */
     default MemorySegment allocate(ValueLayout.OfChar layout, char value) {
         Objects.requireNonNull(layout);
@@ -132,10 +131,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given short value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
+     * @param value  the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
      */
     default MemorySegment allocate(ValueLayout.OfShort layout, short value) {
         Objects.requireNonNull(layout);
@@ -147,10 +147,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given int value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
+     * @param value  the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
      */
     default MemorySegment allocate(ValueLayout.OfInt layout, int value) {
         Objects.requireNonNull(layout);
@@ -162,10 +163,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given float value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
+     * @param value  the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
      */
     default MemorySegment allocate(ValueLayout.OfFloat layout, float value) {
         Objects.requireNonNull(layout);
@@ -177,10 +179,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given long value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
+     * @param value  the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
      */
     default MemorySegment allocate(ValueLayout.OfLong layout, long value) {
         Objects.requireNonNull(layout);
@@ -192,10 +195,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given double value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
+     * @param value  the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
      */
     default MemorySegment allocate(ValueLayout.OfDouble layout, double value) {
         Objects.requireNonNull(layout);
@@ -208,10 +212,11 @@ public interface SegmentAllocator {
     /**
      * Allocates a memory segment with the given layout and initializes it with the given address value.
      * The address value might be narrowed according to the platform address size (see {@link ValueLayout#ADDRESS}).
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
+     * @param value  the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
      */
     default MemorySegment allocate(AddressLayout layout, MemorySegment value) {
         Objects.requireNonNull(value);
@@ -223,10 +228,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given byte elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the byte elements to be copied to the newly allocated memory block.
+     * @param elements      the byte elements to be copied to the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      */
     default MemorySegment allocateArray(ValueLayout.OfByte elementLayout, byte... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
@@ -234,10 +240,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given short elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the short elements to be copied to the newly allocated memory block.
+     * @param elements      the short elements to be copied to the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      */
     default MemorySegment allocateArray(ValueLayout.OfShort elementLayout, short... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
@@ -245,10 +252,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given char elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the char elements to be copied to the newly allocated memory block.
+     * @param elements      the char elements to be copied to the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      */
     default MemorySegment allocateArray(ValueLayout.OfChar elementLayout, char... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
@@ -256,10 +264,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given int elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the int elements to be copied to the newly allocated memory block.
+     * @param elements      the int elements to be copied to the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      */
     default MemorySegment allocateArray(ValueLayout.OfInt elementLayout, int... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
@@ -267,10 +276,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given float elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the float elements to be copied to the newly allocated memory block.
+     * @param elements      the float elements to be copied to the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      */
     default MemorySegment allocateArray(ValueLayout.OfFloat elementLayout, float... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
@@ -278,10 +288,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given long elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the long elements to be copied to the newly allocated memory block.
+     * @param elements      the long elements to be copied to the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      */
     default MemorySegment allocateArray(ValueLayout.OfLong elementLayout, long... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
@@ -289,10 +300,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout and initializes it with the given double elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the double elements to be copied to the newly allocated memory block.
+     * @param elements      the double elements to be copied to the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      */
     default MemorySegment allocateArray(ValueLayout.OfDouble elementLayout, double... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
@@ -311,9 +323,10 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given layout.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout.byteSize(), layout.byteAlignment())}.
+     *
      * @param layout the layout of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
+     * @implSpec the default implementation for this method calls {@code this.allocate(layout.byteSize(), layout.byteAlignment())}.
      */
     default MemorySegment allocate(MemoryLayout layout) {
         Objects.requireNonNull(layout);
@@ -322,12 +335,13 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given element layout and size.
-     * @implSpec the default implementation for this method calls {@code this.allocate(MemoryLayout.sequenceLayout(count, elementLayout))}.
+     *
      * @param elementLayout the array element layout.
-     * @param count the array element count.
+     * @param count         the array element count.
      * @return a segment for the newly allocated memory block.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() * count} overflows.
      * @throws IllegalArgumentException if {@code count < 0}.
+     * @implSpec the default implementation for this method calls {@code this.allocate(MemoryLayout.sequenceLayout(count, elementLayout))}.
      */
     default MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
         Objects.requireNonNull(elementLayout);
@@ -339,10 +353,11 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given size.
-     * @implSpec the default implementation for this method calls {@code this.allocate(byteSize, 1)}.
+     *
      * @param byteSize the size (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
      * @throws IllegalArgumentException if {@code byteSize < 0}
+     * @implSpec the default implementation for this method calls {@code this.allocate(byteSize, 1)}.
      */
     default MemorySegment allocate(long byteSize) {
         return allocate(byteSize, 1);
@@ -350,11 +365,12 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given size and alignment constraint.
-     * @param byteSize the size (in bytes) of the block of memory to be allocated.
+     *
+     * @param byteSize      the size (in bytes) of the block of memory to be allocated.
      * @param byteAlignment the alignment (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
      * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0},
-     * or if {@code byteAlignment} is not a power of 2.
+     *                                  or if {@code byteAlignment} is not a power of 2.
      */
     MemorySegment allocate(long byteSize, long byteAlignment);
 
@@ -365,10 +381,10 @@ public interface SegmentAllocator {
      * <p>
      * The returned allocator throws {@link IndexOutOfBoundsException} when a slice of the provided
      * segment with the requested size and alignment cannot be found.
-     * @implNote A slicing allocator is not <em>thread-safe</em>.
      *
      * @param segment the segment which the returned allocator should slice from.
      * @return a new slicing allocator
+     * @implNote A slicing allocator is not <em>thread-safe</em>.
      */
     static SegmentAllocator slicingAllocator(MemorySegment segment) {
         Objects.requireNonNull(segment);
@@ -380,23 +396,22 @@ public interface SegmentAllocator {
      * new allocation request will return a new slice starting at the segment offset {@code 0}, hence the name
      * <em>prefix allocator</em>.
      * Equivalent to (but likely more efficient than) the following code:
-     * {@snippet lang=java :
+     * {@snippet lang = java:
      * MemorySegment segment = ...
      * SegmentAllocator prefixAllocator = (size, align) -> segment.asSlice(0, size, align);
-     * }
+     *}
      * The returned allocator throws {@link IndexOutOfBoundsException} when a slice of the provided
      * segment with the requested size and alignment cannot be found.
      *
+     * @param segment the memory segment to be recycled by the returned allocator.
+     * @return an allocator which recycles an existing segment upon each new allocation request.
      * @apiNote A prefix allocator can be useful to limit allocation requests in case a client
      * knows that they have fully processed the contents of the allocated segment before the subsequent allocation request
      * takes place.
      * @implNote While a prefix allocator is <em>thread-safe</em>, concurrent access on the same recycling
      * allocator might cause a thread to overwrite contents written to the underlying segment by a different thread.
-     *
-     * @param segment the memory segment to be recycled by the returned allocator.
-     * @return an allocator which recycles an existing segment upon each new allocation request.
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
-        return (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
+        return (AbstractMemorySegmentImpl) Objects.requireNonNull(segment);
     }
 }

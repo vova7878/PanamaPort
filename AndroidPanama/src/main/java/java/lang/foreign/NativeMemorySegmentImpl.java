@@ -26,7 +26,6 @@
 
 package java.lang.foreign;
 
-import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
@@ -128,7 +127,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
         long buf = UNSAFE.allocateMemory(alignedSize);
         if (!SKIP_ZERO_MEMORY) {
-            UNSAFE.setMemory(buf, alignedSize, (byte)0);
+            UNSAFE.setMemory(buf, alignedSize, (byte) 0);
         }
         long alignedBuf = Utils.alignUp(buf, byteAlignment);
         AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(buf, alignedSize,

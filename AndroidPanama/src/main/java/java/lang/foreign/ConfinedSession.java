@@ -27,7 +27,6 @@ package java.lang.foreign;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.ref.Cleaner;
 
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -81,7 +80,7 @@ final class ConfinedSession extends MemorySessionImpl {
 
     void justClose() {
         checkValidState();
-        int asyncCount = (int)ASYNC_RELEASE_COUNT.getVolatile(this);
+        int asyncCount = (int) ASYNC_RELEASE_COUNT.getVolatile(this);
         if ((state == 0 && asyncCount == 0)
                 || ((state - asyncCount) == 0)) {
             state = CLOSED;

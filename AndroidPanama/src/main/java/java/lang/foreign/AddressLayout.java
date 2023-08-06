@@ -26,14 +26,13 @@
 
 package java.lang.foreign;
 
-import jdk.internal.foreign.layout.ValueLayouts;
-import jdk.internal.javac.PreviewFeature;
-import jdk.internal.reflect.CallerSensitive;
-
 import java.lang.foreign.Linker.Option;
 import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;
 import java.util.Optional;
+
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.reflect.CallerSensitive;
 
 /**
  * A value layout used to model the address of some region of memory. The carrier associated with an address layout is
@@ -88,8 +87,11 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * as {@linkplain MemorySegment memory segments} whose size is set to the size of the specified layout. Moreover,
      * if the accessed raw address is not compatible with the alignment constraint in the provided layout,
      * {@linkplain IllegalArgumentException} will be thrown.
-     * @apiNote
-     * This method can also be used to create an address layout which, when used, creates native memory
+     *
+     * @param layout the target layout.
+     * @return an address layout with same characteristics as this layout, but with the provided target layout.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     * @apiNote This method can also be used to create an address layout which, when used, creates native memory
      * segments with maximal size (e.g. {@linkplain Long#MAX_VALUE}). This can be done by using a target sequence
      * layout with unspecified size, as follows:
      * {@snippet lang = java:
@@ -102,10 +104,6 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
-     *
-     * @param layout the target layout.
-     * @return an address layout with same characteristics as this layout, but with the provided target layout.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      * @see #targetLayout()
      */
     @CallerSensitive
@@ -115,9 +113,8 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * Returns an address layout with the same carrier, alignment constraint, name and order as this address layout,
      * but with no target layout.
      *
-     * @apiNote This can be useful to compare two address layouts that have different target layouts, but are otherwise equal.
-     *
      * @return an address layout with same characteristics as this layout, but with no target layout.
+     * @apiNote This can be useful to compare two address layouts that have different target layouts, but are otherwise equal.
      * @see #targetLayout()
      */
     AddressLayout withoutTargetLayout();

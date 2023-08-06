@@ -25,9 +25,6 @@
 
 package java.lang.foreign;
 
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
-
 public final class SlicingAllocator implements SegmentAllocator {
 
     private final MemorySegment segment;
@@ -37,7 +34,7 @@ public final class SlicingAllocator implements SegmentAllocator {
 
     public SlicingAllocator(MemorySegment segment) {
         this.segment = segment;
-        this.maxAlign = ((AbstractMemorySegmentImpl)segment).maxAlignMask();
+        this.maxAlign = ((AbstractMemorySegmentImpl) segment).maxAlignMask();
     }
 
     MemorySegment trySlice(long byteSize, long byteAlignment) {

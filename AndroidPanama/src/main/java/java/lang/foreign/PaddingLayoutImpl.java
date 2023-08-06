@@ -25,7 +25,6 @@
  */
 package java.lang.foreign;
 
-import java.lang.foreign.PaddingLayout;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -48,8 +47,8 @@ public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> i
     public boolean equals(Object other) {
         return this == other ||
                 other instanceof PaddingLayoutImpl otherPadding &&
-                super.equals(other) &&
-                byteSize() == otherPadding.byteSize();
+                        super.equals(other) &&
+                        byteSize() == otherPadding.byteSize();
     }
 
     @Override

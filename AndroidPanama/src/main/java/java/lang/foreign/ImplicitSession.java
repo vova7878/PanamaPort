@@ -25,10 +25,10 @@
 
 package java.lang.foreign;
 
-import sun.nio.ch.DirectBuffer;
-
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
+
+import sun.nio.ch.DirectBuffer;
 
 /**
  * This is an implicit, GC-backed memory session. Implicit sessions cannot be closed explicitly.

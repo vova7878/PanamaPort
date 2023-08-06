@@ -26,6 +26,7 @@
 package java.lang.foreign;
 
 import java.nio.ByteBuffer;
+
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
 
@@ -48,7 +49,7 @@ public final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     @Override
     ByteBuffer makeByteBuffer() {
-        return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int)length, null,
+        return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int) length, null,
                 scope == MemorySessionImpl.GLOBAL ? null : this);
     }
 
@@ -61,7 +62,7 @@ public final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     @Override
     public MappedMemorySegmentImpl asSlice(long offset, long newSize) {
-        return (MappedMemorySegmentImpl)super.asSlice(offset, newSize);
+        return (MappedMemorySegmentImpl) super.asSlice(offset, newSize);
     }
 
     @Override

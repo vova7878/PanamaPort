@@ -26,13 +26,12 @@
 
 package java.lang.foreign;
 
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment.Scope;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.util.Objects;
+
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -183,6 +182,7 @@ public abstract sealed class MemorySessionImpl
 
     /**
      * Returns true, if this session is still open. This method may be called in any thread.
+     *
      * @return {@code true} if this session is not closed yet.
      */
     public boolean isAlive() {
@@ -209,8 +209,9 @@ public abstract sealed class MemorySessionImpl
 
     /**
      * Checks that this session is still alive (see {@link #isAlive()}).
+     *
      * @throws IllegalStateException if this session is already closed or if this is
-     * a confined session and this method is called outside of the owner thread.
+     *                               a confined session and this method is called outside of the owner thread.
      */
     public void checkValidState() {
         try {
@@ -221,7 +222,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     public static final void checkValidState(MemorySegment segment) {
-        ((AbstractMemorySegmentImpl)segment).sessionImpl().checkValidState();
+        ((AbstractMemorySegmentImpl) segment).sessionImpl().checkValidState();
     }
 
     @Override
@@ -235,8 +236,9 @@ public abstract sealed class MemorySessionImpl
 
     /**
      * Closes this session, executing any cleanup action (where provided).
+     *
      * @throws IllegalStateException if this session is already closed or if this is
-     * a confined session and this method is called outside of the owner thread.
+     *                               a confined session and this method is called outside of the owner thread.
      */
     public void close() {
         justClose();

@@ -25,7 +25,6 @@
  */
 package java.lang.foreign;
 
-import java.lang.foreign.MemoryLayout;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,9 +36,7 @@ import java.util.stream.Collectors;
  * (see {@link MemoryLayout#structLayout(MemoryLayout...)}); conversely, if all member layouts are laid out at the same starting offset,
  * the resulting group layout is said to be a <em>union</em> (see {@link MemoryLayout#unionLayout(MemoryLayout...)}).
  *
- * @implSpec
- * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- *
+ * @implSpec This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @since 19
  */
 public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L> & MemoryLayout>
@@ -60,11 +57,10 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
     /**
      * Returns the member layouts associated with this group.
      *
+     * @return the member layouts associated with this group.
      * @apiNote the order in which member layouts are returned is the same order in which member layouts have
      * been passed to one of the group layout factory methods (see {@link MemoryLayout#structLayout(MemoryLayout...)},
      * {@link MemoryLayout#unionLayout(MemoryLayout...)}).
-     *
-     * @return the member layouts associated with this group.
      */
     public final List<MemoryLayout> memberLayouts() {
         return elements; // "elements" are already unmodifiable.

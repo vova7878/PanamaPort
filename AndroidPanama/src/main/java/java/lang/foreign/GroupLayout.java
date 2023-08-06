@@ -26,6 +26,7 @@
 package java.lang.foreign;
 
 import java.util.List;
+
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -34,13 +35,11 @@ import jdk.internal.javac.PreviewFeature;
  * {@linkplain StructLayout struct layout}; conversely, if all member layouts are laid out at the same starting offset,
  * the resulting group layout is a {@linkplain UnionLayout union layout}.
  *
- * @implSpec
- * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- *
+ * @implSpec This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @sealedGraph
  * @since 19
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public sealed interface GroupLayout extends MemoryLayout permits StructLayout, UnionLayout {
 
     /**
@@ -66,9 +65,10 @@ public sealed interface GroupLayout extends MemoryLayout permits StructLayout, U
 
     /**
      * {@inheritDoc}
+     *
      * @throws IllegalArgumentException {@inheritDoc}
      * @throws IllegalArgumentException if {@code byteAlignment} is less than {@code M}, where {@code M} is the maximum alignment
-     * constraint in any of the member layouts associated with this group layout.
+     *                                  constraint in any of the member layouts associated with this group layout.
      */
     @Override
     GroupLayout withByteAlignment(long byteAlignment);

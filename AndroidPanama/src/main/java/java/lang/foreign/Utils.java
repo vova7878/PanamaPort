@@ -26,12 +26,9 @@
 
 package java.lang.foreign;
 
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.StructLayout;
-import java.lang.foreign.ValueLayout;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static sun.security.action.GetPropertyAction.privilegedGetProperty;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -47,9 +44,6 @@ import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.Wrapper;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static sun.security.action.GetPropertyAction.privilegedGetProperty;
-
 /**
  * This class contains misc helper functions to support creation of memory segments.
  */
@@ -58,7 +52,8 @@ public final class Utils {
     public static final boolean IS_WINDOWS = privilegedGetProperty("os.name").startsWith("Windows");
 
     // Suppresses default constructor, ensuring non-instantiability.
-    private Utils() {}
+    private Utils() {
+    }
 
     private static final MethodHandle BYTE_TO_BOOL;
     private static final MethodHandle BOOL_TO_BYTE;
@@ -119,7 +114,7 @@ public final class Utils {
             handle = MethodHandles.filterValue(handle,
                     MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
                     MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
-                            pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
+                                    pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
                             MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
         return VarHandleCache.put(layout, handle);
@@ -130,7 +125,7 @@ public final class Utils {
     }
 
     private static byte booleanToByte(boolean b) {
-        return b ? (byte)1 : (byte)0;
+        return b ? (byte) 1 : (byte) 0;
     }
 
     @ForceInline
@@ -152,7 +147,7 @@ public final class Utils {
     public static void copy(MemorySegment addr, byte[] bytes) {
         var heapSegment = MemorySegment.ofArray(bytes);
         addr.copyFrom(heapSegment);
-        addr.set(JAVA_BYTE, bytes.length, (byte)0);
+        addr.set(JAVA_BYTE, bytes.length, (byte) 0);
     }
 
     public static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {

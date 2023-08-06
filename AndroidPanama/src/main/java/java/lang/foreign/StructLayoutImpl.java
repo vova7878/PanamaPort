@@ -25,8 +25,6 @@
  */
 package java.lang.foreign;
 
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.StructLayout;
 import java.util.List;
 import java.util.Optional;
 
