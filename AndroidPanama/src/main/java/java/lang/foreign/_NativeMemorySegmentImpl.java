@@ -26,12 +26,10 @@
 
 package java.lang.foreign;
 
+import com.v7878.unsafe.AndroidUnsafe;
+
 import java.nio.ByteBuffer;
 import java.util.Optional;
-
-import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.VM;
-import sun.security.action.GetBooleanAction;
 
 /**
  * Implementation for native memory segments. A native memory segment is essentially a wrapper around
@@ -39,18 +37,22 @@ import sun.security.action.GetBooleanAction;
  */
 sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits _MappedMemorySegmentImpl {
 
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    // Port-changed: use AndroidUnsafe
+    //private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // The maximum alignment supported by malloc - typically 16 bytes on
     // 64-bit platforms and 8 bytes on 32-bit platforms.
-    private static final long MAX_MALLOC_ALIGN = Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
-    private static final boolean SKIP_ZERO_MEMORY = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.skipZeroMemory");
+    private static final long MAX_MALLOC_ALIGN = AndroidUnsafe.ADDRESS_SIZE == 4 ? 8 : 16;
+
+    // Port-changed: always false
+    //private static final boolean SKIP_ZERO_MEMORY = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.skipZeroMemory");
+    private static final boolean SKIP_ZERO_MEMORY = false;
 
     final long min;
 
     _NativeMemorySegmentImpl(long min, long length, boolean readOnly, _MemorySessionImpl scope) {
         super(length, readOnly, scope);
-        this.min = (Unsafe.getUnsafe().addressSize() == 4)
+        this.min = (AndroidUnsafe.ADDRESS_SIZE == 4)
                 // On 32-bit systems, normalize the upper unused 32-bits to zero
                 ? min & 0x0000_0000_FFFF_FFFFL
                 // On 64-bit systems, all the bits are used
@@ -84,8 +86,11 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
 
     @Override
     ByteBuffer makeByteBuffer() {
-        return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null,
-                scope == _MemorySessionImpl.GLOBAL ? null : this);
+        // Port-removed: TODO
+        //// Port-changed: Use GlobalSession.INSTANCE instead MemorySessionImpl.GLOBAL
+        //return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null,
+        //        scope == GlobalSession.INSTANCE ? null : this);
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
@@ -111,19 +116,23 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
     // factories
 
     public static MemorySegment makeNativeSegment(long byteSize, long byteAlignment, _MemorySessionImpl sessionImpl) {
-        sessionImpl.checkValidState();
-        if (VM.isDirectMemoryPageAligned()) {
-            byteAlignment = Math.max(byteAlignment, NIO_ACCESS.pageSize());
-        }
+        sessionImpl.checkStateForAccess();
+
+        // Port-removed: always false
+        //if (VM.isDirectMemoryPageAligned()) {
+        //    byteAlignment = Math.max(byteAlignment, AndroidUnsafe.pageSize());
+        //}
+
         long alignedSize = Math.max(1L, byteAlignment > MAX_MALLOC_ALIGN ?
                 byteSize + (byteAlignment - 1) :
                 byteSize);
 
-        NIO_ACCESS.reserveMemory(alignedSize, byteSize);
+        // Port-removed
+        //NIO_ACCESS.reserveMemory(alignedSize, byteSize);
 
-        long buf = UNSAFE.allocateMemory(alignedSize);
+        long buf = AndroidUnsafe.allocateMemory(alignedSize);
         if (!SKIP_ZERO_MEMORY) {
-            UNSAFE.setMemory(buf, alignedSize, (byte) 0);
+            AndroidUnsafe.setMemory(buf, alignedSize, (byte) 0);
         }
         long alignedBuf = _Utils.alignUp(buf, byteAlignment);
         _AbstractMemorySegmentImpl segment = new _NativeMemorySegmentImpl(buf, alignedSize,
@@ -131,8 +140,10 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
         sessionImpl.addOrCleanupIfFail(new _MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
-                UNSAFE.freeMemory(buf);
-                NIO_ACCESS.unreserveMemory(alignedSize, byteSize);
+                AndroidUnsafe.freeMemory(buf);
+
+                // Port-removed
+                //NIO_ACCESS.unreserveMemory(alignedSize, byteSize);
             }
         });
         if (alignedSize != byteSize) {
@@ -147,7 +158,7 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
 
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, _MemorySessionImpl sessionImpl, Runnable action) {
         if (action == null) {
-            sessionImpl.checkValidState();
+            sessionImpl.checkStateForAccess();
         } else {
             sessionImpl.addCloseAction(action);
         }
@@ -155,7 +166,7 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
     }
 
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, _MemorySessionImpl sessionImpl) {
-        sessionImpl.checkValidState();
+        sessionImpl.checkStateForAccess();
         return new _NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
     }
 

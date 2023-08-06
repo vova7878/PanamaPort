@@ -25,16 +25,13 @@
  */
 package java.lang.foreign;
 
-import java.lang.invoke.VarHandle;
+import com.v7878.unsafe.AndroidUnsafe;
+
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import jdk.internal.misc.Unsafe;
-import jdk.internal.reflect.Reflection;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -57,12 +54,14 @@ final class _ValueLayouts {
 
     abstract sealed static class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends _AbstractLayout<V> {
 
-        static final int ADDRESS_SIZE_BYTES = Unsafe.ADDRESS_SIZE;
+        // Port-changed: use AndroidUnsafe
+        static final int ADDRESS_SIZE_BYTES = AndroidUnsafe.ADDRESS_SIZE;
 
         private final Class<?> carrier;
         private final ByteOrder order;
-        @Stable
-        private VarHandle handle;
+
+        // Port-changed: Use MemoryVarHandle instead VarHandle
+        private MemoryVarHandle handle;
 
         AbstractValueLayout(Class<?> carrier, ByteOrder order, long byteSize, long byteAlignment, Optional<String> name) {
             super(byteSize, byteAlignment, name);
@@ -92,10 +91,14 @@ final class _ValueLayouts {
 
         @Override
         public String toString() {
-            char descriptor = carrier.descriptorString().charAt(0);
-            if (order == ByteOrder.LITTLE_ENDIAN) {
-                descriptor = Character.toLowerCase(descriptor);
-            }
+            // Port-removed: TODO
+            //char descriptor = carrier.descriptorString().charAt(0);
+            //if (order == ByteOrder.LITTLE_ENDIAN) {
+            //    descriptor = Character.toLowerCase(descriptor);
+            //}
+            String descriptor = carrier.getSimpleName();
+            descriptor = order == ByteOrder.LITTLE_ENDIAN ?
+                    descriptor.toLowerCase() : descriptor.toUpperCase();
             return decorateLayoutString(String.format("%s%d", descriptor, byteSize()));
         }
 
@@ -108,7 +111,7 @@ final class _ValueLayouts {
                             order.equals(otherValue.order);
         }
 
-        public final VarHandle arrayElementVarHandle(int... shape) {
+        public final MemoryVarHandle arrayElementVarHandle(int... shape) {
             Objects.requireNonNull(shape);
             if (!_Utils.isElementAligned((ValueLayout) this)) {
                 throw new UnsupportedOperationException("Layout alignment greater than its size");
@@ -169,7 +172,7 @@ final class _ValueLayouts {
                     || carrier == MemorySegment.class;
         }
 
-        public final VarHandle accessHandle() {
+        public final MemoryVarHandle accessHandle() {
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
                 handle = _Utils.makeSegmentViewVarHandle(self());
@@ -337,9 +340,16 @@ final class _ValueLayouts {
             return Objects.hash(super.hashCode(), targetLayout);
         }
 
+        // Port-changed: No caller checks
+        //@Override
+        //public AddressLayout withTargetLayout(MemoryLayout layout) {
+        //    Reflection.ensureNativeAccess(Reflection.getCallerClass(), AddressLayout.class, "withTargetLayout");
+        //    Objects.requireNonNull(layout);
+        //    return new OfAddressImpl(order(), byteSize(), byteAlignment(), layout, name());
+        //}
+
         @Override
         public AddressLayout withTargetLayout(MemoryLayout layout) {
-            Reflection.ensureNativeAccess(Reflection.getCallerClass(), AddressLayout.class, "withTargetLayout");
             Objects.requireNonNull(layout);
             return new OfAddressImpl(order(), byteSize(), byteAlignment(), layout, name());
         }

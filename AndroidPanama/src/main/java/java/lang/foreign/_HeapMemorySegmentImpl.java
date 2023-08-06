@@ -26,13 +26,11 @@
 
 package java.lang.foreign;
 
+import com.v7878.unsafe.AndroidUnsafe;
+
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
-
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.Unsafe;
 
 /**
  * Implementation for heap memory segments. A heap memory segment is composed by an offset and
@@ -47,8 +45,9 @@ import jdk.internal.misc.Unsafe;
  */
 abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl {
 
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final int BYTE_ARR_BASE = UNSAFE.arrayBaseOffset(byte[].class);
+    // Port-changed: use AndroidUnsafe
+    //private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final int BYTE_ARR_BASE = AndroidUnsafe.arrayBaseOffset(byte[].class);
 
     private static final long MAX_ALIGN_1 = ValueLayout.JAVA_BYTE.byteAlignment();
     private static final long MAX_ALIGN_2 = ValueLayout.JAVA_SHORT.byteAlignment();
@@ -81,11 +80,13 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
     @Override
     ByteBuffer makeByteBuffer() {
-        if (!(base instanceof byte[] baseByte)) {
-            throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
-        }
-        JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
-        return nioAccess.newHeapByteBuffer(baseByte, (int) offset - BYTE_ARR_BASE, (int) byteSize(), null);
+        // Port-removed: TODO
+        //if (!(base instanceof byte[] baseByte)) {
+        //    throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
+        //}
+        //JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
+        //return nioAccess.newHeapByteBuffer(baseByte, (int) offset - BYTE_ARR_BASE, (int) byteSize(), null);
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     // factories
@@ -108,8 +109,8 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         public static MemorySegment fromArray(byte[] arr) {
             Objects.requireNonNull(arr);
-            long byteSize = (long) arr.length * Unsafe.ARRAY_BYTE_INDEX_SCALE;
-            return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, false,
+            long byteSize = (long) arr.length * AndroidUnsafe.ARRAY_BYTE_INDEX_SCALE;
+            return new OfByte(AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, false,
                     _MemorySessionImpl.heapSession(arr));
         }
 
@@ -120,7 +121,7 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_BYTE_BASE_OFFSET;
+            return offset - AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
         }
     }
 
@@ -142,8 +143,8 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         public static MemorySegment fromArray(char[] arr) {
             Objects.requireNonNull(arr);
-            long byteSize = (long) arr.length * Unsafe.ARRAY_CHAR_INDEX_SCALE;
-            return new OfChar(Unsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, false,
+            long byteSize = (long) arr.length * AndroidUnsafe.ARRAY_CHAR_INDEX_SCALE;
+            return new OfChar(AndroidUnsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, false,
                     _MemorySessionImpl.heapSession(arr));
         }
 
@@ -154,7 +155,7 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_CHAR_BASE_OFFSET;
+            return offset - AndroidUnsafe.ARRAY_CHAR_BASE_OFFSET;
         }
     }
 
@@ -176,8 +177,8 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         public static MemorySegment fromArray(short[] arr) {
             Objects.requireNonNull(arr);
-            long byteSize = (long) arr.length * Unsafe.ARRAY_SHORT_INDEX_SCALE;
-            return new OfShort(Unsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, false,
+            long byteSize = (long) arr.length * AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
+            return new OfShort(AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, false,
                     _MemorySessionImpl.heapSession(arr));
         }
 
@@ -188,7 +189,7 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_SHORT_BASE_OFFSET;
+            return offset - AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
         }
     }
 
@@ -210,8 +211,8 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         public static MemorySegment fromArray(int[] arr) {
             Objects.requireNonNull(arr);
-            long byteSize = (long) arr.length * Unsafe.ARRAY_INT_INDEX_SCALE;
-            return new OfInt(Unsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, false,
+            long byteSize = (long) arr.length * AndroidUnsafe.ARRAY_INT_INDEX_SCALE;
+            return new OfInt(AndroidUnsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, false,
                     _MemorySessionImpl.heapSession(arr));
         }
 
@@ -222,7 +223,7 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_INT_BASE_OFFSET;
+            return offset - AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
         }
     }
 
@@ -244,8 +245,8 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         public static MemorySegment fromArray(long[] arr) {
             Objects.requireNonNull(arr);
-            long byteSize = (long) arr.length * Unsafe.ARRAY_LONG_INDEX_SCALE;
-            return new OfLong(Unsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, false,
+            long byteSize = (long) arr.length * AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
+            return new OfLong(AndroidUnsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, false,
                     _MemorySessionImpl.heapSession(arr));
         }
 
@@ -256,7 +257,7 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_LONG_BASE_OFFSET;
+            return offset - AndroidUnsafe.ARRAY_LONG_BASE_OFFSET;
         }
     }
 
@@ -278,8 +279,8 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         public static MemorySegment fromArray(float[] arr) {
             Objects.requireNonNull(arr);
-            long byteSize = (long) arr.length * Unsafe.ARRAY_FLOAT_INDEX_SCALE;
-            return new OfFloat(Unsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, false,
+            long byteSize = (long) arr.length * AndroidUnsafe.ARRAY_FLOAT_INDEX_SCALE;
+            return new OfFloat(AndroidUnsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, false,
                     _MemorySessionImpl.heapSession(arr));
         }
 
@@ -290,7 +291,7 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_FLOAT_BASE_OFFSET;
+            return offset - AndroidUnsafe.ARRAY_FLOAT_BASE_OFFSET;
         }
     }
 
@@ -312,8 +313,8 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         public static MemorySegment fromArray(double[] arr) {
             Objects.requireNonNull(arr);
-            long byteSize = (long) arr.length * Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
-            return new OfDouble(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, false,
+            long byteSize = (long) arr.length * AndroidUnsafe.ARRAY_DOUBLE_INDEX_SCALE;
+            return new OfDouble(AndroidUnsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, false,
                     _MemorySessionImpl.heapSession(arr));
         }
 
@@ -324,7 +325,7 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
+            return offset - AndroidUnsafe.ARRAY_DOUBLE_BASE_OFFSET;
         }
     }
 

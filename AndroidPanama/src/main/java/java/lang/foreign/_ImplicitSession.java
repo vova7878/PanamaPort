@@ -25,10 +25,8 @@
 
 package java.lang.foreign;
 
-import java.lang.ref.Cleaner;
-import java.lang.ref.Reference;
-
-import sun.nio.ch.DirectBuffer;
+// Port-removed: TODO
+//import sun.nio.ch.DirectBuffer;
 
 /**
  * This is an implicit, GC-backed memory session. Implicit sessions cannot be closed explicitly.
@@ -40,18 +38,26 @@ import sun.nio.ch.DirectBuffer;
  */
 final class _ImplicitSession extends _SharedSession {
 
-    public _ImplicitSession(Cleaner cleaner) {
+    // Port-changed: Use sun.misc.Cleaner
+    //public _ImplicitSession(Cleaner cleaner) {
+    //    super();
+    //    cleaner.register(this, resourceList);
+    //}
+
+    public _ImplicitSession() {
         super();
-        cleaner.register(this, resourceList);
+        sun.misc.Cleaner.create(this, resourceList);
     }
 
     @Override
-    public void release0() {
-        Reference.reachabilityFence(this);
+    protected void release0() {
+        // Port-removed: TODO
+        //Reference.reachabilityFence(this);
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
-    public void acquire0() {
+    protected void acquire0() {
         // do nothing
     }
 

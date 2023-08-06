@@ -26,7 +26,9 @@
 
 package java.lang.foreign;
 
-import java.lang.foreign.Linker.Option;
+// Port-removed: TODO
+//import java.lang.foreign.Linker.Option;
+
 import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;
 import java.util.Optional;

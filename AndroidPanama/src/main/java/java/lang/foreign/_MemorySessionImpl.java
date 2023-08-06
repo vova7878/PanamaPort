@@ -27,12 +27,7 @@
 package java.lang.foreign;
 
 import java.lang.foreign.MemorySegment.Scope;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.lang.ref.Cleaner;
 import java.util.Objects;
-
-import jdk.internal.misc.ScopedMemoryAccess;
 
 /**
  * This class manages the temporal bounds associated with a memory segment as well
@@ -45,7 +40,7 @@ import jdk.internal.misc.ScopedMemoryAccess;
  * Shared sessions do not feature an owner thread - meaning their operations can be called, in a racy
  * manner, by multiple threads. To guarantee temporal safety in the presence of concurrent thread,
  * shared sessions use a more sophisticated synchronization mechanism, which guarantees that no concurrent
- * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
+ * access is possible when a session is being closed (see {@link _ScopedMemoryAccess}).
  */
 abstract sealed class _MemorySessionImpl
         implements Scope
@@ -54,25 +49,32 @@ abstract sealed class _MemorySessionImpl
     static final int CLOSING = -1;
     static final int CLOSED = -2;
 
-    static final VarHandle STATE;
-    static final int MAX_FORKS = Integer.MAX_VALUE;
+    // Port-removed: Move to SharedSession
+    //static final VarHandle STATE;
+    //
+    //static {
+    //    try {
+    //        STATE = MethodHandles.lookup().findVarHandle(MemorySessionImpl.class, "state", int.class);
+    //    } catch (Exception ex) {
+    //        throw new ExceptionInInitializerError(ex);
+    //    }
+    //}
 
-    public static final _MemorySessionImpl GLOBAL = new _GlobalSession(null);
+    // Port-removed: Move to GlobalSession
+    //public static final MemorySessionImpl GLOBAL = new GlobalSession(null);
 
-    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(_MemorySessionImpl::alreadyClosed);
-    static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(_MemorySessionImpl::wrongThread);
+
+    // Port-removed: unused
+    //static final ScopedAccessError ALREADY_CLOSED = new ScopedAccessError(_MemorySessionImpl::alreadyClosed);
+    //static final ScopedAccessError WRONG_THREAD = new ScopedAccessError(MemorySessionImpl::wrongThread);
+
+    // Port-removed: Move owner Thread to ConfinedSession
+    //static final int MAX_FORKS = Integer.MAX_VALUE;
 
     final ResourceList resourceList;
-    final Thread owner;
+    // Port-removed: Move owner Thread to ConfinedSession
+    //final Thread owner;
     int state = OPEN;
-
-    static {
-        try {
-            STATE = MethodHandles.lookup().findVarHandle(_MemorySessionImpl.class, "state", int.class);
-        } catch (Exception ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
 
     public Arena asArena() {
         return new Arena() {
@@ -88,15 +90,16 @@ abstract sealed class _MemorySessionImpl
         };
     }
 
-    public static final _MemorySessionImpl toMemorySession(Arena arena) {
+    public static _MemorySessionImpl toMemorySession(Arena arena) {
         return (_MemorySessionImpl) arena.scope();
     }
 
-    public final boolean isCloseableBy(Thread thread) {
-        Objects.requireNonNull(thread);
-        return isCloseable() &&
-                (owner == null || owner == thread);
-    }
+    // Port-changed: unused
+    //public final boolean isCloseableBy(Thread thread) {
+    //    Objects.requireNonNull(thread);
+    //    return isCloseable() &&
+    //            (owner == null || owner == thread);
+    //}
 
     public void addCloseAction(Runnable runnable) {
         Objects.requireNonNull(runnable);
@@ -123,18 +126,27 @@ abstract sealed class _MemorySessionImpl
     }
 
     void addInternal(ResourceList.ResourceCleanup resource) {
-        checkValidState();
-        // Note: from here on we no longer check the session state. Two cases are possible: either the resource cleanup
-        // is added to the list when the session is still open, in which case everything works ok; or the resource
-        // cleanup is added while the session is being closed. In this latter case, what matters is whether we have already
-        // called `ResourceList::cleanup` to run all the cleanup actions. If not, we can still add this resource
-        // to the list (and, in case of an add vs. close race, it might happen that the cleanup action will be
-        // called immediately after).
-        resourceList.add(resource);
+        // Port-changed: Use lock()
+        //checkValidState();
+        //// Note: from here on we no longer check the session state. Two cases are possible: either the resource cleanup
+        //// is added to the list when the session is still open, in which case everything works ok; or the resource
+        //// cleanup is added while the session is being closed. In this latter case, what matters is whether we have already
+        //// called `ResourceList::cleanup` to run all the cleanup actions. If not, we can still add this resource
+        //// to the list (and, in case of an add vs. close race, it might happen that the cleanup action will be
+        //// called immediately after).
+        //resourceList.add(resource);
+        try (SessionScopedLock tmp = lock()) {
+            resourceList.add(resource);
+        }
     }
 
-    protected _MemorySessionImpl(Thread owner, ResourceList resourceList) {
-        this.owner = owner;
+    // Port-changed: Move owner Thread to ConfinedSession
+    //protected _MemorySessionImpl(Thread owner, ResourceList resourceList) {
+    //    this.owner = owner;
+    //    this.resourceList = resourceList;
+    //}
+
+    protected _MemorySessionImpl(ResourceList resourceList) {
         this.resourceList = resourceList;
     }
 
@@ -146,8 +158,13 @@ abstract sealed class _MemorySessionImpl
         return new _SharedSession();
     }
 
-    public static _MemorySessionImpl createImplicit(Cleaner cleaner) {
-        return new _ImplicitSession(cleaner);
+    // Port-changed: Use sun.misc.Cleaner
+    //public static _MemorySessionImpl createImplicit(Cleaner cleaner) {
+    //    return new _ImplicitSession(cleaner);
+    //}
+
+    public static _MemorySessionImpl createImplicit() {
+        return new _ImplicitSession();
     }
 
     public MemorySegment allocate(long byteSize, long byteAlignment) {
@@ -155,26 +172,54 @@ abstract sealed class _MemorySessionImpl
         return _NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
     }
 
-    public abstract void release0();
+    // Port-changed: make protected
+    //public abstract void acquire0();
+    //public abstract void release0();
 
-    public abstract void acquire0();
+    protected abstract void acquire0();
 
-    public void whileAlive(Runnable action) {
-        Objects.requireNonNull(action);
-        acquire0();
-        try {
-            action.run();
-        } finally {
+    protected abstract void release0();
+
+    // Port-added
+    public final class SessionScopedLock implements AutoCloseable {
+        SessionScopedLock() {
+            acquire0();
+        }
+
+        @Override
+        public void close() {
             release0();
         }
     }
 
-    public final Thread ownerThread() {
-        return owner;
+    public final SessionScopedLock lock() {
+        return new SessionScopedLock();
+    }
+
+    // Port-changed: unused
+    //public void whileAlive(Runnable action) {
+    //    Objects.requireNonNull(action);
+    //    acquire0();
+    //    try {
+    //        action.run();
+    //    } finally {
+    //        release0();
+    //    }
+    //}
+
+    // Port-changed: Move owner Thread to ConfinedSession
+    //public final Thread ownerThread() {
+    //    return owner;
+    //}
+
+    public Thread ownerThread() {
+        return null;
     }
 
     public final boolean isAccessibleBy(Thread thread) {
         Objects.requireNonNull(thread);
+        // Port-added
+        Thread owner = ownerThread();
         return owner == null || owner == thread;
     }
 
@@ -187,40 +232,48 @@ abstract sealed class _MemorySessionImpl
         return state >= OPEN;
     }
 
-    /**
-     * This is a faster version of {@link #checkValidState()}, which is called upon memory access, and which
-     * relies on invariants associated with the memory session implementations (volatile access
-     * to the closed state bit is replaced with plain access). This method should be monomorphic,
-     * to avoid virtual calls in the memory access hot path. This method is not intended as general purpose method
-     * and should only be used in the memory access handle hot path; for liveness checks triggered by other API methods,
-     * please use {@link #checkValidState()}.
-     */
-    public void checkValidStateRaw() {
-        if (owner != null && owner != Thread.currentThread()) {
-            throw WRONG_THREAD;
-        }
+    // Port-added
+    public void checkStateForAccess() {
         if (state < OPEN) {
-            throw ALREADY_CLOSED;
+            throw alreadyClosed();
         }
     }
 
-    /**
-     * Checks that this session is still alive (see {@link #isAlive()}).
-     *
-     * @throws IllegalStateException if this session is already closed or if this is
-     *                               a confined session and this method is called outside of the owner thread.
-     */
-    public void checkValidState() {
-        try {
-            checkValidStateRaw();
-        } catch (ScopedMemoryAccess.ScopedAccessError error) {
-            throw error.newRuntimeException();
-        }
-    }
-
-    public static final void checkValidState(MemorySegment segment) {
-        ((_AbstractMemorySegmentImpl) segment).sessionImpl().checkValidState();
-    }
+    // Port-removed: unused
+    ///**
+    // * This is a faster version of {@link #checkValidState()}, which is called upon memory access, and which
+    // * relies on invariants associated with the memory session implementations (volatile access
+    // * to the closed state bit is replaced with plain access). This method should be monomorphic,
+    // * to avoid virtual calls in the memory access hot path. This method is not intended as general purpose method
+    // * and should only be used in the memory access handle hot path; for liveness checks triggered by other API methods,
+    // * please use {@link #checkValidState()}.
+    // */
+    //public void checkValidStateRaw() {
+    //    if (owner != null && owner != Thread.currentThread()) {
+    //        throw WRONG_THREAD;
+    //    }
+    //    if (state < OPEN) {
+    //        throw ALREADY_CLOSED;
+    //    }
+    //}
+    //
+    ///**
+    // * Checks that this session is still alive (see {@link #isAlive()}).
+    // *
+    // * @throws IllegalStateException if this session is already closed or if this is
+    // *                               a confined session and this method is called outside of the owner thread.
+    // */
+    //public void checkValidState() {
+    //    try {
+    //        checkValidStateRaw();
+    //    } catch (ScopedMemoryAccess.ScopedAccessError error) {
+    //        throw error.newRuntimeException();
+    //    }
+    //}
+    //
+    //public static void checkValidState(MemorySegment segment) {
+    //    ((_AbstractMemorySegmentImpl) segment).sessionImpl().checkValidState();
+    //}
 
     @Override
     protected Object clone() throws CloneNotSupportedException {
@@ -298,9 +351,10 @@ abstract sealed class _MemorySessionImpl
 
     // helper functions to centralize error handling
 
-    static IllegalStateException tooManyAcquires() {
-        return new IllegalStateException("Session acquire limit exceeded");
-    }
+    // Port-removed: Move owner Thread to ConfinedSession
+    //static IllegalStateException tooManyAcquires() {
+    //    return new IllegalStateException("Session acquire limit exceeded");
+    //}
 
     static IllegalStateException alreadyAcquired(int acquires) {
         return new IllegalStateException(String.format("Session is acquired by %d clients", acquires));
@@ -310,9 +364,10 @@ abstract sealed class _MemorySessionImpl
         return new IllegalStateException("Already closed");
     }
 
-    static WrongThreadException wrongThread() {
-        return new WrongThreadException("Attempted access outside owning thread");
-    }
+    // Port-removed: Move owner Thread to ConfinedSession
+    //static WrongThreadException wrongThread() {
+    //    return new WrongThreadException("Attempted access outside owning thread");
+    //}
 
     static UnsupportedOperationException nonCloseable() {
         return new UnsupportedOperationException("Attempted to close a non-closeable session");

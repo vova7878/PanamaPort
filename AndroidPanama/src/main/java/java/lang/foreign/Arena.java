@@ -27,7 +27,8 @@ package java.lang.foreign;
 
 import java.lang.foreign.MemorySegment.Scope;
 
-import jdk.internal.ref.CleanerFactory;
+// Port-removed: TODO
+//import jdk.internal.ref.CleanerFactory;
 
 /**
  * An arena controls the lifecycle of native memory segments, providing both flexible allocation and timely deallocation.
@@ -202,7 +203,9 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @return a new arena that is managed, automatically, by the garbage collector.
      */
     static Arena ofAuto() {
-        return _MemorySessionImpl.createImplicit(CleanerFactory.cleaner()).asArena();
+        // Port-changed: Use sun.misc.Cleaner
+        //return MemorySessionImpl.createImplicit(CleanerFactory.cleaner()).asArena();
+        return _MemorySessionImpl.createImplicit().asArena();
     }
 
     /**
@@ -214,7 +217,8 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      */
     static Arena global() {
         class Holder {
-            static final Arena GLOBAL = _MemorySessionImpl.GLOBAL.asArena();
+            // Port-changed: Use GlobalSession.INSTANCE instead MemorySessionImpl.GLOBAL
+            static final Arena GLOBAL = _GlobalSession.INSTANCE.asArena();
         }
         return Holder.GLOBAL;
     }
@@ -229,7 +233,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     }
 
     /**
-     * {@return a new shared arena} Segments allocated with the global arena can be
+     * {@return a new shared arena} Segments allocated with the shared arena can be
      * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      */
     static Arena ofShared() {

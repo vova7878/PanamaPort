@@ -25,11 +25,12 @@
 
 package java.lang.foreign;
 
+//TODO: move to java.lang
+
 /**
  * Thrown to indicate that a method has been called on the wrong thread.
  */
 public final class WrongThreadException extends RuntimeException {
-    @java.io.Serial
     static final long serialVersionUID = 4676498871006316905L;
 
     /**

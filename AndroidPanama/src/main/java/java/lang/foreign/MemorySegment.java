@@ -42,8 +42,6 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import jdk.internal.foreign.abi.SharedUtils;
-
 /**
  * A memory segment provides access to a contiguous region of memory.
  * <p>
@@ -1076,7 +1074,9 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *                                   such that {@code isAccessibleBy(T) == false}.
      */
     default String getUtf8String(long offset) {
-        return SharedUtils.toJavaStringInternal(this, offset);
+        // Port-removed: TODO
+        //return SharedUtils.toJavaStringInternal(this, offset);
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**

@@ -27,53 +27,44 @@
 package java.lang.foreign;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.abi.SharedUtils;
-import sun.invoke.util.Wrapper;
 
 /**
  * This class contains misc helper functions to support creation of memory segments.
  */
 final class _Utils {
 
-    public static final boolean IS_WINDOWS = privilegedGetProperty("os.name").startsWith("Windows");
+    // Port-removed: always Android
+    //public static final boolean IS_WINDOWS = privilegedGetProperty("os.name").startsWith("Windows");
 
     // Suppresses default constructor, ensuring non-instantiability.
     private _Utils() {
     }
 
-    private static final MethodHandle BYTE_TO_BOOL;
-    private static final MethodHandle BOOL_TO_BYTE;
-    private static final MethodHandle ADDRESS_TO_LONG;
-    private static final MethodHandle LONG_TO_ADDRESS;
-
-    static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            BYTE_TO_BOOL = lookup.findStatic(_Utils.class, "byteToBoolean",
-                    MethodType.methodType(boolean.class, byte.class));
-            BOOL_TO_BYTE = lookup.findStatic(_Utils.class, "booleanToByte",
-                    MethodType.methodType(byte.class, boolean.class));
-            ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
-                    MethodType.methodType(long.class, MemorySegment.class));
-            LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
-                    MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
+    // Port-removed: unused
+    //private static final MethodHandle BYTE_TO_BOOL;
+    //private static final MethodHandle BOOL_TO_BYTE;
+    //private static final MethodHandle ADDRESS_TO_LONG;
+    //private static final MethodHandle LONG_TO_ADDRESS;
+    //
+    //static {
+    //    try {
+    //        MethodHandles.Lookup lookup = MethodHandles.lookup();
+    //        BYTE_TO_BOOL = lookup.findStatic(_Utils.class, "byteToBoolean",
+    //                MethodType.methodType(boolean.class, byte.class));
+    //        BOOL_TO_BYTE = lookup.findStatic(_Utils.class, "booleanToByte",
+    //                MethodType.methodType(byte.class, boolean.class));
+    //        ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
+    //                MethodType.methodType(long.class, MemorySegment.class));
+    //        LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
+    //                MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
+    //    } catch (Throwable ex) {
+    //        throw new ExceptionInInitializerError(ex);
+    //    }
+    //}
 
     public static long alignUp(long n, long alignment) {
         return (n + alignment - 1) & -alignment;
@@ -84,48 +75,52 @@ final class _Utils {
         return ms.asSlice(alignUp(offset, alignment) - offset);
     }
 
-    public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
-        final class VarHandleCache {
-            private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
-
-            static VarHandle put(ValueLayout layout, VarHandle handle) {
-                VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
-                return prev != null ? prev : handle;
-            }
-        }
-        Class<?> baseCarrier = layout.carrier();
-        if (layout.carrier() == MemorySegment.class) {
-            baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
-                case Long.BYTES -> long.class;
-                case Integer.BYTES -> int.class;
-                default -> throw new UnsupportedOperationException("Unsupported address layout");
-            };
-        } else if (layout.carrier() == boolean.class) {
-            baseCarrier = byte.class;
-        }
-
-        VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
-                layout.byteAlignment() - 1, layout.order());
-
-        if (layout.carrier() == boolean.class) {
-            handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
-        } else if (layout instanceof AddressLayout addressLayout) {
-            handle = MethodHandles.filterValue(handle,
-                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
-                    MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
-                                    pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
-                            MethodType.methodType(MemorySegment.class, baseCarrier)));
-        }
-        return VarHandleCache.put(layout, handle);
+    // Port-changed: Use MemoryVarHandle instead VarHandle
+    public static MemoryVarHandle makeSegmentViewVarHandle(ValueLayout layout) {
+        // Port-removed: TODO
+        //final class VarHandleCache {
+        //    private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+        //
+        //    static VarHandle put(ValueLayout layout, VarHandle handle) {
+        //        VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
+        //        return prev != null ? prev : handle;
+        //    }
+        //}
+        //Class<?> baseCarrier = layout.carrier();
+        //if (layout.carrier() == MemorySegment.class) {
+        //    baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
+        //        case Long.BYTES -> long.class;
+        //        case Integer.BYTES -> int.class;
+        //        default -> throw new UnsupportedOperationException("Unsupported address layout");
+        //    };
+        //} else if (layout.carrier() == boolean.class) {
+        //    baseCarrier = byte.class;
+        //}
+        //
+        //VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
+        //        layout.byteAlignment() - 1, layout.order());
+        //
+        //if (layout.carrier() == boolean.class) {
+        //    handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
+        //} else if (layout instanceof AddressLayout addressLayout) {
+        //    handle = MethodHandles.filterValue(handle,
+        //            MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
+        //            MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
+        //                            pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
+        //                    MethodType.methodType(MemorySegment.class, baseCarrier)));
+        //}
+        //return VarHandleCache.put(layout, handle);
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
-    public static boolean byteToBoolean(byte b) {
-        return b != 0;
-    }
-
-    private static byte booleanToByte(boolean b) {
-        return b ? (byte) 1 : (byte) 0;
-    }
+    // Port-removed: unused
+    //public static boolean byteToBoolean(byte b) {
+    //    return b != 0;
+    //}
+    //
+    //private static byte booleanToByte(boolean b) {
+    //    return b ? (byte) 1 : (byte) 0;
+    //}
 
     public static MemorySegment longToAddress(long addr, long size, long align) {
         if (!isAligned(addr, align)) {
@@ -239,11 +234,22 @@ final class _Utils {
         if (padding != 0) {
             layouts.add(MemoryLayout.paddingLayout(padding));
         }
-        return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
+        return MemoryLayout.structLayout(layouts.toArray(new MemoryLayout[0]));
     }
 
     public static int byteWidthOfPrimitive(Class<?> primitive) {
-        return Wrapper.forPrimitiveType(primitive).bitWidth() / 8;
+        // Port-removed: TODO?
+        //return Wrapper.forPrimitiveType(primitive).bitWidth() / 8;
+        if (primitive == byte.class || primitive == boolean.class) {
+            return 1;
+        } else if (primitive == short.class || primitive == char.class) {
+            return 2;
+        } else if (primitive == int.class || primitive == float.class) {
+            return 4;
+        } else if (primitive == long.class || primitive == double.class) {
+            return 8;
+        }
+        throw new IllegalArgumentException("Unsupported primitive class: " + primitive);
     }
 
     public static boolean isPowerOfTwo(long value) {

@@ -32,15 +32,25 @@ package java.lang.foreign;
  */
 final class _GlobalSession extends _MemorySessionImpl {
 
+    // Port-added
+    public static final _GlobalSession INSTANCE = new _GlobalSession(null);
+
     final Object ref;
 
     public _GlobalSession(Object ref) {
-        super(null, null);
+        // Port-changed: Move owner Thread to ConfinedSession
+        //super(null, null);
+        super(null);
         this.ref = ref;
     }
 
     @Override
-    public void release0() {
+    protected void release0() {
+        // do nothing
+    }
+
+    @Override
+    protected void acquire0() {
         // do nothing
     }
 
@@ -50,17 +60,12 @@ final class _GlobalSession extends _MemorySessionImpl {
     }
 
     @Override
-    public void acquire0() {
-        // do nothing
+    public void justClose() {
+        throw nonCloseable();
     }
 
     @Override
     void addInternal(ResourceList.ResourceCleanup resource) {
         // do nothing
-    }
-
-    @Override
-    public void justClose() {
-        throw nonCloseable();
     }
 }

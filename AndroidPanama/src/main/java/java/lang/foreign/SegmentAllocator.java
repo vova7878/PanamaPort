@@ -25,7 +25,6 @@
 
 package java.lang.foreign;
 
-import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -103,7 +102,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfByte layout, byte value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
+        MemoryVarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
         return addr;
@@ -119,7 +118,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfChar layout, char value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
+        MemoryVarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
         return addr;
@@ -135,7 +134,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfShort layout, short value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
+        MemoryVarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
         return addr;
@@ -151,7 +150,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfInt layout, int value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
+        MemoryVarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
         return addr;
@@ -167,7 +166,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfFloat layout, float value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
+        MemoryVarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
         return addr;
@@ -183,7 +182,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfLong layout, long value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
+        MemoryVarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
         return addr;
@@ -199,7 +198,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfDouble layout, double value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
+        MemoryVarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
         return addr;

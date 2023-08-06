@@ -25,8 +25,7 @@
 
 package java.lang.foreign;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A confined session, which features an owner thread. The liveness check features an additional
@@ -36,25 +35,52 @@ import java.lang.invoke.VarHandle;
  */
 final class _ConfinedSession extends _MemorySessionImpl {
 
-    private int asyncReleaseCount = 0;
+    // Port-added: Move owner Thread to ConfinedSession
+    private static final int MAX_FORKS = Integer.MAX_VALUE;
 
-    static final VarHandle ASYNC_RELEASE_COUNT;
+    // Port-added: Move owner Thread to ConfinedSession
+    private final Thread owner;
 
-    static {
-        try {
-            ASYNC_RELEASE_COUNT = MethodHandles.lookup().findVarHandle(_ConfinedSession.class, "asyncReleaseCount", int.class);
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
+    // Port-changed: Use AtomicInteger
+    //private int asyncReleaseCount = 0;
+    //
+    //static final VarHandle ASYNC_RELEASE_COUNT;
+    //
+    //static {
+    //    try {
+    //        ASYNC_RELEASE_COUNT = MethodHandles.lookup().findVarHandle(_ConfinedSession.class, "asyncReleaseCount", int.class);
+    //    } catch (Throwable ex) {
+    //        throw new ExceptionInInitializerError(ex);
+    //    }
+    //}
+
+    private final AtomicInteger ASYNC_RELEASE_COUNT = new AtomicInteger(0);
 
     public _ConfinedSession(Thread owner) {
-        super(owner, new ConfinedResourceList());
+        // Port-changed: Move owner Thread to ConfinedSession
+        //super(owner, new ConfinedResourceList());
+        super(new ConfinedResourceList());
+        this.owner = owner;
+    }
+
+    // Port-added: Move owner Thread to ConfinedSession
+    @Override
+    public Thread ownerThread() {
+        return owner;
+    }
+
+    // Port-added
+    @Override
+    public void checkStateForAccess() {
+        if (owner != null && owner != Thread.currentThread()) {
+            throw wrongThread();
+        }
+        super.checkStateForAccess();
     }
 
     @Override
-    public void acquire0() {
-        checkValidState();
+    protected void acquire0() {
+        checkStateForAccess();
         if (state == MAX_FORKS) {
             throw tooManyAcquires();
         }
@@ -62,7 +88,7 @@ final class _ConfinedSession extends _MemorySessionImpl {
     }
 
     @Override
-    public void release0() {
+    protected void release0() {
         if (Thread.currentThread() == owner) {
             state--;
         } else {
@@ -70,15 +96,14 @@ final class _ConfinedSession extends _MemorySessionImpl {
             // which is implicitly released (in which case the release call comes from the cleaner thread). Or,
             // this session might be kept alive by a shared session, which means the release call can come from any
             // thread.
-            ASYNC_RELEASE_COUNT.getAndAdd(this, 1);
+            ASYNC_RELEASE_COUNT.getAndAdd(1);
         }
     }
 
     void justClose() {
-        checkValidState();
-        int asyncCount = (int) ASYNC_RELEASE_COUNT.getVolatile(this);
-        if ((state == 0 && asyncCount == 0)
-                || ((state - asyncCount) == 0)) {
+        checkStateForAccess();
+        int asyncCount = ASYNC_RELEASE_COUNT.get();
+        if ((state - asyncCount) == 0) {
             state = CLOSED;
         } else {
             throw alreadyAcquired(state - asyncCount);
@@ -109,5 +134,15 @@ final class _ConfinedSession extends _MemorySessionImpl {
                 throw alreadyClosed();
             }
         }
+    }
+
+    // Port-added: Move owner Thread to ConfinedSession
+    static WrongThreadException wrongThread() {
+        return new WrongThreadException("Attempted access outside owning thread");
+    }
+
+    // Port-added: Move owner Thread to ConfinedSession
+    static IllegalStateException tooManyAcquires() {
+        return new IllegalStateException("Session acquire limit exceeded");
     }
 }

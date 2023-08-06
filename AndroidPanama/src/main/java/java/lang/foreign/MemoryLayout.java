@@ -25,17 +25,17 @@
  */
 package java.lang.foreign;
 
+import java.lang.foreign._LayoutPath.PathElementImpl.PathKind;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
 
 /**
  * A memory layout describes the contents of a memory segment.
@@ -402,7 +402,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * {@linkplain MethodHandles#memorySegmentViewVarHandle(ValueLayout) memory segment view handles}.
      * @see MethodHandles#memorySegmentViewVarHandle(ValueLayout)
      */
-    default VarHandle varHandle(PathElement... elements) {
+    // Port-changed: Use MemoryVarHandle instead VarHandle
+    default MemoryVarHandle varHandle(PathElement... elements) {
         return computePathOp(_LayoutPath.rootPath(this), _LayoutPath::dereferenceHandle,
                 Set.of(), elements);
     }
@@ -485,7 +486,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * <a href="MemoryLayout.html#open-path-elements">open path elements</a>.
      *
      * @implSpec Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
-     * @since 19
      */
     sealed interface PathElement permits _LayoutPath.PathElementImpl {
 
@@ -669,6 +669,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         return sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
     }
 
+    // Port-added: TODO: move from here
+    @SuppressWarnings("unchecked")
+    private static <T> List<T> toList(Stream<T> stream) {
+        return (List<T>) List.of(stream.toArray());
+    }
+
     /**
      * Creates a struct layout with the given member layouts.
      *
@@ -701,9 +707,14 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     static StructLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
         return _Utils.wrapOverflow(() ->
-                _StructLayoutImpl.of(Stream.of(elements)
-                        .map(Objects::requireNonNull)
-                        .toList()));
+                _StructLayoutImpl.of(toList(Stream.of(elements)
+                        .map(Objects::requireNonNull))));
+    }
+
+    // Port-added
+    // TODO: javadoc
+    static StructLayout paddedStructLayout(MemoryLayout... elements) {
+        return _Utils.computePaddedStructLayout(elements);
     }
 
     /**
@@ -714,8 +725,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      */
     static UnionLayout unionLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        return _UnionLayoutImpl.of(Stream.of(elements)
-                .map(Objects::requireNonNull)
-                .toList());
+        return _UnionLayoutImpl.of(toList(Stream.of(elements)
+                .map(Objects::requireNonNull)));
     }
 }
