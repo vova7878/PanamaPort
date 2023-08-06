@@ -24,7 +24,7 @@
  *
  */
 
-package jdk.internal.foreign;
+package java.lang.foreign;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;

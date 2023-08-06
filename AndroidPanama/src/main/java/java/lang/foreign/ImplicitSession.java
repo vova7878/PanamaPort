@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.foreign;
+package java.lang.foreign;
 
 import sun.nio.ch.DirectBuffer;
 

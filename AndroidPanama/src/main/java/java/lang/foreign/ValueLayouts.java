@@ -23,7 +23,7 @@
  *  questions.
  *
  */
-package jdk.internal.foreign.layout;
+package java.lang.foreign;
 
 import jdk.internal.foreign.Utils;
 import jdk.internal.misc.Unsafe;

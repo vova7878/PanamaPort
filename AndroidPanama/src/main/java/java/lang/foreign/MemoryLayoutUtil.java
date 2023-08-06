@@ -23,7 +23,7 @@
  *  questions.
  *
  */
-package jdk.internal.foreign.layout;
+package java.lang.foreign;
 
 public final class MemoryLayoutUtil {
 

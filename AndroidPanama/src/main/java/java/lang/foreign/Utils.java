@@ -24,7 +24,7 @@
  *
  */
 
-package jdk.internal.foreign;
+package java.lang.foreign;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;

@@ -23,7 +23,7 @@
  *  questions.
  *
  */
-package jdk.internal.foreign.layout;
+package java.lang.foreign;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.StructLayout;

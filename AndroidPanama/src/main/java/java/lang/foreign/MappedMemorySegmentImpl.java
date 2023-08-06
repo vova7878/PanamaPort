@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.foreign;
+package java.lang.foreign;
 
 import java.nio.ByteBuffer;
 import jdk.internal.access.foreign.UnmapperProxy;

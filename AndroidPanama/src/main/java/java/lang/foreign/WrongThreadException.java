@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.lang;
+package java.lang.foreign;
 
 /**
  * Thrown to indicate that a method has been called on the wrong thread.

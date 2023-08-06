@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.foreign;
+package java.lang.foreign;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
