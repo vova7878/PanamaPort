@@ -38,7 +38,7 @@ import sun.security.action.GetBooleanAction;
  * Implementation for native memory segments. A native memory segment is essentially a wrapper around
  * a native long address.
  */
-public sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits _MappedMemorySegmentImpl {
+sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits _MappedMemorySegmentImpl {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 

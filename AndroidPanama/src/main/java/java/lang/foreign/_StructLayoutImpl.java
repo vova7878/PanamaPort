@@ -28,7 +28,7 @@ package java.lang.foreign;
 import java.util.List;
 import java.util.Optional;
 
-public final class _StructLayoutImpl extends _AbstractGroupLayout<_StructLayoutImpl> implements StructLayout {
+final class _StructLayoutImpl extends _AbstractGroupLayout<_StructLayoutImpl> implements StructLayout {
 
     private _StructLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
         super(Kind.STRUCT, elements, byteSize, byteAlignment, minByteAlignment, name);

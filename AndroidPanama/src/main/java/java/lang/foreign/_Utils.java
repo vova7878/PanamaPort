@@ -47,7 +47,7 @@ import sun.invoke.util.Wrapper;
 /**
  * This class contains misc helper functions to support creation of memory segments.
  */
-public final class _Utils {
+final class _Utils {
 
     public static final boolean IS_WINDOWS = privilegedGetProperty("os.name").startsWith("Windows");
 

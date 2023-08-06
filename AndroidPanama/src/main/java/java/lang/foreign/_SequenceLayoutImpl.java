@@ -28,7 +28,7 @@ package java.lang.foreign;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class _SequenceLayoutImpl extends _AbstractLayout<_SequenceLayoutImpl> implements SequenceLayout {
+final class _SequenceLayoutImpl extends _AbstractLayout<_SequenceLayoutImpl> implements SequenceLayout {
 
     private final long elemCount;
     private final MemoryLayout elementLayout;

@@ -25,7 +25,7 @@
  */
 package java.lang.foreign;
 
-public final class _MemoryLayoutUtil {
+final class _MemoryLayoutUtil {
 
     private _MemoryLayoutUtil() {
     }

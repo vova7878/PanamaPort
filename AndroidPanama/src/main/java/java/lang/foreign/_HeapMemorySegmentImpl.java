@@ -46,7 +46,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * using sharper types would require use of type-conversions, which in turn would inhibit some C2 optimizations,
  * such as the elimination of store barriers in methods like {@link _HeapMemorySegmentImpl#dup(long, long, boolean, _MemorySessionImpl)}.
  */
-public abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl {
+abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final int BYTE_ARR_BASE = UNSAFE.arrayBaseOffset(byte[].class);

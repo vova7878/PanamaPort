@@ -28,7 +28,7 @@ package java.lang.foreign;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class _PaddingLayoutImpl extends _AbstractLayout<_PaddingLayoutImpl> implements PaddingLayout {
+final class _PaddingLayoutImpl extends _AbstractLayout<_PaddingLayoutImpl> implements PaddingLayout {
 
     private _PaddingLayoutImpl(long byteSize) {
         this(byteSize, 1, Optional.empty());

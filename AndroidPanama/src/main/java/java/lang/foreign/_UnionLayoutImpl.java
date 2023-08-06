@@ -28,7 +28,7 @@ package java.lang.foreign;
 import java.util.List;
 import java.util.Optional;
 
-public final class _UnionLayoutImpl extends _AbstractGroupLayout<_UnionLayoutImpl> implements UnionLayout {
+final class _UnionLayoutImpl extends _AbstractGroupLayout<_UnionLayoutImpl> implements UnionLayout {
 
     private _UnionLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
         super(Kind.UNION, elements, byteSize, byteAlignment, minByteAlignment, name);

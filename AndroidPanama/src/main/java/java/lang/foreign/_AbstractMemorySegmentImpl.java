@@ -68,7 +68,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * are defined for each memory segment kind, see {@link _NativeMemorySegmentImpl}, {@link _HeapMemorySegmentImpl} and
  * {@link _MappedMemorySegmentImpl}.
  */
-public abstract sealed class _AbstractMemorySegmentImpl
+abstract sealed class _AbstractMemorySegmentImpl
         implements MemorySegment, SegmentAllocator, BiFunction<String, List<Number>, RuntimeException>
         permits _HeapMemorySegmentImpl, _NativeMemorySegmentImpl {
 

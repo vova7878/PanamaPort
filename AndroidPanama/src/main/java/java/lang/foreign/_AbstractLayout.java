@@ -28,7 +28,7 @@ package java.lang.foreign;
 import java.util.Objects;
 import java.util.Optional;
 
-public abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayout>
+abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayout>
         permits _AbstractGroupLayout, _PaddingLayoutImpl, _SequenceLayoutImpl, _ValueLayouts.AbstractValueLayout {
 
     private final long byteSize;

@@ -48,7 +48,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * shared sessions use a more sophisticated synchronization mechanism, which guarantees that no concurrent
  * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
-public abstract sealed class _MemorySessionImpl
+abstract sealed class _MemorySessionImpl
         implements Scope
         permits _ConfinedSession, _GlobalSession, _SharedSession {
     static final int OPEN = 0;

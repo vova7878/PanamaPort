@@ -51,7 +51,7 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @implSpec This class and its subclasses are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public final class _ValueLayouts {
+final class _ValueLayouts {
 
     // Suppresses default constructor, ensuring non-instantiability.
     private _ValueLayouts() {
