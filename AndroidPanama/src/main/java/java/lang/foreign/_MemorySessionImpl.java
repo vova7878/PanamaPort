@@ -38,7 +38,7 @@ import jdk.internal.vm.annotation.ForceInline;
 /**
  * This class manages the temporal bounds associated with a memory segment as well
  * as thread confinement. A session has a liveness bit, which is updated when the session is closed
- * (this operation is triggered by {@link MemorySessionImpl#close()}). This bit is consulted prior
+ * (this operation is triggered by {@link _MemorySessionImpl#close()}). This bit is consulted prior
  * to memory access (see {@link #checkValidStateRaw()}).
  * There are two kinds of memory session: confined memory session and shared memory session.
  * A confined memory session has an associated owner thread that confines some operations to
@@ -48,9 +48,9 @@ import jdk.internal.vm.annotation.ForceInline;
  * shared sessions use a more sophisticated synchronization mechanism, which guarantees that no concurrent
  * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
-public abstract sealed class MemorySessionImpl
+public abstract sealed class _MemorySessionImpl
         implements Scope
-        permits ConfinedSession, GlobalSession, SharedSession {
+        permits _ConfinedSession, _GlobalSession, _SharedSession {
     static final int OPEN = 0;
     static final int CLOSING = -1;
     static final int CLOSED = -2;
@@ -58,10 +58,10 @@ public abstract sealed class MemorySessionImpl
     static final VarHandle STATE;
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
-    public static final MemorySessionImpl GLOBAL = new GlobalSession(null);
+    public static final _MemorySessionImpl GLOBAL = new _GlobalSession(null);
 
-    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
-    static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
+    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(_MemorySessionImpl::alreadyClosed);
+    static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(_MemorySessionImpl::wrongThread);
 
     final ResourceList resourceList;
     final Thread owner;
@@ -69,7 +69,7 @@ public abstract sealed class MemorySessionImpl
 
     static {
         try {
-            STATE = MethodHandles.lookup().findVarHandle(MemorySessionImpl.class, "state", int.class);
+            STATE = MethodHandles.lookup().findVarHandle(_MemorySessionImpl.class, "state", int.class);
         } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -79,19 +79,19 @@ public abstract sealed class MemorySessionImpl
         return new Arena() {
             @Override
             public Scope scope() {
-                return MemorySessionImpl.this;
+                return _MemorySessionImpl.this;
             }
 
             @Override
             public void close() {
-                MemorySessionImpl.this.close();
+                _MemorySessionImpl.this.close();
             }
         };
     }
 
     @ForceInline
-    public static final MemorySessionImpl toMemorySession(Arena arena) {
-        return (MemorySessionImpl) arena.scope();
+    public static final _MemorySessionImpl toMemorySession(Arena arena) {
+        return (_MemorySessionImpl) arena.scope();
     }
 
     public final boolean isCloseableBy(Thread thread) {
@@ -135,26 +135,26 @@ public abstract sealed class MemorySessionImpl
         resourceList.add(resource);
     }
 
-    protected MemorySessionImpl(Thread owner, ResourceList resourceList) {
+    protected _MemorySessionImpl(Thread owner, ResourceList resourceList) {
         this.owner = owner;
         this.resourceList = resourceList;
     }
 
-    public static MemorySessionImpl createConfined(Thread thread) {
-        return new ConfinedSession(thread);
+    public static _MemorySessionImpl createConfined(Thread thread) {
+        return new _ConfinedSession(thread);
     }
 
-    public static MemorySessionImpl createShared() {
-        return new SharedSession();
+    public static _MemorySessionImpl createShared() {
+        return new _SharedSession();
     }
 
-    public static MemorySessionImpl createImplicit(Cleaner cleaner) {
-        return new ImplicitSession(cleaner);
+    public static _MemorySessionImpl createImplicit(Cleaner cleaner) {
+        return new _ImplicitSession(cleaner);
     }
 
     public MemorySegment allocate(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
+        _Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
+        return _NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
     }
 
     public abstract void release0();
@@ -222,7 +222,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     public static final void checkValidState(MemorySegment segment) {
-        ((AbstractMemorySegmentImpl) segment).sessionImpl().checkValidState();
+        ((_AbstractMemorySegmentImpl) segment).sessionImpl().checkValidState();
     }
 
     @Override
@@ -247,15 +247,15 @@ public abstract sealed class MemorySessionImpl
 
     abstract void justClose();
 
-    public static MemorySessionImpl heapSession(Object ref) {
-        return new GlobalSession(ref);
+    public static _MemorySessionImpl heapSession(Object ref) {
+        return new _GlobalSession(ref);
     }
 
     /**
      * A list of all cleanup actions associated with a memory session. Cleanup actions are modelled as instances
      * of the {@link ResourceCleanup} class, and, together, form a linked list. Depending on whether a session
-     * is shared or confined, different implementations of this class will be used, see {@link ConfinedSession.ConfinedResourceList}
-     * and {@link SharedSession.SharedResourceList}.
+     * is shared or confined, different implementations of this class will be used, see {@link _ConfinedSession.ConfinedResourceList}
+     * and {@link _SharedSession.SharedResourceList}.
      */
     public abstract static class ResourceList implements Runnable {
         ResourceCleanup fst;

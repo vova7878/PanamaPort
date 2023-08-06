@@ -36,7 +36,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * owner thread will result in an exception. Because of this restriction, checking the liveness bit
  * can be performed in plain mode.
  */
-final class ConfinedSession extends MemorySessionImpl {
+final class _ConfinedSession extends _MemorySessionImpl {
 
     private int asyncReleaseCount = 0;
 
@@ -44,13 +44,13 @@ final class ConfinedSession extends MemorySessionImpl {
 
     static {
         try {
-            ASYNC_RELEASE_COUNT = MethodHandles.lookup().findVarHandle(ConfinedSession.class, "asyncReleaseCount", int.class);
+            ASYNC_RELEASE_COUNT = MethodHandles.lookup().findVarHandle(_ConfinedSession.class, "asyncReleaseCount", int.class);
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
     }
 
-    public ConfinedSession(Thread owner) {
+    public _ConfinedSession(Thread owner) {
         super(owner, new ConfinedResourceList());
     }
 

@@ -205,7 +205,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @return a new arena that is managed, automatically, by the garbage collector.
      */
     static Arena ofAuto() {
-        return MemorySessionImpl.createImplicit(CleanerFactory.cleaner()).asArena();
+        return _MemorySessionImpl.createImplicit(CleanerFactory.cleaner()).asArena();
     }
 
     /**
@@ -217,7 +217,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      */
     static Arena global() {
         class Holder {
-            static final Arena GLOBAL = MemorySessionImpl.GLOBAL.asArena();
+            static final Arena GLOBAL = _MemorySessionImpl.GLOBAL.asArena();
         }
         return Holder.GLOBAL;
     }
@@ -228,7 +228,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * the arena's <em>owner thread</em>.
      */
     static Arena ofConfined() {
-        return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
+        return _MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
     }
 
     /**
@@ -236,7 +236,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      */
     static Arena ofShared() {
-        return MemorySessionImpl.createShared().asArena();
+        return _MemorySessionImpl.createShared().asArena();
     }
 
     /**
@@ -264,7 +264,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      */
     @Override
     default MemorySegment allocate(long byteSize, long byteAlignment) {
-        return ((MemorySessionImpl) scope()).allocate(byteSize, byteAlignment);
+        return ((_MemorySessionImpl) scope()).allocate(byteSize, byteAlignment);
     }
 
     /**

@@ -47,12 +47,12 @@ import sun.invoke.util.Wrapper;
 /**
  * This class contains misc helper functions to support creation of memory segments.
  */
-public final class Utils {
+public final class _Utils {
 
     public static final boolean IS_WINDOWS = privilegedGetProperty("os.name").startsWith("Windows");
 
     // Suppresses default constructor, ensuring non-instantiability.
-    private Utils() {
+    private _Utils() {
     }
 
     private static final MethodHandle BYTE_TO_BOOL;
@@ -63,13 +63,13 @@ public final class Utils {
     static {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
-            BYTE_TO_BOOL = lookup.findStatic(Utils.class, "byteToBoolean",
+            BYTE_TO_BOOL = lookup.findStatic(_Utils.class, "byteToBoolean",
                     MethodType.methodType(boolean.class, byte.class));
-            BOOL_TO_BYTE = lookup.findStatic(Utils.class, "booleanToByte",
+            BOOL_TO_BYTE = lookup.findStatic(_Utils.class, "booleanToByte",
                     MethodType.methodType(byte.class, boolean.class));
             ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
                     MethodType.methodType(long.class, MemorySegment.class));
-            LONG_TO_ADDRESS = lookup.findStatic(Utils.class, "longToAddress",
+            LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
                     MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
@@ -133,15 +133,15 @@ public final class Utils {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size);
+        return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size);
     }
 
     @ForceInline
-    public static MemorySegment longToAddress(long addr, long size, long align, MemorySessionImpl scope) {
+    public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
+        return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
     }
 
     public static void copy(MemorySegment addr, byte[] bytes) {

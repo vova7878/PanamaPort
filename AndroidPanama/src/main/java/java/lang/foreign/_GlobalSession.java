@@ -25,39 +25,42 @@
 
 package java.lang.foreign;
 
-import java.lang.ref.Cleaner;
-import java.lang.ref.Reference;
-
-import sun.nio.ch.DirectBuffer;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
- * This is an implicit, GC-backed memory session. Implicit sessions cannot be closed explicitly.
- * While it would be possible to model an implicit session as a non-closeable view of a shared
- * session, it is better to capture the fact that an implicit session is not just a non-closeable
- * view of some session which might be closeable. This is useful e.g. in the implementations of
- * {@link DirectBuffer#address()}, where obtaining an address of a buffer instance associated
- * with a potentially closeable session is forbidden.
+ * The global, non-closeable, shared session. Similar to a shared session, but its {@link #close()} method throws unconditionally.
+ * Adding new resources to the global session, does nothing: as the session can never become not-alive, there is nothing to track.
+ * Acquiring and or releasing a memory session similarly does nothing.
  */
-final class ImplicitSession extends SharedSession {
+final class _GlobalSession extends _MemorySessionImpl {
 
-    public ImplicitSession(Cleaner cleaner) {
-        super();
-        cleaner.register(this, resourceList);
+    final Object ref;
+
+    public _GlobalSession(Object ref) {
+        super(null, null);
+        this.ref = ref;
     }
 
     @Override
+    @ForceInline
     public void release0() {
-        Reference.reachabilityFence(this);
-    }
-
-    @Override
-    public void acquire0() {
         // do nothing
     }
 
     @Override
     public boolean isCloseable() {
         return false;
+    }
+
+    @Override
+    @ForceInline
+    public void acquire0() {
+        // do nothing
+    }
+
+    @Override
+    void addInternal(ResourceList.ResourceCleanup resource) {
+        // do nothing
     }
 
     @Override

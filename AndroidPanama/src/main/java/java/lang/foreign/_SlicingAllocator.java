@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,46 +25,30 @@
 
 package java.lang.foreign;
 
-import jdk.internal.vm.annotation.ForceInline;
+public final class _SlicingAllocator implements SegmentAllocator {
 
-/**
- * The global, non-closeable, shared session. Similar to a shared session, but its {@link #close()} method throws unconditionally.
- * Adding new resources to the global session, does nothing: as the session can never become not-alive, there is nothing to track.
- * Acquiring and or releasing a memory session similarly does nothing.
- */
-final class GlobalSession extends MemorySessionImpl {
+    private final MemorySegment segment;
+    private final long maxAlign;
 
-    final Object ref;
+    private long sp = 0L;
 
-    public GlobalSession(Object ref) {
-        super(null, null);
-        this.ref = ref;
+    public _SlicingAllocator(MemorySegment segment) {
+        this.segment = segment;
+        this.maxAlign = ((_AbstractMemorySegmentImpl) segment).maxAlignMask();
+    }
+
+    MemorySegment trySlice(long byteSize, long byteAlignment) {
+        long min = segment.address();
+        long start = _Utils.alignUp(min + sp, byteAlignment) - min;
+        MemorySegment slice = segment.asSlice(start, byteSize, byteAlignment);
+        sp = start + byteSize;
+        return slice;
     }
 
     @Override
-    @ForceInline
-    public void release0() {
-        // do nothing
-    }
-
-    @Override
-    public boolean isCloseable() {
-        return false;
-    }
-
-    @Override
-    @ForceInline
-    public void acquire0() {
-        // do nothing
-    }
-
-    @Override
-    void addInternal(ResourceList.ResourceCleanup resource) {
-        // do nothing
-    }
-
-    @Override
-    public void justClose() {
-        throw nonCloseable();
+    public MemorySegment allocate(long byteSize, long byteAlignment) {
+        _Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
+        // try to slice from current segment first...
+        return trySlice(byteSize, byteAlignment);
     }
 }

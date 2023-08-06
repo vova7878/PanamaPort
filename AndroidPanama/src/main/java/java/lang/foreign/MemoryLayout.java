@@ -295,7 +295,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
     default long byteOffset(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::offset,
+        return computePathOp(_LayoutPath.rootPath(this), _LayoutPath::offset,
                 EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
     }
 
@@ -330,7 +330,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * but more flexibly, as some indices can be specified when invoking the method handle.
      */
     default MethodHandle byteOffsetHandle(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::offsetHandle,
+        return computePathOp(_LayoutPath.rootPath(this), _LayoutPath::offsetHandle,
                 EnumSet.of(PathKind.DEREF_ELEMENT), elements);
     }
 
@@ -406,7 +406,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @see MethodHandles#memorySegmentViewVarHandle(ValueLayout)
      */
     default VarHandle varHandle(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::dereferenceHandle,
+        return computePathOp(_LayoutPath.rootPath(this), _LayoutPath::dereferenceHandle,
                 Set.of(), elements);
     }
 
@@ -443,7 +443,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * but more flexibly, as some indices can be specified when invoking the method handle.
      */
     default MethodHandle sliceHandle(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::sliceHandle,
+        return computePathOp(_LayoutPath.rootPath(this), _LayoutPath::sliceHandle,
                 Set.of(PathKind.DEREF_ELEMENT), elements);
     }
 
@@ -458,15 +458,15 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *                                  sequence element indices, such as {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
      */
     default MemoryLayout select(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::layout,
+        return computePathOp(_LayoutPath.rootPath(this), _LayoutPath::layout,
                 EnumSet.of(PathKind.SEQUENCE_ELEMENT_INDEX, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
     }
 
-    private static <Z> Z computePathOp(LayoutPath path, Function<LayoutPath, Z> finalizer,
+    private static <Z> Z computePathOp(_LayoutPath path, Function<_LayoutPath, Z> finalizer,
                                        Set<PathKind> badKinds, PathElement... elements) {
         Objects.requireNonNull(elements);
         for (PathElement e : elements) {
-            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl) Objects.requireNonNull(e);
+            _LayoutPath.PathElementImpl pathElem = (_LayoutPath.PathElementImpl) Objects.requireNonNull(e);
             if (badKinds.contains(pathElem.kind())) {
                 throw new IllegalArgumentException(String.format("Invalid %s selection in layout path", pathElem.kind().description()));
             }
@@ -491,7 +491,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-    sealed interface PathElement permits LayoutPath.PathElementImpl {
+    sealed interface PathElement permits _LayoutPath.PathElementImpl {
 
         /**
          * Returns a path element which selects a member layout with the given name in a group layout.
@@ -504,7 +504,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          */
         static PathElement groupElement(String name) {
             Objects.requireNonNull(name);
-            return new LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
+            return new _LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
                     path -> path.groupElement(name));
         }
 
@@ -519,7 +519,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
             if (index < 0) {
                 throw new IllegalArgumentException("Index < 0");
             }
-            return new LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
+            return new _LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
                     path -> path.groupElement(index));
         }
 
@@ -534,7 +534,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
             if (index < 0) {
                 throw new IllegalArgumentException("Index must be positive: " + index);
             }
-            return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT_INDEX,
+            return new _LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT_INDEX,
                     path -> path.sequenceElement(index));
         }
 
@@ -562,7 +562,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
             if (step == 0) {
                 throw new IllegalArgumentException("Step must be != 0: " + step);
             }
-            return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_RANGE,
+            return new _LayoutPath.PathElementImpl(PathKind.SEQUENCE_RANGE,
                     path -> path.sequenceElement(start, step));
         }
 
@@ -576,8 +576,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * @return a path element which selects an unspecified sequence element layout.
          */
         static PathElement sequenceElement() {
-            return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT,
-                    LayoutPath::sequenceElement);
+            return new _LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT,
+                    _LayoutPath::sequenceElement);
         }
 
         /**
@@ -587,8 +587,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * @return a path element which dereferences an address layout.
          */
         static PathElement dereferenceElement() {
-            return new LayoutPath.PathElementImpl(PathKind.DEREF_ELEMENT,
-                    LayoutPath::derefElement);
+            return new _LayoutPath.PathElementImpl(PathKind.DEREF_ELEMENT,
+                    _LayoutPath::derefElement);
         }
     }
 
@@ -634,7 +634,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if {@code byteSize <= 0}.
      */
     static PaddingLayout paddingLayout(long byteSize) {
-        return PaddingLayoutImpl.of(MemoryLayoutUtil.requireByteSizeValid(byteSize, false));
+        return _PaddingLayoutImpl.of(_MemoryLayoutUtil.requireByteSizeValid(byteSize, false));
     }
 
     /**
@@ -648,11 +648,11 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
-        MemoryLayoutUtil.requireNonNegative(elementCount);
+        _MemoryLayoutUtil.requireNonNegative(elementCount);
         Objects.requireNonNull(elementLayout);
-        Utils.checkElementAlignment(elementLayout, "Element layout size is not multiple of alignment");
-        return Utils.wrapOverflow(() ->
-                SequenceLayoutImpl.of(elementCount, elementLayout));
+        _Utils.checkElementAlignment(elementLayout, "Element layout size is not multiple of alignment");
+        return _Utils.wrapOverflow(() ->
+                _SequenceLayoutImpl.of(elementCount, elementLayout));
     }
 
     /**
@@ -704,8 +704,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      */
     static StructLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        return Utils.wrapOverflow(() ->
-                StructLayoutImpl.of(Stream.of(elements)
+        return _Utils.wrapOverflow(() ->
+                _StructLayoutImpl.of(Stream.of(elements)
                         .map(Objects::requireNonNull)
                         .toList()));
     }
@@ -718,7 +718,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      */
     static UnionLayout unionLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        return UnionLayoutImpl.of(Stream.of(elements)
+        return _UnionLayoutImpl.of(Stream.of(elements)
                 .map(Objects::requireNonNull)
                 .toList());
     }

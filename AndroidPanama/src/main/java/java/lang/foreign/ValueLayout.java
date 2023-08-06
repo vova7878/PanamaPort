@@ -160,7 +160,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-    sealed interface OfBoolean extends ValueLayout permits ValueLayouts.OfBooleanImpl {
+    sealed interface OfBoolean extends ValueLayout permits _ValueLayouts.OfBooleanImpl {
 
         /**
          * {@inheritDoc}
@@ -197,7 +197,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-    sealed interface OfByte extends ValueLayout permits ValueLayouts.OfByteImpl {
+    sealed interface OfByte extends ValueLayout permits _ValueLayouts.OfByteImpl {
 
         /**
          * {@inheritDoc}
@@ -235,7 +235,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-    sealed interface OfChar extends ValueLayout permits ValueLayouts.OfCharImpl {
+    sealed interface OfChar extends ValueLayout permits _ValueLayouts.OfCharImpl {
 
         /**
          * {@inheritDoc}
@@ -273,7 +273,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-    sealed interface OfShort extends ValueLayout permits ValueLayouts.OfShortImpl {
+    sealed interface OfShort extends ValueLayout permits _ValueLayouts.OfShortImpl {
 
         /**
          * {@inheritDoc}
@@ -311,7 +311,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-    sealed interface OfInt extends ValueLayout permits ValueLayouts.OfIntImpl {
+    sealed interface OfInt extends ValueLayout permits _ValueLayouts.OfIntImpl {
 
         /**
          * {@inheritDoc}
@@ -349,7 +349,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-    sealed interface OfFloat extends ValueLayout permits ValueLayouts.OfFloatImpl {
+    sealed interface OfFloat extends ValueLayout permits _ValueLayouts.OfFloatImpl {
 
         /**
          * {@inheritDoc}
@@ -385,7 +385,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-    sealed interface OfLong extends ValueLayout permits ValueLayouts.OfLongImpl {
+    sealed interface OfLong extends ValueLayout permits _ValueLayouts.OfLongImpl {
 
         /**
          * {@inheritDoc}
@@ -423,7 +423,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-    sealed interface OfDouble extends ValueLayout permits ValueLayouts.OfDoubleImpl {
+    sealed interface OfDouble extends ValueLayout permits _ValueLayouts.OfDoubleImpl {
 
         /**
          * {@inheritDoc}
@@ -457,57 +457,57 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * An address layout constant whose size is the same as that of a machine address ({@code size_t}),
      * byte alignment set to {@code sizeof(size_t)}, byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    AddressLayout ADDRESS = ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder());
+    AddressLayout ADDRESS = _ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code byte},
      * byte alignment set to 1, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfByte JAVA_BYTE = ValueLayouts.OfByteImpl.of(ByteOrder.nativeOrder());
+    OfByte JAVA_BYTE = _ValueLayouts.OfByteImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code boolean},
      * byte alignment set to 1, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfBoolean JAVA_BOOLEAN = ValueLayouts.OfBooleanImpl.of(ByteOrder.nativeOrder());
+    OfBoolean JAVA_BOOLEAN = _ValueLayouts.OfBooleanImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code char},
      * byte alignment set to 2, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfChar JAVA_CHAR = ValueLayouts.OfCharImpl.of(ByteOrder.nativeOrder());
+    OfChar JAVA_CHAR = _ValueLayouts.OfCharImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code short},
      * byte alignment set to 2, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfShort JAVA_SHORT = ValueLayouts.OfShortImpl.of(ByteOrder.nativeOrder());
+    OfShort JAVA_SHORT = _ValueLayouts.OfShortImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code int},
      * byte alignment set to 4, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfInt JAVA_INT = ValueLayouts.OfIntImpl.of(ByteOrder.nativeOrder());
+    OfInt JAVA_INT = _ValueLayouts.OfIntImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code long},
      * (platform-dependent) byte alignment set to {@code ADDRESS.byteSize()},
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfLong JAVA_LONG = ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder());
+    OfLong JAVA_LONG = _ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code float},
      * byte alignment set to 4, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfFloat JAVA_FLOAT = ValueLayouts.OfFloatImpl.of(ByteOrder.nativeOrder());
+    OfFloat JAVA_FLOAT = _ValueLayouts.OfFloatImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code double},
      * (platform-dependent) byte alignment set to {@code ADDRESS.byteSize()},
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfDouble JAVA_DOUBLE = ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder());
+    OfDouble JAVA_DOUBLE = _ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder());
 
     /**
      * An unaligned address layout constant whose size is the same as that of a machine address ({@code size_t}),

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,31 @@
  */
 package java.lang.foreign;
 
-public final class MemoryLayoutUtil {
+import java.util.List;
+import java.util.Optional;
 
-    private MemoryLayoutUtil() {
+public final class _StructLayoutImpl extends _AbstractGroupLayout<_StructLayoutImpl> implements StructLayout {
+
+    private _StructLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
+        super(Kind.STRUCT, elements, byteSize, byteAlignment, minByteAlignment, name);
     }
 
-    public static long requireNonNegative(long value) {
-        if (value < 0) {
-            throw new IllegalArgumentException("The provided value was negative: " + value);
-        }
-        return value;
+    @Override
+    _StructLayoutImpl dup(long byteAlignment, Optional<String> name) {
+        return new _StructLayoutImpl(memberLayouts(), byteSize(), byteAlignment, minByteAlignment, name);
     }
 
-    public static long requireByteSizeValid(long byteSize, boolean allowZero) {
-        if ((byteSize == 0 && !allowZero) || byteSize < 0) {
-            throw new IllegalArgumentException("Invalid byte size: " + byteSize);
+    public static StructLayout of(List<MemoryLayout> elements) {
+        long size = 0;
+        long align = 1;
+        for (MemoryLayout elem : elements) {
+            if (size % elem.byteAlignment() != 0) {
+                throw new IllegalArgumentException("Invalid alignment constraint for member layout: " + elem);
+            }
+            size = Math.addExact(size, elem.byteSize());
+            align = Math.max(align, elem.byteAlignment());
         }
-        return byteSize;
+        return new _StructLayoutImpl(elements, size, align, align, Optional.empty());
     }
 
 }

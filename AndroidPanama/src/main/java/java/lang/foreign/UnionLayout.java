@@ -34,7 +34,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 20
  */
 @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-public sealed interface UnionLayout extends GroupLayout permits UnionLayoutImpl {
+public sealed interface UnionLayout extends GroupLayout permits _UnionLayoutImpl {
 
     /**
      * {@inheritDoc}

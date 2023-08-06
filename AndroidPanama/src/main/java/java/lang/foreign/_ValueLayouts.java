@@ -51,13 +51,13 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @implSpec This class and its subclasses are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public final class ValueLayouts {
+public final class _ValueLayouts {
 
     // Suppresses default constructor, ensuring non-instantiability.
-    private ValueLayouts() {
+    private _ValueLayouts() {
     }
 
-    abstract sealed static class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
+    abstract sealed static class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends _AbstractLayout<V> {
 
         static final int ADDRESS_SIZE_BYTES = Unsafe.ADDRESS_SIZE;
 
@@ -112,7 +112,7 @@ public final class ValueLayouts {
 
         public final VarHandle arrayElementVarHandle(int... shape) {
             Objects.requireNonNull(shape);
-            if (!Utils.isElementAligned((ValueLayout) this)) {
+            if (!_Utils.isElementAligned((ValueLayout) this)) {
                 throw new UnsupportedOperationException("Layout alignment greater than its size");
             }
             MemoryLayout layout = self();
@@ -155,7 +155,7 @@ public final class ValueLayouts {
             assert !carrier.isPrimitive() ||
                     // Primitive class byteSize must always correspond
                     byteSize == (carrier == boolean.class ? 1 :
-                            Utils.byteWidthOfPrimitive(carrier));
+                            _Utils.byteWidthOfPrimitive(carrier));
         }
 
         static boolean isValidCarrier(Class<?> carrier) {
@@ -175,7 +175,7 @@ public final class ValueLayouts {
         public final VarHandle accessHandle() {
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = Utils.makeSegmentViewVarHandle(self());
+                handle = _Utils.makeSegmentViewVarHandle(self());
             }
             return handle;
         }
@@ -400,23 +400,23 @@ public final class ValueLayouts {
         Objects.requireNonNull(carrier);
         Objects.requireNonNull(order);
         if (carrier == boolean.class) {
-            return ValueLayouts.OfBooleanImpl.of(order);
+            return _ValueLayouts.OfBooleanImpl.of(order);
         } else if (carrier == char.class) {
-            return ValueLayouts.OfCharImpl.of(order);
+            return _ValueLayouts.OfCharImpl.of(order);
         } else if (carrier == byte.class) {
-            return ValueLayouts.OfByteImpl.of(order);
+            return _ValueLayouts.OfByteImpl.of(order);
         } else if (carrier == short.class) {
-            return ValueLayouts.OfShortImpl.of(order);
+            return _ValueLayouts.OfShortImpl.of(order);
         } else if (carrier == int.class) {
-            return ValueLayouts.OfIntImpl.of(order);
+            return _ValueLayouts.OfIntImpl.of(order);
         } else if (carrier == float.class) {
-            return ValueLayouts.OfFloatImpl.of(order);
+            return _ValueLayouts.OfFloatImpl.of(order);
         } else if (carrier == long.class) {
-            return ValueLayouts.OfLongImpl.of(order);
+            return _ValueLayouts.OfLongImpl.of(order);
         } else if (carrier == double.class) {
-            return ValueLayouts.OfDoubleImpl.of(order);
+            return _ValueLayouts.OfDoubleImpl.of(order);
         } else if (carrier == MemorySegment.class) {
-            return ValueLayouts.OfAddressImpl.of(order);
+            return _ValueLayouts.OfAddressImpl.of(order);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + carrier.getName());
         }

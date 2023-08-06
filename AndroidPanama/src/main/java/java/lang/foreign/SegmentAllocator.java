@@ -94,7 +94,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateUtf8String(String str) {
         Objects.requireNonNull(str);
-        return Utils.toCString(str.getBytes(StandardCharsets.UTF_8), this);
+        return _Utils.toCString(str.getBytes(StandardCharsets.UTF_8), this);
     }
 
     /**
@@ -388,7 +388,7 @@ public interface SegmentAllocator {
      */
     static SegmentAllocator slicingAllocator(MemorySegment segment) {
         Objects.requireNonNull(segment);
-        return new SlicingAllocator(segment);
+        return new _SlicingAllocator(segment);
     }
 
     /**
@@ -412,6 +412,6 @@ public interface SegmentAllocator {
      * allocator might cause a thread to overwrite contents written to the underlying segment by a different thread.
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
-        return (AbstractMemorySegmentImpl) Objects.requireNonNull(segment);
+        return (_AbstractMemorySegmentImpl) Objects.requireNonNull(segment);
     }
 }

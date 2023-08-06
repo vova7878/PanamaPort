@@ -39,15 +39,15 @@ import java.util.stream.Collectors;
  * @implSpec This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @since 19
  */
-public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L> & MemoryLayout>
-        extends AbstractLayout<L>
-        permits StructLayoutImpl, UnionLayoutImpl {
+public sealed abstract class _AbstractGroupLayout<L extends _AbstractGroupLayout<L> & MemoryLayout>
+        extends _AbstractLayout<L>
+        permits _StructLayoutImpl, _UnionLayoutImpl {
 
     private final Kind kind;
     private final List<MemoryLayout> elements;
     final long minByteAlignment;
 
-    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
+    _AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
         super(byteSize, byteAlignment, name); // Subclassing creates toctou problems here
         this.kind = kind;
         this.elements = List.copyOf(elements);
@@ -90,7 +90,7 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
     @Override
     public final boolean equals(Object other) {
         return this == other ||
-                other instanceof AbstractGroupLayout<?> otherGroup &&
+                other instanceof _AbstractGroupLayout<?> otherGroup &&
                         super.equals(other) &&
                         kind == otherGroup.kind &&
                         elements.equals(otherGroup.elements);

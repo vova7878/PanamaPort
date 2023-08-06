@@ -25,34 +25,49 @@
  */
 package java.lang.foreign;
 
-import jdk.internal.javac.PreviewFeature;
+import java.util.Objects;
+import java.util.Optional;
 
-/**
- * A group layout whose member layouts are laid out one after the other.
- *
- * @implSpec Implementing classes are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- * @since 20
- */
-@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-public sealed interface StructLayout extends GroupLayout permits _StructLayoutImpl {
+public final class _PaddingLayoutImpl extends _AbstractLayout<_PaddingLayoutImpl> implements PaddingLayout {
 
-    /**
-     * {@inheritDoc}
-     */
+    private _PaddingLayoutImpl(long byteSize) {
+        this(byteSize, 1, Optional.empty());
+    }
+
+    private _PaddingLayoutImpl(long byteSize, long byteAlignment, Optional<String> name) {
+        super(byteSize, byteAlignment, name);
+    }
+
     @Override
-    StructLayout withName(String name);
+    public String toString() {
+        return decorateLayoutString("x" + byteSize());
+    }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    StructLayout withoutName();
+    public boolean equals(Object other) {
+        return this == other ||
+                other instanceof _PaddingLayoutImpl otherPadding &&
+                        super.equals(other) &&
+                        byteSize() == otherPadding.byteSize();
+    }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws IllegalArgumentException {@inheritDoc}
-     */
     @Override
-    StructLayout withByteAlignment(long byteAlignment);
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), byteSize());
+    }
+
+    @Override
+    _PaddingLayoutImpl dup(long byteAlignment, Optional<String> name) {
+        return new _PaddingLayoutImpl(byteSize(), byteAlignment, name);
+    }
+
+    @Override
+    public boolean hasNaturalAlignment() {
+        return true;
+    }
+
+    public static PaddingLayout of(long byteSize) {
+        return new _PaddingLayoutImpl(byteSize);
+    }
+
 }

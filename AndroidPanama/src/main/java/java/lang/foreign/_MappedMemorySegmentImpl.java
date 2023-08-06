@@ -36,13 +36,13 @@ import jdk.internal.misc.ScopedMemoryAccess;
  * memory mapped segment, such as the file descriptor associated with the mapping. This information is crucial
  * in order to correctly reconstruct a byte buffer object from the segment (see {@link #makeByteBuffer()}).
  */
-public final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
+public final class _MappedMemorySegmentImpl extends _NativeMemorySegmentImpl {
 
     private final UnmapperProxy unmapper;
 
     static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    public MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, MemorySessionImpl scope) {
+    public _MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, _MemorySessionImpl scope) {
         super(min, length, readOnly, scope);
         this.unmapper = unmapper;
     }
@@ -50,19 +50,19 @@ public final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
     @Override
     ByteBuffer makeByteBuffer() {
         return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int) length, null,
-                scope == MemorySessionImpl.GLOBAL ? null : this);
+                scope == _MemorySessionImpl.GLOBAL ? null : this);
     }
 
     @Override
-    MappedMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
-        return new MappedMemorySegmentImpl(min + offset, unmapper, size, readOnly, scope);
+    _MappedMemorySegmentImpl dup(long offset, long size, boolean readOnly, _MemorySessionImpl scope) {
+        return new _MappedMemorySegmentImpl(min + offset, unmapper, size, readOnly, scope);
     }
 
     // mapped segment methods
 
     @Override
-    public MappedMemorySegmentImpl asSlice(long offset, long newSize) {
-        return (MappedMemorySegmentImpl) super.asSlice(offset, newSize);
+    public _MappedMemorySegmentImpl asSlice(long offset, long newSize) {
+        return (_MappedMemorySegmentImpl) super.asSlice(offset, newSize);
     }
 
     @Override

@@ -55,7 +55,7 @@ import jdk.internal.reflect.CallerSensitive;
  * @since 19
  */
 @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.OfAddressImpl {
+public sealed interface AddressLayout extends ValueLayout permits _ValueLayouts.OfAddressImpl {
 
     /**
      * {@inheritDoc}

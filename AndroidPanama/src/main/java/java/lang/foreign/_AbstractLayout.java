@@ -28,15 +28,15 @@ package java.lang.foreign;
 import java.util.Objects;
 import java.util.Optional;
 
-public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & MemoryLayout>
-        permits AbstractGroupLayout, PaddingLayoutImpl, SequenceLayoutImpl, ValueLayouts.AbstractValueLayout {
+public abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayout>
+        permits _AbstractGroupLayout, _PaddingLayoutImpl, _SequenceLayoutImpl, _ValueLayouts.AbstractValueLayout {
 
     private final long byteSize;
     private final long byteAlignment;
     private final Optional<String> name;
 
-    AbstractLayout(long byteSize, long byteAlignment, Optional<String> name) {
-        this.byteSize = MemoryLayoutUtil.requireByteSizeValid(byteSize, true);
+    _AbstractLayout(long byteSize, long byteAlignment, Optional<String> name) {
+        this.byteSize = _MemoryLayoutUtil.requireByteSizeValid(byteSize, true);
         this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToOne(byteAlignment);
         this.name = Objects.requireNonNull(name);
     }
@@ -99,7 +99,7 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
      */
     @Override
     public boolean equals(Object other) {
-        return other instanceof AbstractLayout<?> otherLayout &&
+        return other instanceof _AbstractLayout<?> otherLayout &&
                 name.equals(otherLayout.name) &&
                 byteSize == otherLayout.byteSize &&
                 byteAlignment == otherLayout.byteAlignment;
@@ -124,7 +124,7 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     }
 
     private static long requirePowerOfTwoAndGreaterOrEqualToOne(long value) {
-        if (!Utils.isPowerOfTwo(value) || // value must be a power of two
+        if (!_Utils.isPowerOfTwo(value) || // value must be a power of two
                 value < 1) { // value must be greater or equal to 1
             throw new IllegalArgumentException("Invalid alignment: " + value);
         }

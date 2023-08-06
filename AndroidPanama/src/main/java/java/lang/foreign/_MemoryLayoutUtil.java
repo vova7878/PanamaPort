@@ -25,49 +25,23 @@
  */
 package java.lang.foreign;
 
-import java.util.Objects;
-import java.util.Optional;
+public final class _MemoryLayoutUtil {
 
-public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> implements PaddingLayout {
-
-    private PaddingLayoutImpl(long byteSize) {
-        this(byteSize, 1, Optional.empty());
+    private _MemoryLayoutUtil() {
     }
 
-    private PaddingLayoutImpl(long byteSize, long byteAlignment, Optional<String> name) {
-        super(byteSize, byteAlignment, name);
+    public static long requireNonNegative(long value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("The provided value was negative: " + value);
+        }
+        return value;
     }
 
-    @Override
-    public String toString() {
-        return decorateLayoutString("x" + byteSize());
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return this == other ||
-                other instanceof PaddingLayoutImpl otherPadding &&
-                        super.equals(other) &&
-                        byteSize() == otherPadding.byteSize();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), byteSize());
-    }
-
-    @Override
-    PaddingLayoutImpl dup(long byteAlignment, Optional<String> name) {
-        return new PaddingLayoutImpl(byteSize(), byteAlignment, name);
-    }
-
-    @Override
-    public boolean hasNaturalAlignment() {
-        return true;
-    }
-
-    public static PaddingLayout of(long byteSize) {
-        return new PaddingLayoutImpl(byteSize);
+    public static long requireByteSizeValid(long byteSize, boolean allowZero) {
+        if ((byteSize == 0 && !allowZero) || byteSize < 0) {
+            throw new IllegalArgumentException("Invalid byte size: " + byteSize);
+        }
+        return byteSize;
     }
 
 }

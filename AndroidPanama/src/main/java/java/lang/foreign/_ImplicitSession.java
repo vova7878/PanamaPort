@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,43 @@
 
 package java.lang.foreign;
 
-public final class SlicingAllocator implements SegmentAllocator {
+import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 
-    private final MemorySegment segment;
-    private final long maxAlign;
+import sun.nio.ch.DirectBuffer;
 
-    private long sp = 0L;
+/**
+ * This is an implicit, GC-backed memory session. Implicit sessions cannot be closed explicitly.
+ * While it would be possible to model an implicit session as a non-closeable view of a shared
+ * session, it is better to capture the fact that an implicit session is not just a non-closeable
+ * view of some session which might be closeable. This is useful e.g. in the implementations of
+ * {@link DirectBuffer#address()}, where obtaining an address of a buffer instance associated
+ * with a potentially closeable session is forbidden.
+ */
+final class _ImplicitSession extends _SharedSession {
 
-    public SlicingAllocator(MemorySegment segment) {
-        this.segment = segment;
-        this.maxAlign = ((AbstractMemorySegmentImpl) segment).maxAlignMask();
-    }
-
-    MemorySegment trySlice(long byteSize, long byteAlignment) {
-        long min = segment.address();
-        long start = Utils.alignUp(min + sp, byteAlignment) - min;
-        MemorySegment slice = segment.asSlice(start, byteSize, byteAlignment);
-        sp = start + byteSize;
-        return slice;
+    public _ImplicitSession(Cleaner cleaner) {
+        super();
+        cleaner.register(this, resourceList);
     }
 
     @Override
-    public MemorySegment allocate(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        // try to slice from current segment first...
-        return trySlice(byteSize, byteAlignment);
+    public void release0() {
+        Reference.reachabilityFence(this);
+    }
+
+    @Override
+    public void acquire0() {
+        // do nothing
+    }
+
+    @Override
+    public boolean isCloseable() {
+        return false;
+    }
+
+    @Override
+    public void justClose() {
+        throw nonCloseable();
     }
 }

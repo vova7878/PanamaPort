@@ -35,7 +35,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 20
  */
 @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-public sealed interface PaddingLayout extends MemoryLayout permits PaddingLayoutImpl {
+public sealed interface PaddingLayout extends MemoryLayout permits _PaddingLayoutImpl {
 
     /**
      * {@inheritDoc}

@@ -28,28 +28,25 @@ package java.lang.foreign;
 import java.util.List;
 import java.util.Optional;
 
-public final class StructLayoutImpl extends AbstractGroupLayout<StructLayoutImpl> implements StructLayout {
+public final class _UnionLayoutImpl extends _AbstractGroupLayout<_UnionLayoutImpl> implements UnionLayout {
 
-    private StructLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
-        super(Kind.STRUCT, elements, byteSize, byteAlignment, minByteAlignment, name);
+    private _UnionLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
+        super(Kind.UNION, elements, byteSize, byteAlignment, minByteAlignment, name);
     }
 
     @Override
-    StructLayoutImpl dup(long byteAlignment, Optional<String> name) {
-        return new StructLayoutImpl(memberLayouts(), byteSize(), byteAlignment, minByteAlignment, name);
+    _UnionLayoutImpl dup(long byteAlignment, Optional<String> name) {
+        return new _UnionLayoutImpl(memberLayouts(), byteSize(), byteAlignment, minByteAlignment, name);
     }
 
-    public static StructLayout of(List<MemoryLayout> elements) {
+    public static UnionLayout of(List<MemoryLayout> elements) {
         long size = 0;
         long align = 1;
         for (MemoryLayout elem : elements) {
-            if (size % elem.byteAlignment() != 0) {
-                throw new IllegalArgumentException("Invalid alignment constraint for member layout: " + elem);
-            }
-            size = Math.addExact(size, elem.byteSize());
+            size = Math.max(size, elem.byteSize());
             align = Math.max(align, elem.byteAlignment());
         }
-        return new StructLayoutImpl(elements, size, align, align, Optional.empty());
+        return new _UnionLayoutImpl(elements, size, align, align, Optional.empty());
     }
 
 }
