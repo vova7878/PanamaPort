@@ -33,9 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -171,7 +169,6 @@ final class _ValueLayouts {
                     || carrier == MemorySegment.class;
         }
 
-        @ForceInline
         public final VarHandle accessHandle() {
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
@@ -341,7 +338,6 @@ final class _ValueLayouts {
         }
 
         @Override
-        @CallerSensitive
         public AddressLayout withTargetLayout(MemoryLayout layout) {
             Reflection.ensureNativeAccess(Reflection.getCallerClass(), AddressLayout.class, "withTargetLayout");
             Objects.requireNonNull(layout);

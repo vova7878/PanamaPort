@@ -36,7 +36,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A memory layout describes the contents of a memory segment.
@@ -226,9 +225,7 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @implSpec Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @sealedGraph
- * @since 19
  */
-@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, PaddingLayout, ValueLayout {
 
     /**
@@ -490,7 +487,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @implSpec Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
      * @since 19
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
     sealed interface PathElement permits _LayoutPath.PathElementImpl {
 
         /**

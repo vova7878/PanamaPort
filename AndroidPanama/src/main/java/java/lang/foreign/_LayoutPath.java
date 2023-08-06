@@ -33,8 +33,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
-import jdk.internal.vm.annotation.ForceInline;
-
 /**
  * This class provide support for constructing layout paths; that is, starting from a root path (see {@link #rootPath(MemoryLayout)},
  * a path can be constructed by selecting layout elements using the selector methods provided by this class
@@ -214,7 +212,6 @@ class _LayoutPath {
         return handle;
     }
 
-    @ForceInline
     private static long addScaledOffset(long base, long index, long stride, long bound) {
         Objects.checkIndex(index, bound);
         return base + (stride * index);

@@ -31,7 +31,6 @@ import java.util.Optional;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.vm.annotation.ForceInline;
 import sun.security.action.GetBooleanAction;
 
 /**
@@ -49,7 +48,6 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
 
     final long min;
 
-    @ForceInline
     _NativeMemorySegmentImpl(long min, long length, boolean readOnly, _MemorySessionImpl scope) {
         super(length, readOnly, scope);
         this.min = (Unsafe.getUnsafe().addressSize() == 4)
@@ -64,7 +62,6 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
      * segment class hierarchy, it is possible to end up in a situation where this constructor is called
      * when the static fields in this class are not yet initialized.
      */
-    @ForceInline
     public _NativeMemorySegmentImpl() {
         super(0L, false, new _GlobalSession(null));
         this.min = 0L;
@@ -80,7 +77,6 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
         return Optional.empty();
     }
 
-    @ForceInline
     @Override
     _NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, _MemorySessionImpl scope) {
         return new _NativeMemorySegmentImpl(min + offset, size, readOnly, scope);
@@ -149,7 +145,6 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
     // Unsafe native segment factories. These are used by the implementation code, to skip the sanity checks
     // associated with MemorySegment::ofAddress.
 
-    @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, _MemorySessionImpl sessionImpl, Runnable action) {
         if (action == null) {
             sessionImpl.checkValidState();
@@ -159,13 +154,11 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
         return new _NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
     }
 
-    @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, _MemorySessionImpl sessionImpl) {
         sessionImpl.checkValidState();
         return new _NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
     }
 
-    @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize) {
         return new _NativeMemorySegmentImpl(min, byteSize, false, new _GlobalSession(null));
     }

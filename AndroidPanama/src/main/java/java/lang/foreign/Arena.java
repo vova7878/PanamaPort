@@ -27,7 +27,6 @@ package java.lang.foreign;
 
 import java.lang.foreign.MemorySegment.Scope;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.ref.CleanerFactory;
 
 /**
@@ -191,9 +190,7 @@ import jdk.internal.ref.CleanerFactory;
  *
  * @implSpec Implementations of this interface are thread-safe.
  * @see MemorySegment
- * @since 20
  */
-@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public interface Arena extends SegmentAllocator, AutoCloseable {
 
     /**

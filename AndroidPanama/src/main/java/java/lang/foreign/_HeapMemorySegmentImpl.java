@@ -33,7 +33,6 @@ import java.util.Optional;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Implementation for heap memory segments. A heap memory segment is composed by an offset and
@@ -66,7 +65,6 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
                 Optional.of(base);
     }
 
-    @ForceInline
     _HeapMemorySegmentImpl(long offset, Object base, long length, boolean readOnly, _MemorySessionImpl session) {
         super(length, readOnly, session);
         this.offset = offset;

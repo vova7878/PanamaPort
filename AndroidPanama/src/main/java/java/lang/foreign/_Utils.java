@@ -41,7 +41,6 @@ import java.util.function.Supplier;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.Wrapper;
 
 /**
@@ -128,7 +127,6 @@ final class _Utils {
         return b ? (byte) 1 : (byte) 0;
     }
 
-    @ForceInline
     public static MemorySegment longToAddress(long addr, long size, long align) {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
@@ -136,7 +134,6 @@ final class _Utils {
         return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size);
     }
 
-    @ForceInline
     public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
@@ -156,12 +153,10 @@ final class _Utils {
         return addr;
     }
 
-    @ForceInline
     public static boolean isAligned(long offset, long align) {
         return (offset & (align - 1)) == 0;
     }
 
-    @ForceInline
     public static boolean isElementAligned(ValueLayout layout) {
         // Fast-path: if both size and alignment are powers of two, we can just
         // check if one is greater than the other.
@@ -169,14 +164,12 @@ final class _Utils {
         return layout.byteAlignment() <= layout.byteSize();
     }
 
-    @ForceInline
     public static void checkElementAlignment(ValueLayout layout, String msg) {
         if (!isElementAligned(layout)) {
             throw new IllegalArgumentException(msg);
         }
     }
 
-    @ForceInline
     public static void checkElementAlignment(MemoryLayout layout, String msg) {
         if (layout.byteSize() % layout.byteAlignment() != 0) {
             throw new IllegalArgumentException(msg);

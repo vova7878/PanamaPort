@@ -32,8 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Function;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}. Clients implementing this interface
  * must implement the {@link #allocate(long, long)} method. A segment allocator defines several methods
@@ -67,10 +65,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * Clients should consider using an {@linkplain Arena arena} instead, which, provides strong thread-safety,
  * lifetime and non-overlapping guarantees.
- * @since 19
  */
 @FunctionalInterface
-@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public interface SegmentAllocator {
 
     /**

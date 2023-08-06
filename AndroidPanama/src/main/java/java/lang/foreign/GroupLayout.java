@@ -27,8 +27,6 @@ package java.lang.foreign;
 
 import java.util.List;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A compound layout that is an aggregation of multiple, heterogeneous <em>member layouts</em>. There are two ways in which member layouts
  * can be combined: if member layouts are laid out one after the other, the resulting group layout is a
@@ -37,9 +35,7 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @implSpec This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @sealedGraph
- * @since 19
  */
-@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public sealed interface GroupLayout extends MemoryLayout permits StructLayout, UnionLayout {
 
     /**

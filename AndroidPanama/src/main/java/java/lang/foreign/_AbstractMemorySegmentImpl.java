@@ -53,11 +53,9 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -80,7 +78,6 @@ abstract sealed class _AbstractMemorySegmentImpl
     final boolean readOnly;
     final _MemorySessionImpl scope;
 
-    @ForceInline
     _AbstractMemorySegmentImpl(long length, boolean readOnly, _MemorySessionImpl scope) {
         this.length = length;
         this.readOnly = readOnly;
@@ -125,7 +122,6 @@ abstract sealed class _AbstractMemorySegmentImpl
     }
 
     @Override
-    @CallerSensitive
     public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), newSize,
@@ -133,13 +129,11 @@ abstract sealed class _AbstractMemorySegmentImpl
     }
 
     @Override
-    @CallerSensitive
     public final MemorySegment reinterpret(long newSize) {
         return reinterpretInternal(Reflection.getCallerClass(), newSize, scope, null);
     }
 
     @Override
-    @CallerSensitive
     public final MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), byteSize(),
@@ -350,7 +344,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         return arr;
     }
 
-    @ForceInline
     public void checkAccess(long offset, long length, boolean readOnly) {
         if (!readOnly && this.readOnly) {
             throw new UnsupportedOperationException("Attempt to write a read-only segment");
@@ -370,12 +363,10 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     public abstract long maxAlignMask();
 
-    @ForceInline
     public final boolean isAlignedForElement(long offset, MemoryLayout layout) {
         return isAlignedForElement(offset, layout.byteAlignment());
     }
 
-    @ForceInline
     public final boolean isAlignedForElement(long offset, long byteAlignment) {
         return (((unsafeGetOffset() + offset) | maxAlignMask()) & (byteAlignment - 1)) == 0;
     }
@@ -392,7 +383,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         return (int) arraySize;
     }
 
-    @ForceInline
     void checkBounds(long offset, long length) {
         if (length > 0) {
             Preconditions.checkIndex(offset, this.length - length + 1, this);
@@ -419,7 +409,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         return sessionImpl().isAccessibleBy(thread);
     }
 
-    @ForceInline
     public final _MemorySessionImpl sessionImpl() {
         return scope;
     }
@@ -592,7 +581,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         }
     }
 
-    @ForceInline
     public static void copy(MemorySegment srcSegment, ValueLayout srcElementLayout, long srcOffset,
                             MemorySegment dstSegment, ValueLayout dstElementLayout, long dstOffset,
                             long elementCount) {
@@ -624,7 +612,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         }
     }
 
-    @ForceInline
     public static void copy(MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
                             Object dstArray, int dstIndex,
                             int elementCount) {
@@ -653,7 +640,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         }
     }
 
-    @ForceInline
     public static void copy(Object srcArray, int srcIndex,
                             MemorySegment dstSegment, ValueLayout dstLayout, long dstOffset,
                             int elementCount) {

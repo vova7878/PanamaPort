@@ -28,8 +28,6 @@ package java.lang.foreign;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
-import jdk.internal.vm.annotation.ForceInline;
-
 /**
  * A confined session, which features an owner thread. The liveness check features an additional
  * confinement check - that is, calling any operation on this session from a thread other than the
@@ -55,7 +53,6 @@ final class _ConfinedSession extends _MemorySessionImpl {
     }
 
     @Override
-    @ForceInline
     public void acquire0() {
         checkValidState();
         if (state == MAX_FORKS) {
@@ -65,7 +62,6 @@ final class _ConfinedSession extends _MemorySessionImpl {
     }
 
     @Override
-    @ForceInline
     public void release0() {
         if (Thread.currentThread() == owner) {
             state--;

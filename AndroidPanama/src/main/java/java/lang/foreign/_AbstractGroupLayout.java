@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
  * the resulting group layout is said to be a <em>union</em> (see {@link MemoryLayout#unionLayout(MemoryLayout...)}).
  *
  * @implSpec This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- * @since 19
  */
 sealed abstract class _AbstractGroupLayout<L extends _AbstractGroupLayout<L> & MemoryLayout>
         extends _AbstractLayout<L>

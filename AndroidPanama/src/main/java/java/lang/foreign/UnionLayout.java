@@ -25,15 +25,11 @@
  */
 package java.lang.foreign;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A group layout whose member layouts are laid out at the same starting offset.
  *
  * @implSpec Implementing classes are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- * @since 20
  */
-@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public sealed interface UnionLayout extends GroupLayout permits _UnionLayoutImpl {
 
     /**

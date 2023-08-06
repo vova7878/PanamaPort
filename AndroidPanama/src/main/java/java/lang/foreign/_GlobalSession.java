@@ -25,8 +25,6 @@
 
 package java.lang.foreign;
 
-import jdk.internal.vm.annotation.ForceInline;
-
 /**
  * The global, non-closeable, shared session. Similar to a shared session, but its {@link #close()} method throws unconditionally.
  * Adding new resources to the global session, does nothing: as the session can never become not-alive, there is nothing to track.
@@ -42,7 +40,6 @@ final class _GlobalSession extends _MemorySessionImpl {
     }
 
     @Override
-    @ForceInline
     public void release0() {
         // do nothing
     }
@@ -53,7 +50,6 @@ final class _GlobalSession extends _MemorySessionImpl {
     }
 
     @Override
-    @ForceInline
     public void acquire0() {
         // do nothing
     }

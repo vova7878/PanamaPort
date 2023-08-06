@@ -33,7 +33,6 @@ import java.lang.ref.Cleaner;
 import java.util.Objects;
 
 import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * This class manages the temporal bounds associated with a memory segment as well
@@ -89,7 +88,6 @@ abstract sealed class _MemorySessionImpl
         };
     }
 
-    @ForceInline
     public static final _MemorySessionImpl toMemorySession(Arena arena) {
         return (_MemorySessionImpl) arena.scope();
     }
@@ -197,7 +195,6 @@ abstract sealed class _MemorySessionImpl
      * and should only be used in the memory access handle hot path; for liveness checks triggered by other API methods,
      * please use {@link #checkValidState()}.
      */
-    @ForceInline
     public void checkValidStateRaw() {
         if (owner != null && owner != Thread.currentThread()) {
             throw WRONG_THREAD;

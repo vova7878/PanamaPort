@@ -25,8 +25,6 @@
  */
 package java.lang.foreign;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A compound layout that denotes a homogeneous repetition of a given <em>element layout</em>.
  * The repetition count is said to be the sequence layout's <em>element count</em>. A sequence layout can be thought of as a
@@ -47,9 +45,7 @@ import jdk.internal.javac.PreviewFeature;
  *}
  *
  * @implSpec This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- * @since 19
  */
-@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public sealed interface SequenceLayout extends MemoryLayout permits _SequenceLayoutImpl {
 
 

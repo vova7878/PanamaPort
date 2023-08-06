@@ -29,7 +29,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
 import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * A shared session, which can be shared across multiple threads. Closing a shared session has to ensure that
@@ -49,7 +48,6 @@ sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession 
     }
 
     @Override
-    @ForceInline
     public void acquire0() {
         int value;
         do {
@@ -65,7 +63,6 @@ sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession 
     }
 
     @Override
-    @ForceInline
     public void release0() {
         int value;
         do {
