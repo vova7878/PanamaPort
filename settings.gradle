@@ -12,5 +12,6 @@ dependencyResolutionManagement {
         maven { url 'https://jitpack.io' }
     }
 }
-rootProject.name = "AndroidUnsafe"
+rootProject.name = "PanamaPort"
 include ':keep_annotation'
+include ':AndroidUnsafe'
