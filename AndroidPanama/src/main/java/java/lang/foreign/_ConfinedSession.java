@@ -36,9 +36,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class _ConfinedSession extends _MemorySessionImpl {
 
     // Port-added: Move owner Thread to ConfinedSession
-    private static final int MAX_FORKS = Integer.MAX_VALUE;
-
-    // Port-added: Move owner Thread to ConfinedSession
     private final Thread owner;
 
     // Port-changed: Use AtomicInteger
@@ -139,10 +136,5 @@ final class _ConfinedSession extends _MemorySessionImpl {
     // Port-added: Move owner Thread to ConfinedSession
     static WrongThreadException wrongThread() {
         return new WrongThreadException("Attempted access outside owning thread");
-    }
-
-    // Port-added: Move owner Thread to ConfinedSession
-    static IllegalStateException tooManyAcquires() {
-        return new IllegalStateException("Session acquire limit exceeded");
     }
 }

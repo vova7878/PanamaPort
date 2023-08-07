@@ -45,9 +45,13 @@ import java.util.Objects;
 abstract sealed class _MemorySessionImpl
         implements Scope
         permits _ConfinedSession, _GlobalSession, _SharedSession {
+
     static final int OPEN = 0;
-    static final int CLOSING = -1;
+    // Port-removed: unused
+    //static final int CLOSING = -1;
     static final int CLOSED = -2;
+
+    static final int MAX_FORKS = Integer.MAX_VALUE;
 
     // Port-removed: Move to SharedSession
     //static final VarHandle STATE;
@@ -63,13 +67,9 @@ abstract sealed class _MemorySessionImpl
     // Port-removed: Move to GlobalSession
     //public static final MemorySessionImpl GLOBAL = new GlobalSession(null);
 
-
     // Port-removed: unused
     //static final ScopedAccessError ALREADY_CLOSED = new ScopedAccessError(_MemorySessionImpl::alreadyClosed);
     //static final ScopedAccessError WRONG_THREAD = new ScopedAccessError(MemorySessionImpl::wrongThread);
-
-    // Port-removed: Move owner Thread to ConfinedSession
-    //static final int MAX_FORKS = Integer.MAX_VALUE;
 
     final ResourceList resourceList;
     // Port-removed: Move owner Thread to ConfinedSession
@@ -351,10 +351,9 @@ abstract sealed class _MemorySessionImpl
 
     // helper functions to centralize error handling
 
-    // Port-removed: Move owner Thread to ConfinedSession
-    //static IllegalStateException tooManyAcquires() {
-    //    return new IllegalStateException("Session acquire limit exceeded");
-    //}
+    static IllegalStateException tooManyAcquires() {
+        return new IllegalStateException("Session acquire limit exceeded");
+    }
 
     static IllegalStateException alreadyAcquired(int acquires) {
         return new IllegalStateException(String.format("Session is acquired by %d clients", acquires));
