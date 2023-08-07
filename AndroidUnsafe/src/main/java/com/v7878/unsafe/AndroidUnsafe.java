@@ -793,46 +793,85 @@ public class AndroidUnsafe {
         }
     }
 
-    /*public static boolean compareAndSwapInt(Object obj, long offset,
-            int expectedValue, int value) {
-        return Unsafe.compareAndSwapInt(obj, offset, expectedValue, value);
+    public static int getIntVolatileO(Object obj, long offset) {
+        return SunUnsafe.getIntVolatile(obj, offset);
     }
 
-    public static boolean compareAndSwapLong(Object obj, long offset,
-            long expectedValue, long value) {
-        return Unsafe.compareAndSwapLong(obj, offset, expectedValue, value);
+    public static void putIntVolatileO(Object obj, long offset, int value) {
+        SunUnsafe.putIntVolatile(obj, offset, value);
     }
 
-    public static boolean compareAndSwapObject(Object obj, long offset,
-            Object expectedValue, Object value) {
-        return Unsafe.compareAndSwapObject(obj, offset, expectedValue, value);
+    public static long getLongVolatileO(Object obj, long offset) {
+        return SunUnsafe.getLongVolatile(obj, offset);
     }
 
-    public static int getIntVolatile(Object obj, long offset) {
-        return Unsafe.getIntVolatile(obj, offset);
+    public static void putLongVolatileO(Object obj, long offset, long value) {
+        SunUnsafe.putLongVolatile(obj, offset, value);
     }
 
-    public static void putIntVolatile(Object obj, long offset, int newValue) {
-        Unsafe.putIntVolatile(obj, offset, newValue);
+    public static Object getObjectVolatileO(Object obj, long offset) {
+        return SunUnsafe.getObjectVolatile(obj, offset);
     }
 
-    public static long getLongVolatile(Object obj, long offset) {
-        return Unsafe.getLongVolatile(obj, offset);
+    public static void putObjectVolatileO(Object obj, long offset, Object value) {
+        SunUnsafe.putObjectVolatile(obj, offset, value);
     }
 
-    public static void putLongVolatile(Object obj, long offset, long newValue) {
-        Unsafe.putLongVolatile(obj, offset, newValue);
+    public static boolean compareAndSetIntO(Object obj, long offset,
+                                            int expectedValue, int newValue) {
+        return SunUnsafe.compareAndSwapInt(obj, offset, expectedValue, newValue);
     }
 
-    public static Object getObjectVolatile(Object obj, long offset) {
-        return Unsafe.getObjectVolatile(obj, offset);
+    public static boolean compareAndSetLongO(Object obj, long offset,
+                                             long expectedValue, long newValue) {
+        return SunUnsafe.compareAndSwapLong(obj, offset, expectedValue, newValue);
     }
 
-    public static void putObjectVolatile(Object obj, long offset, Object newValue) {
-        Unsafe.putObjectVolatile(obj, offset, newValue);
+    public static boolean compareAndSetObjectO(Object obj, long offset,
+                                               Object expectedValue, Object newValue) {
+        return SunUnsafe.compareAndSwapObject(obj, offset, expectedValue, newValue);
     }
 
-    public static void putOrderedInt(Object obj, long offset, int newValue) {
+    public static int compareAndExchangeIntO(Object obj, long offset,
+                                             int expectedValue, int newValue) {
+        int v;
+        do {
+            v = SunUnsafe.getIntVolatile(obj, offset);
+        } while (!SunUnsafe.compareAndSwapInt(obj, offset, v, v == expectedValue ? newValue : v));
+        return v;
+    }
+
+    public static long compareAndExchangeLongO(Object obj, long offset,
+                                               long expectedValue, long newValue) {
+        long v;
+        do {
+            v = SunUnsafe.getLongVolatile(obj, offset);
+        } while (!SunUnsafe.compareAndSwapLong(obj, offset, v, v == expectedValue ? newValue : v));
+        return v;
+    }
+
+    public static Object compareAndExchangeObjectO(Object obj, long offset,
+                                                   Object expectedValue, Object newValue) {
+        Object v;
+        do {
+            v = SunUnsafe.getObjectVolatile(obj, offset);
+        } while (!SunUnsafe.compareAndSwapObject(obj, offset, v, v == expectedValue ? newValue : v));
+        return v;
+    }
+
+    public static int getAndSetIntO(Object obj, long offset, int newValue) {
+        return SunUnsafe.getAndSetInt(obj, offset, newValue);
+    }
+
+    public static long getAndSetLongO(Object obj, long offset, long newValue) {
+        return SunUnsafe.getAndSetLong(obj, offset, newValue);
+    }
+
+    public static Object getAndSetObjectO(Object obj, long offset, Object newValue) {
+        return SunUnsafe.getAndSetObject(obj, offset, newValue);
+    }
+
+    /*public static void putOrderedInt(Object obj, long offset, int newValue) {
         unsafe.putOrderedInt(obj, offset, newValue);
     }
 
@@ -850,17 +889,5 @@ public class AndroidUnsafe {
 
     public static final long getAndAddLong(Object o, long offset, long delta) {
         return unsafe.getAndAddLong(o, offset, delta);
-    }
-
-    public static final int getAndSetInt(Object o, long offset, int newValue) {
-        return unsafe.getAndSetInt(o, offset, newValue);
-    }
-
-    public static final long getAndSetLong(Object o, long offset, long newValue) {
-        return unsafe.getAndSetLong(o, offset, newValue);
-    }
-
-    public static final Object getAndSetObject(Object o, long offset, Object newValue) {
-        return unsafe.getAndSetObject(o, offset, newValue);
     }*/
 }
