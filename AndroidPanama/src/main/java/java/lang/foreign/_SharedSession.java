@@ -101,7 +101,7 @@ sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession 
         //}
 
         int prevState = compareAndExchangeIntO(this, STATE_OFFSET, OPEN, CLOSED);
-        if (prevState < 0) {
+        if (prevState < OPEN) {
             throw alreadyClosed();
         } else if (prevState != OPEN) {
             throw alreadyAcquired(prevState);
