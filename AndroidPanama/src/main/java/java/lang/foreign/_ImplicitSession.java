@@ -28,6 +28,8 @@ package java.lang.foreign;
 // Port-removed: TODO
 //import sun.nio.ch.DirectBuffer;
 
+import com.v7878.unsafe.Utils;
+
 /**
  * This is an implicit, GC-backed memory session. Implicit sessions cannot be closed explicitly.
  * While it would be possible to model an implicit session as a non-closeable view of a shared
@@ -51,9 +53,8 @@ final class _ImplicitSession extends _SharedSession {
 
     @Override
     protected void release0() {
-        // Port-removed: TODO
-        //Reference.reachabilityFence(this);
-        throw new UnsupportedOperationException("Not supported yet");
+        // Port-changed: Use Utils instead Reference
+        Utils.reachabilityFence(this);
     }
 
     @Override
