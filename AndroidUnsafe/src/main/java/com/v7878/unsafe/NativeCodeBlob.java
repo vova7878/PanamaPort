@@ -157,8 +157,9 @@ public class NativeCodeBlob {
         return Optional.of(code);
     }
 
-    // TODO: getCallerClass
-    //public void processASM(){}
+    public static void processASM() {
+        processASM(Stack.getStackClass1());
+    }
 
     //TODO: cleanup code
     public static void processASM(Class<?> clazz) {
