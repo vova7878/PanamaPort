@@ -1,6 +1,13 @@
 package com.v7878.unsafe;
 
 
+import static com.v7878.misc.Version.CORRECT_SDK_INT;
+
+import android.annotation.SuppressLint;
+
+import androidx.annotation.Keep;
+
+import java.lang.ref.Reference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -128,6 +135,38 @@ public class Utils {
                     }
                 }
                 return value;
+            }
+        };
+    }
+
+    @SuppressLint("NewApi")
+    public static void reachabilityFence(Object ref) {
+        if (CORRECT_SDK_INT >= 28) {
+            //noinspection Since15
+            Reference.reachabilityFence(ref);
+        } else {
+            SinkHolder.sink = ref;
+            // Leaving SinkHolder set to ref is unpleasant, since it keeps ref live until the next
+            // reachabilityFence call. Clear it again in a way that's unlikely to be optimizable.
+            // The fact that finalize_count is volatile makes it hard to move the test up.
+            if (!SinkHolder.finalized) {
+                SinkHolder.sink = null;
+            }
+        }
+    }
+
+    @Keep
+    private static class SinkHolder {
+        static volatile Object sink;
+        // Ensure that sink looks live to even a reasonably clever compiler.
+        private static volatile boolean finalized = false;
+        @SuppressWarnings("unused")
+        private static final Object sinkUser = new Object() {
+            protected void finalize() {
+                if (sink == null && finalized) {
+                    throw new AssertionError("Can't get here");
+                }
+                finalized = true;
             }
         };
     }
