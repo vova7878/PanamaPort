@@ -1,7 +1,7 @@
 package com.v7878.unsafe;
 
-import static com.v7878.unsafe.ArtMethod.getExecutableData;
-import static com.v7878.unsafe.ArtMethod.setExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.nothrows_run;
 

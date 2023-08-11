@@ -213,7 +213,7 @@ public class NativeCodeBlob {
         MemorySegment[] ptrs = makeCodeBlobInternal(Arena.global(), code);
 
         for (int i = 0; i < methods.length; i++) {
-            ArtMethod.setExecutableData(methods[i], ptrs[i].address());
+            ArtMethodUtils.setExecutableData(methods[i], ptrs[i].address());
         }
     }
 }

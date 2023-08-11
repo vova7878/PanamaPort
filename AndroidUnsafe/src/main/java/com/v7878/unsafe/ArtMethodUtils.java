@@ -22,7 +22,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 
 @SuppressWarnings("Since15")
-public class ArtMethod {
+public class ArtMethodUtils {
     private static final GroupLayout art_method_14_12_layout = paddedStructLayout(
             JAVA_INT /*TODO: JAVA_OBJECT*/.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),

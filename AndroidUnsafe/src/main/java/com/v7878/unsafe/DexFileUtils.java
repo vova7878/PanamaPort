@@ -26,8 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-@SuppressWarnings("Since15")
-public class DexFile {
+import dalvik.system.DexFile;
+
+@SuppressWarnings({"Since15", "deprecation"})
+public class DexFileUtils {
     private static class std {
 
         static final GroupLayout string = paddedStructLayout(
