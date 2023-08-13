@@ -140,25 +140,15 @@ public class ArtMethodUtils {
         putIntN(getArtMethod(ex) + ACCESS_FLAGS_OFFSET, flags);
     }
 
-    public enum AccessModifier {
-        PUBLIC(Modifier.PUBLIC),
-        PROTECTED(Modifier.PROTECTED),
-        PRIVATE(Modifier.PRIVATE),
-        NONE(0);
-
-        public final int value;
-
-        AccessModifier(int value) {
-            this.value = value;
-        }
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void changeExecutableFlags(Executable ex, int remove_flags, int add_flags) {
+        int flags = getExecutableFlags(ex) & ~remove_flags;
+        setExecutableFlags(ex, flags | add_flags);
+        fullFence();
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static void replaceExecutableAccessModifier(Executable ex, AccessModifier modifier) {
-        final int all = AccessModifier.PUBLIC.value |
-                AccessModifier.PROTECTED.value | AccessModifier.PRIVATE.value;
-        int flags = getExecutableFlags(ex) & ~all;
-        setExecutableFlags(ex, flags | modifier.value);
-        fullFence();
+    public static void makeExecutablePublicNonFinal(Executable ex) {
+        changeExecutableFlags(ex, Modifier.FINAL | Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE, Modifier.PUBLIC);
     }
 }
