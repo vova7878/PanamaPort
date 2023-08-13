@@ -1,9 +1,11 @@
 package com.v7878.unsafe;
 
 import static android.system.Os.mmap;
+import static android.system.Os.munmap;
 import static com.v7878.misc.Math.roundUpL;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.copyMemory;
+import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -84,13 +86,13 @@ public class NativeCodeBlob {
             offsets[i] = size;
             size += code[i].length;
         }
+
         long finalSize = size;
-        //TODO: use arena
-        MemorySegment data = nothrows_run(() -> MemorySegment.ofAddress(
-                        mmap(0, finalSize, CODE_PROT, CODE_FLAGS, null, 0))
-                .reinterpret(finalSize));
-        //Cleaner.create(lifetime, () -> nothrows_run(
-        //        () -> munmap(data.address(), finalSize)));
+        MemorySegment data = MemorySegment.ofAddress(nothrows_run(
+                        () -> mmap(0, finalSize, CODE_PROT, CODE_FLAGS, null, 0)))
+                .reinterpret(finalSize, arena, segment -> nothrows_run(
+                        () -> munmap(segment.address(), finalSize)));
+
         MemorySegment[] out = new MemorySegment[count];
         for (int i = 0; i < count; i++) {
             MemorySegment tmp = data.asSlice(offsets[i], code[i].length);
@@ -161,14 +163,12 @@ public class NativeCodeBlob {
         processASM(Stack.getStackClass1());
     }
 
-    //TODO: cleanup code
     public static void processASM(Class<?> clazz) {
         Objects.requireNonNull(clazz);
         Method[] methods = getDeclaredMethods(clazz);
 
         Map<Method, byte[]> work = new HashMap<>(methods.length);
 
-        for_methods:
         for (Method method : methods) {
             ASM[] data = method.getDeclaredAnnotationsByType(ASM.class);
             ASM_GENERATOR generator = method.getDeclaredAnnotation(ASM_GENERATOR.class);
@@ -176,25 +176,24 @@ public class NativeCodeBlob {
                 if (!Modifier.isNative(method.getModifiers())) {
                     throw new IllegalArgumentException("Non-native method annotated with ASM: " + method);
                 }
-                Optional<byte[]> code;
+                Optional<byte[]> code = Optional.empty();
                 for (ASM tmp : data) {
                     if (tmp.iset() == CURRENT_INSTRUCTION_SET) {
                         code = getCode(tmp);
                         if (code.isPresent()) {
-                            work.put(method, code.get());
-                            continue for_methods;
+                            break;
                         }
                     }
                 }
-                if (generator != null) {
+                if (!code.isPresent() && generator != null) {
                     code = getCode(generator, clazz);
-                    if (code.isPresent()) {
-                        work.put(method, code.get());
-                        continue for_methods;
-                    }
                 }
-                throw new IllegalStateException("Unable to find ASM for " +
-                        CURRENT_INSTRUCTION_SET + " instruction set for method " + method);
+                if (code.isPresent()) {
+                    work.put(method, code.get());
+                } else {
+                    throw new IllegalStateException("Unable to find ASM for " +
+                            CURRENT_INSTRUCTION_SET + " instruction set for method " + method);
+                }
             }
         }
 
@@ -210,10 +209,11 @@ public class NativeCodeBlob {
             }
         }
 
+        //TODO: add arena parameter
         MemorySegment[] ptrs = makeCodeBlobInternal(Arena.global(), code);
 
         for (int i = 0; i < methods.length; i++) {
-            ArtMethodUtils.setExecutableData(methods[i], ptrs[i].address());
+            setExecutableData(methods[i], ptrs[i].address());
         }
     }
 }
