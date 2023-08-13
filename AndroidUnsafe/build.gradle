@@ -28,6 +28,7 @@ android {
 dependencies {
     compileOnly project(':keep_annotation')
     compileOnly project(':fake_panama')
+    compileOnly project(':fake_buffer')
 
     compileOnly 'com.github.vova7878:OptimizationAnnotations:v0.0.1'
 
