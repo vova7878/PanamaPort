@@ -27,6 +27,7 @@
 package java.lang.foreign;
 
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.JavaNioAccess;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
@@ -86,11 +87,8 @@ sealed class _NativeMemorySegmentImpl extends _AbstractMemorySegmentImpl permits
 
     @Override
     ByteBuffer makeByteBuffer() {
-        // Port-removed: TODO
-        //// Port-changed: Use GlobalSession.INSTANCE instead MemorySessionImpl.GLOBAL
-        //return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null,
-        //        scope == GlobalSession.INSTANCE ? null : this);
-        throw new UnsupportedOperationException("Not supported yet");
+        // Port-changed: different JavaNioAccess.newDirectByteBuffer implementation
+        return JavaNioAccess.newDirectByteBuffer(min, (int) this.length, null, this.scope);
     }
 
     @Override
