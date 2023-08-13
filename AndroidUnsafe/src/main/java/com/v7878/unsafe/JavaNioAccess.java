@@ -16,18 +16,23 @@ import com.v7878.dex.Dex;
 import com.v7878.dex.EncodedMethod;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.TypeId;
+import com.v7878.unsafe.SegmentByteBuffer.SegmentMemoryRef;
 
+import java.lang.foreign.MemorySegment.Scope;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 import dalvik.system.DexFile;
 
 // SegmentByteBuffer should not appear in JavaNioAccess as it breaks class loading order
 class BufferFactory {
-    public static ByteBuffer makeBuf(long address, int cap) {
-        return new SegmentByteBuffer(new DirectByteBuffer.MemoryRef(address), -1, 0, cap, cap, 0, false);
+    public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
+        return new SegmentByteBuffer(new SegmentMemoryRef(addr, obj, scope),
+                -1, 0, cap, cap, 0, false);
     }
 }
 
@@ -119,7 +124,50 @@ public class JavaNioAccess {
         loadClass(dex, direct_buf_name, loader);
     }
 
-    public static ByteBuffer makeBuf(long address, int cap) {
-        return BufferFactory.makeBuf(address, cap);
+    public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
+        Objects.requireNonNull(scope);
+        return BufferFactory.newDirectByteBuffer(addr, cap, obj, scope);
     }
+
+    /*public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long address, int cap, Object obj, MemorySegment segment) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }*/
+
+    /*public static ByteBuffer newHeapByteBuffer(byte[] hb, int offset, int capacity, MemorySegment segment) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }*/
+
+    public static Object getBufferBase(Buffer buffer) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    public static long getBufferAddress(Buffer buffer) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    /*public static UnmapperProxy unmapper(Buffer buffer) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    public static void force(FileDescriptor fd, long address, long length) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    public static void load(long address, long length) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    // unload not exists
+
+    public static boolean isLoaded(long address, long length, int pageCount) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }*/
 }

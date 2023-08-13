@@ -1,17 +1,41 @@
 package com.v7878.unsafe;
 
+import static com.v7878.unsafe.DexFileUtils.getDexFile;
+import static com.v7878.unsafe.DexFileUtils.setTrusted;
+
+import androidx.annotation.Keep;
+
+import java.lang.foreign.MemorySegment.Scope;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 
 class SegmentByteBuffer extends DirectByteBuffer {
 
-    SegmentByteBuffer(MemoryRef memoryRef, int mark, int pos, int lim, int cap, int off, boolean isReadOnly) {
+    static {
+        setTrusted(getDexFile(SegmentByteBuffer.class));
+    }
+
+    static class SegmentMemoryRef extends MemoryRef {
+
+        @Keep
+        @SuppressWarnings("unused")
+        //TODO: use the "originalBufferObject" field if it exists, else generate it
+        private final Object att;
+        final Scope scope;
+
+        public SegmentMemoryRef(long allocatedAddress, Object obj, Scope scope) {
+            super(allocatedAddress);
+            this.att = obj;
+            this.scope = scope;
+        }
+    }
+
+    SegmentByteBuffer(SegmentMemoryRef memoryRef, int mark, int pos, int lim, int cap, int off, boolean isReadOnly) {
         super(memoryRef, mark, pos, lim, cap, off, isReadOnly);
     }
 
     @Override
     public final MappedByteBuffer slice() {
-        attachment();
             /*if (!memoryRef.isAccessible) {
                 throw new IllegalStateException("buffer is inaccessible");
             }
@@ -70,4 +94,6 @@ class SegmentByteBuffer extends DirectByteBuffer {
                     true);*/
         throw new UnsupportedOperationException("Not supported yet");
     }
+
+    //TODO: lock the scope while performing manipulations
 }
