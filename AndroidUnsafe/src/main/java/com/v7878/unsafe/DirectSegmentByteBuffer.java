@@ -10,10 +10,10 @@ import com.v7878.misc.Checks;
 import java.lang.foreign.MemorySegment.Scope;
 import java.nio.ByteBuffer;
 
-class SegmentByteBuffer extends DirectByteBuffer {
+class DirectSegmentByteBuffer extends DirectByteBuffer {
 
     static {
-        setTrusted(getDexFile(SegmentByteBuffer.class));
+        setTrusted(getDexFile(DirectSegmentByteBuffer.class));
     }
 
     static class SegmentMemoryRef extends MemoryRef {
@@ -22,17 +22,19 @@ class SegmentByteBuffer extends DirectByteBuffer {
         @SuppressWarnings({"unused", "FieldCanBeLocal"})
         //TODO: use the "originalBufferObject" field if it exists, else generate it
         private final Object att;
-        final Scope scope;
 
-        public SegmentMemoryRef(long allocatedAddress, Object obj, Scope scope) {
+        public SegmentMemoryRef(long allocatedAddress, Object obj) {
             super(allocatedAddress);
             this.att = obj;
-            this.scope = scope;
         }
     }
 
-    SegmentByteBuffer(SegmentMemoryRef memoryRef, int mark, int pos, int lim, int cap, int off, boolean isReadOnly) {
+    public final Scope scope;
+
+    DirectSegmentByteBuffer(SegmentMemoryRef memoryRef, int mark, int pos, int lim,
+                            int cap, int off, boolean isReadOnly, Scope scope) {
         super(memoryRef, mark, pos, lim, cap, off, isReadOnly);
+        this.scope = scope;
     }
 
     @Override
@@ -44,8 +46,8 @@ class SegmentByteBuffer extends DirectByteBuffer {
         int lim = limit();
         int rem = lim - pos;
         int off = pos + offset;
-        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
-                -1, 0, rem, rem, off, isReadOnly);
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) memoryRef,
+                -1, 0, rem, rem, off, isReadOnly, scope);
     }
 
     @Override
@@ -54,8 +56,8 @@ class SegmentByteBuffer extends DirectByteBuffer {
             throw new IllegalStateException("buffer is inaccessible");
         }
         Checks.checkFromIndexSize(index, length, limit());
-        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
-                -1, 0, length, length, index, isReadOnly);
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) memoryRef,
+                -1, 0, length, length, index, isReadOnly, scope);
     }
 
     @Override
@@ -63,8 +65,8 @@ class SegmentByteBuffer extends DirectByteBuffer {
         if (memoryRef.isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
-        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
-                markValue(), position(), limit(), capacity(), offset, isReadOnly);
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) memoryRef, markValue(),
+                position(), limit(), capacity(), offset, isReadOnly, scope);
     }
 
     @Override
@@ -72,8 +74,8 @@ class SegmentByteBuffer extends DirectByteBuffer {
         if (memoryRef.isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
-        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
-                markValue(), position(), limit(), capacity(), offset, true);
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) memoryRef, markValue(),
+                position(), limit(), capacity(), offset, true, scope);
     }
 
     //TODO: lock the scope while performing manipulations

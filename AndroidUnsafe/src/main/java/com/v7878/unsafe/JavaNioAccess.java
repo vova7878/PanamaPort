@@ -19,7 +19,7 @@ import com.v7878.dex.Dex;
 import com.v7878.dex.EncodedMethod;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.TypeId;
-import com.v7878.unsafe.SegmentByteBuffer.SegmentMemoryRef;
+import com.v7878.unsafe.DirectSegmentByteBuffer.SegmentMemoryRef;
 
 import java.lang.foreign.MemorySegment.Scope;
 import java.lang.reflect.Constructor;
@@ -33,16 +33,26 @@ import java.util.Objects;
 
 import dalvik.system.DexFile;
 
-// SegmentByteBuffer should not appear in JavaNioAccess as it breaks class loading order
-class BufferFactory {
+// SegmentByteBuffers should not appear in JavaNioAccess as it breaks class loading order
+class SegmentBufferAccess {
     public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
-        return new SegmentByteBuffer(new SegmentMemoryRef(addr, obj, scope),
-                -1, 0, cap, cap, 0, false);
+        return new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
+                -1, 0, cap, cap, 0, false, scope);
     }
 
     public static ByteBuffer newHeapByteBuffer(byte[] buf, int off, int cap, Scope scope) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        return new HeapSegmentByteBuffer(buf, -1, 0,
+                cap, cap, off, false, scope);
+    }
+
+    public static Scope getBufferScope(Buffer buffer) {
+        if (buffer instanceof DirectSegmentByteBuffer) {
+            return ((DirectSegmentByteBuffer) buffer).scope;
+        }
+        if (buffer instanceof HeapSegmentByteBuffer) {
+            return ((HeapSegmentByteBuffer) buffer).scope;
+        }
+        return null;
     }
 }
 
@@ -210,13 +220,7 @@ public class JavaNioAccess {
 
     public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
         Objects.requireNonNull(scope);
-        return BufferFactory.newDirectByteBuffer(addr, cap, obj, scope);
-    }
-
-    public static ByteBuffer newHeapByteBuffer(byte[] buffer, int offset, int capacity, Scope scope) {
-        Objects.requireNonNull(scope);
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        return SegmentBufferAccess.newDirectByteBuffer(addr, cap, obj, scope);
     }
 
     /*public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long address, int cap, Object obj, MemorySegment segment) {
@@ -224,10 +228,10 @@ public class JavaNioAccess {
         throw new UnsupportedOperationException("Not implemented yet");
     }*/
 
-    /*public static ByteBuffer newHeapByteBuffer(byte[] hb, int offset, int capacity, MemorySegment segment) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
-    }*/
+    public static ByteBuffer newHeapByteBuffer(byte[] buffer, int offset, int capacity, Scope scope) {
+        Objects.requireNonNull(scope);
+        return SegmentBufferAccess.newHeapByteBuffer(buffer, offset, capacity, scope);
+    }
 
     public static Object getBufferBase(Buffer buffer) {
         //TODO
@@ -237,6 +241,10 @@ public class JavaNioAccess {
     public static long getBufferAddress(Buffer buffer) {
         //TODO
         throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    public static Scope getBufferScope(Buffer buffer) {
+        return SegmentBufferAccess.getBufferScope(buffer);
     }
 
     /*public static UnmapperProxy unmapper(Buffer buffer) {
