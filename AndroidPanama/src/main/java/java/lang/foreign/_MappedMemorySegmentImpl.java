@@ -25,10 +25,9 @@
 
 package java.lang.foreign;
 
-import java.nio.ByteBuffer;
+import com.v7878.unsafe.JavaNioAccess.UnmapperProxy;
 
-// Port-removed: TODO
-//import jdk.internal.access.foreign.UnmapperProxy;
+import java.nio.ByteBuffer;
 
 /**
  * Implementation for a mapped memory segments. A mapped memory segment is a native memory segment, which
@@ -38,100 +37,71 @@ import java.nio.ByteBuffer;
  */
 final class _MappedMemorySegmentImpl extends _NativeMemorySegmentImpl {
 
-    // Port-removed: TODO
-    //private final UnmapperProxy unmapper;
-    //
-    //static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
-    //
-    //public _MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, _MemorySessionImpl scope) {
-    //    super(min, length, readOnly, scope);
-    //    this.unmapper = unmapper;
-    //}
-    //
-    //@Override
-    //ByteBuffer makeByteBuffer() {
-    //    return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int) length, null,
-    //            scope == _MemorySessionImpl.GLOBAL ? null : this);
-    //}
-    //
-    //@Override
-    //_MappedMemorySegmentImpl dup(long offset, long size, boolean readOnly, _MemorySessionImpl scope) {
-    //    return new _MappedMemorySegmentImpl(min + offset, unmapper, size, readOnly, scope);
-    //}
-    //
-    //// mapped segment methods
-    //
-    //@Override
-    //public _MappedMemorySegmentImpl asSlice(long offset, long newSize) {
-    //    return (_MappedMemorySegmentImpl) super.asSlice(offset, newSize);
-    //}
-    //
-    //@Override
-    //public boolean isMapped() {
-    //    return true;
-    //}
-    //
-    //// support for mapped segments
-    //
-    //public void load() {
-    //    if (unmapper != null) {
-    //        SCOPED_MEMORY_ACCESS.load(sessionImpl(), min, unmapper.isSync(), length);
-    //    }
-    //}
-    //
-    //public void unload() {
-    //    if (unmapper != null) {
-    //        SCOPED_MEMORY_ACCESS.unload(sessionImpl(), min, unmapper.isSync(), length);
-    //    }
-    //}
-    //
-    //public boolean isLoaded() {
-    //    return unmapper == null || SCOPED_MEMORY_ACCESS.isLoaded(sessionImpl(), min, unmapper.isSync(), length);
-    //}
-    //
-    //public void force() {
-    //    if (unmapper != null) {
-    //        SCOPED_MEMORY_ACCESS.force(sessionImpl(), unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
-    //    }
-    //}
+    private final UnmapperProxy unmapper;
 
-    public _MappedMemorySegmentImpl() {
-        throw new UnsupportedOperationException("Not supported yet");
+    // Port-changed: methods in ScopedMemoryAccess is static
+    //static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+
+    public _MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length,
+                                    boolean readOnly, _MemorySessionImpl scope) {
+        super(min, length, readOnly, scope);
+        this.unmapper = unmapper;
     }
 
     @Override
     ByteBuffer makeByteBuffer() {
+        // Port-removed: TODO
+        //return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int) length, null,
+        //        scope == _MemorySessionImpl.GLOBAL ? null : this);
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     _MappedMemorySegmentImpl dup(long offset, long size, boolean readOnly, _MemorySessionImpl scope) {
-        throw new UnsupportedOperationException("Not supported yet");
+        return new _MappedMemorySegmentImpl(min + offset, unmapper, size, readOnly, scope);
     }
+
+    // mapped segment methods
 
     @Override
     public _MappedMemorySegmentImpl asSlice(long offset, long newSize) {
-        throw new UnsupportedOperationException("Not supported yet");
+        return (_MappedMemorySegmentImpl) super.asSlice(offset, newSize);
     }
 
     @Override
     public boolean isMapped() {
-        throw new UnsupportedOperationException("Not supported yet");
+        return true;
     }
 
+    // support for mapped segments
+
     public void load() {
+        // Port-removed: TODO
+        //if (unmapper != null) {
+        //    SCOPED_MEMORY_ACCESS.load(sessionImpl(), min, unmapper.isSync(), length);
+        //}
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     public void unload() {
+        // Port-removed: TODO
+        //if (unmapper != null) {
+        //    SCOPED_MEMORY_ACCESS.unload(sessionImpl(), min, unmapper.isSync(), length);
+        //}
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     public boolean isLoaded() {
+        // Port-removed: TODO
+        //return unmapper == null || SCOPED_MEMORY_ACCESS.isLoaded(sessionImpl(), min, unmapper.isSync(), length);
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     public void force() {
+        // Port-removed: TODO
+        //if (unmapper != null) {
+        //    SCOPED_MEMORY_ACCESS.force(sessionImpl(), unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
+        //}
         throw new UnsupportedOperationException("Not supported yet");
     }
 }

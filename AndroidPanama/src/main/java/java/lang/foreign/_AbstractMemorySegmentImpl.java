@@ -29,6 +29,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import com.v7878.misc.Checks;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.JavaNioAccess;
+import com.v7878.unsafe.JavaNioAccess.UnmapperProxy;
 
 import java.lang.reflect.Array;
 import java.nio.Buffer;
@@ -67,7 +69,7 @@ abstract sealed class _AbstractMemorySegmentImpl
     // Port-changed: methods in ScopedMemoryAccess is static
     //private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    // Port-removed: TODO
+    // Port-removed: different JavaNioAccess implementation
     //static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     final long length;
@@ -553,54 +555,55 @@ abstract sealed class _AbstractMemorySegmentImpl
                 unsafeGetBase());
     }
 
+    // Port-changed: slightly different implementation
     public static _AbstractMemorySegmentImpl ofBuffer(Buffer bb) {
-        // Port-removed: TODO
-        //Objects.requireNonNull(bb);
-        //Object base = NIO_ACCESS.getBufferBase(bb);
-        //if (!bb.isDirect() && base == null) {
-        //    throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
-        //}
-        //long bbAddress = NIO_ACCESS.getBufferAddress(bb);
-        //UnmapperProxy unmapper = NIO_ACCESS.unmapper(bb);
-        //
-        //int pos = bb.position();
-        //int limit = bb.limit();
-        //int size = limit - pos;
-        //
-        //_AbstractMemorySegmentImpl bufferSegment = (_AbstractMemorySegmentImpl) NIO_ACCESS.bufferSegment(bb);
-        //boolean readOnly = bb.isReadOnly();
-        //int scaleFactor = getScaleFactor(bb);
-        //final _MemorySessionImpl bufferScope;
-        //if (bufferSegment != null) {
-        //    bufferScope = bufferSegment.scope;
-        //} else {
-        //    bufferScope = _MemorySessionImpl.heapSession(bb);
-        //}
-        //if (base != null) {
-        //    if (base instanceof byte[]) {
-        //        return new _HeapMemorySegmentImpl.OfByte(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-        //    } else if (base instanceof short[]) {
-        //        return new _HeapMemorySegmentImpl.OfShort(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-        //    } else if (base instanceof char[]) {
-        //        return new _HeapMemorySegmentImpl.OfChar(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-        //    } else if (base instanceof int[]) {
-        //        return new _HeapMemorySegmentImpl.OfInt(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-        //    } else if (base instanceof float[]) {
-        //        return new _HeapMemorySegmentImpl.OfFloat(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-        //    } else if (base instanceof long[]) {
-        //        return new _HeapMemorySegmentImpl.OfLong(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-        //    } else if (base instanceof double[]) {
-        //        return new _HeapMemorySegmentImpl.OfDouble(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-        //    } else {
-        //        throw new AssertionError("Cannot get here");
-        //    }
-        //} else if (unmapper == null) {
-        //    return new _NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, readOnly, bufferScope);
-        //} else {
-        //    // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
-        //    return new _MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, readOnly, bufferScope);
-        //}
-        throw new UnsupportedOperationException("Not supported yet");
+        Objects.requireNonNull(bb);
+        Object base = JavaNioAccess.getBufferBase(bb);
+        if (!bb.isDirect() && base == null) {
+            throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
+        }
+        if (bb.isDirect() && base != null) {
+            //TODO
+            throw new UnsupportedOperationException("direct buffer with non-movable array not supported yet");
+        }
+
+        UnmapperProxy unmapper = JavaNioAccess.unmapper(bb);
+
+        boolean readOnly = bb.isReadOnly();
+        int scaleFactor = getScaleFactor(bb);
+        long pos = bb.position();
+        long lim = bb.limit();
+        long size = (lim - pos) << scaleFactor;
+        long bbAddress = JavaNioAccess.getBufferAddress(bb) + (pos << scaleFactor);
+
+        _MemorySessionImpl bufferScope = (_MemorySessionImpl) JavaNioAccess.getBufferScope(bb);
+        if (bufferScope == null) {
+            bufferScope = _MemorySessionImpl.heapSession(bb);
+        }
+
+        if (base != null) {
+            if (base instanceof byte[]) {
+                return new _HeapMemorySegmentImpl.OfByte(bbAddress, base, size, readOnly, bufferScope);
+            } else if (base instanceof short[]) {
+                return new _HeapMemorySegmentImpl.OfShort(bbAddress, base, size, readOnly, bufferScope);
+            } else if (base instanceof char[]) {
+                return new _HeapMemorySegmentImpl.OfChar(bbAddress, base, size, readOnly, bufferScope);
+            } else if (base instanceof int[]) {
+                return new _HeapMemorySegmentImpl.OfInt(bbAddress, base, size, readOnly, bufferScope);
+            } else if (base instanceof float[]) {
+                return new _HeapMemorySegmentImpl.OfFloat(bbAddress, base, size, readOnly, bufferScope);
+            } else if (base instanceof long[]) {
+                return new _HeapMemorySegmentImpl.OfLong(bbAddress, base, size, readOnly, bufferScope);
+            } else if (base instanceof double[]) {
+                return new _HeapMemorySegmentImpl.OfDouble(bbAddress, base, size, readOnly, bufferScope);
+            } else {
+                throw new AssertionError("Cannot get here");
+            }
+        } else if (unmapper == null) {
+            return new _NativeMemorySegmentImpl(bbAddress, size, readOnly, bufferScope);
+        } else {
+            return new _MappedMemorySegmentImpl(bbAddress, unmapper, size, readOnly, bufferScope);
+        }
     }
 
     private static int getScaleFactor(Buffer buffer) {
