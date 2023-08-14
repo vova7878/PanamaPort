@@ -356,4 +356,9 @@ public abstract class CommonByteBuffer extends FakeByteBuffer {
     public void setAccessible(boolean value) {
         throw new UnsupportedOperationException("Stub!");
     }
+
+    // from java.nio.Buffer
+    public int markValue() {
+        throw new UnsupportedOperationException("Stub!");
+    }
 }

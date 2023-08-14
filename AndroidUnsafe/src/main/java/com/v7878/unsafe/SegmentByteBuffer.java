@@ -5,6 +5,8 @@ import static com.v7878.unsafe.DexFileUtils.setTrusted;
 
 import androidx.annotation.Keep;
 
+import com.v7878.misc.Checks;
+
 import java.lang.foreign.MemorySegment.Scope;
 import java.nio.ByteBuffer;
 
@@ -17,7 +19,7 @@ class SegmentByteBuffer extends DirectByteBuffer {
     static class SegmentMemoryRef extends MemoryRef {
 
         @Keep
-        @SuppressWarnings("unused")
+        @SuppressWarnings({"unused", "FieldCanBeLocal"})
         //TODO: use the "originalBufferObject" field if it exists, else generate it
         private final Object att;
         final Scope scope;
@@ -35,63 +37,43 @@ class SegmentByteBuffer extends DirectByteBuffer {
 
     @Override
     public final DirectByteBuffer slice() {
-        /*if (!memoryRef.isAccessible) {
+        if (!memoryRef.isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
         }
         int pos = position();
         int lim = limit();
-        assert (pos <= lim);
-        int rem = (pos <= lim ? lim - pos : 0);
+        int rem = lim - pos;
         int off = pos + offset;
-        assert (off >= 0);
-        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef, -1, 0, rem, rem, off, isReadOnly);*/
-        throw new UnsupportedOperationException("Not supported yet");
+        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
+                -1, 0, rem, rem, off, isReadOnly);
     }
 
     @Override
     public final DirectByteBuffer slice(int index, int length) {
-        /*if (!memoryRef.isAccessible) {
+        if (!memoryRef.isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
         }
         Checks.checkFromIndexSize(index, length, limit());
         return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
-                -1,
-                0,
-                length,
-                length,
-                index << 0,
-                isReadOnly);*/
-        throw new UnsupportedOperationException("Not supported yet");
+                -1, 0, length, length, index, isReadOnly);
     }
 
     @Override
     public final DirectByteBuffer duplicate() {
-        /*if (memoryRef.isFreed) {
+        if (memoryRef.isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
         return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
-                this.markValue(),
-                this.position(),
-                this.limit(),
-                this.capacity(),
-                offset,
-                isReadOnly);*/
-        throw new UnsupportedOperationException("Not supported yet");
+                markValue(), position(), limit(), capacity(), offset, isReadOnly);
     }
 
     @Override
     public final ByteBuffer asReadOnlyBuffer() {
-        /*if (memoryRef.isFreed) {
+        if (memoryRef.isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
         return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
-                this.markValue(),
-                this.position(),
-                this.limit(),
-                this.capacity(),
-                offset,
-                true);*/
-        throw new UnsupportedOperationException("Not supported yet");
+                markValue(), position(), limit(), capacity(), offset, true);
     }
 
     //TODO: lock the scope while performing manipulations

@@ -14,7 +14,7 @@ public abstract class DirectByteBuffer extends CommonByteBuffer {
         }
     }
 
-    // from MappedByteBuffer
+    // from java.nio.MappedByteBuffer
     public final FileDescriptor fd;
 
     public final Cleaner cleaner;

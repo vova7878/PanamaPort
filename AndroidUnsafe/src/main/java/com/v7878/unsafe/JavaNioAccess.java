@@ -2,12 +2,15 @@ package com.v7878.unsafe;
 
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicNonFinal;
 import static com.v7878.unsafe.ClassUtils.makeClassPublicNonFinal;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructors;
+import static com.v7878.unsafe.Reflection.getDeclaredFields0;
+import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
@@ -20,10 +23,12 @@ import com.v7878.unsafe.SegmentByteBuffer.SegmentMemoryRef;
 
 import java.lang.foreign.MemorySegment.Scope;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.util.Objects;
 
 import dalvik.system.DexFile;
@@ -98,6 +103,11 @@ public class JavaNioAccess {
             for (Constructor<?> constructor : constructors) {
                 makeExecutablePublicNonFinal(constructor);
             }
+
+            Field[] fields = getDeclaredFields0(nio_mem_ref_class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
         }
 
         Class<?> nio_direct_buf_class = nothrows_run(() -> Class.forName(nio_direct_buf_name));
@@ -113,6 +123,34 @@ public class JavaNioAccess {
             for (Constructor<?> constructor : constructors) {
                 makeExecutablePublicNonFinal(constructor);
             }
+
+            Field[] fields = getDeclaredFields0(nio_direct_buf_class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
+        }
+
+        {
+            Field[] fields = getDeclaredFields0(MappedByteBuffer.class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
+        }
+
+        {
+            Field[] fields = getDeclaredFields0(ByteBuffer.class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
+        }
+
+        {
+            Field[] fields = getDeclaredFields0(Buffer.class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
+
+            makeExecutablePublicNonFinal(getDeclaredMethod(Buffer.class, "markValue"));
         }
 
         DexFile dex = openDexFile(new Dex(mem_def, buf_def).compile());
