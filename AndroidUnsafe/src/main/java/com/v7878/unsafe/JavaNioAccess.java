@@ -2,17 +2,22 @@ package com.v7878.unsafe;
 
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicNonFinal;
 import static com.v7878.unsafe.ClassUtils.makeClassPublicNonFinal;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
+import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructors;
+import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredFields0;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
+import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.runOnce;
 
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
@@ -23,6 +28,7 @@ import com.v7878.unsafe.DirectSegmentByteBuffer.SegmentMemoryRef;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment.Scope;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -31,6 +37,7 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
 
@@ -66,11 +73,6 @@ public class JavaNioAccess {
         FileDescriptor fileDescriptor();
 
         void unmap();
-
-        default boolean isSync() {
-            // on android always false
-            return false;
-        }
     }
 
     static {
@@ -247,14 +249,20 @@ public class JavaNioAccess {
         return SegmentBufferAccess.newHeapByteBuffer(buffer, offset, capacity, scope);
     }
 
+    private static final Supplier<MethodHandle> base = runOnce(
+            () -> unreflect(getDeclaredMethod(Buffer.class, "base")));
+
     public static Object getBufferBase(Buffer buffer) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        Objects.requireNonNull(buffer);
+        return nothrows_run(() -> base.get().invokeExact(buffer));
     }
 
+    private static final long ADDRESS_OFFSET =
+            fieldOffset(getDeclaredField(Buffer.class, "address"));
+
     public static long getBufferAddress(Buffer buffer) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        Objects.requireNonNull(buffer);
+        return getLongO(buffer, ADDRESS_OFFSET);
     }
 
     public static Scope getBufferScope(Buffer buffer) {
