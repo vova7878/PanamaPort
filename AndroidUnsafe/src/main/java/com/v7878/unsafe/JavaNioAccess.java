@@ -39,6 +39,11 @@ class BufferFactory {
         return new SegmentByteBuffer(new SegmentMemoryRef(addr, obj, scope),
                 -1, 0, cap, cap, 0, false);
     }
+
+    public static ByteBuffer newHeapByteBuffer(byte[] buf, int off, int cap, Scope scope) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 }
 
 @SuppressWarnings("deprecation")
@@ -49,10 +54,15 @@ public class JavaNioAccess {
         TypeId nio_direct_buf_id = TypeId.of(nio_direct_buf_name);
         String nio_mem_ref_name = "java.nio.DirectByteBuffer$MemoryRef";
         TypeId nio_mem_ref_id = TypeId.of(nio_mem_ref_name);
+        String nio_heap_buf_name = "java.nio.HeapByteBuffer";
+        TypeId nio_heap_buf_id = TypeId.of(nio_heap_buf_name);
+
         String direct_buf_name = "com.v7878.unsafe.DirectByteBuffer";
         TypeId direct_buf_id = TypeId.of(direct_buf_name);
         String mem_ref_name = "com.v7878.unsafe.DirectByteBuffer$MemoryRef";
         TypeId mem_ref_id = TypeId.of(mem_ref_name);
+        String heap_buf_name = "com.v7878.unsafe.HeapByteBuffer";
+        TypeId heap_buf_id = TypeId.of(heap_buf_name);
 
         ClassDef mem_def = new ClassDef(mem_ref_id);
         mem_def.setSuperClass(nio_mem_ref_id);
@@ -77,19 +87,37 @@ public class JavaNioAccess {
                 .return_void()
         ));
 
-        ClassDef buf_def = new ClassDef(direct_buf_id);
-        buf_def.setSuperClass(nio_direct_buf_id);
-        buf_def.setAccessFlags(Modifier.PUBLIC);
+        ClassDef direct_buf_def = new ClassDef(direct_buf_id);
+        direct_buf_def.setSuperClass(nio_direct_buf_id);
+        direct_buf_def.setAccessFlags(Modifier.PUBLIC);
 
         //public DirectByteBuffer($args$) {
         //    super($args$);
         //}
-        buf_def.getClassData().getDirectMethods().add(new EncodedMethod(
+        direct_buf_def.getClassData().getDirectMethods().add(new EncodedMethod(
                 MethodId.constructor(direct_buf_id, mem_ref_id,
                         TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
                 Modifier.PUBLIC | /*TODO: CONSTRUCTOR*/ 0x10000
         ).withCode(0, b -> b
                 .invoke_range(DIRECT, MethodId.constructor(nio_direct_buf_id, nio_mem_ref_id,
+                                TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
+                        8, b.this_())
+                .return_void()
+        ));
+
+        ClassDef heap_buf_def = new ClassDef(heap_buf_id);
+        heap_buf_def.setSuperClass(nio_heap_buf_id);
+        heap_buf_def.setAccessFlags(Modifier.PUBLIC);
+
+        //public HeapByteBuffer($args$) {
+        //    super($args$);
+        //}
+        heap_buf_def.getClassData().getDirectMethods().add(new EncodedMethod(
+                MethodId.constructor(heap_buf_id, TypeId.of(byte[].class),
+                        TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
+                Modifier.PUBLIC | /*TODO: CONSTRUCTOR*/ 0x10000
+        ).withCode(0, b -> b
+                .invoke_range(DIRECT, MethodId.constructor(nio_heap_buf_id, TypeId.of(byte[].class),
                                 TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
                         8, b.this_())
                 .return_void()
@@ -130,6 +158,23 @@ public class JavaNioAccess {
             }
         }
 
+        Class<?> nio_heap_buf_class = nothrows_run(() -> Class.forName(nio_heap_buf_name));
+        {
+            makeClassPublicNonFinal(nio_heap_buf_class);
+
+            Method[] methods = getDeclaredMethods(nio_heap_buf_class);
+            for (Method method : methods) {
+                if (!Modifier.isPrivate(method.getModifiers())) {
+                    makeExecutablePublicNonFinal(method);
+                }
+            }
+
+            Constructor<?>[] constructors = getDeclaredConstructors(nio_heap_buf_class);
+            for (Constructor<?> constructor : constructors) {
+                makeExecutablePublicNonFinal(constructor);
+            }
+        }
+
         {
             Field[] fields = getDeclaredFields0(MappedByteBuffer.class, false);
             for (Field field : fields) {
@@ -153,18 +198,25 @@ public class JavaNioAccess {
             makeExecutablePublicNonFinal(getDeclaredMethod(Buffer.class, "markValue"));
         }
 
-        DexFile dex = openDexFile(new Dex(mem_def, buf_def).compile());
+        DexFile dex = openDexFile(new Dex(mem_def, direct_buf_def, heap_buf_def).compile());
         setTrusted(dex);
 
         ClassLoader loader = JavaNioAccess.class.getClassLoader();
 
         loadClass(dex, mem_ref_name, loader);
         loadClass(dex, direct_buf_name, loader);
+        loadClass(dex, heap_buf_name, loader);
     }
 
     public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
         Objects.requireNonNull(scope);
         return BufferFactory.newDirectByteBuffer(addr, cap, obj, scope);
+    }
+
+    public static ByteBuffer newHeapByteBuffer(byte[] buffer, int offset, int capacity, Scope scope) {
+        Objects.requireNonNull(scope);
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /*public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long address, int cap, Object obj, MemorySegment segment) {
