@@ -7,7 +7,6 @@ import androidx.annotation.Keep;
 
 import java.lang.foreign.MemorySegment.Scope;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 
 class SegmentByteBuffer extends DirectByteBuffer {
 
@@ -35,63 +34,63 @@ class SegmentByteBuffer extends DirectByteBuffer {
     }
 
     @Override
-    public final MappedByteBuffer slice() {
-            /*if (!memoryRef.isAccessible) {
-                throw new IllegalStateException("buffer is inaccessible");
-            }
-            int pos = position();
-            int lim = limit();
-            assert (pos <= lim);
-            int rem = (pos <= lim ? lim - pos : 0);
-            int off = pos + offset;
-            assert (off >= 0);
-            return new SegmentByteBuffer(memoryRef, -1, 0, rem, rem, off, isReadOnly);*/
+    public final DirectByteBuffer slice() {
+        /*if (!memoryRef.isAccessible) {
+            throw new IllegalStateException("buffer is inaccessible");
+        }
+        int pos = position();
+        int lim = limit();
+        assert (pos <= lim);
+        int rem = (pos <= lim ? lim - pos : 0);
+        int off = pos + offset;
+        assert (off >= 0);
+        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef, -1, 0, rem, rem, off, isReadOnly);*/
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
-    public final MappedByteBuffer slice(int index, int length) {
-            /*if (!memoryRef.isAccessible) {
-                throw new IllegalStateException("buffer is inaccessible");
-            }
-            Objects.checkFromIndexSize(index, length, limit());
-            return new SegmentByteBuffer(memoryRef,
-                    -1,
-                    0,
-                    length,
-                    length,
-                    index << 0,
-                    isReadOnly);*/
+    public final DirectByteBuffer slice(int index, int length) {
+        /*if (!memoryRef.isAccessible) {
+            throw new IllegalStateException("buffer is inaccessible");
+        }
+        Checks.checkFromIndexSize(index, length, limit());
+        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
+                -1,
+                0,
+                length,
+                length,
+                index << 0,
+                isReadOnly);*/
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
-    public final MappedByteBuffer duplicate() {
-            /*if (memoryRef.isFreed) {
-                throw new IllegalStateException("buffer has been freed");
-            }
-            return new SegmentByteBuffer(memoryRef,
-                    this.markValue(),
-                    this.position(),
-                    this.limit(),
-                    this.capacity(),
-                    offset,
-                    isReadOnly);*/
+    public final DirectByteBuffer duplicate() {
+        /*if (memoryRef.isFreed) {
+            throw new IllegalStateException("buffer has been freed");
+        }
+        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
+                this.markValue(),
+                this.position(),
+                this.limit(),
+                this.capacity(),
+                offset,
+                isReadOnly);*/
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public final ByteBuffer asReadOnlyBuffer() {
-            /*if (memoryRef.isFreed) {
-                throw new IllegalStateException("buffer has been freed");
-            }
-            return new SegmentByteBuffer(memoryRef,
-                    this.markValue(),
-                    this.position(),
-                    this.limit(),
-                    this.capacity(),
-                    offset,
-                    true);*/
+        /*if (memoryRef.isFreed) {
+            throw new IllegalStateException("buffer has been freed");
+        }
+        return new SegmentByteBuffer((SegmentMemoryRef) memoryRef,
+                this.markValue(),
+                this.position(),
+                this.limit(),
+                this.capacity(),
+                offset,
+                true);*/
         throw new UnsupportedOperationException("Not supported yet");
     }
 
