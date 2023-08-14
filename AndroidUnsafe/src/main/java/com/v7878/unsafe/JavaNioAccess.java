@@ -3,6 +3,7 @@ package com.v7878.unsafe;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
+import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicNonFinal;
 import static com.v7878.unsafe.ClassUtils.makeClassPublicNonFinal;
@@ -17,7 +18,6 @@ import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.runOnce;
 
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
@@ -37,7 +37,6 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
 
@@ -249,12 +248,12 @@ public class JavaNioAccess {
         return SegmentBufferAccess.newHeapByteBuffer(buffer, offset, capacity, scope);
     }
 
-    private static final Supplier<MethodHandle> base = runOnce(
-            () -> unreflect(getDeclaredMethod(Buffer.class, "base")));
+    private static final MethodHandle base =
+            unreflect(getDeclaredMethod(Buffer.class, "base"));
 
     public static Object getBufferBase(Buffer buffer) {
         Objects.requireNonNull(buffer);
-        return nothrows_run(() -> base.get().invokeExact(buffer));
+        return nothrows_run(() -> base.invokeExact(buffer));
     }
 
     private static final long ADDRESS_OFFSET =
@@ -269,7 +268,17 @@ public class JavaNioAccess {
         return SegmentBufferAccess.getBufferScope(buffer);
     }
 
+    private static final long FD_OFFSET =
+            fieldOffset(getDeclaredField(MappedByteBuffer.class, "fd"));
+
     public static UnmapperProxy unmapper(Buffer buffer) {
+        if (!(buffer instanceof MappedByteBuffer)) {
+            return null;
+        }
+        FileDescriptor fd = (FileDescriptor) getObject(buffer, FD_OFFSET);
+        if (fd == null) {
+            return null;
+        }
         //TODO
         throw new UnsupportedOperationException("Not implemented yet");
     }
