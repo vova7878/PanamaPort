@@ -27,6 +27,7 @@
 package java.lang.foreign;
 
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.JavaNioAccess;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -80,13 +81,12 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
     @Override
     ByteBuffer makeByteBuffer() {
-        // Port-removed: TODO
-        //if (!(base instanceof byte[] baseByte)) {
-        //    throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
-        //}
-        //JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
-        //return nioAccess.newHeapByteBuffer(baseByte, (int) offset - BYTE_ARR_BASE, (int) byteSize(), null);
-        throw new UnsupportedOperationException("Not supported yet");
+        if (!(base instanceof byte[] baseByte)) {
+            // TODO: allow it?
+            throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
+        }
+        // Port-changed: different JavaNioAccess.newHeapByteBuffer implementation
+        return JavaNioAccess.newHeapByteBuffer(baseByte, (int) offset - BYTE_ARR_BASE, (int) byteSize(), scope);
     }
 
     // factories
