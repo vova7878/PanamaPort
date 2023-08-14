@@ -16,7 +16,6 @@ import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredFields0;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
-import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.dex.ClassDef;
@@ -28,15 +27,21 @@ import com.v7878.unsafe.DirectSegmentByteBuffer.SegmentMemoryRef;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment.Scope;
-import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.nio.MappedByteBuffer;
+import java.nio.ShortBuffer;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import dalvik.system.DexFile;
 
@@ -248,12 +253,22 @@ public class JavaNioAccess {
         return SegmentBufferAccess.newHeapByteBuffer(buffer, offset, capacity, scope);
     }
 
-    private static final MethodHandle base =
-            unreflect(getDeclaredMethod(Buffer.class, "base"));
+    private static long assert_same(long v1, long v2) {
+        if (v1 == v2) {
+            return v1;
+        }
+        throw new AssertionError();
+    }
+
+    private static final long BASE_OFFSET = Stream.of(ByteBuffer.class, CharBuffer.class,
+            ShortBuffer.class, IntBuffer.class, FloatBuffer.class, LongBuffer.class,
+            DoubleBuffer.class).mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
+            "hb"))).reduce(JavaNioAccess::assert_same).getAsLong();
 
     public static Object getBufferBase(Buffer buffer) {
+        //TODO: ByteBufferAs*Buffer
         Objects.requireNonNull(buffer);
-        return nothrows_run(() -> base.invokeExact(buffer));
+        return getObject(buffer, BASE_OFFSET);
     }
 
     private static final long ADDRESS_OFFSET =
