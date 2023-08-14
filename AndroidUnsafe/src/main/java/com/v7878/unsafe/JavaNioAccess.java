@@ -21,6 +21,7 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.TypeId;
 import com.v7878.unsafe.DirectSegmentByteBuffer.SegmentMemoryRef;
 
+import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment.Scope;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -58,6 +59,19 @@ class SegmentBufferAccess {
 
 @SuppressWarnings("deprecation")
 public class JavaNioAccess {
+
+    public interface UnmapperProxy {
+        long address();
+
+        FileDescriptor fileDescriptor();
+
+        void unmap();
+
+        default boolean isSync() {
+            // on android always false
+            return false;
+        }
+    }
 
     static {
         String nio_direct_buf_name = "java.nio.DirectByteBuffer";
@@ -247,12 +261,12 @@ public class JavaNioAccess {
         return SegmentBufferAccess.getBufferScope(buffer);
     }
 
-    /*public static UnmapperProxy unmapper(Buffer buffer) {
+    public static UnmapperProxy unmapper(Buffer buffer) {
         //TODO
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    public static void force(FileDescriptor fd, long address, long length) {
+    /*public static void force(FileDescriptor fd, long address, long length) {
         //TODO
         throw new UnsupportedOperationException("Not implemented yet");
     }
