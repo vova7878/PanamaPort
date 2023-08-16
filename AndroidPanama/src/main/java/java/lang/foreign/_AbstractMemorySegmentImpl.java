@@ -25,6 +25,7 @@
 
 package java.lang.foreign;
 
+import static com.v7878.unsafe.Utils.assert_;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import com.v7878.misc.Checks;
@@ -557,14 +558,11 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     // Port-changed: slightly different implementation
     public static _AbstractMemorySegmentImpl ofBuffer(Buffer bb) {
+        //TODO: check buffer.isAccessible or isFreed in segments?
         Objects.requireNonNull(bb);
         Object base = JavaNioAccess.getBufferBase(bb);
         if (!bb.isDirect() && base == null) {
             throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
-        }
-        if (bb.isDirect() && base != null) {
-            //TODO
-            throw new UnsupportedOperationException("direct buffer with non-movable array not supported yet");
         }
 
         UnmapperProxy unmapper = JavaNioAccess.unmapper(bb);
@@ -582,7 +580,11 @@ abstract sealed class _AbstractMemorySegmentImpl
         }
 
         if (base != null) {
-            if (base instanceof byte[]) {
+            if (bb.isDirect()) {
+                assert_(base instanceof byte[], AssertionError::new);
+                //TODO
+                throw new UnsupportedOperationException("direct buffer with non-movable array not supported yet");
+            } else if (base instanceof byte[]) {
                 return new _HeapMemorySegmentImpl.OfByte(bbAddress, base, size, readOnly, bufferScope);
             } else if (base instanceof short[]) {
                 return new _HeapMemorySegmentImpl.OfShort(bbAddress, base, size, readOnly, bufferScope);
