@@ -26,6 +26,8 @@
 
 package java.lang.foreign;
 
+import com.v7878.unsafe.Utils.FineClosable;
+
 import java.lang.foreign.MemorySegment.Scope;
 import java.util.Objects;
 
@@ -181,7 +183,7 @@ abstract sealed class _MemorySessionImpl
     protected abstract void release0();
 
     // Port-added
-    public final class SessionScopedLock implements AutoCloseable {
+    public final class SessionScopedLock implements FineClosable {
         SessionScopedLock() {
             acquire0();
         }

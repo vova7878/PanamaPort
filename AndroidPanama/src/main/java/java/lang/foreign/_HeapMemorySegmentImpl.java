@@ -329,4 +329,5 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
         }
     }
 
+    //TODO: ofRawObject
 }

@@ -17,6 +17,10 @@ import java.util.stream.Collectors;
 
 public class Utils {
 
+    public interface FineClosable extends AutoCloseable {
+        void close();
+    }
+
     private static boolean arrayContentsEq(Object[] a1, Object[] a2) {
         if (a1 == null) {
             return a2 == null || a2.length == 0;

@@ -26,6 +26,11 @@
 
 package java.lang.foreign;
 
+import androidx.annotation.Keep;
+
+import com.v7878.unsafe.JavaForeignAccess;
+import com.v7878.unsafe.Utils.FineClosable;
+
 import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.Buffer;
@@ -2290,5 +2295,17 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
          */
         @Override
         int hashCode();
+    }
+
+    // Port-added: JavaForeignAccess
+    @Keep
+    @SuppressWarnings("unused")
+    private static JavaForeignAccess initAccess() {
+        return new JavaForeignAccess() {
+            @Override
+            public FineClosable _lock(Scope scope) {
+                return ((_MemorySessionImpl) scope).lock();
+            }
+        };
     }
 }
