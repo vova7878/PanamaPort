@@ -4,12 +4,14 @@ import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
+import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicNonFinal;
 import static com.v7878.unsafe.ClassUtils.makeClassPublicNonFinal;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
+import static com.v7878.unsafe.JavaNioAccess.FD_OFFSET;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructors;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
@@ -24,6 +26,7 @@ import com.v7878.dex.EncodedMethod;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.TypeId;
 import com.v7878.unsafe.DirectSegmentByteBuffer.SegmentMemoryRef;
+import com.v7878.unsafe.JavaNioAccess.UnmapperProxy;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment.Scope;
@@ -54,6 +57,16 @@ class SegmentBufferAccess {
                 -1, 0, cap, cap, 0, false, scope);
     }
 
+    public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapper, long addr,
+                                                 int cap, Object obj, Scope scope) {
+        ByteBuffer out = new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
+                -1, 0, cap, cap, 0, false, scope);
+        if (unmapper != null) {
+            putObject(out, FD_OFFSET, unmapper.fileDescriptor());
+        }
+        return out;
+    }
+
     public static ByteBuffer newHeapByteBuffer(byte[] buf, int off, int cap, Scope scope) {
         return new HeapSegmentByteBuffer(buf, -1, 0,
                 cap, cap, off, false, scope);
@@ -74,11 +87,8 @@ class SegmentBufferAccess {
 public class JavaNioAccess {
 
     public interface UnmapperProxy {
-        long address();
 
         FileDescriptor fileDescriptor();
-
-        void unmap();
     }
 
     static {
@@ -245,10 +255,11 @@ public class JavaNioAccess {
         return SegmentBufferAccess.newDirectByteBuffer(addr, cap, obj, scope);
     }
 
-    /*public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long address, int cap, Object obj, MemorySegment segment) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
-    }*/
+    public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapper, long addr,
+                                                 int cap, Object obj, Scope scope) {
+        Objects.requireNonNull(scope);
+        return SegmentBufferAccess.newMappedByteBuffer(unmapper, addr, cap, obj, scope);
+    }
 
     public static ByteBuffer newHeapByteBuffer(byte[] buffer, int offset, int capacity, Scope scope) {
         Objects.requireNonNull(scope);
@@ -298,7 +309,7 @@ public class JavaNioAccess {
         return SegmentBufferAccess.getBufferScope(buffer);
     }
 
-    private static final long FD_OFFSET =
+    static final long FD_OFFSET =
             fieldOffset(getDeclaredField(MappedByteBuffer.class, "fd"));
 
     public static UnmapperProxy unmapper(Buffer buffer) {
@@ -306,11 +317,7 @@ public class JavaNioAccess {
             return null;
         }
         FileDescriptor fd = (FileDescriptor) getObject(buffer, FD_OFFSET);
-        if (fd == null) {
-            return null;
-        }
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        return fd == null ? null : () -> fd;
     }
 
     /*public static void force(FileDescriptor fd, long address, long length) {
