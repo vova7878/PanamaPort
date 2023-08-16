@@ -2,6 +2,7 @@ package com.v7878.unsafe;
 
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.putObject;
@@ -300,8 +301,17 @@ public class JavaNioAccess {
     private static final long ADDRESS_OFFSET =
             fieldOffset(getDeclaredField(Buffer.class, "address"));
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    // Yes, it is offset to offset from base (ugly name)
+    private static final long OFFSET_OFFSET = AS_BUFFERS.stream()
+            .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "offset")))
+            .reduce(JavaNioAccess::assert_same).getAsLong();
+
     public static long getBufferAddress(Buffer buffer) {
         Objects.requireNonNull(buffer);
+        if (!buffer.isDirect() && AS_BUFFERS.contains(buffer.getClass())) {
+            return getIntO(buffer, OFFSET_OFFSET);
+        }
         return getLongO(buffer, ADDRESS_OFFSET);
     }
 
