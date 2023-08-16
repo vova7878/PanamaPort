@@ -41,6 +41,8 @@ import java.nio.LongBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import dalvik.system.DexFile;
@@ -265,9 +267,22 @@ public class JavaNioAccess {
             DoubleBuffer.class).mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
             "hb"))).reduce(JavaNioAccess::assert_same).getAsLong();
 
+    private static final Set<Class<?>> AS_BUFFERS = Stream
+            .of("Char", "Short", "Int", "Float", "Long", "Double")
+            .map(name -> String.format("java.nio.ByteBufferAs%sBuffer", name))
+            .map(name -> nothrows_run(() -> Class.forName(name)))
+            .collect(Collectors.toSet());
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    private static final long BB_OFFSET = AS_BUFFERS.stream()
+            .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "bb")))
+            .reduce(JavaNioAccess::assert_same).getAsLong();
+
     public static Object getBufferBase(Buffer buffer) {
-        //TODO: ByteBufferAs*Buffer
         Objects.requireNonNull(buffer);
+        if (AS_BUFFERS.contains(buffer.getClass())) {
+            return getBufferBase((ByteBuffer) getObject(buffer, BB_OFFSET));
+        }
         return getObject(buffer, BASE_OFFSET);
     }
 
