@@ -25,6 +25,7 @@
 
 package java.lang.foreign;
 
+import com.v7878.unsafe.JavaNioAccess;
 import com.v7878.unsafe.JavaNioAccess.UnmapperProxy;
 
 import java.nio.ByteBuffer;
@@ -50,10 +51,8 @@ final class _MappedMemorySegmentImpl extends _NativeMemorySegmentImpl {
 
     @Override
     ByteBuffer makeByteBuffer() {
-        // Port-removed: TODO
-        //return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int) length, null,
-        //        scope == _MemorySessionImpl.GLOBAL ? null : this);
-        throw new UnsupportedOperationException("Not supported yet");
+        // Port-changed: different JavaNioAccess.newMappedByteBuffer implementation
+        return JavaNioAccess.newMappedByteBuffer(unmapper, min, (int) length, null, scope);
     }
 
     @Override
