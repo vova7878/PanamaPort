@@ -15,6 +15,7 @@ import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
+import static com.v7878.unsafe.AndroidUnsafe.putWordO;
 import static com.v7878.unsafe.Reflection.ClassMirror;
 import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
@@ -189,6 +190,12 @@ public class VM {
     public static long getEmbeddedVTableEntry(Class<?> clazz, int index) {
         Checks.checkIndex(index, getEmbeddedVTableLength(clazz));
         return getWordO(clazz, VTABLE_OFFSET + (long) index * ADDRESS_SIZE);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setEmbeddedVTableEntry(Class<?> clazz, int index, long art_method) {
+        Checks.checkIndex(index, getEmbeddedVTableLength(clazz));
+        putWordO(clazz, VTABLE_OFFSET + (long) index * ADDRESS_SIZE, art_method);
     }
 
     public static boolean isCompressedString(String s) {
