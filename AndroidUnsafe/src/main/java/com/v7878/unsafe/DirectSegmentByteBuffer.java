@@ -4,8 +4,6 @@ import static com.v7878.unsafe.DexFileUtils.getDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.JavaForeignAccess.lock;
 
-import androidx.annotation.Keep;
-
 import com.v7878.misc.Checks;
 import com.v7878.unsafe.Utils.FineClosable;
 
@@ -20,14 +18,8 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
 
     static class SegmentMemoryRef extends MemoryRef {
 
-        @Keep
-        @SuppressWarnings({"unused", "FieldCanBeLocal"})
-        //TODO: use the "originalBufferObject" field if it exists, else generate it
-        private final Object att;
-
         public SegmentMemoryRef(long allocatedAddress, Object obj) {
-            super(allocatedAddress);
-            this.att = obj;
+            super(allocatedAddress, obj);
         }
     }
 

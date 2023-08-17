@@ -8,8 +8,11 @@ import sun.misc.Cleaner;
 // Compile-time stub, real DirectByteBuffer will be generated at runtime
 public abstract class DirectByteBuffer extends CommonByteBuffer {
     public static class MemoryRef extends DirectByteBuffer$MemoryRef {
+        // use the "originalBufferObject" field from java.nio.DirectByteBuffer
+        // if it exists, else generate it
+        public final Object originalBufferObject;
 
-        public MemoryRef(long address) {
+        public MemoryRef(long address, Object originalBufferObject) {
             throw new UnsupportedOperationException("Stub!");
         }
     }

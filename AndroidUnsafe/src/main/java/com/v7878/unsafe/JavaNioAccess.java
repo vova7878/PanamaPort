@@ -1,6 +1,7 @@
 package com.v7878.unsafe;
 
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
+import static com.v7878.dex.bytecode.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
@@ -23,7 +24,9 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
+import com.v7878.dex.EncodedField;
 import com.v7878.dex.EncodedMethod;
+import com.v7878.dex.FieldId;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.TypeId;
 import com.v7878.unsafe.DirectSegmentByteBuffer.SegmentMemoryRef;
@@ -111,22 +114,31 @@ public class JavaNioAccess {
         mem_def.setSuperClass(nio_mem_ref_id);
         mem_def.setAccessFlags(Modifier.PUBLIC);
 
+        FieldId obo = new FieldId(mem_ref_id, TypeId.of(Object.class), "originalBufferObject");
+        if (CORRECT_SDK_INT == 26) {
+            // public final Object originalBufferObject;
+            mem_def.getClassData().getInstanceFields().add(new EncodedField(obo,
+                    Modifier.PUBLIC | Modifier.FINAL, null));
+        }
+
+
         //public MemoryRef($args$) {
         //    super($args$);
         //}
         mem_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                MethodId.constructor(mem_ref_id, TypeId.J),
+                MethodId.constructor(mem_ref_id, TypeId.J, TypeId.of(Object.class)),
                 Modifier.PUBLIC | /*TODO: CONSTRUCTOR*/ 0x10000
         ).withCode(CORRECT_SDK_INT == 26 ? 0 : 1, b -> b
                 .if_(CORRECT_SDK_INT == 26,
                         unused -> b
                                 .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id, TypeId.J),
-                                        b.this_(), b.p(0), b.p(1)),
+                                        b.this_(), b.p(0), b.p(1))
+                                .iop(PUT_OBJECT, b.p(2), b.this_(), obo),
                         unused -> b
                                 .const_4(b.l(0), 0)
                                 .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id,
                                                 TypeId.J, TypeId.of(Object.class)),
-                                        b.this_(), b.p(0), b.p(1), b.l(0)))
+                                        b.this_(), b.p(0), b.p(1), b.p(2)))
                 .return_void()
         ));
 

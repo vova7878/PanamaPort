@@ -7,9 +7,6 @@ public class DirectByteBuffer$MemoryRef {
     public boolean isAccessible;
     public boolean isFreed;
 
-    // api 27+, TODO?
-    //public final Object originalBufferObject;
-
     public DirectByteBuffer$MemoryRef() {
         throw new UnsupportedOperationException("Stub!");
     }
