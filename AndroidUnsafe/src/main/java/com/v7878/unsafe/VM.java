@@ -206,7 +206,6 @@ public class VM {
         return roundUp(sizeOf(obj), OBJECT_ALIGNMENT);
     }
 
-
     @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
     public static int rawObjectToInt(Object obj) {
         Object[] arr = new Object[1];
@@ -250,6 +249,11 @@ public class VM {
     public static int objectToInt(Object obj) {
         int out = rawObjectToInt(obj);
         return kPoisonReferences.get() ? -out : out;
+    }
+
+    @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
+    public static long objectToLong(Object obj) {
+        return objectToInt(obj) & 0xffffffffL;
     }
 
     @DangerLevel(DangerLevel.GC_COLLISION_MOVABLE_OBJECTS)
