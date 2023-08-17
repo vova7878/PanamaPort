@@ -222,6 +222,25 @@ public class Reflection {
         return (long) nothrows_run(() -> mGetArtField.invoke(f));
     }
 
+    public static Executable toExecutable(long art_method) {
+        MethodHandle mh = allocateInstance(MethodHandleImplClass);
+        MethodHandleImplMirror[] mhh = arrayCast(MethodHandleImplMirror.class, mh);
+        mhh[0].artFieldOrMethod = art_method;
+        Executable tmp = MethodHandles.reflectAs(Executable.class, mh);
+        setAccessible(tmp, true);
+        return tmp;
+    }
+
+    public static Field toField(long art_field) {
+        MethodHandle mh = allocateInstance(MethodHandleImplClass);
+        MethodHandleImplMirror[] mhh = arrayCast(MethodHandleImplMirror.class, mh);
+        mhh[0].artFieldOrMethod = art_field;
+        mhh[0].handleKind = Integer.MAX_VALUE;
+        Field tmp = MethodHandles.reflectAs(Field.class, mh);
+        setAccessible(tmp, true);
+        return tmp;
+    }
+
     public static Executable[] getDeclaredExecutables0(Class<?> clazz) {
         Objects.requireNonNull(clazz);
         ClassMirror[] clh = arrayCast(ClassMirror.class, clazz);
