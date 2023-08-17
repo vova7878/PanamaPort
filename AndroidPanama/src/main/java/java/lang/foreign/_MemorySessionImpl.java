@@ -26,6 +26,8 @@
 
 package java.lang.foreign;
 
+import android.annotation.SuppressLint;
+
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.lang.foreign.MemorySegment.Scope;
@@ -357,6 +359,7 @@ abstract sealed class _MemorySessionImpl
         return new IllegalStateException("Session acquire limit exceeded");
     }
 
+    @SuppressLint("DefaultLocale")
     static IllegalStateException alreadyAcquired(int acquires) {
         return new IllegalStateException(String.format("Session is acquired by %d clients", acquires));
     }

@@ -28,7 +28,7 @@ package java.lang.foreign;
 final class _SlicingAllocator implements SegmentAllocator {
 
     private final MemorySegment segment;
-    private final long maxAlign;
+    private final long maxAlign; // TODO: unused?
 
     private long sp = 0L;
 

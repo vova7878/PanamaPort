@@ -28,6 +28,8 @@ package java.lang.foreign;
 import static com.v7878.unsafe.Utils.assert_;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
+import android.annotation.SuppressLint;
+
 import com.v7878.misc.Checks;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.JavaNioAccess;
@@ -455,6 +457,7 @@ abstract sealed class _AbstractMemorySegmentImpl
         return scope;
     }
 
+    @SuppressLint("DefaultLocale")
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
         return new IndexOutOfBoundsException(
                 String.format("Out of bound access on segment %s; new offset = %d; new length = %d",
