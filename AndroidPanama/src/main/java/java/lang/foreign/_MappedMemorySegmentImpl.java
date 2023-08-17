@@ -75,32 +75,24 @@ final class _MappedMemorySegmentImpl extends _NativeMemorySegmentImpl {
     // support for mapped segments
 
     public void load() {
-        // Port-removed: TODO
-        //if (unmapper != null) {
-        //    SCOPED_MEMORY_ACCESS.load(sessionImpl(), min, unmapper.isSync(), length);
-        //}
-        throw new UnsupportedOperationException("Not supported yet");
+        if (unmapper != null) {
+            _ScopedMemoryAccess.load(sessionImpl(), min, length);
+        }
     }
 
     public void unload() {
-        // Port-removed: TODO
-        //if (unmapper != null) {
-        //    SCOPED_MEMORY_ACCESS.unload(sessionImpl(), min, unmapper.isSync(), length);
-        //}
-        throw new UnsupportedOperationException("Not supported yet");
+        if (unmapper != null) {
+            _ScopedMemoryAccess.unload(sessionImpl(), min, length);
+        }
     }
 
     public boolean isLoaded() {
-        // Port-removed: TODO
-        //return unmapper == null || SCOPED_MEMORY_ACCESS.isLoaded(sessionImpl(), min, unmapper.isSync(), length);
-        throw new UnsupportedOperationException("Not supported yet");
+        return unmapper == null || _ScopedMemoryAccess.isLoaded(sessionImpl(), min, length);
     }
 
     public void force() {
-        // Port-removed: TODO
-        //if (unmapper != null) {
-        //    SCOPED_MEMORY_ACCESS.force(sessionImpl(), unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
-        //}
-        throw new UnsupportedOperationException("Not supported yet");
+        if (unmapper != null) {
+            _ScopedMemoryAccess.force(sessionImpl(), unmapper.fileDescriptor(), min, 0, length);
+        }
     }
 }

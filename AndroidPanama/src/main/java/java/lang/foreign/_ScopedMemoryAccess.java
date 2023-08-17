@@ -1,7 +1,9 @@
 package java.lang.foreign;
 
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.JavaNioAccess;
 
+import java.io.FileDescriptor;
 import java.lang.foreign._MemorySessionImpl.SessionScopedLock;
 
 class _ScopedMemoryAccess {
@@ -12,8 +14,8 @@ class _ScopedMemoryAccess {
                                   Object srcBase, long srcOffset,
                                   Object destBase, long destOffset,
                                   long bytes) {
-        try (SessionScopedLock ignored1 = srcSession.lock();
-             SessionScopedLock ignored2 = dstSession.lock()) {
+        try (SessionScopedLock ignored1 = srcSession == null ? null : srcSession.lock();
+             SessionScopedLock ignored2 = dstSession == null ? null : dstSession.lock()) {
             AndroidUnsafe.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
             //TODO
             //ExtraMemoryAccess.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
@@ -41,5 +43,29 @@ class _ScopedMemoryAccess {
                                          int length, int log2ArrayIndexScale) {
         //TODO
         throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    public static boolean isLoaded(_MemorySessionImpl session, long address, long length) {
+        try (SessionScopedLock ignored = session == null ? null : session.lock()) {
+            return JavaNioAccess.isLoaded(address, length);
+        }
+    }
+
+    public static void load(_MemorySessionImpl session, long address, long length) {
+        try (SessionScopedLock ignored = session == null ? null : session.lock()) {
+            JavaNioAccess.load(address, length);
+        }
+    }
+
+    public static void unload(_MemorySessionImpl session, long address, long length) {
+        try (SessionScopedLock ignored = session == null ? null : session.lock()) {
+            JavaNioAccess.unload(address, length);
+        }
+    }
+
+    public static void force(_MemorySessionImpl session, FileDescriptor fd, long address, long offset, long length) {
+        try (SessionScopedLock ignored = session == null ? null : session.lock()) {
+            JavaNioAccess.force(fd, address, offset, length);
+        }
     }
 }
