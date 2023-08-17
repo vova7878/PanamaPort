@@ -342,7 +342,7 @@ public class JavaNioAccess {
         return fd == null ? null : () -> fd;
     }
 
-    /*public static void force(FileDescriptor fd, long address, long length) {
+    public static void force(FileDescriptor fd, long address, long offset, long length) {
         //TODO
         throw new UnsupportedOperationException("Not implemented yet");
     }
@@ -352,10 +352,13 @@ public class JavaNioAccess {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    // unload not exists
-
-    public static boolean isLoaded(long address, long length, int pageCount) {
+    public static void unload(long address, long length) {
         //TODO
         throw new UnsupportedOperationException("Not implemented yet");
-    }*/
+    }
+
+    public static boolean isLoaded(long address, long length) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 }
