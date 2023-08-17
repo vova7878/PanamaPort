@@ -394,7 +394,7 @@ final class _ValueLayouts {
      *     <li>{@link ValueLayout.OfFloat}, for {@code float.class}</li>
      *     <li>{@link ValueLayout.OfLong}, for {@code long.class}</li>
      *     <li>{@link ValueLayout.OfDouble}, for {@code double.class}</li>
-     *     <li>{@link ValueLayout.OfAddress}, for {@code MemorySegment.class}</li>
+     *     <li>{@link AddressLayout}, for {@code MemorySegment.class}</li>
      * </ul>
      *
      * @param carrier the value layout carrier.
