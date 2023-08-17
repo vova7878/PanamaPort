@@ -2,6 +2,7 @@ package com.v7878.unsafe;
 
 import static com.v7878.misc.Math.isSigned32Bit;
 import static com.v7878.misc.Math.roundUp;
+import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_INDEX_SCALE;
@@ -12,6 +13,7 @@ import static com.v7878.unsafe.AndroidUnsafe.getInt;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
+import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.Reflection.ClassMirror;
 import static com.v7878.unsafe.Reflection.arrayCast;
@@ -24,6 +26,8 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.runOnce;
 
 import androidx.annotation.Keep;
+
+import com.v7878.misc.Checks;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
@@ -178,6 +182,13 @@ public class VM {
     public static int getEmbeddedVTableLength(Class<?> clazz) {
         assert_(shouldHaveEmbeddedVTableAndImt(clazz), IllegalArgumentException::new);
         return getIntO(clazz, emptyClassSize());
+    }
+
+    private static final long VTABLE_OFFSET = roundUp(emptyClassSize() + 4, ADDRESS_SIZE) + ADDRESS_SIZE;
+
+    public static long getEmbeddedVTableEntry(Class<?> clazz, int index) {
+        Checks.checkIndex(index, getEmbeddedVTableLength(clazz));
+        return getWordO(clazz, VTABLE_OFFSET + (long) index * ADDRESS_SIZE);
     }
 
     public static boolean isCompressedString(String s) {
