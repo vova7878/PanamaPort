@@ -25,6 +25,8 @@
  */
 package java.lang.foreign;
 
+import static com.v7878.unsafe.Utils.runOnce;
+
 import com.v7878.unsafe.AndroidUnsafe;
 
 import java.nio.ByteOrder;
@@ -32,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -60,8 +63,9 @@ final class _ValueLayouts {
         private final Class<?> carrier;
         private final ByteOrder order;
 
-        // Port-changed: Use MemoryVarHandle instead VarHandle
-        private MemoryVarHandle handle;
+        // Port-changed: Use Supplier<MemoryVarHandle> instead VarHandle
+        private final Supplier<MemoryVarHandle> handle =
+                runOnce(() -> _Utils.makeSegmentViewVarHandle(self()));
 
         AbstractValueLayout(Class<?> carrier, ByteOrder order, long byteSize, long byteAlignment, Optional<String> name) {
             super(byteSize, byteAlignment, name);
@@ -173,11 +177,7 @@ final class _ValueLayouts {
         }
 
         public final MemoryVarHandle accessHandle() {
-            if (handle == null) {
-                // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = _Utils.makeSegmentViewVarHandle(self());
-            }
-            return handle;
+            return handle.get();
         }
 
         @SuppressWarnings("unchecked")
