@@ -371,7 +371,7 @@ final class _ValueLayouts {
             if (order() == ByteOrder.LITTLE_ENDIAN) {
                 descriptor = Character.toLowerCase(descriptor);
             }
-            return decorateLayoutString(String.format("%s%s", descriptor, targetLayout));
+            return decorateLayoutString(String.format("%s<%s>", descriptor, targetLayout));
         }
     }
 
