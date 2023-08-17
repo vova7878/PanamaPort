@@ -27,6 +27,7 @@ package java.lang.foreign;
 
 import static com.v7878.unsafe.Utils.runOnce;
 
+import com.v7878.dex.TypeId;
 import com.v7878.unsafe.AndroidUnsafe;
 
 import java.nio.ByteOrder;
@@ -95,15 +96,11 @@ final class _ValueLayouts {
 
         @Override
         public String toString() {
-            // Port-removed: TODO
-            //char descriptor = carrier.descriptorString().charAt(0);
-            //if (order == ByteOrder.LITTLE_ENDIAN) {
-            //    descriptor = Character.toLowerCase(descriptor);
-            //}
-            String descriptor = carrier.getSimpleName();
-            descriptor = order == ByteOrder.LITTLE_ENDIAN ?
-                    descriptor.toLowerCase() : descriptor.toUpperCase();
-            return decorateLayoutString(String.format("%s%d", descriptor, byteSize()));
+            char descriptor = TypeId.of(carrier).getShorty();
+            if (order == ByteOrder.LITTLE_ENDIAN) {
+                descriptor = Character.toLowerCase(descriptor);
+            }
+            return decorateLayoutString(Character.toString(descriptor));
         }
 
         @Override
@@ -374,11 +371,7 @@ final class _ValueLayouts {
             if (order() == ByteOrder.LITTLE_ENDIAN) {
                 descriptor = Character.toLowerCase(descriptor);
             }
-            String str = decorateLayoutString(String.format("%s%d", descriptor, byteSize()));
-            if (targetLayout != null) {
-                str += ":" + targetLayout;
-            }
-            return str;
+            return decorateLayoutString(String.format("%s%s", descriptor, targetLayout));
         }
     }
 

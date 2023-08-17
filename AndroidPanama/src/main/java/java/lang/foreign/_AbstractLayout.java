@@ -25,6 +25,8 @@
  */
 package java.lang.foreign;
 
+import android.annotation.SuppressLint;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -101,7 +103,7 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     @Override
     public boolean equals(Object other) {
         return other instanceof _AbstractLayout<?> otherLayout &&
-                name.equals(otherLayout.name) &&
+                Objects.equals(name, otherLayout.name) &&
                 byteSize == otherLayout.byteSize &&
                 byteAlignment == otherLayout.byteAlignment;
     }
@@ -114,12 +116,15 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
 
     abstract L dup(long byteAlignment, String name);
 
+    // Port-changed: make available for parsing
+    @SuppressLint("DefaultLocale")
     String decorateLayoutString(String s) {
-        if (name().isPresent()) {
-            s = String.format("%s(%s)", s, name().get());
-        }
+        s = String.format("%s%d", s, byteSize());
         if (!hasNaturalAlignment()) {
-            s = byteAlignment() + "%" + s;
+            s = String.format("%s%%%d", s, byteAlignment());
+        }
+        if (name != null) {
+            s = String.format("%s(%s)", s, name);
         }
         return s;
     }
