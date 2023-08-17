@@ -33,24 +33,25 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
 
     private final long byteSize;
     private final long byteAlignment;
-    private final Optional<String> name;
+    // Port-changed: Use String instead Optional<String>
+    final String name;
 
-    _AbstractLayout(long byteSize, long byteAlignment, Optional<String> name) {
+    _AbstractLayout(long byteSize, long byteAlignment, String name) {
         this.byteSize = _MemoryLayoutUtil.requireByteSizeValid(byteSize, true);
         this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToOne(byteAlignment);
-        this.name = Objects.requireNonNull(name);
+        this.name = name;
     }
 
     public final L withName(String name) {
-        return dup(byteAlignment(), Optional.of(name));
+        return dup(byteAlignment(), name);
     }
 
     public final L withoutName() {
-        return dup(byteAlignment(), Optional.empty());
+        return dup(byteAlignment(), null);
     }
 
     public final Optional<String> name() {
-        return name;
+        return Optional.ofNullable(name);
     }
 
     public L withByteAlignment(long byteAlignment) {
@@ -111,7 +112,7 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     @Override
     public abstract String toString();
 
-    abstract L dup(long byteAlignment, Optional<String> name);
+    abstract L dup(long byteAlignment, String name);
 
     String decorateLayoutString(String s) {
         if (name().isPresent()) {

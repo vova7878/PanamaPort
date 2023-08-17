@@ -26,15 +26,14 @@
 package java.lang.foreign;
 
 import java.util.Objects;
-import java.util.Optional;
 
 final class _PaddingLayoutImpl extends _AbstractLayout<_PaddingLayoutImpl> implements PaddingLayout {
 
     private _PaddingLayoutImpl(long byteSize) {
-        this(byteSize, 1, Optional.empty());
+        this(byteSize, 1, null);
     }
 
-    private _PaddingLayoutImpl(long byteSize, long byteAlignment, Optional<String> name) {
+    private _PaddingLayoutImpl(long byteSize, long byteAlignment, String name) {
         super(byteSize, byteAlignment, name);
     }
 
@@ -57,7 +56,7 @@ final class _PaddingLayoutImpl extends _AbstractLayout<_PaddingLayoutImpl> imple
     }
 
     @Override
-    _PaddingLayoutImpl dup(long byteAlignment, Optional<String> name) {
+    _PaddingLayoutImpl dup(long byteAlignment, String name) {
         return new _PaddingLayoutImpl(byteSize(), byteAlignment, name);
     }
 

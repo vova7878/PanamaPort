@@ -26,7 +26,6 @@
 package java.lang.foreign;
 
 import java.util.Objects;
-import java.util.Optional;
 
 final class _SequenceLayoutImpl extends _AbstractLayout<_SequenceLayoutImpl> implements SequenceLayout {
 
@@ -34,10 +33,10 @@ final class _SequenceLayoutImpl extends _AbstractLayout<_SequenceLayoutImpl> imp
     private final MemoryLayout elementLayout;
 
     private _SequenceLayoutImpl(long elemCount, MemoryLayout elementLayout) {
-        this(elemCount, elementLayout, elementLayout.byteAlignment(), Optional.empty());
+        this(elemCount, elementLayout, elementLayout.byteAlignment(), null);
     }
 
-    private _SequenceLayoutImpl(long elemCount, MemoryLayout elementLayout, long byteAlignment, Optional<String> name) {
+    private _SequenceLayoutImpl(long elemCount, MemoryLayout elementLayout, long byteAlignment, String name) {
         super(Math.multiplyExact(elemCount, elementLayout.byteSize()), byteAlignment, name);
         this.elemCount = elemCount;
         this.elementLayout = elementLayout;
@@ -67,7 +66,7 @@ final class _SequenceLayoutImpl extends _AbstractLayout<_SequenceLayoutImpl> imp
      */
     public SequenceLayout withElementCount(long elementCount) {
         return _Utils.wrapOverflow(() ->
-                new _SequenceLayoutImpl(elementCount, elementLayout, byteAlignment(), name()));
+                new _SequenceLayoutImpl(elementCount, elementLayout, byteAlignment(), name));
     }
 
     /**
@@ -195,7 +194,7 @@ final class _SequenceLayoutImpl extends _AbstractLayout<_SequenceLayoutImpl> imp
     }
 
     @Override
-    _SequenceLayoutImpl dup(long byteAlignment, Optional<String> name) {
+    _SequenceLayoutImpl dup(long byteAlignment, String name) {
         return new _SequenceLayoutImpl(elementCount(), elementLayout, byteAlignment, name);
     }
 

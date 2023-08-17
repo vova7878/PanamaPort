@@ -27,7 +27,6 @@ package java.lang.foreign;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -46,7 +45,7 @@ sealed abstract class _AbstractGroupLayout<L extends _AbstractGroupLayout<L> & M
     private final List<MemoryLayout> elements;
     final long minByteAlignment;
 
-    _AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
+    _AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, String name) {
         super(byteSize, byteAlignment, name); // Subclassing creates toctou problems here
         this.kind = kind;
         this.elements = List.copyOf(elements);
