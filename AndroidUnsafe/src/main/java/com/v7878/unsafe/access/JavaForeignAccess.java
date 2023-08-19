@@ -1,4 +1,4 @@
-package com.v7878.unsafe;
+package com.v7878.unsafe.access;
 
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.nothrows_run;

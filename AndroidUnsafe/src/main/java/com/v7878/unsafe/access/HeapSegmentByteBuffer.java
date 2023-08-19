@@ -1,10 +1,11 @@
-package com.v7878.unsafe;
+package com.v7878.unsafe.access;
 
 import static com.v7878.unsafe.DexFileUtils.getDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
-import static com.v7878.unsafe.JavaForeignAccess.lock;
+import static com.v7878.unsafe.access.JavaForeignAccess.lock;
 
 import com.v7878.misc.Checks;
+import com.v7878.unsafe.HeapByteBuffer;
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.lang.foreign.MemorySegment.Scope;

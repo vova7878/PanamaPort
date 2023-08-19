@@ -28,8 +28,8 @@ package java.lang.foreign;
 
 import androidx.annotation.Keep;
 
-import com.v7878.unsafe.JavaForeignAccess;
 import com.v7878.unsafe.Utils.FineClosable;
+import com.v7878.unsafe.access.JavaForeignAccess;
 
 import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;

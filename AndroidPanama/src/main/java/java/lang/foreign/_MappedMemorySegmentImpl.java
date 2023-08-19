@@ -25,8 +25,8 @@
 
 package java.lang.foreign;
 
-import com.v7878.unsafe.JavaNioAccess;
-import com.v7878.unsafe.JavaNioAccess.UnmapperProxy;
+import com.v7878.unsafe.access.JavaNioAccess;
+import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
 import java.nio.ByteBuffer;
 

@@ -1,4 +1,4 @@
-package com.v7878.unsafe;
+package com.v7878.unsafe.access;
 
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.bytecode.CodeBuilder.Op.PUT_OBJECT;
@@ -13,7 +13,6 @@ import static com.v7878.unsafe.ClassUtils.makeClassPublicNonFinal;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
-import static com.v7878.unsafe.JavaNioAccess.FD_OFFSET;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructors;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
@@ -21,6 +20,7 @@ import static com.v7878.unsafe.Reflection.getDeclaredFields0;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.access.JavaNioAccess.FD_OFFSET;
 
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
@@ -29,8 +29,8 @@ import com.v7878.dex.EncodedMethod;
 import com.v7878.dex.FieldId;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.TypeId;
-import com.v7878.unsafe.DirectSegmentByteBuffer.SegmentMemoryRef;
-import com.v7878.unsafe.JavaNioAccess.UnmapperProxy;
+import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
+import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment.Scope;

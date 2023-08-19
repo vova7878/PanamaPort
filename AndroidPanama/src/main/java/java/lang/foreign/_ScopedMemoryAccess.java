@@ -1,7 +1,7 @@
 package java.lang.foreign;
 
 import com.v7878.unsafe.AndroidUnsafe;
-import com.v7878.unsafe.JavaNioAccess;
+import com.v7878.unsafe.access.JavaNioAccess;
 
 import java.io.FileDescriptor;
 import java.lang.foreign._MemorySessionImpl.SessionScopedLock;

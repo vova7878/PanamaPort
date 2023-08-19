@@ -32,8 +32,8 @@ import android.annotation.SuppressLint;
 
 import com.v7878.misc.Checks;
 import com.v7878.unsafe.AndroidUnsafe;
-import com.v7878.unsafe.JavaNioAccess;
-import com.v7878.unsafe.JavaNioAccess.UnmapperProxy;
+import com.v7878.unsafe.access.JavaNioAccess;
+import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
 import java.lang.reflect.Array;
 import java.nio.Buffer;
