@@ -36,8 +36,6 @@ import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.CapturableState;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.javac.PreviewFeature;
-import jdk.internal.reflect.CallerSensitive;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code from foreign functions.
@@ -477,9 +475,7 @@ import jdk.internal.reflect.CallerSensitive;
  * and even JVM crashes, since an upcall is typically executed in the context of a downcall method handle invocation.
  *
  * @implSpec Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- * @since 19
  */
-@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public sealed interface Linker permits AbstractLinker {
 
     /**
@@ -517,10 +513,8 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if {@code !address.isNative()}, or if {@code address.equals(MemorySegment.NULL)}.
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
-     * @throws IllegalCallerException   If the caller is in a module that does not have native access enabled.
      * @see SymbolLookup
      */
-    @CallerSensitive
     MethodHandle downcallHandle(MemorySegment address, FunctionDescriptor function, Option... options);
 
     /**
@@ -564,9 +558,7 @@ public sealed interface Linker permits AbstractLinker {
      * @return a downcall method handle.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
-     * @throws IllegalCallerException   If the caller is in a module that does not have native access enabled.
      */
-    @CallerSensitive
     MethodHandle downcallHandle(FunctionDescriptor function, Option... options);
 
     /**
@@ -608,9 +600,7 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalStateException    if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException     if {@code arena} is a confined arena, and this method is called from a
      *                                  thread {@code T}, other than the arena's owner thread.
-     * @throws IllegalCallerException   If the caller is in a module that does not have native access enabled.
      */
-    @CallerSensitive
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options);
 
     /**
@@ -631,10 +621,7 @@ public sealed interface Linker permits AbstractLinker {
 
     /**
      * A linker option is used to provide additional parameters to a linkage request.
-     *
-     * @since 20
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
     sealed interface Option
             permits LinkerOptions.LinkerOptionImpl {
 
