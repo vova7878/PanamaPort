@@ -28,10 +28,6 @@ package java.lang.foreign;
 import java.lang.invoke.MethodHandle;
 import java.util.function.Consumer;
 
-import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.SharedUtils;
-
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code from foreign functions.
  * <p>
@@ -471,7 +467,7 @@ import jdk.internal.foreign.abi.SharedUtils;
  *
  * @implSpec Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public sealed interface Linker permits AbstractLinker {
+public sealed interface Linker permits _AndroidLinkerImpl {
 
     /**
      * {@return a linker for the ABI associated with the underlying native platform} The underlying native platform
@@ -484,7 +480,9 @@ public sealed interface Linker permits AbstractLinker {
      * on Linux, these libraries typically include {@code libc}, {@code libm} and {@code libdl}.
      */
     static Linker nativeLinker() {
-        return SharedUtils.getSystemLinker();
+        // Port-changed
+        //return SharedUtils.getSystemLinker();
+        return _AndroidLinkerImpl.INSTANCE;
     }
 
     /**
@@ -618,7 +616,9 @@ public sealed interface Linker permits AbstractLinker {
     /**
      * A linker option is used to provide additional parameters to a linkage request.
      */
-    sealed interface Option permits LinkerOptions.LinkerOptionImpl {
+    // Port-changed: TODO
+    //sealed interface Option permits LinkerOptions.LinkerOptionImpl
+    interface Option {
 
         /**
          * {@return a linker option used to denote the index indicating the start of the variadic arguments passed to the
