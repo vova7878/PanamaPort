@@ -26,14 +26,9 @@
 package java.lang.foreign;
 
 import java.lang.invoke.MethodHandle;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.CapturableState;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 
@@ -617,13 +612,13 @@ public sealed interface Linker permits AbstractLinker {
      * recommended that the result of {@link #defaultLookup()} exposes, as much as possible, a consistent set of symbols
      * across all the OS and processor combinations.
      */
-    SymbolLookup defaultLookup();
+    // Port-removed: TODO
+    //SymbolLookup defaultLookup();
 
     /**
      * A linker option is used to provide additional parameters to a linkage request.
      */
-    sealed interface Option
-            permits LinkerOptions.LinkerOptionImpl {
+    sealed interface Option permits LinkerOptions.LinkerOptionImpl {
 
         /**
          * {@return a linker option used to denote the index indicating the start of the variadic arguments passed to the
@@ -646,7 +641,9 @@ public sealed interface Linker permits AbstractLinker {
          * against which the index is validated is available.
          */
         static Option firstVariadicArg(int index) {
-            return new LinkerOptions.FirstVariadicArg(index);
+            // Port-removed: TODO
+            //return new LinkerOptions.FirstVariadicArg(index);
+            throw new UnsupportedOperationException("Not supported yet");
         }
 
         /**
@@ -691,11 +688,13 @@ public sealed interface Linker permits AbstractLinker {
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
-            Set<CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
-                    .map(Objects::requireNonNull)
-                    .map(CapturableState::forName)
-                    .collect(Collectors.toSet());
-            return new LinkerOptions.CaptureCallState(set);
+            // Port-removed: TODO
+            //Set<CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
+            //        .map(Objects::requireNonNull)
+            //        .map(CapturableState::forName)
+            //        .collect(Collectors.toSet());
+            //return new LinkerOptions.CaptureCallState(set);
+            throw new UnsupportedOperationException("Not supported yet");
         }
 
         /**
@@ -723,7 +722,9 @@ public sealed interface Linker permits AbstractLinker {
          * @see #captureCallState(String...)
          */
         static StructLayout captureStateLayout() {
-            return CapturableState.LAYOUT;
+            // Port-removed: TODO
+            //return CapturableState.LAYOUT;
+            throw new UnsupportedOperationException("Not supported yet");
         }
 
         /**
@@ -739,7 +740,9 @@ public sealed interface Linker permits AbstractLinker {
          * such as loss of performance, or JVM crashes.
          */
         static Option isTrivial() {
-            return LinkerOptions.IsTrivial.INSTANCE;
+            // Port-removed: TODO
+            //return LinkerOptions.IsTrivial.INSTANCE;
+            throw new UnsupportedOperationException("Not supported yet");
         }
     }
 }
