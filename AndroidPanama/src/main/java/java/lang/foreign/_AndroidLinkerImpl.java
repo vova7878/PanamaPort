@@ -9,6 +9,7 @@ import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import com.v7878.dex.AnnotationItem;
 import com.v7878.dex.AnnotationSet;
@@ -33,6 +34,7 @@ import java.util.Set;
 
 import dalvik.system.DexFile;
 
+@SuppressWarnings("deprecation")
 final class _AndroidLinkerImpl implements Linker {
 
     public static final _AndroidLinkerImpl INSTANCE = new _AndroidLinkerImpl();
@@ -61,7 +63,7 @@ final class _AndroidLinkerImpl implements Linker {
 
     private static final Set<MemoryLayout> SUPPORTED_LAYOUTS = Set.of(
             ValueLayout.JAVA_BOOLEAN,
-            ValueLayout.JAVA_BYTE,
+            JAVA_BYTE,
             ValueLayout.JAVA_CHAR,
             ValueLayout.JAVA_SHORT,
             ValueLayout.JAVA_INT,
@@ -265,7 +267,9 @@ final class _AndroidLinkerImpl implements Linker {
         // since the linker already restricts those such that they will always be the same
         if (ml instanceof AddressLayout al) {
             return al.targetLayout()
-                    .map(tl -> al.withoutName().withTargetLayout(stripNames(tl)))
+                    .map(tl -> al.withoutName().withTargetLayout(
+                            MemoryLayout.paddingLayout(tl.byteSize())
+                                    .withByteAlignment(tl.byteAlignment())))
                     .orElseGet(al::withoutName);
         }
         return ml.withoutName();
