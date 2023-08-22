@@ -30,6 +30,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -134,6 +135,19 @@ final class _Utils {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
         }
         return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
+    }
+
+    public static long unboxSegment(MemorySegment segment) {
+        if (!segment.isNative()) {
+            throw new IllegalArgumentException("Heap segment not allowed: " + segment);
+        }
+        return segment.address();
+    }
+
+    public static void checkSymbol(MemorySegment symbol) {
+        Objects.requireNonNull(symbol);
+        if (symbol.equals(MemorySegment.NULL))
+            throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
     public static void copy(MemorySegment addr, byte[] bytes) {

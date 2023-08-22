@@ -10,6 +10,8 @@ import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign._Utils.checkSymbol;
+import static java.lang.foreign._Utils.unboxSegment;
 
 import com.v7878.dex.AnnotationItem;
 import com.v7878.dex.AnnotationSet;
@@ -224,19 +226,6 @@ final class _AndroidLinkerImpl implements Linker {
         }
 
         return handle;
-    }
-
-    private static long unboxSegment(MemorySegment segment) {
-        if (!segment.isNative()) {
-            throw new IllegalArgumentException("Heap segment not allowed: " + segment);
-        }
-        return segment.address();
-    }
-
-    private static void checkSymbol(MemorySegment symbol) {
-        Objects.requireNonNull(symbol);
-        if (symbol.equals(MemorySegment.NULL))
-            throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
     private static void checkLayouts(FunctionDescriptor descriptor) {
