@@ -26,9 +26,8 @@
 
 package java.lang.foreign;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -151,9 +150,12 @@ final class _Utils {
     }
 
     public static void copy(MemorySegment addr, byte[] bytes) {
-        var heapSegment = MemorySegment.ofArray(bytes);
+        // Port-changed: TODO?
+        //var heapSegment = MemorySegment.ofArray(bytes);
+        //addr.copyFrom(heapSegment);
+        //addr.set(JAVA_BYTE, bytes.length, (byte) 0);
+        var heapSegment = MemorySegment.ofArray(Arrays.copyOf(bytes, bytes.length + 1));
         addr.copyFrom(heapSegment);
-        addr.set(JAVA_BYTE, bytes.length, (byte) 0);
     }
 
     public static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {
