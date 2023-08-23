@@ -610,8 +610,7 @@ public sealed interface Linker permits _AndroidLinkerImpl {
      * recommended that the result of {@link #defaultLookup()} exposes, as much as possible, a consistent set of symbols
      * across all the OS and processor combinations.
      */
-    // Port-removed: TODO
-    //SymbolLookup defaultLookup();
+    SymbolLookup defaultLookup();
 
     /**
      * A linker option is used to provide additional parameters to a linkage request.

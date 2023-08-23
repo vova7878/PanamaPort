@@ -22,6 +22,7 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.unsafe.Utils.SoftReferenceCache;
+import com.v7878.unsafe.foreign.RawNativeLibraries;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.Transformers;
@@ -32,6 +33,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import dalvik.system.DexFile;
@@ -61,6 +63,14 @@ final class _AndroidLinkerImpl implements Linker {
                                     Arena arena, Option... options) {
         // TODO
         throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public SymbolLookup defaultLookup() {
+        return name -> {
+            long tmp = RawNativeLibraries.dlsym(RawNativeLibraries.RTLD_DEFAULT, name);
+            return Optional.ofNullable(tmp == 0 ? null : MemorySegment.ofAddress(tmp));
+        };
     }
 
     private static final Set<MemoryLayout> SUPPORTED_LAYOUTS = Set.of(
@@ -140,6 +150,7 @@ final class _AndroidLinkerImpl implements Linker {
         };
     }
 
+    //TODO: check segments scope in call
     private static class Arranger implements Transformers.TransformerI {
         private final MethodHandle stub;
         private final Class<?>[] args;
@@ -198,6 +209,7 @@ final class _AndroidLinkerImpl implements Linker {
     }
 
     private static MethodHandle arrangeDowncall(long symbol, FunctionDescriptor descriptor) {
+        //TODO: check symbol scope in call
         MethodType handle_call_type = descriptor.toMethodType();
         MethodType stub_call_type = fixStubCallType(handle_call_type);
 
