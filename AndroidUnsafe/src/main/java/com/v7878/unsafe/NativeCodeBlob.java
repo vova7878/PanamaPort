@@ -90,6 +90,7 @@ public class NativeCodeBlob {
         long finalSize = size;
         MemorySegment data = MemorySegment.ofAddress(nothrows_run(
                         () -> mmap(0, finalSize, CODE_PROT, CODE_FLAGS, null, 0)))
+                //TODO: cleanup if fail?
                 .reinterpret(finalSize, arena, segment -> nothrows_run(
                         () -> munmap(segment.address(), finalSize)));
 
