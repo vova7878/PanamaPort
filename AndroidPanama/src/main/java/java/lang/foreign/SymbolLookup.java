@@ -25,20 +25,9 @@
 
 package java.lang.foreign;
 
-import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
-
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.Utils;
-import jdk.internal.loader.BuiltinClassLoader;
-import jdk.internal.loader.NativeLibrary;
-import jdk.internal.loader.RawNativeLibraries;
-import jdk.internal.reflect.Reflection;
 
 /**
  * A <em>symbol lookup</em> retrieves the address of a symbol in one or more libraries.
@@ -146,7 +135,15 @@ public interface SymbolLookup {
      */
     default SymbolLookup or(SymbolLookup other) {
         Objects.requireNonNull(other);
-        return name -> find(name).or(() -> other.find(name));
+        // Port-changed: backport
+        //return name -> find(name).or(() -> other.find(name));
+        return name -> {
+            Optional<MemorySegment> tmp = find(name);
+            if (tmp.isPresent()) {
+                return tmp;
+            }
+            return Objects.requireNonNull(other.find(name));
+        };
     }
 
     /**
@@ -175,29 +172,31 @@ public interface SymbolLookup {
      * @see System#loadLibrary(String)
      */
     static SymbolLookup loaderLookup() {
-        Class<?> caller = Reflection.getCallerClass();
-        // If there's no caller class, fallback to system loader
-        ClassLoader loader = caller != null ?
-                caller.getClassLoader() :
-                ClassLoader.getSystemClassLoader();
-        Arena loaderArena;// builtin loaders never go away
-        if ((loader == null || loader instanceof BuiltinClassLoader)) {
-            loaderArena = Arena.global();
-        } else {
-            MemorySessionImpl session = MemorySessionImpl.heapSession(loader);
-            loaderArena = session.asArena();
-        }
-        return name -> {
-            Objects.requireNonNull(name);
-            if (Utils.containsNullChars(name)) return Optional.empty();
-            JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
-            // note: ClassLoader::findNative supports a null loader
-            long addr = javaLangAccess.findNative(loader, name);
-            return addr == 0L ?
-                    Optional.empty() :
-                    Optional.of(MemorySegment.ofAddress(addr)
-                            .reinterpret(loaderArena, null));
-        };
+        // Port-removed: TODO
+        //Class<?> caller = Reflection.getCallerClass();
+        //// If there's no caller class, fallback to system loader
+        //ClassLoader loader = caller != null ?
+        //        caller.getClassLoader() :
+        //        ClassLoader.getSystemClassLoader();
+        //Arena loaderArena;// builtin loaders never go away
+        //if ((loader == null || loader instanceof BuiltinClassLoader)) {
+        //    loaderArena = Arena.global();
+        //} else {
+        //    MemorySessionImpl session = MemorySessionImpl.heapSession(loader);
+        //    loaderArena = session.asArena();
+        //}
+        //return name -> {
+        //    Objects.requireNonNull(name);
+        //    if (Utils.containsNullChars(name)) return Optional.empty();
+        //    JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
+        //    // note: ClassLoader::findNative supports a null loader
+        //    long addr = javaLangAccess.findNative(loader, name);
+        //    return addr == 0L ?
+        //            Optional.empty() :
+        //            Optional.of(MemorySegment.ofAddress(addr)
+        //                    .reinterpret(loaderArena, null));
+        //};
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -224,11 +223,13 @@ public interface SymbolLookup {
      * In Windows, the library name is resolved according to the specification of the {@code LoadLibrary} function.
      */
     static SymbolLookup libraryLookup(String name, Arena arena) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
-        if (Utils.containsNullChars(name)) {
-            throw new IllegalArgumentException("Cannot open library: " + name);
-        }
-        return libraryLookup(name, RawNativeLibraries::load, arena);
+        // Port-removed: TODO
+        //Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
+        //if (Utils.containsNullChars(name)) {
+        //    throw new IllegalArgumentException("Cannot open library: " + name);
+        //}
+        //return libraryLookup(name, RawNativeLibraries::load, arena);
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -254,34 +255,37 @@ public interface SymbolLookup {
      * implemented using the {@code dlopen}, {@code dlsym} and {@code dlclose} functions.
      */
     static SymbolLookup libraryLookup(Path path, Arena arena) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
-        return libraryLookup(path, RawNativeLibraries::load, arena);
+        // Port-removed: TODO
+        //Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
+        //return libraryLookup(path, RawNativeLibraries::load, arena);
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
-    private static <Z> SymbolLookup libraryLookup(Z libDesc, BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
-        Objects.requireNonNull(libDesc);
-        Objects.requireNonNull(libArena);
-        // attempt to load native library from path or name
-        RawNativeLibraries nativeLibraries = RawNativeLibraries.newInstance(MethodHandles.lookup());
-        NativeLibrary library = loadLibraryFunc.apply(nativeLibraries, libDesc);
-        if (library == null) {
-            throw new IllegalArgumentException("Cannot open library: " + libDesc);
-        }
-        // register hook to unload library when 'libScope' becomes not alive
-        MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
-            @Override
-            public void cleanup() {
-                nativeLibraries.unload(library);
-            }
-        });
-        return name -> {
-            Objects.requireNonNull(name);
-            if (Utils.containsNullChars(name)) return Optional.empty();
-            long addr = library.find(name);
-            return addr == 0L ?
-                    Optional.empty() :
-                    Optional.of(MemorySegment.ofAddress(addr)
-                            .reinterpret(libArena, null));
-        };
-    }
+    // Port-removed: TODO
+    //private static <Z> SymbolLookup libraryLookup(Z libDesc, BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
+    //    Objects.requireNonNull(libDesc);
+    //    Objects.requireNonNull(libArena);
+    //    // attempt to load native library from path or name
+    //    RawNativeLibraries nativeLibraries = RawNativeLibraries.newInstance(MethodHandles.lookup());
+    //    NativeLibrary library = loadLibraryFunc.apply(nativeLibraries, libDesc);
+    //    if (library == null) {
+    //        throw new IllegalArgumentException("Cannot open library: " + libDesc);
+    //    }
+    //    // register hook to unload library when 'libScope' becomes not alive
+    //    MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
+    //        @Override
+    //        public void cleanup() {
+    //            nativeLibraries.unload(library);
+    //        }
+    //    });
+    //    return name -> {
+    //        Objects.requireNonNull(name);
+    //        if (Utils.containsNullChars(name)) return Optional.empty();
+    //        long addr = library.find(name);
+    //        return addr == 0L ?
+    //                Optional.empty() :
+    //                Optional.of(MemorySegment.ofAddress(addr)
+    //                        .reinterpret(libArena, null));
+    //    };
+    //}
 }
