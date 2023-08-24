@@ -343,22 +343,18 @@ public class JavaNioAccess {
     }
 
     public static void force(FileDescriptor fd, long address, long offset, long length) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        MappedMemoryUtils.force(fd, address + offset, length);
     }
 
     public static void load(long address, long length) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        MappedMemoryUtils.load(address, length);
     }
 
     public static void unload(long address, long length) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        MappedMemoryUtils.unload(address, length);
     }
 
     public static boolean isLoaded(long address, long length) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        return MappedMemoryUtils.isLoaded(address, length);
     }
 }
