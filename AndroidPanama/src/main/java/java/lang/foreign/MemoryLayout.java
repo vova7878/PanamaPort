@@ -35,7 +35,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * A memory layout describes the contents of a memory segment.
@@ -669,12 +668,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         return sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
     }
 
-    // Port-added: TODO: move from here
-    @SuppressWarnings("unchecked")
-    private static <T> List<T> toList(Stream<T> stream) {
-        return (List<T>) List.of(stream.toArray());
-    }
-
     /**
      * Creates a struct layout with the given member layouts.
      *
@@ -707,8 +700,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     static StructLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
         return _Utils.wrapOverflow(() ->
-                _StructLayoutImpl.of(toList(Stream.of(elements)
-                        .map(Objects::requireNonNull))));
+                _StructLayoutImpl.of(List.of(elements)));
     }
 
     // Port-added
@@ -725,7 +717,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      */
     static UnionLayout unionLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        return _UnionLayoutImpl.of(toList(Stream.of(elements)
-                .map(Objects::requireNonNull)));
+        return _UnionLayoutImpl.of(List.of(elements));
     }
 }
