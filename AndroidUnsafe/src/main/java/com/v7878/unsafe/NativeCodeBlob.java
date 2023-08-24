@@ -14,6 +14,8 @@ import static java.lang.annotation.ElementType.METHOD;
 
 import android.system.OsConstants;
 
+import com.v7878.unsafe.access.JavaForeignAccess;
+
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -88,11 +90,12 @@ public class NativeCodeBlob {
         }
 
         long finalSize = size;
-        MemorySegment data = MemorySegment.ofAddress(nothrows_run(
-                        () -> mmap(0, finalSize, CODE_PROT, CODE_FLAGS, null, 0)))
-                //TODO: cleanup if fail?
-                .reinterpret(finalSize, arena, segment -> nothrows_run(
-                        () -> munmap(segment.address(), finalSize)));
+        long address = nothrows_run(() -> mmap(0, finalSize,
+                CODE_PROT, CODE_FLAGS, null, 0));
+        MemorySegment data = MemorySegment.ofAddress(address)
+                .reinterpret(finalSize, arena, null);
+        JavaForeignAccess.addOrCleanupIfFail(arena.scope(),
+                () -> nothrows_run(() -> munmap(address, finalSize)));
 
         MemorySegment[] out = new MemorySegment[count];
         for (int i = 0; i < count; i++) {
