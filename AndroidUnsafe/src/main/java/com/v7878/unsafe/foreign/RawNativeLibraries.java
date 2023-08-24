@@ -90,10 +90,8 @@ public class RawNativeLibraries {
 
     public static NativeLibrary load(String pathname) {
         long handle = dlopen(pathname);
-        if (handle == 0) {
-            //TODO: check dlerror
-            throw new IllegalArgumentException("Cannot open library: " + pathname);
-        }
+        //TODO: check dlerror
+        if (handle == 0) return null;
         return new RawNativeLibraryImpl(handle, pathname);
     }
 
