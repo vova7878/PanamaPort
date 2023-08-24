@@ -59,7 +59,8 @@ public class AndroidUnsafe {
         public abstract <T> T throwException(Throwable th);
     }
 
-    public static final int ADDRESS_SIZE = addressSize();
+    public static final int ADDRESS_SIZE = SunUnsafe.addressSize();
+    public static final int PAGE_SIZE = SunUnsafe.pageSize();
 
     static {
         assert_((ADDRESS_SIZE == 4) || (ADDRESS_SIZE == 8), AssertionError::new);
@@ -128,11 +129,11 @@ public class AndroidUnsafe {
     }
 
     public static int addressSize() {
-        return SunUnsafe.addressSize();
+        return ADDRESS_SIZE;
     }
 
     public static int pageSize() {
-        return SunUnsafe.pageSize();
+        return PAGE_SIZE;
     }
 
     public static long allocateMemory(long bytes) {
