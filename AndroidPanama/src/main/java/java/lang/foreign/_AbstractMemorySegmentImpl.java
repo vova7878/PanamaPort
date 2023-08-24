@@ -177,10 +177,10 @@ abstract sealed class _AbstractMemorySegmentImpl
             throw new IllegalArgumentException("newSize < 0");
         }
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
-        Runnable action = cleanup != null ?
-                () -> cleanup.accept(_NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address(), newSize)) :
-                null;
-        return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address(), newSize,
+        long address = address();
+        Runnable action = cleanup == null ? null : () -> cleanup.accept(
+                _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address, newSize));
+        return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address, newSize,
                 (_MemorySessionImpl) scope, action);
     }
 
