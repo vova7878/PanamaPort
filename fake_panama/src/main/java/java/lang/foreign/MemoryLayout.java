@@ -1,5 +1,7 @@
 package java.lang.foreign;
 
+import com.v7878.foreign.VarHandle;
+
 import java.lang.invoke.MethodHandle;
 import java.util.Optional;
 
@@ -21,7 +23,7 @@ public interface MemoryLayout {
 
     MethodHandle byteOffsetHandle(PathElement... elements);
 
-    MemoryVarHandle varHandle(PathElement... elements);
+    VarHandle varHandle(PathElement... elements);
 
     MethodHandle sliceHandle(PathElement... elements);
 

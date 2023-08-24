@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.v7878.unsafe'
+    namespace 'com.v7878.foreign'
     compileSdk 33
 
     defaultConfig {
@@ -26,20 +26,6 @@ android {
 }
 
 dependencies {
-    compileOnly project(':keep_annotation')
-    compileOnly project(':fake_panama')
-    compileOnly project(':fake_buffer')
-
-    compileOnly 'com.github.vova7878:OptimizationAnnotations:v0.0.1'
-
-    api project(':VarHandleApi')
-
-    implementation 'com.github.vova7878:SunUnsafeWrapper:v0.0.1'
-    implementation 'com.github.vova7878:DexFile:58a392e5ee'
-    implementation 'com.github.vova7878:AndroidMisc:v0.0.1'
-
-    //TODO: runtimeOnlyApi?
-    runtimeOnly project(':AndroidPanama')
 }
 
 publishing {

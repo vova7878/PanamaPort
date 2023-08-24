@@ -26,6 +26,8 @@
 
 package java.lang.foreign;
 
+import com.v7878.foreign.VarHandle;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -75,8 +77,7 @@ final class _Utils {
         return ms.asSlice(alignUp(offset, alignment) - offset);
     }
 
-    // Port-changed: Use MemoryVarHandle instead VarHandle
-    public static MemoryVarHandle makeSegmentViewVarHandle(ValueLayout layout) {
+    public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
         // Port-removed: TODO
         //final class VarHandleCache {
         //    private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();

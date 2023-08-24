@@ -30,6 +30,8 @@ dependencies {
 
     compileOnly 'com.github.vova7878:SunCleanerStub:v0.0.1'
 
+    api project(':VarHandleApi')
+
     implementation project(path: ':AndroidUnsafe')
     implementation 'com.github.vova7878:DexFile:58a392e5ee'
     implementation 'com.github.vova7878:AndroidMisc:v0.0.1'

@@ -25,6 +25,7 @@
  */
 package java.lang.foreign;
 
+import com.v7878.foreign.VarHandle;
 import com.v7878.misc.Checks;
 
 import java.lang.invoke.MethodHandle;
@@ -194,12 +195,12 @@ class _LayoutPath {
     }
 
     // Port-changed: Use MemoryVarHandle instead VarHandle
-    public MemoryVarHandle dereferenceHandle() {
+    public VarHandle dereferenceHandle() {
         return dereferenceHandle(true);
     }
 
     // Port-changed: Use MemoryVarHandle instead VarHandle
-    public MemoryVarHandle dereferenceHandle(boolean adapt) {
+    public VarHandle dereferenceHandle(boolean adapt) {
         // Port-changed: TODO
         //if (!(layout instanceof ValueLayout valueLayout)) {
         //    throw new IllegalArgumentException("Path does not select a value layout");

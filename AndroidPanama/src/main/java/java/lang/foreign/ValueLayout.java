@@ -25,6 +25,8 @@
  */
 package java.lang.foreign;
 
+import com.v7878.foreign.VarHandle;
+
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteOrder;
 
@@ -127,8 +129,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @see MemoryLayout#varHandle(PathElement...)
      * @see SequenceLayout
      */
-    // Port-changed: Use MemoryVarHandle instead VarHandle
-    MemoryVarHandle arrayElementVarHandle(int... shape);
+    VarHandle arrayElementVarHandle(int... shape);
 
     /**
      * {@return the carrier associated with this value layout}

@@ -28,6 +28,7 @@ package java.lang.foreign;
 import static com.v7878.unsafe.Utils.runOnce;
 
 import com.v7878.dex.TypeId;
+import com.v7878.foreign.VarHandle;
 import com.v7878.unsafe.AndroidUnsafe;
 
 import java.nio.ByteOrder;
@@ -64,8 +65,7 @@ final class _ValueLayouts {
         private final Class<?> carrier;
         private final ByteOrder order;
 
-        // Port-changed: Use Supplier<MemoryVarHandle> instead VarHandle
-        private final Supplier<MemoryVarHandle> handle =
+        private final Supplier<VarHandle> handle =
                 runOnce(() -> _Utils.makeSegmentViewVarHandle(self()));
 
         AbstractValueLayout(Class<?> carrier, ByteOrder order, long byteSize, long byteAlignment, String name) {
@@ -112,7 +112,7 @@ final class _ValueLayouts {
                             order.equals(otherValue.order);
         }
 
-        public final MemoryVarHandle arrayElementVarHandle(int... shape) {
+        public final VarHandle arrayElementVarHandle(int... shape) {
             Objects.requireNonNull(shape);
             if (!_Utils.isElementAligned((ValueLayout) this)) {
                 throw new UnsupportedOperationException("Layout alignment greater than its size");
@@ -173,7 +173,7 @@ final class _ValueLayouts {
                     || carrier == MemorySegment.class;
         }
 
-        public final MemoryVarHandle accessHandle() {
+        public final VarHandle accessHandle() {
             return handle.get();
         }
 

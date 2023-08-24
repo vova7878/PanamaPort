@@ -25,10 +25,11 @@
  */
 package java.lang.foreign;
 
+import com.v7878.foreign.VarHandle;
+
 import java.lang.foreign._LayoutPath.PathElementImpl.PathKind;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -401,8 +402,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * {@linkplain MethodHandles#memorySegmentViewVarHandle(ValueLayout) memory segment view handles}.
      * @see MethodHandles#memorySegmentViewVarHandle(ValueLayout)
      */
-    // Port-changed: Use MemoryVarHandle instead VarHandle
-    default MemoryVarHandle varHandle(PathElement... elements) {
+    default VarHandle varHandle(PathElement... elements) {
         return computePathOp(_LayoutPath.rootPath(this), _LayoutPath::dereferenceHandle,
                 Set.of(), elements);
     }

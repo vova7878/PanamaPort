@@ -1,5 +1,7 @@
 package java.lang.foreign;
 
+import com.v7878.foreign.VarHandle;
+
 import java.nio.ByteOrder;
 import java.util.function.Supplier;
 
@@ -12,7 +14,7 @@ public interface ValueLayout extends MemoryLayout {
     @Override
     ValueLayout withoutName();
 
-    MemoryVarHandle arrayElementVarHandle(int... shape);
+    VarHandle arrayElementVarHandle(int... shape);
 
     Class<?> carrier();
 

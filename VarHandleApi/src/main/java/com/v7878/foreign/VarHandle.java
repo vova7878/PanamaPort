@@ -1,4 +1,4 @@
-package com.v7878.unsafe.invoke;
+package com.v7878.foreign;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -6,177 +6,84 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class VarHandleW {
-    public final Object get(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+public abstract class VarHandle {
+    public abstract Object get(Object... args);
 
-    public final void set(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract void set(Object... args);
 
     // Volatile accessors
 
-    public final Object getVolatile(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getVolatile(Object... args);
 
-    public final void setVolatile(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract void setVolatile(Object... args);
 
-    public final Object getOpaque(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getOpaque(Object... args);
 
-    public final void setOpaque(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract void setOpaque(Object... args);
 
     // Lazy accessors
 
-    public final Object getAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAcquire(Object... args);
 
-    public final void setRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract void setRelease(Object... args);
 
     // Compare and set accessors
 
-    public final boolean compareAndSet(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract boolean compareAndSet(Object... args);
 
-    public final Object compareAndExchange(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object compareAndExchange(Object... args);
 
-    public final Object compareAndExchangeAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object compareAndExchangeAcquire(Object... args);
 
-    public final Object compareAndExchangeRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object compareAndExchangeRelease(Object... args);
 
     // Weak (spurious failures allowed)
 
-    public final boolean weakCompareAndSetPlain(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract boolean weakCompareAndSetPlain(Object... args);
 
-    public final boolean weakCompareAndSet(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract boolean weakCompareAndSet(Object... args);
 
-    public final boolean weakCompareAndSetAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract boolean weakCompareAndSetAcquire(Object... args);
 
-    public final boolean weakCompareAndSetRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract boolean weakCompareAndSetRelease(Object... args);
 
-    public final Object getAndSet(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndSet(Object... args);
 
-    public final Object getAndSetAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndSetAcquire(Object... args);
 
-    public final Object getAndSetRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndSetRelease(Object... args);
 
     // Primitive adders
     // Throw UnsupportedOperationException for refs
 
-    public final Object getAndAdd(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndAdd(Object... args);
 
-    public final Object getAndAddAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndAddAcquire(Object... args);
 
-    public final Object getAndAddRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndAddRelease(Object... args);
 
     // Bitwise operations
     // Throw UnsupportedOperationException for refs
 
-    public final Object getAndBitwiseOr(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndBitwiseOr(Object... args);
 
-    public final Object getAndBitwiseOrAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndBitwiseOrAcquire(Object... args);
 
-    public final Object getAndBitwiseOrRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndBitwiseOrRelease(Object... args);
 
-    public final Object getAndBitwiseAnd(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndBitwiseAnd(Object... args);
 
-    public final Object getAndBitwiseAndAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndBitwiseAndAcquire(Object... args);
 
-    public final Object getAndBitwiseAndRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndBitwiseAndRelease(Object... args);
 
-    public final Object getAndBitwiseXor(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndBitwiseXor(Object... args);
 
-    public final Object getAndBitwiseXorAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndBitwiseXorAcquire(Object... args);
 
-    public final Object getAndBitwiseXorRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Object getAndBitwiseXorRelease(Object... args);
 
-    enum AccessType {
+    protected enum AccessType {
         GET,
         SET,
         COMPARE_AND_SET,
@@ -186,8 +93,8 @@ public class VarHandleW {
         GET_AND_UPDATE_BITWISE,
         GET_AND_UPDATE_NUMERIC;
 
-        MethodType accessModeType(Class<?> receiver, Class<?> value,
-                                  Class<?>... intermediate) {
+        public MethodType accessModeType(Class<?> receiver, Class<?> value,
+                                         Class<?>... intermediate) {
             Class<?>[] ps;
             int i;
             switch (this) {
@@ -304,28 +211,13 @@ public class VarHandleW {
         }
     }
 
-    public final Class<?> varType() {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract Class<?> varType();
 
-    public final List<Class<?>> coordinateTypes() {
-        MethodType typeGet = accessModeType(AccessMode.GET);
-        return typeGet.parameterList();
-    }
+    public abstract List<Class<?>> coordinateTypes();
 
-    public final MethodType accessModeType(AccessMode accessMode) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract MethodType accessModeType(AccessMode accessMode);
 
-    public final boolean isAccessModeSupported(AccessMode accessMode) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract boolean isAccessModeSupported(AccessMode accessMode);
 
-    public final MethodHandle toMethodHandle(AccessMode accessMode) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
-    }
+    public abstract MethodHandle toMethodHandle(AccessMode accessMode);
 }
