@@ -570,11 +570,10 @@ abstract sealed class _AbstractMemorySegmentImpl
 
         UnmapperProxy unmapper = JavaNioAccess.unmapper(bb);
 
-        //TODO: check data races
         boolean readOnly = bb.isReadOnly();
         int scaleFactor = getScaleFactor(bb);
         long pos = bb.position();
-        long lim = bb.limit();
+        long lim = Math.max(bb.limit(), pos);
         long size = (lim - pos) << scaleFactor;
         long bbAddress = JavaNioAccess.getBufferAddress(bb) + (pos << scaleFactor);
 

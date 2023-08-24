@@ -38,7 +38,7 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
             throw new IllegalStateException("buffer is inaccessible");
         }
         int pos = position();
-        int lim = limit();
+        int lim = Math.max(limit(), pos);
         int rem = lim - pos;
         int off = pos + offset;
         return new DirectSegmentByteBuffer((SegmentMemoryRef) memoryRef,

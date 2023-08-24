@@ -27,8 +27,12 @@ public class HeapSegmentByteBuffer extends HeapByteBuffer {
 
     @Override
     public HeapByteBuffer slice() {
-        return new HeapSegmentByteBuffer(hb, -1, 0, remaining(),
-                remaining(), position() + offset, isReadOnly, scope);
+        int pos = position();
+        int lim = Math.max(limit(), pos);
+        int rem = lim - pos;
+        int off = pos + offset;
+        return new HeapSegmentByteBuffer(hb, -1, 0, rem,
+                rem, off, isReadOnly, scope);
     }
 
     @Override
