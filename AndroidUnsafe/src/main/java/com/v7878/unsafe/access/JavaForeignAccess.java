@@ -20,4 +20,16 @@ public abstract class JavaForeignAccess {
     public static FineClosable lock(Scope scope) {
         return INSTANCE._lock(scope);
     }
+
+    protected abstract void _addCloseAction(Scope scope, Runnable cleanup);
+
+    public static void addCloseAction(Scope scope, Runnable cleanup) {
+        INSTANCE._addCloseAction(scope, cleanup);
+    }
+
+    protected abstract void _addOrCleanupIfFail(Scope scope, Runnable cleanup);
+
+    public static void addOrCleanupIfFail(Scope scope, Runnable cleanup) {
+        INSTANCE._addOrCleanupIfFail(scope, cleanup);
+    }
 }

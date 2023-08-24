@@ -32,6 +32,7 @@ import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.JavaForeignAccess;
 
 import java.io.UncheckedIOException;
+import java.lang.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import java.lang.invoke.MethodHandles;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -2305,6 +2306,16 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             @Override
             public FineClosable _lock(Scope scope) {
                 return ((_MemorySessionImpl) scope).lock();
+            }
+
+            @Override
+            protected void _addCloseAction(Scope scope, Runnable cleanup) {
+                ((_MemorySessionImpl) scope).addCloseAction(cleanup);
+            }
+
+            @Override
+            protected void _addOrCleanupIfFail(Scope scope, Runnable cleanup) {
+                ((_MemorySessionImpl) scope).addOrCleanupIfFail(ResourceCleanup.ofRunnable(cleanup));
             }
         };
     }
