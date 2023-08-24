@@ -582,11 +582,11 @@ abstract sealed class _AbstractMemorySegmentImpl
             bufferScope = _MemorySessionImpl.heapSession(bb);
         }
 
-        if (base != null) {
+        if (base != null) heap:{
             if (bb.isDirect()) {
                 assert_(base instanceof byte[], AssertionError::new);
-                //TODO
-                throw new UnsupportedOperationException("direct buffer with non-movable array not supported yet");
+                // TODO: maybe new MemorySegment implementation?
+                break heap;
             } else if (base instanceof byte[]) {
                 return new _HeapMemorySegmentImpl.OfByte(bbAddress, base, size, readOnly, bufferScope);
             } else if (base instanceof short[]) {
@@ -601,10 +601,10 @@ abstract sealed class _AbstractMemorySegmentImpl
                 return new _HeapMemorySegmentImpl.OfLong(bbAddress, base, size, readOnly, bufferScope);
             } else if (base instanceof double[]) {
                 return new _HeapMemorySegmentImpl.OfDouble(bbAddress, base, size, readOnly, bufferScope);
-            } else {
-                throw new AssertionError("Cannot get here");
             }
-        } else if (unmapper == null) {
+            throw new AssertionError("Cannot get here");
+        }
+        if (unmapper == null) {
             return new _NativeMemorySegmentImpl(bbAddress, size, readOnly, bufferScope);
         } else {
             return new _MappedMemorySegmentImpl(bbAddress, unmapper, size, readOnly, bufferScope);
