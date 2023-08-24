@@ -210,4 +210,8 @@ public class Utils {
             }
         }
     }
+
+    public static boolean containsNullChars(String s) {
+        return s.indexOf('\u0000') >= 0;
+    }
 }

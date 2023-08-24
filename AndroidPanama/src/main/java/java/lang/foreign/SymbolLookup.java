@@ -25,9 +25,15 @@
 
 package java.lang.foreign;
 
+import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.foreign.NativeLibrary;
+import com.v7878.unsafe.foreign.RawNativeLibraries;
+
+import java.lang.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * A <em>symbol lookup</em> retrieves the address of a symbol in one or more libraries.
@@ -223,13 +229,10 @@ public interface SymbolLookup {
      * In Windows, the library name is resolved according to the specification of the {@code LoadLibrary} function.
      */
     static SymbolLookup libraryLookup(String name, Arena arena) {
-        // Port-removed: TODO
-        //Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
-        //if (Utils.containsNullChars(name)) {
-        //    throw new IllegalArgumentException("Cannot open library: " + name);
-        //}
-        //return libraryLookup(name, RawNativeLibraries::load, arena);
-        throw new UnsupportedOperationException("Not supported yet");
+        if (Utils.containsNullChars(name)) {
+            throw new IllegalArgumentException("Cannot open library: " + name);
+        }
+        return libraryLookup(name, RawNativeLibraries::load, arena);
     }
 
     /**
@@ -255,37 +258,29 @@ public interface SymbolLookup {
      * implemented using the {@code dlopen}, {@code dlsym} and {@code dlclose} functions.
      */
     static SymbolLookup libraryLookup(Path path, Arena arena) {
-        // Port-removed: TODO
-        //Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
-        //return libraryLookup(path, RawNativeLibraries::load, arena);
-        throw new UnsupportedOperationException("Not supported yet");
+        return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
-    // Port-removed: TODO
-    //private static <Z> SymbolLookup libraryLookup(Z libDesc, BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
-    //    Objects.requireNonNull(libDesc);
-    //    Objects.requireNonNull(libArena);
-    //    // attempt to load native library from path or name
-    //    RawNativeLibraries nativeLibraries = RawNativeLibraries.newInstance(MethodHandles.lookup());
-    //    NativeLibrary library = loadLibraryFunc.apply(nativeLibraries, libDesc);
-    //    if (library == null) {
-    //        throw new IllegalArgumentException("Cannot open library: " + libDesc);
-    //    }
-    //    // register hook to unload library when 'libScope' becomes not alive
-    //    MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
-    //        @Override
-    //        public void cleanup() {
-    //            nativeLibraries.unload(library);
-    //        }
-    //    });
-    //    return name -> {
-    //        Objects.requireNonNull(name);
-    //        if (Utils.containsNullChars(name)) return Optional.empty();
-    //        long addr = library.find(name);
-    //        return addr == 0L ?
-    //                Optional.empty() :
-    //                Optional.of(MemorySegment.ofAddress(addr)
-    //                        .reinterpret(libArena, null));
-    //    };
-    //}
+    private static <Z> SymbolLookup libraryLookup(Z libDesc, Function<Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
+        Objects.requireNonNull(libDesc);
+        Objects.requireNonNull(libArena);
+        // attempt to load native library from path or name
+        NativeLibrary library = loadLibraryFunc.apply(libDesc);
+        if (library == null) {
+            throw new IllegalArgumentException("Cannot open library: " + libDesc);
+        }
+        // register hook to unload library when 'libScope' becomes not alive
+        _MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new ResourceCleanup() {
+            @Override
+            public void cleanup() {
+                RawNativeLibraries.unload(library);
+            }
+        });
+        return name -> {
+            long addr = library.find(name);
+            return addr == 0L ? Optional.empty() :
+                    Optional.of(MemorySegment.ofAddress(addr)
+                            .reinterpret(libArena, null));
+        };
+    }
 }
