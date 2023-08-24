@@ -27,10 +27,12 @@ public class Errno {
 
     @Keep
     @CriticalNative
+    @SuppressWarnings("JavaJniMissingFunction")
     private static native long __errno64();
 
     @Keep
     @CriticalNative
+    @SuppressWarnings("JavaJniMissingFunction")
     private static native int __errno32();
 
     public static long __errno() {
