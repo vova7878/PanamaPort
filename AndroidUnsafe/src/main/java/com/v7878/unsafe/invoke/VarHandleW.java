@@ -233,10 +233,8 @@ public class VarHandleW {
         private static int fillParameters(
                 Class<?>[] ps, Class<?> receiver, Class<?>... intermediate) {
             int i = 0;
-            if (receiver != null)
-                ps[i++] = receiver;
-            for (int j = 0; j < intermediate.length; j++)
-                ps[i++] = intermediate[j];
+            if (receiver != null) ps[i++] = receiver;
+            for (Class<?> arg : intermediate) ps[i++] = arg;
             return i;
         }
     }
