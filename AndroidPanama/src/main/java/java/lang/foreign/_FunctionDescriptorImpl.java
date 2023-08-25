@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 /**
  * @implSpec This class and its subclasses are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public final class _FunctionDescriptorImpl implements FunctionDescriptor {
+final class _FunctionDescriptorImpl implements FunctionDescriptor {
 
     private final MemoryLayout resLayout; // Nullable
     private final List<MemoryLayout> argLayouts;
