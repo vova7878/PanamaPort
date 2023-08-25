@@ -211,6 +211,10 @@ public abstract class VarHandle {
         }
     }
 
+    protected static AccessType accessType(AccessMode accessMode) {
+        return accessMode.at;
+    }
+
     public abstract Class<?> varType();
 
     public abstract List<Class<?>> coordinateTypes();
