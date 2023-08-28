@@ -211,8 +211,7 @@ final class _Utils {
 
     public static void checkAlign(long byteAlignment) {
         // alignment should be > 0, and power of two
-        if (byteAlignment <= 0 ||
-                ((byteAlignment & (byteAlignment - 1)) != 0L)) {
+        if (byteAlignment <= 0 || !isPowerOfTwo(byteAlignment)) {
             throw new IllegalArgumentException("Invalid alignment constraint : " + byteAlignment);
         }
     }

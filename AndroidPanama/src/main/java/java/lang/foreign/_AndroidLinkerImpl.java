@@ -9,7 +9,15 @@ import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
+import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static java.lang.foreign._Utils.checkSymbol;
 import static java.lang.foreign._Utils.unboxSegment;
 
@@ -74,15 +82,15 @@ final class _AndroidLinkerImpl implements Linker {
     }
 
     private static final Set<MemoryLayout> SUPPORTED_LAYOUTS = Set.of(
-            ValueLayout.JAVA_BOOLEAN,
+            JAVA_BOOLEAN,
             JAVA_BYTE,
-            ValueLayout.JAVA_CHAR,
-            ValueLayout.JAVA_SHORT,
-            ValueLayout.JAVA_INT,
-            ValueLayout.JAVA_FLOAT,
-            ValueLayout.JAVA_LONG,
-            ValueLayout.JAVA_DOUBLE,
-            ValueLayout.ADDRESS
+            JAVA_CHAR,
+            JAVA_SHORT,
+            JAVA_INT,
+            JAVA_FLOAT,
+            JAVA_LONG,
+            JAVA_DOUBLE,
+            ADDRESS
     );
 
     private static class LinkRequest {
