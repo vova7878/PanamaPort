@@ -93,37 +93,36 @@ public abstract class VarHandle {
         GET_AND_UPDATE_BITWISE,
         GET_AND_UPDATE_NUMERIC;
 
-        public MethodType accessModeType(Class<?> receiver, Class<?> value,
-                                         Class<?>... intermediate) {
+        public MethodType accessModeType(Class<?> value, Class<?>... coordinates) {
             Class<?>[] ps;
             int i;
             switch (this) {
                 case GET:
-                    ps = allocateParameters(0, receiver, intermediate);
-                    fillParameters(ps, receiver, intermediate);
+                    ps = allocateParameters(0, coordinates);
+                    fillParameters(ps, coordinates);
                     return MethodType.methodType(value, ps);
                 case SET:
-                    ps = allocateParameters(1, receiver, intermediate);
-                    i = fillParameters(ps, receiver, intermediate);
+                    ps = allocateParameters(1, coordinates);
+                    i = fillParameters(ps, coordinates);
                     ps[i] = value;
                     return MethodType.methodType(void.class, ps);
                 case COMPARE_AND_SET:
-                    ps = allocateParameters(2, receiver, intermediate);
-                    i = fillParameters(ps, receiver, intermediate);
+                    ps = allocateParameters(2, coordinates);
+                    i = fillParameters(ps, coordinates);
                     ps[i++] = value;
                     ps[i] = value;
                     return MethodType.methodType(boolean.class, ps);
                 case COMPARE_AND_EXCHANGE:
-                    ps = allocateParameters(2, receiver, intermediate);
-                    i = fillParameters(ps, receiver, intermediate);
+                    ps = allocateParameters(2, coordinates);
+                    i = fillParameters(ps, coordinates);
                     ps[i++] = value;
                     ps[i] = value;
                     return MethodType.methodType(value, ps);
                 case GET_AND_UPDATE:
                 case GET_AND_UPDATE_BITWISE:
                 case GET_AND_UPDATE_NUMERIC:
-                    ps = allocateParameters(1, receiver, intermediate);
-                    i = fillParameters(ps, receiver, intermediate);
+                    ps = allocateParameters(1, coordinates);
+                    i = fillParameters(ps, coordinates);
                     ps[i] = value;
                     return MethodType.methodType(value, ps);
                 default:
@@ -131,17 +130,14 @@ public abstract class VarHandle {
             }
         }
 
-        private static Class<?>[] allocateParameters(
-                int values, Class<?> receiver, Class<?>... intermediate) {
-            int size = ((receiver != null) ? 1 : 0) + intermediate.length + values;
+        private static Class<?>[] allocateParameters(int values, Class<?>... coordinates) {
+            int size = coordinates.length + values;
             return new Class<?>[size];
         }
 
-        private static int fillParameters(
-                Class<?>[] ps, Class<?> receiver, Class<?>... intermediate) {
+        private static int fillParameters(Class<?>[] ps, Class<?>... coordinates) {
             int i = 0;
-            if (receiver != null) ps[i++] = receiver;
-            for (Class<?> arg : intermediate) ps[i++] = arg;
+            for (Class<?> arg : coordinates) ps[i++] = arg;
             return i;
         }
     }
