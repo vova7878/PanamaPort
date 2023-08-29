@@ -3,10 +3,12 @@ package com.v7878.unsafe.access;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
+import com.v7878.foreign.VarHandle;
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySegment.Scope;
+import java.lang.foreign.ValueLayout;
 import java.lang.reflect.Method;
 
 public abstract class JavaForeignAccess {
@@ -14,6 +16,12 @@ public abstract class JavaForeignAccess {
         Method init = getDeclaredMethod(MemorySegment.class, "initAccess");
         return init.invoke(null);
     });
+
+    protected abstract VarHandle _accessHandle(ValueLayout layout);
+
+    public static VarHandle accessHandle(ValueLayout layout) {
+        return INSTANCE._accessHandle(layout);
+    }
 
     protected abstract FineClosable _lock(Scope scope);
 

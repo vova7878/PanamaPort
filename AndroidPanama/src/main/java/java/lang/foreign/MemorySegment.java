@@ -28,11 +28,13 @@ package java.lang.foreign;
 
 import androidx.annotation.Keep;
 
+import com.v7878.foreign.VarHandle;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.JavaForeignAccess;
 
 import java.io.UncheckedIOException;
 import java.lang.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
+import java.lang.foreign._ValueLayouts.AbstractValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -2303,6 +2305,11 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
     @SuppressWarnings("unused")
     private static JavaForeignAccess initAccess() {
         return new JavaForeignAccess() {
+            @Override
+            protected VarHandle _accessHandle(ValueLayout layout) {
+                return ((AbstractValueLayout<?>) layout).accessHandle();
+            }
+
             @Override
             public FineClosable _lock(Scope scope) {
                 return ((_MemorySessionImpl) scope).lock();
