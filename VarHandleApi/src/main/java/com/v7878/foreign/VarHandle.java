@@ -220,4 +220,11 @@ public abstract class VarHandle {
     public abstract boolean isAccessModeSupported(AccessMode accessMode);
 
     public abstract MethodHandle toMethodHandle(AccessMode accessMode);
+
+    @Override
+    public final String toString() {
+        return String.format("VarHandle[varType=%s, coord=%s]",
+                varType().getName(),
+                coordinateTypes());
+    }
 }
