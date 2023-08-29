@@ -10,6 +10,7 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import androidx.annotation.Keep;
 
 import com.v7878.dex.TypeId;
+import com.v7878.misc.Checks;
 import com.v7878.unsafe.DangerLevel;
 
 import java.lang.invoke.MethodHandle;
@@ -91,15 +92,37 @@ public class EmulatedStackFrame {
         return out;
     }
 
-    /*//TODO
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void copyArguments(StackFrameAccessor reader, int reader_start_idx,
                                      StackFrameAccessor writer, int writer_start_idx, int count) {
-        checkFromIndexSize(reader_start_idx, count,
+        Checks.checkFromIndexSize(reader_start_idx, count,
                 reader.frame().type().parameterCount());
-        checkFromIndexSize(writer_start_idx, count,
+        Checks.checkFromIndexSize(writer_start_idx, count,
                 writer.frame().type().parameterCount());
-    }*/
+
+        if (count == 0) return;
+
+        int reader_frame_start = reader.frameOffsets[reader_start_idx];
+        int reader_ref_start = reader.referencesOffsets[reader_start_idx];
+
+        int writer_frame_start = writer.frameOffsets[writer_start_idx];
+        int writer_ref_start = writer.referencesOffsets[writer_start_idx];
+
+        int frame_count = reader.frameOffsets[reader_start_idx + count] - reader_frame_start;
+        int ref_count = reader.referencesOffsets[reader_start_idx + count] - reader_ref_start;
+
+        if (frame_count != (writer.frameOffsets[writer_start_idx + count] - writer_frame_start)) {
+            throw new IllegalArgumentException("reader and writer have different stack frame range size");
+        }
+        if (ref_count != (writer.referencesOffsets[writer_start_idx + count] - writer_ref_start)) {
+            throw new IllegalArgumentException("reader and writer have different stack ref range size");
+        }
+
+        System.arraycopy(reader.frame.stackFrame(), reader_frame_start,
+                writer.frame.stackFrame(), writer_frame_start, frame_count);
+        System.arraycopy(reader.frame.references(), reader_ref_start,
+                writer.frame.references(), writer_ref_start, ref_count);
+    }
 
     public void copyReturnValueTo(EmulatedStackFrame other) {
         final Class<?> returnType = type().returnType();
@@ -186,19 +209,19 @@ public class EmulatedStackFrame {
 
         private void buildTables(MethodType methodType) {
             final Class<?>[] ptypes = methodType.parameterArray();
-            frameOffsets = new int[ptypes.length];
-            referencesOffsets = new int[ptypes.length];
+            frameOffsets = new int[ptypes.length + 1];
+            referencesOffsets = new int[ptypes.length + 1];
             int frameOffset = 0;
             int referenceOffset = 0;
             for (int i = 0; i < ptypes.length; ++i) {
-                frameOffsets[i] = frameOffset;
-                referencesOffsets[i] = referenceOffset;
                 final Class<?> ptype = ptypes[i];
                 if (ptype.isPrimitive()) {
                     frameOffset += getSize(ptype);
                 } else {
                     referenceOffset++;
                 }
+                frameOffsets[i + 1] = frameOffset;
+                referencesOffsets[i + 1] = referenceOffset;
             }
         }
 
@@ -243,8 +266,26 @@ public class EmulatedStackFrame {
             return this;
         }
 
+        public void putNextBoolean(boolean value) {
+            checkWriteType(boolean.class);
+            argumentIdx++;
+            frameBuf.putInt(value ? 1 : 0);
+        }
+
         public void putNextByte(byte value) {
             checkWriteType(byte.class);
+            argumentIdx++;
+            frameBuf.putInt(value);
+        }
+
+        public void putNextChar(char value) {
+            checkWriteType(char.class);
+            argumentIdx++;
+            frameBuf.putInt(value);
+        }
+
+        public void putNextShort(short value) {
+            checkWriteType(short.class);
             argumentIdx++;
             frameBuf.putInt(value);
         }
@@ -255,34 +296,16 @@ public class EmulatedStackFrame {
             frameBuf.putInt(value);
         }
 
-        public void putNextLong(long value) {
-            checkWriteType(long.class);
-            argumentIdx++;
-            frameBuf.putLong(value);
-        }
-
-        public void putNextChar(char value) {
-            checkWriteType(char.class);
-            argumentIdx++;
-            frameBuf.putInt(value);
-        }
-
-        public void putNextBoolean(boolean value) {
-            checkWriteType(boolean.class);
-            argumentIdx++;
-            frameBuf.putInt(value ? 1 : 0);
-        }
-
-        public void putNextShort(short value) {
-            checkWriteType(short.class);
-            argumentIdx++;
-            frameBuf.putInt(value);
-        }
-
         public void putNextFloat(float value) {
             checkWriteType(float.class);
             argumentIdx++;
             frameBuf.putFloat(value);
+        }
+
+        public void putNextLong(long value) {
+            checkWriteType(long.class);
+            argumentIdx++;
+            frameBuf.putLong(value);
         }
 
         public void putNextDouble(double value) {
@@ -297,22 +320,16 @@ public class EmulatedStackFrame {
             frame.references()[referencesOffset++] = value;
         }
 
+        public boolean nextBoolean() {
+            checkReadType(boolean.class);
+            argumentIdx++;
+            return (frameBuf.getInt() != 0);
+        }
+
         public byte nextByte() {
             checkReadType(byte.class);
             argumentIdx++;
             return (byte) frameBuf.getInt();
-        }
-
-        public int nextInt() {
-            checkReadType(int.class);
-            argumentIdx++;
-            return frameBuf.getInt();
-        }
-
-        public long nextLong() {
-            checkReadType(long.class);
-            argumentIdx++;
-            return frameBuf.getLong();
         }
 
         public char nextChar() {
@@ -321,22 +338,28 @@ public class EmulatedStackFrame {
             return (char) frameBuf.getInt();
         }
 
-        public boolean nextBoolean() {
-            checkReadType(boolean.class);
-            argumentIdx++;
-            return (frameBuf.getInt() != 0);
-        }
-
         public short nextShort() {
             checkReadType(short.class);
             argumentIdx++;
             return (short) frameBuf.getInt();
         }
 
+        public int nextInt() {
+            checkReadType(int.class);
+            argumentIdx++;
+            return frameBuf.getInt();
+        }
+
         public float nextFloat() {
             checkReadType(float.class);
             argumentIdx++;
             return frameBuf.getFloat();
+        }
+
+        public long nextLong() {
+            checkReadType(long.class);
+            argumentIdx++;
+            return frameBuf.getLong();
         }
 
         public double nextDouble() {
