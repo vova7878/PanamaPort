@@ -31,6 +31,7 @@ import androidx.annotation.Keep;
 
 import com.v7878.foreign.VarHandle;
 import com.v7878.misc.Checks;
+import com.v7878.unsafe.invoke.Transformers;
 import com.v7878.unsafe.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
@@ -228,12 +229,12 @@ class _LayoutPath {
     }
 
     public MethodHandle offsetHandle() {
-        MethodHandle mh = MethodHandles.identity(long.class);
+        MethodHandle mh = Transformers.identity(long.class);
         for (int i = strides.length - 1; i >= 0; i--) {
             MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i], bounds[i]);
             // (J, ...) -> J to (J, J, ...) -> J
             // i.e. new coord is prefixed. Last coord will correspond to innermost layout
-            mh = MethodHandles.collectArguments(mh, 0, collector);
+            mh = Transformers.collectArguments(mh, 0, collector);
         }
         mh = MethodHandles.insertArguments(mh, 0, offset);
         return mh;
