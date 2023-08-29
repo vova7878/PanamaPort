@@ -26,12 +26,23 @@
 
 package java.lang.foreign;
 
-import com.v7878.foreign.VarHandle;
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 
+import androidx.annotation.Keep;
+
+import com.v7878.foreign.VarHandle;
+import com.v7878.unsafe.invoke.VarHandles;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
@@ -47,82 +58,86 @@ final class _Utils {
     }
 
     // Port-removed: unused
-    //private static final MethodHandle BYTE_TO_BOOL;
-    //private static final MethodHandle BOOL_TO_BYTE;
-    //private static final MethodHandle ADDRESS_TO_LONG;
-    //private static final MethodHandle LONG_TO_ADDRESS;
-    //
-    //static {
-    //    try {
-    //        MethodHandles.Lookup lookup = MethodHandles.lookup();
-    //        BYTE_TO_BOOL = lookup.findStatic(_Utils.class, "byteToBoolean",
-    //                MethodType.methodType(boolean.class, byte.class));
-    //        BOOL_TO_BYTE = lookup.findStatic(_Utils.class, "booleanToByte",
-    //                MethodType.methodType(byte.class, boolean.class));
-    //        ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
-    //                MethodType.methodType(long.class, MemorySegment.class));
-    //        LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
-    //                MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
-    //    } catch (Throwable ex) {
-    //        throw new ExceptionInInitializerError(ex);
-    //    }
-    //}
+    private static final MethodHandle BYTE_TO_BOOL;
+    private static final MethodHandle BOOL_TO_BYTE;
+    private static final MethodHandle LONG_TO_ADDRESS;
+    private static final MethodHandle ADDRESS_TO_LONG;
+
+    static {
+        try {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            BYTE_TO_BOOL = lookup.findStatic(_Utils.class, "byteToBoolean",
+                    MethodType.methodType(boolean.class, byte.class));
+            BOOL_TO_BYTE = lookup.findStatic(_Utils.class, "booleanToByte",
+                    MethodType.methodType(byte.class, boolean.class));
+            LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
+            ADDRESS_TO_LONG = lookup.findStatic(_Utils.class, "unboxSegment",
+                    MethodType.methodType(long.class, MemorySegment.class));
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
 
     public static long alignUp(long n, long alignment) {
         return (n + alignment - 1) & -alignment;
     }
 
-    public static MemorySegment alignUp(MemorySegment ms, long alignment) {
-        long offset = ms.address();
-        return ms.asSlice(alignUp(offset, alignment) - offset);
-    }
+    // Port-removed: unused
+    //public static MemorySegment alignUp(MemorySegment ms, long alignment) {
+    //    long offset = ms.address();
+    //    return ms.asSlice(alignUp(offset, alignment) - offset);
+    //}
 
-    public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
-        // Port-removed: TODO
-        //final class VarHandleCache {
-        //    private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
-        //
-        //    static VarHandle put(ValueLayout layout, VarHandle handle) {
-        //        VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
-        //        return prev != null ? prev : handle;
-        //    }
-        //}
-        //Class<?> baseCarrier = layout.carrier();
-        //if (layout.carrier() == MemorySegment.class) {
-        //    baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
-        //        case Long.BYTES -> long.class;
-        //        case Integer.BYTES -> int.class;
-        //        default -> throw new UnsupportedOperationException("Unsupported address layout");
-        //    };
-        //} else if (layout.carrier() == boolean.class) {
-        //    baseCarrier = byte.class;
-        //}
-        //
-        //VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
-        //        layout.byteAlignment() - 1, layout.order());
-        //
-        //if (layout.carrier() == boolean.class) {
-        //    handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
-        //} else if (layout instanceof AddressLayout addressLayout) {
-        //    handle = MethodHandles.filterValue(handle,
-        //            MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
-        //            MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
-        //                            pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
-        //                    MethodType.methodType(MemorySegment.class, baseCarrier)));
-        //}
-        //return VarHandleCache.put(layout, handle);
+    // Port-added: specific implementation
+    private static VarHandle makeRawSegmentViewVarHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
+        // TODO
         throw new UnsupportedOperationException("Not supported yet");
     }
 
-    // Port-removed: unused
-    //public static boolean byteToBoolean(byte b) {
-    //    return b != 0;
-    //}
-    //
-    //private static byte booleanToByte(boolean b) {
-    //    return b ? (byte) 1 : (byte) 0;
-    //}
+    // Port-changed: use makeRawSegmentViewVarHandle
+    public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
+        final class VarHandleCache {
+            private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
 
+            static VarHandle put(ValueLayout layout, VarHandle handle) {
+                VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
+                return prev != null ? prev : handle;
+            }
+        }
+        Class<?> baseCarrier = layout.carrier();
+        if (layout.carrier() == MemorySegment.class) {
+            baseCarrier = IS64BIT ? long.class : int.class;
+        } else if (layout.carrier() == boolean.class) {
+            baseCarrier = byte.class;
+        }
+
+        VarHandle handle = makeRawSegmentViewVarHandle(baseCarrier,
+                layout.byteAlignment() - 1, layout.order());
+
+        if (layout.carrier() == boolean.class) {
+            handle = VarHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
+        } else if (layout instanceof AddressLayout addressLayout) {
+            handle = VarHandles.filterValue(handle,
+                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
+                    MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
+                                    pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
+                            MethodType.methodType(MemorySegment.class, baseCarrier)));
+        }
+        return VarHandleCache.put(layout, handle);
+    }
+
+    @Keep
+    public static boolean byteToBoolean(byte b) {
+        return b != 0;
+    }
+
+    @Keep
+    private static byte booleanToByte(boolean b) {
+        return b ? (byte) 1 : (byte) 0;
+    }
+
+    @Keep
     public static MemorySegment longToAddress(long addr, long size, long align) {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
@@ -130,13 +145,15 @@ final class _Utils {
         return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size);
     }
 
-    public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
-        if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
-        }
-        return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
-    }
+    // Port-removed: unused
+    //public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
+    //    if (!isAligned(addr, align)) {
+    //        throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
+    //    }
+    //    return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
+    //}
 
+    @Keep
     public static long unboxSegment(MemorySegment segment) {
         if (!segment.isNative()) {
             throw new IllegalArgumentException("Heap segment not allowed: " + segment);
