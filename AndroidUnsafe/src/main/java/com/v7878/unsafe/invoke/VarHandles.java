@@ -82,21 +82,23 @@ public final class VarHandles {
                         return MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
                     case SET:
                         return MethodHandles.collectArguments(modeHandle, lastParameterPos, filterToTarget);
-                    case GET_AND_UPDATE: {
-                        MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                        return MethodHandles.collectArguments(adapter, lastParameterPos, filterToTarget);
+                    case COMPARE_AND_SET: {
+                        MethodHandle adapter = MethodHandles.collectArguments(modeHandle, lastParameterPos, filterToTarget);
+                        return MethodHandles.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
                     }
                     case COMPARE_AND_EXCHANGE: {
                         MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
                         adapter = MethodHandles.collectArguments(adapter, lastParameterPos, filterToTarget);
                         return MethodHandles.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
                     }
-                    case COMPARE_AND_SET: {
-                        MethodHandle adapter = MethodHandles.collectArguments(modeHandle, lastParameterPos, filterToTarget);
-                        return MethodHandles.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
+                    case GET_AND_UPDATE:
+                    case GET_AND_UPDATE_BITWISE:
+                    case GET_AND_UPDATE_NUMERIC: {
+                        MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                        return MethodHandles.collectArguments(adapter, lastParameterPos, filterToTarget);
                     }
                 }
-                throw new AssertionError();
+                throw new AssertionError("Cannot get here");
             });
         }
     }
