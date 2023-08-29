@@ -5,11 +5,17 @@ import com.v7878.foreign.VarHandle;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
 public final class VarHandles {
     private VarHandles() {
+    }
+
+    private static RuntimeException newIllegalArgumentException(String message) {
+        return new IllegalArgumentException(message);
     }
 
     private static RuntimeException newIllegalArgumentException(String message, Object obj) {
@@ -44,6 +50,56 @@ public final class VarHandles {
             throw newIllegalArgumentException("filterFromTarget filter type does not match target var handle type", filterToTarget.type(), target.varType());
         }
         return IndirectVarHandle.filterValue(target, filterToTarget, filterFromTarget);
+    }
+
+    public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(filters);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        if (pos < 0 || pos >= targetCoordinates.size()) {
+            throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
+        } else if (pos + filters.length > targetCoordinates.size()) {
+            throw new IllegalArgumentException("Too many filters");
+        }
+
+        if (filters.length == 0) return target;
+
+        List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
+        for (int i = 0; i < filters.length; i++) {
+            MethodHandle filter = Objects.requireNonNull(filters[i]);
+            MethodType filterType = filter.type();
+            if (filterType.parameterCount() != 1) {
+                throw newIllegalArgumentException("Invalid filter type " + filterType);
+            } else if (newCoordinates.get(pos + i) != filterType.returnType()) {
+                throw newIllegalArgumentException("Invalid filter type " + filterType + " for coordinate type " + newCoordinates.get(i));
+            }
+            newCoordinates.set(pos + i, filters[i].type().parameterType(0));
+        }
+
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) -> MethodHandles.filterArguments(modeHandle, 1 + pos, filters));
+    }
+
+    public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(filter);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        if (pos < 0 || pos >= targetCoordinates.size()) {
+            throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
+        } else if (filter.type().returnType() != void.class && filter.type().returnType() != targetCoordinates.get(pos)) {
+            throw newIllegalArgumentException("Invalid filter type " + filter.type() + " for coordinate type " + targetCoordinates.get(pos));
+        }
+
+        List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
+        if (filter.type().returnType() != void.class) {
+            newCoordinates.remove(pos);
+        }
+        newCoordinates.addAll(pos, filter.type().parameterList());
+
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) -> MethodHandles.collectArguments(modeHandle, 1 + pos, filter));
     }
 
     private static class IndirectVarHandle extends AbstractVarHandle {
