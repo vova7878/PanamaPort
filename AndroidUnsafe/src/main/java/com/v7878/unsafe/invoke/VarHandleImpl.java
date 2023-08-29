@@ -115,4 +115,8 @@ public class VarHandleImpl extends AbstractVarHandle {
         }
         return m;
     }
+
+    public static boolean isReadOnly(AccessMode accessMode) {
+        return accessType(accessMode) == AccessType.GET;
+    }
 }
