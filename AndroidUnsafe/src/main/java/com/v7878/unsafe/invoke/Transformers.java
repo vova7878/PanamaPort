@@ -29,6 +29,7 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
+import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -36,6 +37,7 @@ import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.List;
 
 import dalvik.system.DexFile;
 
@@ -428,5 +430,77 @@ public class Transformers {
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
         MethodHandle adaptedTarget = target.asType(stackFrame.type());
         invokeExactWithFrameNoChecks(adaptedTarget, stackFrame);
+    }
+
+    private static class CollectArguments implements TransformerI {
+        private final MethodHandle target;
+        private final MethodHandle collector;
+        private final int pos;
+        private final int collector_count;
+
+        CollectArguments(MethodHandle target, MethodHandle collector, int pos) {
+            this.target = target;
+            this.collector = collector;
+            this.pos = pos;
+            this.collector_count = collector.type().parameterCount();
+        }
+
+        @Override
+        public void transform(EmulatedStackFrame stack) throws Throwable {
+            StackFrameAccessor this_accessor = stack.createAccessor();
+
+            // First invoke the collector.
+            EmulatedStackFrame collectorFrame = EmulatedStackFrame.create(collector.type());
+            StackFrameAccessor collector_accessor = collectorFrame.createAccessor();
+            EmulatedStackFrame.copyArguments(this_accessor, pos,
+                    collector_accessor, 0, collector_count);
+            invokeExactWithFrameNoChecks(collector, collectorFrame);
+
+            // Start constructing the target frame.
+            EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
+            StackFrameAccessor target_accessor = targetFrame.createAccessor();
+            EmulatedStackFrame.copyArguments(this_accessor, 0,
+                    target_accessor, 0, pos);
+
+            // If return type of collector is not void, we have a return value to copy.
+            target_accessor.moveTo(pos);
+            if (collector.type().returnType() != void.class) {
+                EmulatedStackFrame.copyNext(collector_accessor.moveToReturn(),
+                        target_accessor, collector.type().returnType());
+            }
+
+            // Finish constructing the target frame.
+            EmulatedStackFrame.copyArguments(this_accessor, pos,
+                    target_accessor, target_accessor.argumentIdx,
+                    stack.type().parameterCount() - pos);
+
+            // Invoke the target.
+            invokeExactWithFrameNoChecks(target, targetFrame);
+            targetFrame.copyReturnValueTo(stack);
+        }
+    }
+
+    private static RuntimeException newIllegalArgumentException(String message, Object obj1, Object obj2) {
+        return new IllegalArgumentException(message + ": " + obj1 + ", " + obj2);
+    }
+
+    // PLATFORM-BUG!
+    public static MethodHandle collectArguments(MethodHandle target, int pos, MethodHandle filter) {
+        MethodType newType = collectArgumentsChecks(target, pos, filter);
+        return makeTransformer(newType, new CollectArguments(target, filter, pos));
+    }
+
+    private static MethodType collectArgumentsChecks(MethodHandle target, int pos, MethodHandle filter) {
+        MethodType targetType = target.type();
+        MethodType filterType = filter.type();
+        Class<?> rtype = filterType.returnType();
+        List<Class<?>> filterArgs = filterType.parameterList();
+        if (rtype == void.class) {
+            return targetType.insertParameterTypes(pos, filterArgs);
+        }
+        if (rtype != targetType.parameterType(pos)) {
+            throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
+        }
+        return targetType.dropParameterTypes(pos, pos + 1).insertParameterTypes(pos, filterArgs);
     }
 }
