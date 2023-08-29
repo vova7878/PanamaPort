@@ -471,9 +471,10 @@ public class Transformers {
             }
 
             // Finish constructing the target frame.
-            EmulatedStackFrame.copyArguments(this_accessor, pos,
+            int this_pos = pos + collector_count;
+            EmulatedStackFrame.copyArguments(this_accessor, this_pos,
                     target_accessor, target_accessor.argumentIdx,
-                    stack.type().parameterCount() - pos);
+                    stack.type().parameterCount() - this_pos);
 
             // Invoke the target.
             invokeExactWithFrameNoChecks(target, targetFrame);
