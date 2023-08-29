@@ -27,10 +27,10 @@ package java.lang.foreign;
 
 import static com.v7878.unsafe.AndroidUnsafe.compareAndExchangeIntO;
 import static com.v7878.unsafe.AndroidUnsafe.compareAndSetIntO;
-import static com.v7878.unsafe.AndroidUnsafe.compareAndSetObjectO;
-import static com.v7878.unsafe.AndroidUnsafe.getAndSetObjectO;
+import static com.v7878.unsafe.AndroidUnsafe.compareAndSetObject;
+import static com.v7878.unsafe.AndroidUnsafe.getAndSetObject;
 import static com.v7878.unsafe.AndroidUnsafe.getIntVolatileO;
-import static com.v7878.unsafe.AndroidUnsafe.getObjectVolatileO;
+import static com.v7878.unsafe.AndroidUnsafe.getObjectVolatile;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 
 import com.v7878.unsafe.AndroidUnsafe;
@@ -130,13 +130,13 @@ sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession 
         @Override
         void add(ResourceCleanup cleanup) {
             while (true) {
-                ResourceCleanup prev = (ResourceCleanup) getObjectVolatileO(this, FST_OFFSET);
+                ResourceCleanup prev = (ResourceCleanup) getObjectVolatile(this, FST_OFFSET);
                 if (prev == ResourceCleanup.CLOSED_LIST) {
                     // too late
                     throw alreadyClosed();
                 }
                 cleanup.next = prev;
-                if (compareAndSetObjectO(this, FST_OFFSET, prev, cleanup)) {
+                if (compareAndSetObject(this, FST_OFFSET, prev, cleanup)) {
                     return; //victory
                 }
                 // keep trying
@@ -164,7 +164,7 @@ sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession 
             //    throw alreadyClosed();
             //}
 
-            ResourceCleanup prev = (ResourceCleanup) getAndSetObjectO(
+            ResourceCleanup prev = (ResourceCleanup) getAndSetObject(
                     this, FST_OFFSET, ResourceCleanup.CLOSED_LIST);
             if (prev == ResourceCleanup.CLOSED_LIST) {
                 throw alreadyClosed();
