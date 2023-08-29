@@ -38,6 +38,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.Objects;
 
 import dalvik.system.DexFile;
 
@@ -484,7 +485,7 @@ public class Transformers {
         return new IllegalArgumentException(message + ": " + obj1 + ", " + obj2);
     }
 
-    // PLATFORM-BUG!
+    // fix for PLATFORM-BUG!
     public static MethodHandle collectArguments(MethodHandle target, int pos, MethodHandle filter) {
         MethodType newType = collectArgumentsChecks(target, pos, filter);
         return makeTransformer(newType, new CollectArguments(target, filter, pos));
@@ -502,5 +503,14 @@ public class Transformers {
             throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
         }
         return targetType.dropParameterTypes(pos, pos + 1).insertParameterTypes(pos, filterArgs);
+    }
+
+    // fix for PLATFORM-BUG!
+    public static MethodHandle identity(Class<?> type) {
+        Objects.requireNonNull(type);
+        return makeTransformer(MethodType.methodType(type, type), (TransformerI) stack -> {
+            EmulatedStackFrame.copyNext(stack.createAccessor().moveTo(0),
+                    stack.createAccessor().moveToReturn(), type);
+        });
     }
 }
