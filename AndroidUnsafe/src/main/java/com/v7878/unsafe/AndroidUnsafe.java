@@ -542,16 +542,16 @@ public class AndroidUnsafe {
         }
     }
 
-    public static long getLongUnaligned(Object obj, long offset, ByteOrder order) {
-        return convEndian(getLongUnaligned(obj, offset), order);
+    public static long getLongUnaligned(Object obj, long offset, boolean swap) {
+        return convEndian(getLongUnaligned(obj, offset), swap);
     }
 
     public static double getDoubleUnaligned(Object obj, long offset) {
         return Double.longBitsToDouble(getLongUnaligned(obj, offset));
     }
 
-    public static double getDoubleUnaligned(Object obj, long offset, ByteOrder order) {
-        return Double.longBitsToDouble(getLongUnaligned(obj, offset, order));
+    public static double getDoubleUnaligned(Object obj, long offset, boolean swap) {
+        return Double.longBitsToDouble(getLongUnaligned(obj, offset, swap));
     }
 
     public static int getIntUnaligned(Object obj, long offset) {
@@ -568,16 +568,16 @@ public class AndroidUnsafe {
         }
     }
 
-    public static int getIntUnaligned(Object obj, long offset, ByteOrder order) {
-        return convEndian(getIntUnaligned(obj, offset), order);
+    public static int getIntUnaligned(Object obj, long offset, boolean swap) {
+        return convEndian(getIntUnaligned(obj, offset), swap);
     }
 
     public static float getFloatUnaligned(Object obj, long offset) {
         return Float.intBitsToFloat(getIntUnaligned(obj, offset));
     }
 
-    public static float getFloatUnaligned(Object obj, long offset, ByteOrder order) {
-        return Float.intBitsToFloat(getIntUnaligned(obj, offset, order));
+    public static float getFloatUnaligned(Object obj, long offset, boolean swap) {
+        return Float.intBitsToFloat(getIntUnaligned(obj, offset, swap));
     }
 
     public static short getShortUnaligned(Object obj, long offset) {
@@ -589,21 +589,21 @@ public class AndroidUnsafe {
         }
     }
 
-    public static short getShortUnaligned(Object obj, long offset, ByteOrder order) {
-        return convEndian(getShortUnaligned(obj, offset), order);
+    public static short getShortUnaligned(Object obj, long offset, boolean swap) {
+        return convEndian(getShortUnaligned(obj, offset), swap);
     }
 
     public static char getCharUnaligned(Object obj, long offset) {
         return (char) getShortUnaligned(obj, offset);
     }
 
-    public static char getCharUnaligned(Object obj, long offset, ByteOrder order) {
-        return (char) getShortUnaligned(obj, offset, order);
+    public static char getCharUnaligned(Object obj, long offset, boolean swap) {
+        return (char) getShortUnaligned(obj, offset, swap);
     }
 
-    public static long getWordUnaligned(Object obj, long offset, ByteOrder order) {
-        return IS64BIT ? getLongUnaligned(obj, offset, order)
-                : getIntUnaligned(obj, offset, order) & 0xffffffffL;
+    public static long getWordUnaligned(Object obj, long offset, boolean swap) {
+        return IS64BIT ? getLongUnaligned(obj, offset, swap)
+                : getIntUnaligned(obj, offset, swap) & 0xffffffffL;
     }
 
     public static long getWordUnaligned(Object obj, long offset) {
@@ -689,16 +689,16 @@ public class AndroidUnsafe {
         }
     }
 
-    public static void putLongUnaligned(Object o, long offset, long value, ByteOrder order) {
-        putLongUnaligned(o, offset, convEndian(value, order));
+    public static void putLongUnaligned(Object o, long offset, long value, boolean swap) {
+        putLongUnaligned(o, offset, convEndian(value, swap));
     }
 
     public static void putDoubleUnaligned(Object o, long offset, double value) {
         putLongUnaligned(o, offset, Double.doubleToRawLongBits(value));
     }
 
-    public static void putDoubleUnaligned(Object o, long offset, double value, ByteOrder order) {
-        putLongUnaligned(o, offset, Double.doubleToRawLongBits(value), order);
+    public static void putDoubleUnaligned(Object o, long offset, double value, boolean swap) {
+        putLongUnaligned(o, offset, Double.doubleToRawLongBits(value), swap);
     }
 
     public static void putIntUnaligned(Object o, long offset, int value) {
@@ -717,16 +717,16 @@ public class AndroidUnsafe {
         }
     }
 
-    public static void putIntUnaligned(Object o, long offset, int value, ByteOrder order) {
-        putIntUnaligned(o, offset, convEndian(value, order));
+    public static void putIntUnaligned(Object o, long offset, int value, boolean swap) {
+        putIntUnaligned(o, offset, convEndian(value, swap));
     }
 
     public static void putFloatUnaligned(Object o, long offset, float value) {
         putLongUnaligned(o, offset, Float.floatToRawIntBits(value));
     }
 
-    public static void putFloatUnaligned(Object o, long offset, float value, ByteOrder order) {
-        putLongUnaligned(o, offset, Float.floatToRawIntBits(value), order);
+    public static void putFloatUnaligned(Object o, long offset, float value, boolean swap) {
+        putLongUnaligned(o, offset, Float.floatToRawIntBits(value), swap);
     }
 
     public static void putShortUnaligned(Object o, long offset, short value) {
@@ -739,23 +739,23 @@ public class AndroidUnsafe {
         }
     }
 
-    public static void putShortUnaligned(Object o, long offset, short value, ByteOrder order) {
-        putShortUnaligned(o, offset, convEndian(value, order));
+    public static void putShortUnaligned(Object o, long offset, short value, boolean swap) {
+        putShortUnaligned(o, offset, convEndian(value, swap));
     }
 
     public static void putCharUnaligned(Object o, long offset, char value) {
         putShortUnaligned(o, offset, (short) value);
     }
 
-    public static void putCharUnaligned(Object o, long offset, char value, ByteOrder order) {
-        putShortUnaligned(o, offset, (short) value, order);
+    public static void putCharUnaligned(Object o, long offset, char value, boolean swap) {
+        putShortUnaligned(o, offset, (short) value, swap);
     }
 
-    public static void putWordUnaligned(Object obj, long offset, long value, ByteOrder order) {
+    public static void putWordUnaligned(Object obj, long offset, long value, boolean swap) {
         if (IS64BIT) {
-            putLongUnaligned(obj, offset, value, order);
+            putLongUnaligned(obj, offset, value, swap);
         } else {
-            putIntUnaligned(obj, offset, (int) value, order);
+            putIntUnaligned(obj, offset, (int) value, swap);
         }
     }
 
@@ -810,11 +810,11 @@ public class AndroidUnsafe {
         SunUnsafe.putLongVolatile(obj, offset, value);
     }
 
-    public static Object getObjectVolatileO(Object obj, long offset) {
+    public static Object getObjectVolatile(Object obj, long offset) {
         return SunUnsafe.getObjectVolatile(obj, offset);
     }
 
-    public static void putObjectVolatileO(Object obj, long offset, Object value) {
+    public static void putObjectVolatile(Object obj, long offset, Object value) {
         SunUnsafe.putObjectVolatile(obj, offset, value);
     }
 
@@ -828,8 +828,8 @@ public class AndroidUnsafe {
         return SunUnsafe.compareAndSwapLong(obj, offset, expectedValue, newValue);
     }
 
-    public static boolean compareAndSetObjectO(Object obj, long offset,
-                                               Object expectedValue, Object newValue) {
+    public static boolean compareAndSetObject(Object obj, long offset,
+                                              Object expectedValue, Object newValue) {
         return SunUnsafe.compareAndSwapObject(obj, offset, expectedValue, newValue);
     }
 
@@ -851,8 +851,8 @@ public class AndroidUnsafe {
         return v;
     }
 
-    public static Object compareAndExchangeObjectO(Object obj, long offset,
-                                                   Object expectedValue, Object newValue) {
+    public static Object compareAndExchangeObject(Object obj, long offset,
+                                                  Object expectedValue, Object newValue) {
         Object v;
         do {
             v = SunUnsafe.getObjectVolatile(obj, offset);
@@ -868,7 +868,7 @@ public class AndroidUnsafe {
         return SunUnsafe.getAndSetLong(obj, offset, newValue);
     }
 
-    public static Object getAndSetObjectO(Object obj, long offset, Object newValue) {
+    public static Object getAndSetObject(Object obj, long offset, Object newValue) {
         return SunUnsafe.getAndSetObject(obj, offset, newValue);
     }
 
