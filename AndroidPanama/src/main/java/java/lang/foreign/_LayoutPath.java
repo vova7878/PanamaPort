@@ -254,7 +254,7 @@ class _LayoutPath {
             sliceHandle = MH_SLICE_LAYOUT; // (MS, long, MemoryLayout) -> MS
             sliceHandle = MethodHandles.insertArguments(sliceHandle, 2, layout); // (MS, long) -> MS
         }
-        sliceHandle = MethodHandles.collectArguments(sliceHandle, 1, offsetHandle()); // (MS, ...) -> MS
+        sliceHandle = Transformers.collectArguments(sliceHandle, 1, offsetHandle()); // (MS, ...) -> MS
 
         if (enclosing != null) {
             MethodHandle checkHandle = MethodHandles.insertArguments(MH_CHECK_ALIGN, 1, rootLayout());
