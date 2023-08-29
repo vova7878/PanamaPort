@@ -91,8 +91,8 @@ final class _Utils {
 
     // Port-added: specific implementation
     private static VarHandle makeRawSegmentViewVarHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
-        // TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return _VarHandleSegmentViewBase.makeRawSegmentViewVarHandle(carrier,
+                alignmentMask, ByteOrder.nativeOrder().equals(order));
     }
 
     // Port-changed: use makeRawSegmentViewVarHandle

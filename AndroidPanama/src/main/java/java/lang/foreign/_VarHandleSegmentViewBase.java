@@ -1,14 +1,57 @@
 package java.lang.foreign;
 
+import static com.v7878.unsafe.invoke.VarHandleImpl.isReadOnly;
+
+import com.v7878.foreign.VarHandle;
+import com.v7878.foreign.VarHandle.AccessMode;
+import com.v7878.unsafe.invoke.EmulatedStackFrame;
+import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
+import com.v7878.unsafe.invoke.VarHandleImpl;
 import com.v7878.unsafe.invoke.VarHandleImpl.VarHandleTransformer;
 
 import java.util.Objects;
 
-abstract class _VarHandleSegmentViewBase implements VarHandleTransformer {
+abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer {
+
+    public static VarHandle makeRawSegmentViewVarHandle(Class<?> carrier, long alignmentMask, boolean swap) {
+        if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
+            throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
+        }
+        int accessModesBitMask = (1 << AccessMode.GET.ordinal()) | (1 << AccessMode.SET.ordinal());
+
+        VarHandleTransformer transformer;
+        if (carrier == byte.class) {
+            transformer = new VarHandleSegmentAsBytes(swap, alignmentMask);
+        } else if (carrier == char.class) {
+            //TODO
+            throw new UnsupportedOperationException("Not supported yet");
+        } else if (carrier == short.class) {
+            //TODO
+            throw new UnsupportedOperationException("Not supported yet");
+        } else if (carrier == int.class) {
+            //TODO
+            throw new UnsupportedOperationException("Not supported yet");
+        } else if (carrier == float.class) {
+            //TODO
+            throw new UnsupportedOperationException("Not supported yet");
+        } else if (carrier == long.class) {
+            //TODO
+            throw new UnsupportedOperationException("Not supported yet");
+        } else if (carrier == double.class) {
+            //TODO
+            throw new UnsupportedOperationException("Not supported yet");
+        } else {
+            throw new IllegalStateException("Cannot get here");
+        }
+
+        return VarHandleImpl.newVarHandle(accessModesBitMask,
+                transformer, carrier, MemorySegment.class, long.class);
+    }
+
     /**
      * endianness
      **/
-    final boolean no;
+    final boolean swap;
 
     /**
      * access size (in bytes, computed from var handle carrier type)
@@ -20,8 +63,8 @@ abstract class _VarHandleSegmentViewBase implements VarHandleTransformer {
      **/
     final long alignmentMask;
 
-    _VarHandleSegmentViewBase(boolean no, long length, long alignmentMask) {
-        this.no = no;
+    _VarHandleSegmentViewBase(boolean swap, long length, long alignmentMask) {
+        this.swap = swap;
         this.length = length;
         this.alignmentMask = alignmentMask;
     }
@@ -30,10 +73,8 @@ abstract class _VarHandleSegmentViewBase implements VarHandleTransformer {
         return new IllegalArgumentException("Misaligned access at address: " + address);
     }
 
-    _AbstractMemorySegmentImpl checkAddress(Object obb, long offset, boolean ro) {
-        _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl) Objects.requireNonNull(obb);
-        ms.checkAccess(offset, length, ro);
-        return ms;
+    void checkAddress(_AbstractMemorySegmentImpl ms, long offset, boolean ro) {
+        Objects.requireNonNull(ms).checkAccess(offset, length, ro);
     }
 
     long offset(_AbstractMemorySegmentImpl bb, long offset) {
@@ -52,5 +93,29 @@ abstract class _VarHandleSegmentViewBase implements VarHandleTransformer {
             throw newIllegalArgumentExceptionForMisalignedAccess(address);
         }
         return address;
+    }
+
+    private static final class VarHandleSegmentAsBytes extends _VarHandleSegmentViewBase {
+
+        VarHandleSegmentAsBytes(boolean swap, long alignmentMask) {
+            super(swap, 1, alignmentMask);
+        }
+
+        @Override
+        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
+            StackFrameAccessor accessor = stack.createAccessor();
+            _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
+                    accessor.nextReference(MemorySegment.class);
+            long offset = accessor.nextLong();
+            checkAddress(ms, offset, isReadOnly(mode));
+            switch (mode) {
+                case GET -> accessor.moveToReturn().putNextByte(
+                        _ScopedMemoryAccess.getByte(ms.sessionImpl(), ms.unsafeGetBase(),
+                                offsetNoVMAlignCheck(ms, offset)));
+                case SET -> _ScopedMemoryAccess.putByte(ms.sessionImpl(), ms.unsafeGetBase(),
+                        offsetNoVMAlignCheck(ms, offset), accessor.nextByte());
+                default -> throw new AssertionError("Cannot get here");
+            }
+        }
     }
 }
