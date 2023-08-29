@@ -17,6 +17,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
+        //TODO: all modes
         int accessModesBitMask = (1 << AccessMode.GET.ordinal()) | (1 << AccessMode.SET.ordinal());
 
         VarHandleTransformer transformer;
