@@ -1082,9 +1082,9 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *                                   such that {@code isAccessibleBy(T) == false}.
      */
     default String getUtf8String(long offset) {
-        // Port-removed: TODO
+        // Port-changed: use _Utils
         //return SharedUtils.toJavaStringInternal(this, offset);
-        throw new UnsupportedOperationException("Not supported yet");
+        return _Utils.toJavaStringInternal(this, offset);
     }
 
     /**

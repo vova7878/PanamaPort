@@ -38,6 +38,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -153,6 +154,7 @@ final class _Utils {
     //    return _NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
     //}
 
+    // Port-added
     @Keep
     public static long unboxSegment(MemorySegment segment) {
         if (!segment.isNative()) {
@@ -161,10 +163,32 @@ final class _Utils {
         return segment.address();
     }
 
+    // Port-added
     public static void checkSymbol(MemorySegment symbol) {
         Objects.requireNonNull(symbol);
         if (symbol.equals(MemorySegment.NULL))
             throw new IllegalArgumentException("Symbol is NULL: " + symbol);
+    }
+
+    // Port-added
+    public static String toJavaStringInternal(MemorySegment segment, long start) {
+        int len = strlen(segment, start);
+        byte[] bytes = new byte[len];
+        MemorySegment.copy(segment, JAVA_BYTE, start, bytes, 0, len);
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    // Port-added
+    private static int strlen(MemorySegment segment, long start) {
+        // iterate until overflow (String can only hold a byte[], whose length can be expressed as an int)
+        //noinspection OverflowingLoopIndex
+        for (int offset = 0; offset >= 0; offset++) {
+            byte curr = segment.get(JAVA_BYTE, start + offset);
+            if (curr == 0) {
+                return offset;
+            }
+        }
+        throw new IllegalArgumentException("String too large");
     }
 
     // Port-changed: rename "copy" to "copyCString"
