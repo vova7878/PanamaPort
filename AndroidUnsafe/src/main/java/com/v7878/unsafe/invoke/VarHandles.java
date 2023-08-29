@@ -78,7 +78,7 @@ public final class VarHandles {
         }
 
         return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandles.filterArguments(modeHandle, 1 + pos, filters));
+                (mode, modeHandle) -> MethodHandles.filterArguments(modeHandle, pos, filters));
     }
 
     public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
@@ -99,7 +99,7 @@ public final class VarHandles {
         newCoordinates.addAll(pos, filter.type().parameterList());
 
         return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandles.collectArguments(modeHandle, 1 + pos, filter));
+                (mode, modeHandle) -> Transformers.collectArguments(modeHandle, pos, filter));
     }
 
     private static class IndirectVarHandle extends AbstractVarHandle {
@@ -137,21 +137,19 @@ public final class VarHandles {
                     case GET:
                         return MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
                     case SET:
-                        return MethodHandles.collectArguments(modeHandle, lastParameterPos, filterToTarget);
+                        return MethodHandles.filterArguments(modeHandle, lastParameterPos, filterToTarget);
                     case COMPARE_AND_SET: {
-                        MethodHandle adapter = MethodHandles.collectArguments(modeHandle, lastParameterPos, filterToTarget);
-                        return MethodHandles.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
+                        return MethodHandles.filterArguments(modeHandle, lastParameterPos - 1, filterToTarget, filterToTarget);
                     }
                     case COMPARE_AND_EXCHANGE: {
                         MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                        adapter = MethodHandles.collectArguments(adapter, lastParameterPos, filterToTarget);
-                        return MethodHandles.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
+                        return MethodHandles.filterArguments(adapter, lastParameterPos - 1, filterToTarget, filterToTarget);
                     }
                     case GET_AND_UPDATE:
                     case GET_AND_UPDATE_BITWISE:
                     case GET_AND_UPDATE_NUMERIC: {
                         MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                        return MethodHandles.collectArguments(adapter, lastParameterPos, filterToTarget);
+                        return MethodHandles.filterArguments(adapter, lastParameterPos, filterToTarget);
                     }
                 }
                 throw new AssertionError("Cannot get here");
