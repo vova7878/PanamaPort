@@ -27,6 +27,7 @@
 package java.lang.foreign;
 
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import androidx.annotation.Keep;
 
@@ -38,7 +39,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -167,18 +167,16 @@ final class _Utils {
             throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
-    public static void copy(MemorySegment addr, byte[] bytes) {
-        // Port-changed: TODO?
-        //var heapSegment = MemorySegment.ofArray(bytes);
-        //addr.copyFrom(heapSegment);
-        //addr.set(JAVA_BYTE, bytes.length, (byte) 0);
-        var heapSegment = MemorySegment.ofArray(Arrays.copyOf(bytes, bytes.length + 1));
+    // Port-changed: rename "copy" to "copyCString"
+    public static void copyCString(MemorySegment addr, byte[] bytes) {
+        var heapSegment = MemorySegment.ofArray(bytes);
         addr.copyFrom(heapSegment);
+        addr.set(JAVA_BYTE, bytes.length, (byte) 0);
     }
 
     public static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {
         MemorySegment addr = allocator.allocate(bytes.length + 1);
-        copy(addr, bytes);
+        copyCString(addr, bytes);
         return addr;
     }
 
