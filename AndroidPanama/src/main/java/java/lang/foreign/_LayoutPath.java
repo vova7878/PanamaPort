@@ -25,8 +25,13 @@
  */
 package java.lang.foreign;
 
+import static com.v7878.misc.Math.ceilDiv;
+
+import androidx.annotation.Keep;
+
 import com.v7878.foreign.VarHandle;
 import com.v7878.misc.Checks;
+import com.v7878.unsafe.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -98,16 +103,6 @@ class _LayoutPath {
         return _LayoutPath.nestedPath(elem, offset, addStride(elem.byteSize()), addBound(seq.elementCount()), derefAdapters, this);
     }
 
-    // Port-added: TODO: move from here
-    private static long ceilDiv(long x, long y) {
-        final long q = x / y;
-        // if the signs are the same and modulo not zero, round up
-        if ((x ^ y) >= 0 && (q * y != x)) {
-            return q + 1;
-        }
-        return q;
-    }
-
     public _LayoutPath sequenceElement(long start, long step) {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
         SequenceLayout seq = (SequenceLayout) layout;
@@ -171,19 +166,18 @@ class _LayoutPath {
     }
 
     public _LayoutPath derefElement() {
-        // Port-changed: TODO
-        //if (!(layout instanceof AddressLayout addressLayout) ||
-        //        !addressLayout.targetLayout().isPresent()) {
-        //    throw badLayoutPath("Cannot dereference layout: " + layout);
-        //}
-        //MemoryLayout derefLayout = addressLayout.targetLayout().get();
-        //MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
-        //handle = MethodHandles.filterReturnValue(handle,
-        //        MethodHandles.insertArguments(MH_SEGMENT_RESIZE, 1, derefLayout));
-        //return derefPath(derefLayout, handle, this);
-        throw new UnsupportedOperationException("Not supported yet");
+        if (!(layout instanceof AddressLayout addressLayout &&
+                addressLayout.targetLayout().isPresent())) {
+            throw badLayoutPath("Cannot dereference layout: " + layout);
+        }
+        MemoryLayout derefLayout = addressLayout.targetLayout().get();
+        MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
+        handle = MethodHandles.filterReturnValue(handle,
+                MethodHandles.insertArguments(MH_SEGMENT_RESIZE, 1, derefLayout));
+        return derefPath(derefLayout, handle, this);
     }
 
+    @Keep
     private static MemorySegment resizeSegment(MemorySegment segment, MemoryLayout layout) {
         return _Utils.longToAddress(segment.address(), layout.byteSize(), layout.byteAlignment());
     }
@@ -194,41 +188,38 @@ class _LayoutPath {
         return offset;
     }
 
-    // Port-changed: Use MemoryVarHandle instead VarHandle
     public VarHandle dereferenceHandle() {
         return dereferenceHandle(true);
     }
 
-    // Port-changed: Use MemoryVarHandle instead VarHandle
     public VarHandle dereferenceHandle(boolean adapt) {
-        // Port-changed: TODO
-        //if (!(layout instanceof ValueLayout valueLayout)) {
-        //    throw new IllegalArgumentException("Path does not select a value layout");
-        //}
-        //
-        //// If we have an enclosing layout, drop the alignment check for the accessed element,
-        //// we check the root layout instead
-        //ValueLayout accessedLayout = enclosing != null ? valueLayout.withByteAlignment(1) : valueLayout;
-        //VarHandle handle = _Utils.makeSegmentViewVarHandle(accessedLayout);
-        //handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
-        //
-        //// we only have to check the alignment of the root layout for the first dereference we do,
-        //// as each dereference checks the alignment of the target address when constructing its segment
-        //// (see _Utils::longToAddress)
-        //if (derefAdapters.length == 0 && enclosing != null) {
-        //    MethodHandle checkHandle = MethodHandles.insertArguments(MH_CHECK_ALIGN, 1, rootLayout());
-        //    handle = MethodHandles.filterCoordinates(handle, 0, checkHandle);
-        //}
-        //
-        //if (adapt) {
-        //    for (int i = derefAdapters.length; i > 0; i--) {
-        //        handle = MethodHandles.collectCoordinates(handle, 0, derefAdapters[i - 1]);
-        //    }
-        //}
-        //return handle;
-        throw new UnsupportedOperationException("Not supported yet");
+        if (!(layout instanceof ValueLayout valueLayout)) {
+            throw new IllegalArgumentException("Path does not select a value layout");
+        }
+
+        // If we have an enclosing layout, drop the alignment check for the accessed element,
+        // we check the root layout instead
+        ValueLayout accessedLayout = enclosing != null ? valueLayout.withByteAlignment(1) : valueLayout;
+        VarHandle handle = _Utils.makeSegmentViewVarHandle(accessedLayout);
+        handle = VarHandles.collectCoordinates(handle, 1, offsetHandle());
+
+        // we only have to check the alignment of the root layout for the first dereference we do,
+        // as each dereference checks the alignment of the target address when constructing its segment
+        // (see _Utils::longToAddress)
+        if (derefAdapters.length == 0 && enclosing != null) {
+            MethodHandle checkHandle = MethodHandles.insertArguments(MH_CHECK_ALIGN, 1, rootLayout());
+            handle = VarHandles.filterCoordinates(handle, 0, checkHandle);
+        }
+
+        if (adapt) {
+            for (int i = derefAdapters.length; i > 0; i--) {
+                handle = VarHandles.collectCoordinates(handle, 0, derefAdapters[i - 1]);
+            }
+        }
+        return handle;
     }
 
+    @Keep
     private static long addScaledOffset(long base, long index, long stride, long bound) {
         // Port-changed: use Checks instead Objects
         //Objects.checkIndex(index, bound);
@@ -272,6 +263,7 @@ class _LayoutPath {
         return sliceHandle;
     }
 
+    @Keep
     private static MemorySegment checkAlign(MemorySegment segment, MemoryLayout constraint) {
         if (!((_AbstractMemorySegmentImpl) segment).isAlignedForElement(0, constraint)) {
             throw new IllegalArgumentException("Target offset incompatible with alignment constraints: " + constraint.byteAlignment());

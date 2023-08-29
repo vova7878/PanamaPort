@@ -526,6 +526,8 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *                                   or {@code newSize > byteSize() - offset}
      * @see #asSlice(long, long, long)
      */
+
+    @Keep
     MemorySegment asSlice(long offset, long newSize);
 
     /**
@@ -562,6 +564,8 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *                                   the alignment constraint specified by {@code layout}.
      * @see #asSlice(long, long, long)
      */
+
+    @Keep
     default MemorySegment asSlice(long offset, MemoryLayout layout) {
         Objects.requireNonNull(layout);
         return asSlice(offset, layout.byteSize(), layout.byteAlignment());
