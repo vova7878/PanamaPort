@@ -293,7 +293,7 @@ final class _Utils {
     }
 
     public static int byteWidthOfPrimitive(Class<?> primitive) {
-        // Port-removed: TODO?
+        // Port-changed: just check all primitive types
         //return Wrapper.forPrimitiveType(primitive).bitWidth() / 8;
         if (primitive == byte.class || primitive == boolean.class) {
             return 1;

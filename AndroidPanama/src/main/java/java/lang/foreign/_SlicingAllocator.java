@@ -28,13 +28,15 @@ package java.lang.foreign;
 final class _SlicingAllocator implements SegmentAllocator {
 
     private final MemorySegment segment;
-    private final long maxAlign; // TODO: unused?
+    // Port-removed: unused
+    //private final long maxAlign;
 
     private long sp = 0L;
 
     public _SlicingAllocator(MemorySegment segment) {
         this.segment = segment;
-        this.maxAlign = ((_AbstractMemorySegmentImpl) segment).maxAlignMask();
+        // Port-removed: unused
+        //this.maxAlign = ((_AbstractMemorySegmentImpl) segment).maxAlignMask();
     }
 
     MemorySegment trySlice(long byteSize, long byteAlignment) {

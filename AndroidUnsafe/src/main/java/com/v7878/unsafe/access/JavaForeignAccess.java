@@ -11,6 +11,7 @@ import java.lang.foreign.MemorySegment.Scope;
 import java.lang.foreign.ValueLayout;
 import java.lang.reflect.Method;
 
+//TODO: filechanel mmap segment
 public abstract class JavaForeignAccess {
     private static final JavaForeignAccess INSTANCE = (JavaForeignAccess) nothrows_run(() -> {
         Method init = getDeclaredMethod(MemorySegment.class, "initAccess");
