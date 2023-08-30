@@ -261,13 +261,28 @@ public interface SymbolLookup {
         return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
+    // Port-added: check dlerror
+    private static String format_dlerror(String msg) {
+        StringBuilder out = new StringBuilder();
+        out.append(msg);
+        String err = RawNativeLibraries.dlerror();
+        if (err == null) {
+            out.append("; no dlerror message");
+        } else {
+            out.append("; dlerror: ");
+            out.append(err);
+        }
+        return out.toString();
+    }
+
     private static <Z> SymbolLookup libraryLookup(Z libDesc, Function<Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
         Objects.requireNonNull(libDesc);
         Objects.requireNonNull(libArena);
         // attempt to load native library from path or name
         NativeLibrary library = loadLibraryFunc.apply(libDesc);
         if (library == null) {
-            throw new IllegalArgumentException("Cannot open library: " + libDesc);
+            // Port-added: use format_dlerror
+            throw new IllegalArgumentException(format_dlerror("Cannot open library: " + libDesc));
         }
         // register hook to unload library when 'libScope' becomes not alive
         _MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new ResourceCleanup() {
