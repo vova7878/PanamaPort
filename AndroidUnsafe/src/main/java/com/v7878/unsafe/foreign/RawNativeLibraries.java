@@ -2,6 +2,10 @@ package com.v7878.unsafe.foreign;
 
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static java.lang.foreign.MemoryLayout.sequenceLayout;
+import static java.lang.foreign.MemorySegment.NULL;
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -74,15 +78,15 @@ public class RawNativeLibraries {
                 (int) dlclose.invokeExact((int) handle));
     }
 
-    // TODO
-    //private static final Supplier<MethodHandle> dlerror = runOnce(
-    //        () -> SymbolLookup.defaultLookup().lookupHandle("dlerror",
-    //                FunctionDescriptor.of(ADDRESS)));
-    //
-    //static String dlerror() {
-    //    Pointer msg = (Pointer) nothrows_run(() -> dlerror.get().invoke());
-    //    return msg.isNull() ? null : msg.getCString();
-    //}
+    private static final MethodHandle dlerror = Linker.nativeLinker()
+            .downcallHandle(LibDL.dlerror, FunctionDescriptor.of(
+                            ADDRESS.withTargetLayout(sequenceLayout(JAVA_BYTE)))
+                    /*TODO: , isTrivial()*/);
+
+    public static String dlerror() {
+        MemorySegment msg = (MemorySegment) nothrows_run(() -> dlerror.invoke());
+        return NULL.equals(msg) ? null : msg.getUtf8String(0);
+    }
 
     public static NativeLibrary load(Path path) {
         return load(path.toFile().toString());
