@@ -2,17 +2,31 @@ package com.v7878.unsafe;
 
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
+import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
+import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
+import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getDeclaredMethods;
+import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.runOnce;
+import static com.v7878.unsafe.Utils.searchMethod;
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.MemoryLayout.structLayout;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+
+import androidx.annotation.Keep;
+
+import com.v7878.unsafe.Reflection.MethodHandleMirror;
+import com.v7878.unsafe.access.JavaForeignAccess;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
@@ -21,8 +35,14 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Objects;
 import java.util.function.Supplier;
+
+import dalvik.annotation.optimization.CriticalNative;
+import dalvik.annotation.optimization.FastNative;
 
 @SuppressWarnings("Since15")
 public class JNIUtils {
@@ -286,46 +306,46 @@ public class JNIUtils {
                 tmp = 21 * 4; // tls32_
                 tmp += 4; // padding
                 tmp += 8 * 8; // tls64_
-                tmp += 7 * ADDRESS_SIZE; // tlsPtr_
+                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             case 33: // android 13
                 tmp = 20 * 4; // tls32_
                 tmp += 8 * 8; // tls64_
-                tmp += 7 * ADDRESS_SIZE; // tlsPtr_
+                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             case 32: // android 12L
             case 31: // android 12
                 tmp = 4; // StateAndFlags
                 tmp += 21 * 4; // tls32_
                 tmp += 8 * 8; // tls64_
-                tmp += 7 * ADDRESS_SIZE; // tlsPtr_
+                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             case 30: // android 11
                 tmp = 4; // StateAndFlags
                 tmp += 22 * 4; // tls32_
                 tmp += 4; // padding
                 tmp += 8 * 8; // tls64_
-                tmp += 7 * ADDRESS_SIZE; // tlsPtr_
+                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             case 29: // android 10
                 tmp = 4; // StateAndFlags
                 tmp += 20 * 4; // tls32_
                 tmp += 4; // padding
                 tmp += 8 * 8; // tls64_
-                tmp += 7 * ADDRESS_SIZE; // tlsPtr_
+                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             case 28: // android 9
             case 27: // android 8.1
                 tmp = 4; // StateAndFlags
                 tmp += 17 * 4; // tls32_
                 tmp += 8 * 8; // tls64_
-                tmp += 7 * ADDRESS_SIZE; // tlsPtr_
+                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             case 26: // android 8
                 tmp = 4; // StateAndFlags
                 tmp += 15 * 4; // tls32_
                 tmp += 8 * 8; // tls64_
-                tmp += 7 * ADDRESS_SIZE; // tlsPtr_
+                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             default:
                 throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
@@ -358,12 +378,15 @@ public class JNIUtils {
         return getCurrentEnvPtr().get(JNIEnv_LAYOUT, 0);
     }
 
+    public static MemorySegment getJNINativeInterfaceFunction(String name) {
+        return getJNINativeInterface().get(ADDRESS,
+                JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
+    }
+
     private static final Supplier<MemorySegment> javaVMPtr = runOnce(() -> {
-        // TODO: cleanup code
         MemorySegment env = getCurrentEnvPtr();
         MethodHandle get_vm = Linker.nativeLinker().downcallHandle(
-                getJNINativeInterface().get(ADDRESS,
-                        JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement("GetJavaVM"))),
+                getJNINativeInterfaceFunction("GetJavaVM"),
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment jvm = arena.allocate(ADDRESS);
@@ -384,6 +407,101 @@ public class JNIUtils {
         return getJavaVMPtr().get(JavaVM_LAYOUT, 0);
     }
 
+    public static MemorySegment getJNIInvokeInterfaceFunction(String name) {
+        return getJNIInvokeInterface().get(ADDRESS,
+                JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
+    }
+
+    @Keep
+    private static class RefUtils {
+        @FastNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private native int NewGlobalRef32();
+
+        @FastNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private native long NewGlobalRef64();
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void DeleteGlobalRef32(int env, int ref);
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void DeleteGlobalRef64(long env, long ref);
+
+        @FastNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void putRef64(Object obj, long offset, long ref);
+
+        @FastNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void putRef32(Object obj, long offset, int ref);
+
+        public static final MethodHandle newGlobalRef;
+
+        static {
+            Class<?> word = IS64BIT ? long.class : int.class;
+            String suffix = IS64BIT ? "64" : "32";
+
+            Method[] methods = getDeclaredMethods(RefUtils.class);
+
+            Method put = getDeclaredMethod(SunUnsafe.getUnsafeClass(), "putObject",
+                    Object.class, long.class, Object.class);
+            assert_(Modifier.isNative(put.getModifiers()), AssertionError::new);
+            setExecutableData(searchMethod(methods, "putRef" + suffix,
+                    Object.class, long.class, word), getExecutableData(put));
+
+            Method ngr = searchMethod(methods, "NewGlobalRef" + suffix);
+            setExecutableData(ngr, getJNINativeInterfaceFunction("NewGlobalRef").address());
+
+            newGlobalRef = unreflectDirect(ngr);
+            MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, newGlobalRef);
+            mirror[0].type = MethodType.methodType(word, Object.class);
+
+            Method dgr = searchMethod(methods, "DeleteGlobalRef" + suffix, word, word);
+            setExecutableData(dgr, getJNINativeInterfaceFunction("DeleteGlobalRef").address());
+        }
+    }
+
+    public static long NewGlobalRef(Object obj) {
+        return nothrows_run(() -> {
+            MethodHandle h = RefUtils.newGlobalRef;
+            if (IS64BIT) {
+                return (long) h.invokeExact(obj);
+            } else {
+                return ((int) h.invokeExact(obj)) & 0xffffffffL;
+            }
+        });
+    }
+
+    public static void DeleteGlobalRef(long ref) {
+        long env = getCurrentEnvPtr().address();
+        if (IS64BIT) {
+            RefUtils.DeleteGlobalRef64(env, ref);
+        } else {
+            RefUtils.DeleteGlobalRef32((int) env, (int) ref);
+        }
+    }
+
+    public static long NewGlobalRef(Object obj, Arena arena) {
+        Objects.requireNonNull(arena);
+        long ref = NewGlobalRef(obj);
+        JavaForeignAccess.addOrCleanupIfFail(arena.scope(), () -> DeleteGlobalRef(ref));
+        return ref;
+    }
+
+    public static Object refToObject(long ref) {
+        Object[] arr = new Object[1];
+        final long offset = ARRAY_OBJECT_BASE_OFFSET;
+        if (IS64BIT) {
+            RefUtils.putRef64(arr, offset, ref);
+        } else {
+            RefUtils.putRef32(arr, offset, (int) ref);
+        }
+        return arr[0];
+    }
+
     // TODO
     /*private static final Supplier<Pointer> runtimePtr = runOnce(() ->
             Linker.nativeLinker().lookup("_ZN3art7Runtime9instance_E").get(ADDRESS));
@@ -391,78 +509,4 @@ public class JNIUtils {
     public static Pointer getRuntimePtr() {
         return runtimePtr.get();
     }*/
-
-    // TODO
-    /*@Keep
-    private static class RefUtils {
-        @SuppressWarnings("JavaJniMissingFunction")
-        @FastNative
-        private native int NewGlobalRef32();
-
-        @SuppressWarnings("JavaJniMissingFunction")
-        @FastNative
-        private native long NewGlobalRef64();
-
-        @SuppressWarnings("JavaJniMissingFunction")
-        @CriticalNative
-        private static native void DeleteGlobalRef32(int env, int ref);
-
-        @SuppressWarnings("JavaJniMissingFunction")
-        @CriticalNative
-        private static native void DeleteGlobalRef64(long env, long ref);
-    }
-
-    private static final Supplier<MethodHandle> newGlobalRef = runOnce(() -> {
-        Class<?> word = IS64BIT ? long.class : int.class;
-        String suffix = IS64BIT ? "64" : "32";
-
-        Method m = getDeclaredMethod(RefUtils.class, "NewGlobalRef" + suffix);
-        setExecutableData(m, getCurrentJNINativeInterface()
-                .select(groupElement("NewGlobalRef")).get(ADDRESS, 0));
-        MethodHandle out = unreflectDirect(m);
-
-        MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, out);
-        mirror[0].type = MethodType.methodType(word, Object.class);
-
-        return out;
-    });
-
-    public static long NewGlobalRef(Object obj) {
-        return nothrows_run(() -> {
-            MethodHandle f = newGlobalRef.get();
-            if (IS64BIT) {
-                return (long) f.invokeExact(obj);
-            } else {
-                return ((int) f.invokeExact(obj)) & 0xffffffffL;
-            }
-        });
-    }
-
-    private static final Supplier<MethodHandle> deleteGlobalRef = runOnce(() -> {
-        Class<?> word = IS64BIT ? long.class : int.class;
-        String suffix = IS64BIT ? "64" : "32";
-
-        Method m = getDeclaredMethod(RefUtils.class,
-                "DeleteGlobalRef" + suffix, word, word);
-        setExecutableData(m, getCurrentJNINativeInterface()
-                .select(groupElement("DeleteGlobalRef")).get(ADDRESS, 0));
-
-        return unreflect(m);
-    });
-
-    public static void DeleteGlobalRef(long ref) {
-        nothrows_run(() -> {
-            MethodHandle f = deleteGlobalRef.get();
-            long env = getCurrentEnvPtr().address();
-            if (IS64BIT) {
-                f.invokeExact(env, ref);
-            } else {
-                f.invokeExact((int) env, (int)ref);
-            }
-        });
-    }*/
-
-    //TODO
-    //public static class ScopedGlobalRef implements FineClosable {
-    //}
 }
