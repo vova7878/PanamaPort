@@ -36,6 +36,7 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
@@ -500,6 +501,72 @@ public class JNIUtils {
             RefUtils.putRef32(arr, offset, (int) ref);
         }
         return arr[0];
+    }
+
+    @Keep
+    private static class IDUtils {
+        @FastNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private native int FromReflectedMethod32();
+
+        @FastNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private native long FromReflectedMethod64();
+
+
+        @FastNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private native int FromReflectedField32();
+
+        @FastNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private native long FromReflectedField64();
+
+        public static final MethodHandle fromReflectedMethod;
+        public static final MethodHandle fromReflectedField;
+
+        static {
+            Class<?> word = IS64BIT ? long.class : int.class;
+            String suffix = IS64BIT ? "64" : "32";
+
+            Method[] methods = getDeclaredMethods(IDUtils.class);
+
+            Method frm = searchMethod(methods, "FromReflectedMethod" + suffix);
+            setExecutableData(frm, getJNINativeInterfaceFunction("FromReflectedMethod").address());
+
+            fromReflectedMethod = unreflectDirect(frm);
+            MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, fromReflectedMethod);
+            mirror[0].type = MethodType.methodType(word, Method.class);
+
+            Method frf = searchMethod(methods, "FromReflectedField" + suffix);
+            setExecutableData(frf, getJNINativeInterfaceFunction("FromReflectedField").address());
+
+            fromReflectedField = unreflectDirect(frf);
+            mirror = arrayCast(MethodHandleMirror.class, fromReflectedField);
+            mirror[0].type = MethodType.methodType(word, Field.class);
+        }
+    }
+
+    public static long FromReflectedMethod(Method method) {
+        return nothrows_run(() -> {
+            MethodHandle h = IDUtils.fromReflectedMethod;
+            if (IS64BIT) {
+                return (long) h.invokeExact(method);
+            } else {
+                return ((int) h.invokeExact(method)) & 0xffffffffL;
+            }
+        });
+    }
+
+    public static long FromReflectedField(Field field) {
+        return nothrows_run(() -> {
+            MethodHandle h = IDUtils.fromReflectedField;
+            if (IS64BIT) {
+                return (long) h.invokeExact(field);
+            } else {
+                return ((int) h.invokeExact(field)) & 0xffffffffL;
+            }
+        });
     }
 
     // TODO
