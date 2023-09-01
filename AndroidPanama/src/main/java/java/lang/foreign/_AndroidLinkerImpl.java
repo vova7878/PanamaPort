@@ -462,13 +462,17 @@ final class _AndroidLinkerImpl implements Linker {
 
         switch (NativeCodeBlob.CURRENT_INSTRUCTION_SET) {
             case X86_64:
-                byte call = switch (r_shorty) {
-                    case 'V' -> 0x70;
-                    case 'I' -> 0x10;
-                    case 'J' -> 0x28;
-                    //TODO: all types
-                    default ->
-                            throw new IllegalStateException("Unexpected return type: " + r_shorty);
+                byte[] call = switch (r_shorty) {
+                    case 'Z' -> new byte[]{(byte) 0xb0, 0x03};
+                    case 'B' -> new byte[]{(byte) 0xc8, 0x03};
+                    case 'C' -> new byte[]{(byte) 0xe0, 0x03};
+                    case 'S' -> new byte[]{(byte) 0xf8, 0x03};
+                    case 'I' -> new byte[]{0x10, 0x04};
+                    case 'F' -> new byte[]{0x40, 0x04};
+                    case 'J' -> new byte[]{0x28, 0x04};
+                    case 'D' -> new byte[]{0x58, 0x04};
+                    case 'V' -> new byte[]{0x70, 0x04};
+                    default -> throw new AssertionError("Unexpected return type: " + r_shorty);
                 };
                 code = new byte[]{
                         (byte) 0x48, (byte) 0x81, (byte) 0xec, (byte) 0xd8, (byte) 0x00, (byte) 0x00, (byte) 0x00,
@@ -514,7 +518,7 @@ final class _AndroidLinkerImpl implements Linker {
                         (byte) 0x48, (byte) 0x8B, (byte) 0x07,
                         (byte) 0x48, (byte) 0xBA, m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7],
                         (byte) 0x48, (byte) 0xBE, c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7],
-                        (byte) 0xFF, (byte) 0x90, call, (byte) 0x04, (byte) 0x00, (byte) 0x00,
+                        (byte) 0xFF, (byte) 0x90, call[0], call[1], (byte) 0x00, (byte) 0x00,
                         (byte) 0x48, (byte) 0x81, (byte) 0xC4, (byte) 0xD8, (byte) 0x00, (byte) 0x00, (byte) 0x00,
                         (byte) 0xC3,
                         (byte) 0x89, (byte) 0xC7,
