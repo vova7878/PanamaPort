@@ -21,19 +21,87 @@ public class ExtraMemoryAccess {
 
     @Keep
     private static class Swaps32 {
-        @ASM(iset = X86 /*, TODO*/)
+        @ASM(iset = X86, code = {
+                0x56,                                 // push   esi
+                0x53,                                 // push   ebx
+                (byte) 0x8B, 0x4C, 0x24, 0x0C,        // mov    ecx, dword ptr [esp+0xc]
+                (byte) 0x8B, 0x5C, 0x24, 0x10,        // mov    ebx, dword ptr [esp+0x10]
+                (byte) 0x8B, 0x74, 0x24, 0x14,        // mov    esi, dword ptr [esp+0x14]
+                (byte) 0xD1, (byte) 0xEE,             // shr    esi, 1
+                0x74, 0x1C,                           // je     0x2e
+                (byte) 0xBA, 0x00, 0x00, 0x00, 0x00,  // mov    edx, 0x0
+                (byte) 0x8B, 0x04, (byte) 0x93,       // mov    eax, dword ptr [ebx+edx*4]
+                0x0F, (byte) 0xC8,                    // bswap  eax
+                (byte) 0xC1, (byte) 0xC0, 0x10,       // rol    eax, 0x10
+                (byte) 0x89, 0x04, (byte) 0x91,       // mov    dword ptr [ecx+edx*4], eax
+                0x42,                                 // inc    edx
+                0x39, (byte) 0xF2,                    // cmp    edx, esi
+                0x75, (byte) 0xF0,                    // jne    0x17
+                (byte) 0xC1, (byte) 0xE2, 0x02,       // shl    edx, 2
+                0x01, (byte) 0xD3,                    // add    ebx, edx
+                0x01, (byte) 0xD1,                    // add    ecx, edx
+                (byte) 0xF6, 0x44, 0x24, 0x14, 0x01,  // test   byte ptr [esp+0x14], 1
+                0x74, 0x0A,                           // je     0x3f
+                0x66, (byte) 0x8B, 0x03,              // mov    ax, word ptr [ebx]
+                0x66, (byte) 0xC1, (byte) 0xC0, 0x08, // rol    ax, 8
+                0x66, (byte) 0x89, 0x01,              // mov    word ptr [ecx], ax
+                0x5B,                                 // pop    ebx
+                0x5E,                                 // pop    esi
+                (byte) 0xC3,                          // ret
+        })
         @ASM(iset = ARM /*, TODO*/)
         @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
         static native void swapShorts(int dst, int src, int count);
 
-        @ASM(iset = X86 /*, TODO*/)
+        @ASM(iset = X86, code = {
+                0x56,                                //push   esi
+                0x53,                                //push   ebx
+                (byte) 0x8B, 0x5C, 0x24, 0x0C,       //mov    ebx, dword ptr [esp+0xc]
+                (byte) 0x8B, 0x74, 0x24, 0x10,       //mov    esi, dword ptr [esp+0x10]
+                (byte) 0x8B, 0x4C, 0x24, 0x14,       //mov    ecx, dword ptr [esp+0x14]
+                (byte) 0x85, (byte) 0xC9,            //test   ecx, ecx
+                0x74, 0x12,                          //je     0x24
+                (byte) 0xB8, 0x00, 0x00, 0x00, 0x00, //mov    eax, 0x0
+                (byte) 0x8B, 0x14, (byte) 0x86,      //mov    edx, dword ptr [esi+eax*4]
+                0x0F, (byte) 0xCA,                   //bswap  edx
+                (byte) 0x89, 0x14, (byte) 0x83,      //mov    dword ptr [ebx+eax*4], edx
+                0x40,                                //inc    eax
+                0x39, (byte) 0xC1,                   //cmp    ecx, eax
+                0x75, (byte) 0xF3,                   //jne    0x17
+                0x5B,                                //pop    ebx
+                0x5E,                                //pop    esi
+                (byte) 0xC3,                         //ret
+        })
         @ASM(iset = ARM /*, TODO*/)
         @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
         static native void swapInts(int dst, int src, int count);
 
-        @ASM(iset = X86 /*, TODO*/)
+        @ASM(iset = X86, code = {
+                0x57,                                 // push   edi
+                0x56,                                 // push   esi
+                0x53,                                 // push   ebx
+                (byte) 0x8B, 0x5C, 0x24, 0x10,        // mov    ebx, dword ptr [esp+0x10]
+                (byte) 0x8B, 0x74, 0x24, 0x14,        // mov    esi, dword ptr [esp+0x14]
+                (byte) 0x8B, 0x7C, 0x24, 0x18,        // mov    edi, dword ptr [esp+0x18]
+                (byte) 0x85, (byte) 0xFF,             // test   edi, edi
+                0x74, 0x1C,                           // je     0x2f
+                (byte) 0xB8, 0x00, 0x00, 0x00, 0x00,  // mov    eax, 0x0
+                (byte) 0x8B, 0x14, (byte) 0xC6,       // mov    edx, dword ptr [esi+eax*8]
+                (byte) 0x8B, 0x4C, (byte) 0xC6, 0x04, // mov    ecx, dword ptr [esi+eax*8+4]
+                0x0F, (byte) 0xC9,                    // bswap  ecx
+                (byte) 0x89, 0x0C, (byte) 0xC3,       // mov    dword ptr [ebx+eax*8], ecx
+                0x0F, (byte) 0xCA,                    // bswap  edx
+                (byte) 0x89, 0x54, (byte) 0xC3, 0x04, // mov    dword ptr [ebx+eax*8+4], edx
+                0x40,                                 // inc    eax
+                0x39, (byte) 0xC7,                    // cmp    edi, eax
+                0x75, (byte) 0xE9,                    // jne    0x18
+                0x5B,                                 // pop    ebx
+                0x5E,                                 // pop    esi
+                0x5F,                                 // pop    edi
+                (byte) 0xC3,                          // ret
+        })
         @ASM(iset = ARM /*, TODO*/)
         @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
