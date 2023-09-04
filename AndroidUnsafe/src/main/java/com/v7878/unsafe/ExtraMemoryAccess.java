@@ -137,7 +137,24 @@ public class ExtraMemoryAccess {
                 0x66, 0x41, (byte) 0x89, 0x00,           // mov     WORD PTR [r8], ax
                 (byte) 0xc3                              // ret
         })
-        @ASM(iset = ARM64 /*, TODO*/)
+        @ASM(iset = ARM64, code = {
+                0x5F, 0x08, 0x00, (byte) 0xF1,               // cmp   x2, #2
+                0x23, 0x01, 0x00, 0x54,                      // b.lo  #0x28
+                0x48, (byte) 0xFC, 0x41, (byte) 0xD3,        // lsr   x8, x2, #1
+                0x1F, 0x05, 0x00, (byte) 0xF1,               // cmp   x8, #1
+                0x08, (byte) 0x85, (byte) 0x9F, (byte) 0x9A, // csinc x8, x8, xzr, hi
+                0x29, 0x44, 0x40, (byte) 0xB8,               // ldr   w9, [x1], #4
+                0x08, 0x05, 0x00, (byte) 0xF1,               // subs  x8, x8, #1
+                0x29, 0x05, (byte) 0xC0, 0x5A,               // rev16 w9, w9
+                0x09, 0x44, 0x00, (byte) 0xB8,               // str   w9, [x0], #4
+                (byte) 0x81, (byte) 0xFF, (byte) 0xFF, 0x54, // b.ne  #0x14
+                (byte) 0xA2, 0x00, 0x00, 0x36,               // tbz   w2, #0, #0x3c
+                0x28, 0x00, 0x40, 0x79,                      // ldrh  w8, [x1]
+                0x08, 0x09, (byte) 0xC0, 0x5A,               // rev   w8, w8
+                0x08, 0x7D, 0x10, 0x53,                      // lsr   w8, w8, #0x10
+                0x08, 0x00, 0x00, 0x79,                      // strh  w8, [x0]
+                (byte) 0xC0, 0x03, 0x5F, (byte) 0xD6         // ret
+        })
         @ASM(iset = RISCV64 /*, TODO*/)
         @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
@@ -155,7 +172,15 @@ public class ExtraMemoryAccess {
                 0x75, (byte) 0xef,                    // jne    0xa
                 (byte) 0xc3                           // ret
         })
-        @ASM(iset = ARM64 /*, TODO*/)
+        @ASM(iset = ARM64, code = {
+                (byte) 0xC2, 0x00, 0x00, (byte) 0xB4,        // cbz  x2, #0x18
+                0x28, 0x44, 0x40, (byte) 0xB8,               // ldr  w8, [x1], #4
+                0x42, 0x04, 0x00, (byte) 0xF1,               // subs x2, x2, #1
+                0x08, 0x09, (byte) 0xC0, 0x5A,               // rev  w8, w8
+                0x08, 0x44, 0x00, (byte) 0xB8,               // str  w8, [x0], #4
+                (byte) 0x81, (byte) 0xFF, (byte) 0xFF, 0x54, // b.ne #4
+                (byte) 0xC0, 0x03, 0x5F, (byte) 0xD6         // ret
+        })
         @ASM(iset = RISCV64 /*, TODO*/)
         @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
@@ -176,7 +201,16 @@ public class ExtraMemoryAccess {
                 0x75, (byte) 0xe2,                          // jne    0xa
                 (byte) 0xc3,                                // ret
         })
-        @ASM(iset = ARM64 /*, TODO*/)
+        @ASM(iset = ARM64, code = {
+                (byte) 0xE2, 0x00, 0x00, (byte) 0xB4, // cbz  x2, #0x1c
+                0x29, 0x20, (byte) 0xC1, 0x28,        // ldp  w9, w8, [x1], #8
+                0x42, 0x04, 0x00, (byte) 0xF1,        // subs x2, x2, #1
+                0x08, 0x09, (byte) 0xC0, 0x5A,        // rev  w8, w8
+                0x29, 0x09, (byte) 0xC0, 0x5A,        // rev  w9, w9
+                0x08, 0x24, (byte) 0x81, 0x28,        // stp  w8, w9, [x0], #8
+                0x61, (byte) 0xFF, (byte) 0xFF, 0x54, // b.ne #4
+                (byte) 0xC0, 0x03, 0x5F, (byte) 0xD6  // ret
+        })
         @ASM(iset = RISCV64 /*, TODO*/)
         @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
