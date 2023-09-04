@@ -42,7 +42,33 @@ public class ExtraMemoryAccess {
 
     @Keep
     private static class Swaps64 {
-        @ASM(iset = X86_64 /*, TODO*/)
+        @ASM(iset = X86_64, code = {
+                0x49, (byte) 0x89, (byte) 0xf8,          // mov     r8, rdi
+                0x48, (byte) 0x89, (byte) 0xd7,          // mov     rdi, rdx
+                0x48, (byte) 0xd1, (byte) 0xef,          // shr     rdi, 1
+                0x48, (byte) 0x83, (byte) 0xfa, 0x01,    // cmp     rdx, 0x1
+                0x76, 0x31,                              // jbe     0x40
+                (byte) 0xb9, 0x00, 0x00, 0x00, 0x00,     // mov     ecx, 0x0
+                (byte) 0x8b, 0x04, (byte) 0x8e,          // mov     eax, DWORD PTR [rsi+rcx*4]
+                0x0f, (byte) 0xc8,                       // bswap   eax
+                (byte) 0xc1, (byte) 0xc0, 0x10,          // rol     eax, 0x10
+                0x41, (byte) 0x89, 0x04, (byte) 0x88,    // mov     DWORD PTR [r8+rcx*4], eax
+                0x48, (byte) 0x83, (byte) 0xc1, 0x01,    // add     rcx, 0x1
+                0x48, 0x39, (byte) 0xf9,                 // cmp     rcx, rdi
+                0x72, (byte) 0xeb,                       // jb      0x14
+                0x48, (byte) 0xc1, (byte) 0xe7, 0x02,    // shl     rdi, 0x2
+                0x48, 0x01, (byte) 0xfe,                 // add     rsi, rdi
+                0x48, (byte) 0x83, (byte) 0xfa, 0x01,    // cmp     rdx, 0x1
+                (byte) 0xb8, 0x04, 0x00, 0x00, 0x00,     // mov     eax, 0x4
+                0x48, 0x0f, 0x46, (byte) 0xf8,           // cmovbe  rdi, rax
+                0x49, 0x01, (byte) 0xf8,                 // add     r8, rdi
+                (byte) 0xf6, (byte) 0xc2, 0x01,          // test    dl, 0x1
+                0x74, 0x0b,                              // je      0x50
+                0x0f, (byte) 0xb7, 0x06,                 // movzx   eax, WORD PTR [rsi]
+                0x66, (byte) 0xc1, (byte) 0xc0, 0x08,    // rol     ax, 0x8
+                0x66, 0x41, (byte) 0x89, 0x00,           // mov     WORD PTR [r8], ax
+                (byte) 0xc3                              // ret
+        })
         @ASM(iset = ARM64 /*, TODO*/)
         @ASM(iset = RISCV64 /*, TODO*/)
         @SuppressWarnings("JavaJniMissingFunction")
