@@ -92,10 +92,10 @@ public class NativeCodeBlob {
         long finalSize = size;
         long address = nothrows_run(() -> mmap(0, finalSize,
                 CODE_PROT, CODE_FLAGS, null, 0));
-        MemorySegment data = MemorySegment.ofAddress(address)
-                .reinterpret(finalSize, arena, null);
         JavaForeignAccess.addOrCleanupIfFail(arena.scope(),
                 () -> nothrows_run(() -> munmap(address, finalSize)));
+        MemorySegment data = MemorySegment.ofAddress(address)
+                .reinterpret(finalSize, arena, null);
 
         MemorySegment[] out = new MemorySegment[count];
         for (int i = 0; i < count; i++) {
@@ -108,6 +108,7 @@ public class NativeCodeBlob {
     }
 
     public static MemorySegment[] makeCodeBlob(Arena arena, byte[]... code) {
+        Objects.requireNonNull(arena);
         if (code.length == 0) {
             return new MemorySegment[0];
         }
