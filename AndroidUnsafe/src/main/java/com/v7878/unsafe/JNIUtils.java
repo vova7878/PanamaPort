@@ -564,11 +564,12 @@ public class JNIUtils {
         });
     }
 
-    // TODO
-    /*private static final Supplier<Pointer> runtimePtr = runOnce(() ->
-            Linker.nativeLinker().lookup("_ZN3art7Runtime9instance_E").get(ADDRESS));
+    private static final Supplier<MemorySegment> runtimePtr = runOnce(() ->
+            Linker.nativeLinker().defaultLookup()
+                    .find("_ZN3art7Runtime9instance_E")
+                    .get().get(ADDRESS, 0));
 
-    public static Pointer getRuntimePtr() {
+    public static MemorySegment getRuntimePtr() {
         return runtimePtr.get();
-    }*/
+    }
 }
