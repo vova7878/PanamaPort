@@ -409,4 +409,12 @@ public class Reflection {
 
         return out;
     }
+
+    public static MethodHandle setMethodType(MethodHandle handle, MethodType type) {
+        Objects.requireNonNull(handle);
+        Objects.requireNonNull(type);
+        MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, handle);
+        mirror[0].type = type;
+        return handle;
+    }
 }

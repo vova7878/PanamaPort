@@ -7,11 +7,11 @@ import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
 import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
-import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
+import static com.v7878.unsafe.Reflection.setMethodType;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -25,7 +25,6 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import androidx.annotation.Keep;
 
-import com.v7878.unsafe.Reflection.MethodHandleMirror;
 import com.v7878.unsafe.access.JavaForeignAccess;
 
 import java.lang.foreign.AddressLayout;
@@ -457,8 +456,7 @@ public class JNIUtils {
             setExecutableData(ngr, getJNINativeInterfaceFunction("NewGlobalRef").address());
 
             newGlobalRef = unreflectDirect(ngr);
-            MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, newGlobalRef);
-            mirror[0].type = MethodType.methodType(word, Object.class);
+            setMethodType(newGlobalRef, MethodType.methodType(word, Object.class));
 
             Method dgr = searchMethod(methods, "DeleteGlobalRef" + suffix, word, word);
             setExecutableData(dgr, getJNINativeInterfaceFunction("DeleteGlobalRef").address());
@@ -513,7 +511,6 @@ public class JNIUtils {
         @SuppressWarnings("JavaJniMissingFunction")
         private native long FromReflectedMethod64();
 
-
         @FastNative
         @SuppressWarnings("JavaJniMissingFunction")
         private native int FromReflectedField32();
@@ -535,15 +532,13 @@ public class JNIUtils {
             setExecutableData(frm, getJNINativeInterfaceFunction("FromReflectedMethod").address());
 
             fromReflectedMethod = unreflectDirect(frm);
-            MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, fromReflectedMethod);
-            mirror[0].type = MethodType.methodType(word, Method.class);
+            setMethodType(fromReflectedMethod, MethodType.methodType(word, Method.class));
 
             Method frf = searchMethod(methods, "FromReflectedField" + suffix);
             setExecutableData(frf, getJNINativeInterfaceFunction("FromReflectedField").address());
 
             fromReflectedField = unreflectDirect(frf);
-            mirror = arrayCast(MethodHandleMirror.class, fromReflectedField);
-            mirror[0].type = MethodType.methodType(word, Field.class);
+            setMethodType(fromReflectedField, MethodType.methodType(word, Field.class));
         }
     }
 
