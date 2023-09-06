@@ -10,6 +10,7 @@ import androidx.annotation.Keep;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -204,6 +205,38 @@ public class Utils {
                         if (ref == null || (result = ref.get()) == null) {
                             result = valueFactory.apply(key); // keep alive
                             ref = new SoftReference<>(result);
+                        }
+                    }
+                }
+                return result;
+            }
+        }
+    }
+
+    public static final class WeakReferenceCache<K, V> {
+
+        private final Map<K, Node<K, V>> cache = new ConcurrentHashMap<>();
+
+        public V get(K key, Function<K, V> valueFactory) {
+            return cache
+                    .computeIfAbsent(key, k -> new Node<>()) // short lock (has to be according to ConcurrentHashMap)
+                    .get(key, valueFactory); // long lock, but just for the particular key
+        }
+
+        private static class Node<K, V> {
+
+            private volatile WeakReference<V> ref;
+
+            public Node() {
+            }
+
+            public V get(K key, Function<K, V> valueFactory) {
+                V result;
+                if (ref == null || (result = ref.get()) == null) {
+                    synchronized (this) { // don't let threads race on the valueFactory::apply call
+                        if (ref == null || (result = ref.get()) == null) {
+                            result = valueFactory.apply(key); // keep alive
+                            ref = new WeakReference<>(result);
                         }
                     }
                 }
