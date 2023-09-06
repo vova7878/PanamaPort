@@ -171,6 +171,8 @@ public class EmulatedStackFrame {
             case 'D':
                 writer.putNextDouble(reader.nextDouble());
                 break;
+            default:
+                throw new AssertionError("Cannot get here");
         }
     }
 
@@ -320,6 +322,43 @@ public class EmulatedStackFrame {
             frame.references()[referencesOffset++] = value;
         }
 
+        public void putNextValue(Object value) {
+            argumentIdx++;
+            switch (TypeId.of(getCurrentArgumentType()).getShorty()) {
+                case 'V':
+                    break;
+                case 'L':
+                    frame.references()[referencesOffset++] = value;
+                    break;
+                case 'Z':
+                    frameBuf.putInt((boolean) value ? 1 : 0);
+                    break;
+                case 'B':
+                    frameBuf.putInt((byte) value);
+                    break;
+                case 'C':
+                    frameBuf.putInt((char) value);
+                    break;
+                case 'S':
+                    frameBuf.putInt((short) value);
+                    break;
+                case 'I':
+                    frameBuf.putInt((int) value);
+                    break;
+                case 'F':
+                    frameBuf.putFloat((float) value);
+                    break;
+                case 'J':
+                    frameBuf.putLong((long) value);
+                    break;
+                case 'D':
+                    frameBuf.putDouble((double) value);
+                    break;
+                default:
+                    throw new AssertionError("Cannot get here");
+            }
+        }
+
         public boolean nextBoolean() {
             checkReadType(boolean.class);
             argumentIdx++;
@@ -373,6 +412,33 @@ public class EmulatedStackFrame {
             argumentIdx++;
             //noinspection unchecked
             return (T) frame.references()[referencesOffset++];
+        }
+
+        public Object nextValue() {
+            argumentIdx++;
+            switch (TypeId.of(getCurrentArgumentType()).getShorty()) {
+                case 'L':
+                    return frame.references()[referencesOffset++];
+                case 'Z':
+                    return (frameBuf.getInt() != 0);
+                case 'B':
+                    return (byte) frameBuf.getInt();
+                case 'C':
+                    return (char) frameBuf.getInt();
+                case 'S':
+                    return (short) frameBuf.getInt();
+                case 'I':
+                    return frameBuf.getInt();
+                case 'F':
+                    return frameBuf.getFloat();
+                case 'J':
+                    return frameBuf.getLong();
+                case 'D':
+                    return frameBuf.getDouble();
+                case 'V':
+                default:
+                    throw new AssertionError("Cannot get here");
+            }
         }
     }
 
