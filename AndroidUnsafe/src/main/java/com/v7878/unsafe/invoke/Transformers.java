@@ -15,8 +15,12 @@ import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.MethodHandleMirror;
 import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
+import static com.v7878.unsafe.Stack.getStackClass1;
 import static com.v7878.unsafe.Utils.nothrows_run;
+
+import android.util.ArrayMap;
 
 import androidx.annotation.Keep;
 
@@ -29,6 +33,8 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
+import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 
 import java.lang.invoke.MethodHandle;
@@ -38,6 +44,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import dalvik.system.DexFile;
@@ -513,5 +520,103 @@ public class Transformers {
             EmulatedStackFrame.copyNext(stack.createAccessor().moveTo(0),
                     stack.createAccessor().moveToReturn(), type);
         });
+    }
+
+    private static final SoftReferenceCache<MethodType, MethodHandle> invokers_cache = new SoftReferenceCache<>();
+
+    private static void addClass(Map<String, Class<?>> map, Class<?> clazz) {
+        Class<?> component = clazz.getComponentType();
+        while (component != null) {
+            clazz = component;
+            component = clazz.getComponentType();
+        }
+
+        if (clazz.getClassLoader() != null && clazz.getClassLoader() != Object.class.getClassLoader()) {
+            map.put(clazz.getName(), clazz);
+        }
+    }
+
+    private static ClassLoader getInvokerClassLoader(MethodType type) {
+        ArrayMap<String, Class<?>> map = new ArrayMap<>(type.parameterCount() + 1);
+        for (int i = 0; i < type.parameterCount(); i++) {
+            addClass(map, type.parameterType(i));
+        }
+        addClass(map, type.returnType());
+
+        if (map.size() == 0) {
+            return Utils.newEmptyClassLoader();
+        }
+
+        // new every time, needed for GC
+        return new ClassLoader(getStackClass1().getClassLoader()) {
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                Class<?> out = map.get(name);
+                if (out != null) {
+                    return out;
+                }
+                return super.loadClass(name, resolve);
+            }
+
+            @Override
+            public Class<?> loadClass(String name) throws ClassNotFoundException {
+                return loadClass(name, false);
+            }
+        };
+    }
+
+    private static String getInvokerName(ProtoId proto) {
+        return Transformers.class.getName() + "$$$Invoker_" + proto.getShorty();
+    }
+
+    private static MethodHandle newInvoker(MethodType type) {
+        ProtoId proto = ProtoId.of(type);
+        MethodType itype = type.insertParameterTypes(0, MethodHandle.class);
+        ProtoId iproto = ProtoId.of(itype);
+        String invoker_name = getInvokerName(proto);
+        TypeId invoker_id = TypeId.of(invoker_name);
+        ClassDef invoker_def = new ClassDef(invoker_id);
+        invoker_def.setSuperClass(TypeId.of(Object.class));
+
+        final boolean exact = false;
+        MethodId invoke = new MethodId(TypeId.of(MethodHandle.class),
+                new ProtoId(TypeId.of(Object.class), TypeId.of(Object[].class)),
+                exact ? "invokeExact" : "invoke");
+
+        MethodId iid = new MethodId(invoker_id, ProtoId.of(itype), "invoke");
+        invoker_def.getClassData().getDirectMethods().add(new EncodedMethod(
+                iid, Modifier.STATIC).withCode(2 /* locals for wide result */, b -> {
+                    b.invoke_polymorphic_range(invoke, proto,
+                            iproto.getInputRegistersCount(), b.p(0));
+                    switch (iproto.getReturnType().getShorty()) {
+                        case 'V':
+                            b.return_void();
+                            break;
+                        case 'L':
+                            b.move_result_object(b.l(0))
+                                    .return_object(b.l(0));
+                            break;
+                        case 'J':
+                        case 'D':
+                            b.move_result_wide(b.l(0))
+                                    .return_wide(b.l(0));
+                            break;
+                        default:
+                            b.move_result(b.l(0))
+                                    .return_(b.l(0));
+                            break;
+                    }
+                }
+        ));
+
+        DexFile dex = openDexFile(new Dex(invoker_def).compile());
+        Class<?> invoker = loadClass(dex, invoker_name, getInvokerClassLoader(type));
+
+        return unreflect(getDeclaredMethod(invoker, "invoke", itype.parameterArray()));
+    }
+
+    public static MethodHandle invoker(MethodType type) {
+        Objects.requireNonNull(type);
+        return invokers_cache.get(type, Transformers::newInvoker);
     }
 }
