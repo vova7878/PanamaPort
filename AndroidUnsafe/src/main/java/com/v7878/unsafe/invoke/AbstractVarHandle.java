@@ -12,39 +12,39 @@ import java.util.stream.Stream;
 
 public abstract class AbstractVarHandle extends VarHandle {
     public final Object get(Object... args) {
-        return nothrows_run(() -> toMethodHandle(AccessMode.GET).invokeWithArguments(args));
+        return invoke(AccessMode.GET, args);
     }
 
     public final void set(Object... args) {
-        nothrows_run(() -> toMethodHandle(AccessMode.SET).invokeWithArguments(args));
+        invoke(AccessMode.SET, args);
     }
 
     // Volatile accessors
 
     public final Object getVolatile(Object... args) {
-        return nothrows_run(() -> toMethodHandle(AccessMode.GET_VOLATILE).invokeWithArguments(args));
+        return invoke(AccessMode.GET_VOLATILE, args);
     }
 
     public final void setVolatile(Object... args) {
-        nothrows_run(() -> toMethodHandle(AccessMode.SET_VOLATILE).invokeWithArguments(args));
+        invoke(AccessMode.SET_VOLATILE, args);
     }
 
     public final Object getOpaque(Object... args) {
-        return nothrows_run(() -> toMethodHandle(AccessMode.GET_OPAQUE).invokeWithArguments(args));
+        return invoke(AccessMode.GET_OPAQUE, args);
     }
 
     public final void setOpaque(Object... args) {
-        nothrows_run(() -> toMethodHandle(AccessMode.SET_OPAQUE).invokeWithArguments(args));
+        invoke(AccessMode.SET_OPAQUE, args);
     }
 
     // Lazy accessors
 
     public final Object getAcquire(Object... args) {
-        return nothrows_run(() -> toMethodHandle(AccessMode.GET_ACQUIRE).invokeWithArguments(args));
+        return invoke(AccessMode.GET_ACQUIRE, args);
     }
 
     public final void setRelease(Object... args) {
-        nothrows_run(() -> toMethodHandle(AccessMode.SET_RELEASE).invokeWithArguments(args));
+        invoke(AccessMode.SET_RELEASE, args);
     }
 
     // Compare and set accessors
@@ -231,6 +231,12 @@ public abstract class AbstractVarHandle extends VarHandle {
 
     private MethodType[] methodTypeTable;
     private MethodHandle[] methodHandleTable;
+    private MethodHandle[] invokerMethodHandleTable;
+
+    private Object invoke(AccessMode mode, Object[] args) {
+        return nothrows_run(() -> getInvokerHandle(accessType(mode).ordinal())
+                .invokeExact(toMethodHandle(mode), args));
+    }
 
     private MethodType accessModeType(int type) {
         MethodType[] mtTable = methodTypeTable;
@@ -256,6 +262,24 @@ public abstract class AbstractVarHandle extends VarHandle {
         MethodHandle mh = mhTable[mode];
         if (mh == null) {
             mh = mhTable[mode] = getMethodHandleUncached(mode);
+        }
+        return mh;
+    }
+
+    private MethodHandle getInvokerHandleUncached(int accessType) {
+        MethodType generic = accessModeType(accessType).generic();
+        MethodHandle invoker = Transformers.invoker(generic);
+        return invoker.asSpreader(Object[].class, generic.parameterCount());
+    }
+
+    private MethodHandle getInvokerHandle(int accessType) {
+        MethodHandle[] mhTable = invokerMethodHandleTable;
+        if (mhTable == null) {
+            mhTable = invokerMethodHandleTable = new MethodHandle[AccessType.values().length];
+        }
+        MethodHandle mh = mhTable[accessType];
+        if (mh == null) {
+            mh = mhTable[accessType] = getInvokerHandleUncached(accessType);
         }
         return mh;
     }
