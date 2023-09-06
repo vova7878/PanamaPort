@@ -2,6 +2,7 @@ package com.v7878.unsafe;
 
 
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.Stack.getStackClass1;
 
 import android.annotation.SuppressLint;
 
@@ -213,5 +214,15 @@ public class Utils {
 
     public static boolean containsNullChars(String s) {
         return s.indexOf('\u0000') >= 0;
+    }
+
+    public static ClassLoader newEmptyClassLoader(ClassLoader parent) {
+        // new every time, needed for GC
+        return new ClassLoader(parent) {
+        };
+    }
+
+    public static ClassLoader newEmptyClassLoader() {
+        return newEmptyClassLoader(getStackClass1().getClassLoader());
     }
 }
