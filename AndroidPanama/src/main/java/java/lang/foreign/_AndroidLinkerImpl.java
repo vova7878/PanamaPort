@@ -37,6 +37,7 @@ import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.NativeCodeBlob;
+import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
@@ -205,12 +206,6 @@ final class _AndroidLinkerImpl implements Linker {
         return MethodType.methodType(ret, args);
     }
 
-    private static ClassLoader getStubClassLoader() {
-        // new every time, needed for GC
-        return new ClassLoader(Linker.class.getClassLoader()) {
-        };
-    }
-
     //TODO: check segments scope in call
     private static class DowncallArranger implements Transformers.TransformerI {
         private final MethodHandle stub;
@@ -288,7 +283,7 @@ final class _AndroidLinkerImpl implements Linker {
         ));
 
         DexFile dex = openDexFile(new Dex(stub_def).compile());
-        Class<?> stub = loadClass(dex, stub_name, getStubClassLoader());
+        Class<?> stub = loadClass(dex, stub_name, Utils.newEmptyClassLoader());
         Method function = getDeclaredMethod(stub, "function", stub_call_type.parameterArray());
         setExecutableData(function, symbol);
 
@@ -407,7 +402,7 @@ final class _AndroidLinkerImpl implements Linker {
         ));
 
         DexFile dex = openDexFile(new Dex(stub_def).compile());
-        Class<?> stub = loadClass(dex, stub_name, getStubClassLoader());
+        Class<?> stub = loadClass(dex, stub_name, Utils.newEmptyClassLoader());
 
         putObject(stub, staticFieldOffset(getDeclaredField(stub, "target")), target);
 
