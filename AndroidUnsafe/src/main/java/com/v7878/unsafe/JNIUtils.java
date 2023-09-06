@@ -1,12 +1,18 @@
 package com.v7878.unsafe;
 
+import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
+import static com.v7878.dex.bytecode.CodeBuilder.RawUnOp.NEG_INT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
 import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
+import static com.v7878.unsafe.ClassUtils.setClassStatus;
+import static com.v7878.unsafe.DexFileUtils.loadClass;
+import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
@@ -25,6 +31,12 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import androidx.annotation.Keep;
 
+import com.v7878.dex.ClassDef;
+import com.v7878.dex.Dex;
+import com.v7878.dex.EncodedMethod;
+import com.v7878.dex.MethodId;
+import com.v7878.dex.ProtoId;
+import com.v7878.dex.TypeId;
 import com.v7878.unsafe.access.JavaForeignAccess;
 
 import java.lang.foreign.AddressLayout;
@@ -33,6 +45,7 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
@@ -43,8 +56,9 @@ import java.util.function.Supplier;
 
 import dalvik.annotation.optimization.CriticalNative;
 import dalvik.annotation.optimization.FastNative;
+import dalvik.system.DexFile;
 
-@SuppressWarnings("Since15")
+@SuppressWarnings({"Since15", "deprecation"})
 public class JNIUtils {
     public static final GroupLayout JNI_NATIVE_INTERFACE_LAYOUT = structLayout(
             ADDRESS.withName("reserved0"),
@@ -413,7 +427,7 @@ public class JNIUtils {
     }
 
     @Keep
-    private static class RefUtils {
+    abstract static class RefUtils {
         @FastNative
         @SuppressWarnings("JavaJniMissingFunction")
         private native int NewGlobalRef32();
@@ -429,6 +443,42 @@ public class JNIUtils {
         @CriticalNative
         @SuppressWarnings("JavaJniMissingFunction")
         private static native void DeleteGlobalRef64(long env, long ref);
+
+        abstract long NewLocalRef64(long env, Object obj);
+
+        abstract int NewLocalRef32(int env, Object obj);
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        static native long RawNewLocalRef64(long env, long ref_ptr);
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        static native int RawNewLocalRef32(int env, int ref_ptr);
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void DeleteLocalRef64(long env, long ref);
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void DeleteLocalRef32(int env, int ref);
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void PushLocalFrame64(long env, int capacity);
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void PushLocalFrame32(int env, int capacity);
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void PopLocalFrame64(long env);
+
+        @CriticalNative
+        @SuppressWarnings("JavaJniMissingFunction")
+        private static native void PopLocalFrame32(int env);
 
         @FastNative
         @SuppressWarnings("JavaJniMissingFunction")
@@ -460,6 +510,112 @@ public class JNIUtils {
 
             Method dgr = searchMethod(methods, "DeleteGlobalRef" + suffix, word, word);
             setExecutableData(dgr, getJNINativeInterfaceFunction("DeleteGlobalRef").address());
+
+            SymbolLookup art = Linker.nativeLinker().defaultLookup();
+
+            MemorySegment nlr = art.find("_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE").get();
+            setExecutableData(searchMethod(methods, "RawNewLocalRef" + suffix, word, word), nlr.address());
+
+            MemorySegment dlr = art.find("_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject").get();
+            setExecutableData(searchMethod(methods, "DeleteLocalRef" + suffix, word, word), dlr.address());
+
+            // art.find("_ZN3art9JNIEnvExt9PushFrameEi").get();
+            MemorySegment push = JNIUtils.getJNINativeInterfaceFunction("PushLocalFrame");
+            setExecutableData(searchMethod(methods, "PushLocalFrame" + suffix, word, int.class), push.address());
+
+            MemorySegment pop = art.find("_ZN3art9JNIEnvExt8PopFrameEv").get();
+            setExecutableData(searchMethod(methods, "PopLocalFrame" + suffix, word), pop.address());
+        }
+    }
+
+    private static final Supplier<RefUtils> localRefUtils = runOnce(() -> {
+        //make sure kPoisonReferences is initialized
+        boolean kPoisonReferences = VM.kPoisonReferences.get();
+
+        Class<?> word = IS64BIT ? long.class : int.class;
+        TypeId word_id = TypeId.of(word);
+        String suffix = IS64BIT ? "64" : "32";
+
+        String impl_name = RefUtils.class.getName() + "$Impl";
+        TypeId impl_id = TypeId.of(impl_name);
+        ClassDef impl_def = new ClassDef(impl_id);
+        impl_def.setSuperClass(TypeId.of(RefUtils.class));
+
+        MethodId raw_nlr_id = new MethodId(TypeId.of(RefUtils.class),
+                new ProtoId(word_id, word_id, word_id), "RawNewLocalRef" + suffix);
+        MethodId nlr_id = new MethodId(impl_id, new ProtoId(word_id,
+                word_id, TypeId.of(Object.class)), "NewLocalRef" + suffix);
+
+        // note: it's broken - object is cast to pointer
+        if (IS64BIT) {
+            // pointer 64-bit, object 32-bit -> fill upper 32 bits with zeros (l0 register)
+            impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
+                    nlr_id, Modifier.PUBLIC).withCode(1, b -> b
+                    .const_4(b.l(0), 0)
+                    .if_(kPoisonReferences,
+                            // TODO: how will GC react to this?
+                            unused -> b.raw_unop(NEG_INT, b.p(2), b.p(2)),
+                            unused -> b.nop()
+                    )
+                    .invoke(STATIC, raw_nlr_id, b.p(0), b.p(1), b.p(2), b.l(0))
+                    .move_result_wide(b.v(0))
+                    .return_wide(b.v(0))
+            ));
+        } else {
+            impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
+                    nlr_id, Modifier.PUBLIC).withCode(0, b -> b
+                    .if_(kPoisonReferences,
+                            // TODO: how will GC react to this?
+                            unused -> b.raw_unop(NEG_INT, b.p(1), b.p(1)),
+                            unused -> b.nop()
+                    )
+                    .invoke(STATIC, raw_nlr_id, b.p(0), b.p(1))
+                    .move_result(b.v(0))
+                    .return_(b.v(0))
+            ));
+        }
+
+        DexFile dex = openDexFile(new Dex(impl_def).compile());
+        Class<?> utils = loadClass(dex, impl_name, RefUtils.class.getClassLoader());
+        setClassStatus(utils, ClassUtils.ClassStatus.Verified);
+
+        return (RefUtils) allocateInstance(utils);
+    });
+
+    public static long NewLocalRef(Object obj) {
+        RefUtils utils = localRefUtils.get();
+        long env = getCurrentEnvPtr().address();
+        if (IS64BIT) {
+            return utils.NewLocalRef64(env, obj);
+        } else {
+            return utils.NewLocalRef32((int) env, obj) & 0xffffffffL;
+        }
+    }
+
+    public static void DeleteLocalRef(long ref) {
+        long env = getCurrentEnvPtr().address();
+        if (IS64BIT) {
+            RefUtils.DeleteLocalRef64(env, ref);
+        } else {
+            RefUtils.DeleteLocalRef32((int) env, (int) ref);
+        }
+    }
+
+    public static void PushLocalFrame(int capacity) {
+        long env = getCurrentEnvPtr().address();
+        if (IS64BIT) {
+            RefUtils.PushLocalFrame64(env, capacity);
+        } else {
+            RefUtils.PushLocalFrame32((int) env, capacity);
+        }
+    }
+
+    public static void PopLocalFrame() {
+        long env = getCurrentEnvPtr().address();
+        if (IS64BIT) {
+            RefUtils.PopLocalFrame64(env);
+        } else {
+            RefUtils.PopLocalFrame32((int) env);
         }
     }
 
