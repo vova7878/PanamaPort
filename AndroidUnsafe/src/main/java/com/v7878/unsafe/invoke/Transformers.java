@@ -627,4 +627,22 @@ public class Transformers {
         Objects.requireNonNull(type);
         return exact_invokers_cache.get(type, t -> newInvoker(t, true));
     }
+
+    static class JustInvoke implements TransformerI {
+        private final MethodHandle target;
+
+        JustInvoke(MethodHandle target) {
+            this.target = target;
+        }
+
+        @Override
+        public void transform(EmulatedStackFrame stack) throws Throwable {
+            // Invoke the target with checks
+            invokeExactWithFrame(target, stack);
+        }
+    }
+
+    public static MethodHandle protectHandle(MethodHandle target) {
+        return makeTransformer(target.type(), new JustInvoke(target));
+    }
 }
