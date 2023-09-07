@@ -18,6 +18,7 @@ import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Stack.getStackClass1;
+import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import android.util.ArrayMap;
@@ -489,10 +490,6 @@ public class Transformers {
         }
     }
 
-    private static RuntimeException newIllegalArgumentException(String message, Object obj1, Object obj2) {
-        return new IllegalArgumentException(message + ": " + obj1 + ", " + obj2);
-    }
-
     // fix for PLATFORM-BUG!
     public static MethodHandle collectArguments(MethodHandle target, int pos, MethodHandle filter) {
         MethodType newType = collectArgumentsChecks(target, pos, filter);
@@ -516,10 +513,9 @@ public class Transformers {
     // fix for PLATFORM-BUG!
     public static MethodHandle identity(Class<?> type) {
         Objects.requireNonNull(type);
-        return makeTransformer(MethodType.methodType(type, type), (TransformerI) stack -> {
-            EmulatedStackFrame.copyNext(stack.createAccessor().moveTo(0),
-                    stack.createAccessor().moveToReturn(), type);
-        });
+        return makeTransformer(MethodType.methodType(type, type), (TransformerI) stack ->
+                EmulatedStackFrame.copyNext(stack.createAccessor().moveTo(0),
+                        stack.createAccessor().moveToReturn(), type));
     }
 
     private static void addClass(Map<String, Class<?>> map, Class<?> clazz) {
@@ -628,7 +624,7 @@ public class Transformers {
         return exact_invokers_cache.get(type, t -> newInvoker(t, true));
     }
 
-    static class JustInvoke implements TransformerI {
+    private static class JustInvoke implements TransformerI {
         private final MethodHandle target;
 
         JustInvoke(MethodHandle target) {

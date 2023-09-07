@@ -1,5 +1,7 @@
 package com.v7878.unsafe.invoke;
 
+import static com.v7878.unsafe.Utils.newIllegalArgumentException;
+
 import com.v7878.foreign.VarHandle;
 
 import java.lang.invoke.MethodHandle;
@@ -12,18 +14,6 @@ import java.util.function.BiFunction;
 
 public final class VarHandles {
     private VarHandles() {
-    }
-
-    private static RuntimeException newIllegalArgumentException(String message) {
-        return new IllegalArgumentException(message);
-    }
-
-    private static RuntimeException newIllegalArgumentException(String message, Object obj) {
-        return new IllegalArgumentException(message + ": " + obj);
-    }
-
-    private static RuntimeException newIllegalArgumentException(String message, Object obj1, Object obj2) {
-        return new IllegalArgumentException(message + ": " + obj1 + ", " + obj2);
     }
 
     private static Class<?> lastParameterType(MethodType type) {

@@ -258,4 +258,16 @@ public class Utils {
     public static ClassLoader newEmptyClassLoader() {
         return newEmptyClassLoader(getStackClass1().getClassLoader());
     }
+
+    public static RuntimeException newIllegalArgumentException(String message) {
+        return new IllegalArgumentException(message);
+    }
+
+    public static RuntimeException newIllegalArgumentException(String message, Object obj) {
+        return new IllegalArgumentException(message + ": " + obj);
+    }
+
+    public static RuntimeException newIllegalArgumentException(String message, Object obj1, Object obj2) {
+        return new IllegalArgumentException(message + ": " + obj1 + ", " + obj2);
+    }
 }
