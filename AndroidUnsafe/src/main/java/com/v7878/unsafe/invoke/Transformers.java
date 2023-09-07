@@ -522,8 +522,6 @@ public class Transformers {
         });
     }
 
-    private static final SoftReferenceCache<MethodType, MethodHandle> invokers_cache = new SoftReferenceCache<>();
-
     private static void addClass(Map<String, Class<?>> map, Class<?> clazz) {
         Class<?> component = clazz.getComponentType();
         while (component != null) {
@@ -569,7 +567,7 @@ public class Transformers {
         return Transformers.class.getName() + "$$$Invoker_" + proto.getShorty();
     }
 
-    private static MethodHandle newInvoker(MethodType type) {
+    private static MethodHandle newInvoker(MethodType type, boolean exact) {
         ProtoId proto = ProtoId.of(type);
         MethodType itype = type.insertParameterTypes(0, MethodHandle.class);
         ProtoId iproto = ProtoId.of(itype);
@@ -578,7 +576,6 @@ public class Transformers {
         ClassDef invoker_def = new ClassDef(invoker_id);
         invoker_def.setSuperClass(TypeId.of(Object.class));
 
-        final boolean exact = false;
         MethodId invoke = new MethodId(TypeId.of(MethodHandle.class),
                 new ProtoId(TypeId.of(Object.class), TypeId.of(Object[].class)),
                 exact ? "invokeExact" : "invoke");
@@ -615,8 +612,19 @@ public class Transformers {
         return unreflect(getDeclaredMethod(invoker, "invoke", itype.parameterArray()));
     }
 
+    private static final SoftReferenceCache<MethodType, MethodHandle>
+            invokers_cache = new SoftReferenceCache<>();
+
     public static MethodHandle invoker(MethodType type) {
         Objects.requireNonNull(type);
-        return invokers_cache.get(type, Transformers::newInvoker);
+        return invokers_cache.get(type, t -> newInvoker(t, false));
+    }
+
+    private static final SoftReferenceCache<MethodType, MethodHandle>
+            exact_invokers_cache = new SoftReferenceCache<>();
+
+    public static MethodHandle exactInvoker(MethodType type) {
+        Objects.requireNonNull(type);
+        return exact_invokers_cache.get(type, t -> newInvoker(t, true));
     }
 }
