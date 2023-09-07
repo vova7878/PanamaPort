@@ -14,12 +14,14 @@ import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.MethodHandleMirror;
 import static com.v7878.unsafe.Reflection.arrayCast;
+import static com.v7878.unsafe.Reflection.getDeclaredConstructor;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Stack.getStackClass1;
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.runOnce;
 
 import android.util.ArrayMap;
 
@@ -39,6 +41,7 @@ import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.Constructor;
@@ -47,6 +50,7 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
 
@@ -640,5 +644,26 @@ public class Transformers {
 
     public static MethodHandle protectHandle(MethodHandle target) {
         return makeTransformer(target.type(), new JustInvoke(target));
+    }
+
+    private static void explicitCastArgumentsChecks(MethodHandle target, MethodType newType) {
+        if (target.type().parameterCount() != newType.parameterCount()) {
+            throw new WrongMethodTypeException("cannot explicitly cast " + target +
+                    " to " + newType);
+        }
+    }
+
+    private static final Supplier<MethodHandle> new_eca = runOnce(() -> nothrows_run(() -> {
+        Class<?> eca = Class.forName("java.lang.invoke.Transformers$ExplicitCastArguments");
+        return unreflect(getDeclaredConstructor(eca, MethodHandle.class, MethodType.class));
+    }));
+
+    // fix for PLATFORM-BUG! (Again... Android's MethodHandle API is cursed)
+    public static MethodHandle explicitCastArguments(MethodHandle target, MethodType newType) {
+        if (invoke_transformer.isInstance(target)) {
+            explicitCastArgumentsChecks(target, newType);
+            return (MethodHandle) nothrows_run(() -> new_eca.get().invoke(target, newType));
+        }
+        return MethodHandles.explicitCastArguments(target, newType);
     }
 }
