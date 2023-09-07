@@ -32,6 +32,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.VarHandle;
+import com.v7878.unsafe.invoke.Transformers;
 import com.v7878.unsafe.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
@@ -106,6 +107,7 @@ final class _Utils {
                 return prev != null ? prev : handle;
             }
         }
+
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = IS64BIT ? long.class : int.class;
@@ -120,8 +122,8 @@ final class _Utils {
             handle = VarHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
         } else if (layout instanceof AddressLayout addressLayout) {
             handle = VarHandles.filterValue(handle,
-                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
-                    MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
+                    Transformers.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
+                    Transformers.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
                                     pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
                             MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
