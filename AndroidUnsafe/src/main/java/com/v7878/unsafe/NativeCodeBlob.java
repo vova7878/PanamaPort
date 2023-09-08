@@ -138,10 +138,12 @@ public class NativeCodeBlob {
         String value();
     }
 
+    private static final byte[] NOT_FOUND = new byte[0];
+
     private static Optional<byte[]> getCode(ASM asm) {
         byte[] code = asm.code();
         if (code.length == 0) {
-            return Optional.empty();
+            return Optional.of(NOT_FOUND);
         }
         return Optional.of(code);
     }
@@ -158,8 +160,11 @@ public class NativeCodeBlob {
             throw new IllegalArgumentException("return type of asm generator method is not byte[]: " + generator);
         }
         byte[] code = (byte[]) nothrows_run(() -> generator.invoke(null, CURRENT_INSTRUCTION_SET));
-        if (code == null || code.length == 0) {
+        if (code == null) {
             return Optional.empty();
+        }
+        if (code.length == 0) {
+            return Optional.of(NOT_FOUND);
         }
         return Optional.of(code);
     }
@@ -194,10 +199,12 @@ public class NativeCodeBlob {
                     code = getCode(generator, clazz);
                 }
                 if (code.isPresent()) {
-                    work.put(method, code.get());
-                } else {
-                    throw new IllegalStateException("Unable to find ASM for " +
-                            CURRENT_INSTRUCTION_SET + " instruction set for method " + method);
+                    if (code.get() == NOT_FOUND) {
+                        throw new IllegalStateException("Unable to find ASM for " +
+                                CURRENT_INSTRUCTION_SET + " instruction set for method " + method);
+                    } else {
+                        work.put(method, code.get());
+                    }
                 }
             }
         }
