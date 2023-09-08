@@ -713,7 +713,7 @@ public class JNIUtils {
     private static final Supplier<MemorySegment> runtimePtr = runOnce(() ->
             Linker.nativeLinker().defaultLookup()
                     .find("_ZN3art7Runtime9instance_E")
-                    .get().get(ADDRESS, 0));
+                    .get().reinterpret(ADDRESS_SIZE).get(ADDRESS, 0));
 
     public static MemorySegment getRuntimePtr() {
         return runtimePtr.get();
