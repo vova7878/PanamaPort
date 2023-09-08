@@ -16,7 +16,6 @@ public class Stack {
     }
 
     @Keep
-    @SuppressWarnings("JavaJniMissingFunction")
     public static native Class<?> getStackClass2();
 
     @Keep

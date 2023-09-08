@@ -90,11 +90,9 @@ class MappedMemoryUtils {
     // native methods
 
     @Keep
-    @SuppressWarnings("JavaJniMissingFunction")
     private static native boolean isLoaded0(long address, long length, int pageCount);
 
     @Keep
-    @SuppressWarnings("JavaJniMissingFunction")
     private static native void force0(FileDescriptor fd, long address, long length);
 
 
@@ -103,12 +101,10 @@ class MappedMemoryUtils {
 
     @Keep
     @CriticalNative
-    @SuppressWarnings("JavaJniMissingFunction")
     private static native int madvise64(long address, long length, int advice);
 
     @Keep
     @CriticalNative
-    @SuppressWarnings("JavaJniMissingFunction")
     private static native int madvise32(int address, int length, int advice);
 
     private static int madvise(long address, long length, int advice) {

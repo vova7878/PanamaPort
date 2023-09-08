@@ -50,7 +50,6 @@ public class ExtraMemoryAccess {
                 (byte) 0xC3,                          // ret
         })
         @ASM(iset = ARM /*, TODO*/)
-        @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
         static native void swapShorts(int dst, int src, int count);
 
@@ -74,7 +73,6 @@ public class ExtraMemoryAccess {
                 (byte) 0xC3,                         //ret
         })
         @ASM(iset = ARM /*, TODO*/)
-        @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
         static native void swapInts(int dst, int src, int count);
 
@@ -103,7 +101,6 @@ public class ExtraMemoryAccess {
                 (byte) 0xC3,                          // ret
         })
         @ASM(iset = ARM /*, TODO*/)
-        @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
         static native void swapLongs(int dst, int src, int count);
     }
@@ -156,7 +153,6 @@ public class ExtraMemoryAccess {
                 (byte) 0xC0, 0x03, 0x5F, (byte) 0xD6         // ret
         })
         @ASM(iset = RISCV64 /*, TODO*/)
-        @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
         static native void swapShorts(long dst, long src, long count);
 
@@ -182,7 +178,6 @@ public class ExtraMemoryAccess {
                 (byte) 0xC0, 0x03, 0x5F, (byte) 0xD6         // ret
         })
         @ASM(iset = RISCV64 /*, TODO*/)
-        @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
         static native void swapInts(long dst, long src, long count);
 
@@ -212,7 +207,6 @@ public class ExtraMemoryAccess {
                 (byte) 0xC0, 0x03, 0x5F, (byte) 0xD6  // ret
         })
         @ASM(iset = RISCV64 /*, TODO*/)
-        @SuppressWarnings("JavaJniMissingFunction")
         @CriticalNative
         static native void swapLongs(long dst, long src, long count);
     }

@@ -429,19 +429,15 @@ public class JNIUtils {
     @Keep
     abstract static class RefUtils {
         @FastNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private native int NewGlobalRef32();
 
         @FastNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private native long NewGlobalRef64();
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void DeleteGlobalRef32(int env, int ref);
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void DeleteGlobalRef64(long env, long ref);
 
         abstract long NewLocalRef64(long env, Object obj);
@@ -449,43 +445,33 @@ public class JNIUtils {
         abstract int NewLocalRef32(int env, Object obj);
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         static native long RawNewLocalRef64(long env, long ref_ptr);
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         static native int RawNewLocalRef32(int env, int ref_ptr);
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void DeleteLocalRef64(long env, long ref);
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void DeleteLocalRef32(int env, int ref);
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void PushLocalFrame64(long env, int capacity);
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void PushLocalFrame32(int env, int capacity);
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void PopLocalFrame64(long env);
 
         @CriticalNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void PopLocalFrame32(int env);
 
         @FastNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void putRef64(Object obj, long offset, long ref);
 
         @FastNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private static native void putRef32(Object obj, long offset, int ref);
 
         public static final MethodHandle newGlobalRef;
@@ -660,19 +646,15 @@ public class JNIUtils {
     @Keep
     private static class IDUtils {
         @FastNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private native int FromReflectedMethod32();
 
         @FastNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private native long FromReflectedMethod64();
 
         @FastNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private native int FromReflectedField32();
 
         @FastNative
-        @SuppressWarnings("JavaJniMissingFunction")
         private native long FromReflectedField64();
 
         public static final MethodHandle fromReflectedMethod;
