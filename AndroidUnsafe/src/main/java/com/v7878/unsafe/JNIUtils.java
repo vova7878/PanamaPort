@@ -429,9 +429,11 @@ public class JNIUtils {
     @Keep
     abstract static class RefUtils {
         @FastNative
+        @SuppressWarnings("unused")
         private native int NewGlobalRef32();
 
         @FastNative
+        @SuppressWarnings("unused")
         private native long NewGlobalRef64();
 
         @CriticalNative
@@ -445,9 +447,11 @@ public class JNIUtils {
         abstract int NewLocalRef32(int env, Object obj);
 
         @CriticalNative
+        @SuppressWarnings("unused")
         static native long RawNewLocalRef64(long env, long ref_ptr);
 
         @CriticalNative
+        @SuppressWarnings("unused")
         static native int RawNewLocalRef32(int env, int ref_ptr);
 
         @CriticalNative
@@ -646,15 +650,19 @@ public class JNIUtils {
     @Keep
     private static class IDUtils {
         @FastNative
+        @SuppressWarnings("unused")
         private native int FromReflectedMethod32();
 
         @FastNative
+        @SuppressWarnings("unused")
         private native long FromReflectedMethod64();
 
         @FastNative
+        @SuppressWarnings("unused")
         private native int FromReflectedField32();
 
         @FastNative
+        @SuppressWarnings("unused")
         private native long FromReflectedField64();
 
         public static final MethodHandle fromReflectedMethod;
