@@ -15,12 +15,13 @@ import com.v7878.unsafe.NativeCodeBlob.ASM;
 import dalvik.annotation.optimization.CriticalNative;
 
 public class ExtraMemoryAccess {
-    static {
-        processASM(IS64BIT ? Swaps64.class : Swaps32.class);
-    }
 
     @Keep
-    private static class Swaps32 {
+    private static class Swaps {
+        static {
+            processASM();
+        }
+
         @ASM(iset = X86, code = {
                 0x56,                                 // push   esi
                 0x53,                                 // push   ebx
@@ -51,7 +52,7 @@ public class ExtraMemoryAccess {
         })
         @ASM(iset = ARM /*, TODO*/)
         @CriticalNative
-        static native void swapShorts(int dst, int src, int count);
+        static native void swapShorts32(int dst, int src, int count);
 
         @ASM(iset = X86, code = {
                 0x56,                                //push   esi
@@ -74,7 +75,7 @@ public class ExtraMemoryAccess {
         })
         @ASM(iset = ARM /*, TODO*/)
         @CriticalNative
-        static native void swapInts(int dst, int src, int count);
+        static native void swapInts32(int dst, int src, int count);
 
         @ASM(iset = X86, code = {
                 0x57,                                 // push   edi
@@ -102,11 +103,8 @@ public class ExtraMemoryAccess {
         })
         @ASM(iset = ARM /*, TODO*/)
         @CriticalNative
-        static native void swapLongs(int dst, int src, int count);
-    }
+        static native void swapLongs32(int dst, int src, int count);
 
-    @Keep
-    private static class Swaps64 {
         @ASM(iset = X86_64, code = {
                 0x49, (byte) 0x89, (byte) 0xf8,          // mov     r8, rdi
                 0x48, (byte) 0x89, (byte) 0xd7,          // mov     rdi, rdx
@@ -154,7 +152,7 @@ public class ExtraMemoryAccess {
         })
         @ASM(iset = RISCV64 /*, TODO*/)
         @CriticalNative
-        static native void swapShorts(long dst, long src, long count);
+        static native void swapShorts64(long dst, long src, long count);
 
         @ASM(iset = X86_64, code = {
                 0x48, (byte) 0x85, (byte) 0xd2,       // test   rdx, rdx
@@ -179,7 +177,7 @@ public class ExtraMemoryAccess {
         })
         @ASM(iset = RISCV64 /*, TODO*/)
         @CriticalNative
-        static native void swapInts(long dst, long src, long count);
+        static native void swapInts64(long dst, long src, long count);
 
         @ASM(iset = X86_64, code = {
                 0x48, (byte) 0x85, (byte) 0xd2,             // test   rdx, rdx
@@ -208,28 +206,28 @@ public class ExtraMemoryAccess {
         })
         @ASM(iset = RISCV64 /*, TODO*/)
         @CriticalNative
-        static native void swapLongs(long dst, long src, long count);
+        static native void swapLongs64(long dst, long src, long count);
     }
 
     public static void swapShorts(long dst, long src, long count) {
         if (IS64BIT)
-            Swaps64.swapShorts(dst, src, count);
+            Swaps.swapShorts64(dst, src, count);
         else
-            Swaps32.swapShorts((int) dst, (int) src, (int) count);
+            Swaps.swapShorts32((int) dst, (int) src, (int) count);
     }
 
     public static void swapInts(long dst, long src, long count) {
         if (IS64BIT)
-            Swaps64.swapInts(dst, src, count);
+            Swaps.swapInts64(dst, src, count);
         else
-            Swaps32.swapInts((int) dst, (int) src, (int) count);
+            Swaps.swapInts32((int) dst, (int) src, (int) count);
     }
 
     public static void swapLongs(long dst, long src, long count) {
         if (IS64BIT)
-            Swaps64.swapLongs(dst, src, count);
+            Swaps.swapLongs64(dst, src, count);
         else
-            Swaps32.swapLongs((int) dst, (int) src, (int) count);
+            Swaps.swapLongs32((int) dst, (int) src, (int) count);
     }
 
     public void copySwapMemory(long srcAddress, long dstAddress,
