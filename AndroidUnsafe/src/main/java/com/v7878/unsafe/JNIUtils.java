@@ -526,64 +526,64 @@ public class JNIUtils {
             MemorySegment pop = art.find("_ZN3art9JNIEnvExt8PopFrameEv").get();
             setExecutableData(searchMethod(methods, "PopLocalFrame" + suffix, word), pop.address());
         }
+
+        public static final RefUtils INSTANCE = nothrows_run(() -> {
+            //make sure kPoisonReferences is initialized
+            boolean kPoisonReferences = VM.kPoisonReferences.get();
+
+            Class<?> word = IS64BIT ? long.class : int.class;
+            TypeId word_id = TypeId.of(word);
+            String suffix = IS64BIT ? "64" : "32";
+
+            String impl_name = RefUtils.class.getName() + "$Impl";
+            TypeId impl_id = TypeId.of(impl_name);
+            ClassDef impl_def = new ClassDef(impl_id);
+            impl_def.setSuperClass(TypeId.of(RefUtils.class));
+
+            MethodId raw_nlr_id = new MethodId(TypeId.of(RefUtils.class),
+                    new ProtoId(word_id, word_id, word_id), "RawNewLocalRef" + suffix);
+            MethodId nlr_id = new MethodId(impl_id, new ProtoId(word_id,
+                    word_id, TypeId.of(Object.class)), "NewLocalRef" + suffix);
+
+            // note: it's broken - object is cast to pointer
+            if (IS64BIT) {
+                // pointer 64-bit, object 32-bit -> fill upper 32 bits with zeros (l0 register)
+                impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
+                        nlr_id, Modifier.PUBLIC).withCode(1, b -> b
+                        .const_4(b.l(0), 0)
+                        .if_(kPoisonReferences,
+                                // TODO: how will GC react to this?
+                                unused -> b.raw_unop(NEG_INT, b.p(2), b.p(2)),
+                                unused -> b.nop()
+                        )
+                        .invoke(STATIC, raw_nlr_id, b.p(0), b.p(1), b.p(2), b.l(0))
+                        .move_result_wide(b.v(0))
+                        .return_wide(b.v(0))
+                ));
+            } else {
+                impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
+                        nlr_id, Modifier.PUBLIC).withCode(0, b -> b
+                        .if_(kPoisonReferences,
+                                // TODO: how will GC react to this?
+                                unused -> b.raw_unop(NEG_INT, b.p(1), b.p(1)),
+                                unused -> b.nop()
+                        )
+                        .invoke(STATIC, raw_nlr_id, b.p(0), b.p(1))
+                        .move_result(b.v(0))
+                        .return_(b.v(0))
+                ));
+            }
+
+            DexFile dex = openDexFile(new Dex(impl_def).compile());
+            Class<?> utils = loadClass(dex, impl_name, RefUtils.class.getClassLoader());
+            setClassStatus(utils, ClassUtils.ClassStatus.Verified);
+
+            return (RefUtils) allocateInstance(utils);
+        });
     }
 
-    private static final Supplier<RefUtils> localRefUtils = runOnce(() -> {
-        //make sure kPoisonReferences is initialized
-        boolean kPoisonReferences = VM.kPoisonReferences.get();
-
-        Class<?> word = IS64BIT ? long.class : int.class;
-        TypeId word_id = TypeId.of(word);
-        String suffix = IS64BIT ? "64" : "32";
-
-        String impl_name = RefUtils.class.getName() + "$Impl";
-        TypeId impl_id = TypeId.of(impl_name);
-        ClassDef impl_def = new ClassDef(impl_id);
-        impl_def.setSuperClass(TypeId.of(RefUtils.class));
-
-        MethodId raw_nlr_id = new MethodId(TypeId.of(RefUtils.class),
-                new ProtoId(word_id, word_id, word_id), "RawNewLocalRef" + suffix);
-        MethodId nlr_id = new MethodId(impl_id, new ProtoId(word_id,
-                word_id, TypeId.of(Object.class)), "NewLocalRef" + suffix);
-
-        // note: it's broken - object is cast to pointer
-        if (IS64BIT) {
-            // pointer 64-bit, object 32-bit -> fill upper 32 bits with zeros (l0 register)
-            impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                    nlr_id, Modifier.PUBLIC).withCode(1, b -> b
-                    .const_4(b.l(0), 0)
-                    .if_(kPoisonReferences,
-                            // TODO: how will GC react to this?
-                            unused -> b.raw_unop(NEG_INT, b.p(2), b.p(2)),
-                            unused -> b.nop()
-                    )
-                    .invoke(STATIC, raw_nlr_id, b.p(0), b.p(1), b.p(2), b.l(0))
-                    .move_result_wide(b.v(0))
-                    .return_wide(b.v(0))
-            ));
-        } else {
-            impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                    nlr_id, Modifier.PUBLIC).withCode(0, b -> b
-                    .if_(kPoisonReferences,
-                            // TODO: how will GC react to this?
-                            unused -> b.raw_unop(NEG_INT, b.p(1), b.p(1)),
-                            unused -> b.nop()
-                    )
-                    .invoke(STATIC, raw_nlr_id, b.p(0), b.p(1))
-                    .move_result(b.v(0))
-                    .return_(b.v(0))
-            ));
-        }
-
-        DexFile dex = openDexFile(new Dex(impl_def).compile());
-        Class<?> utils = loadClass(dex, impl_name, RefUtils.class.getClassLoader());
-        setClassStatus(utils, ClassUtils.ClassStatus.Verified);
-
-        return (RefUtils) allocateInstance(utils);
-    });
-
     public static long NewLocalRef(Object obj) {
-        RefUtils utils = localRefUtils.get();
+        RefUtils utils = RefUtils.INSTANCE;
         long env = getCurrentEnvPtr().address();
         if (IS64BIT) {
             return utils.NewLocalRef64(env, obj);
