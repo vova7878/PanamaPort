@@ -570,7 +570,7 @@ public class Transformers {
     private static MethodHandle newInvoker(MethodType type, boolean exact) {
         ProtoId proto = ProtoId.of(type);
         MethodType itype = type.insertParameterTypes(0, MethodHandle.class);
-        ProtoId iproto = ProtoId.of(itype);
+
         String invoker_name = getInvokerName(proto);
         TypeId invoker_id = TypeId.of(invoker_name);
         ClassDef invoker_def = new ClassDef(invoker_id);
@@ -584,8 +584,8 @@ public class Transformers {
         invoker_def.getClassData().getDirectMethods().add(new EncodedMethod(
                 iid, Modifier.STATIC).withCode(2 /* locals for wide result */, b -> {
                     b.invoke_polymorphic_range(invoke, proto,
-                            iproto.getInputRegistersCount(), b.p(0));
-                    switch (iproto.getReturnType().getShorty()) {
+                            proto.getInputRegistersCount() + 1, b.p(0));
+                    switch (proto.getReturnType().getShorty()) {
                         case 'V':
                             b.return_void();
                             break;
