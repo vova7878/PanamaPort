@@ -5,6 +5,7 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import com.v7878.foreign.VarHandle;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Objects;
@@ -267,9 +268,11 @@ public abstract class AbstractVarHandle extends VarHandle {
     }
 
     private MethodHandle getInvokerHandleUncached(int accessType) {
-        MethodType generic = accessModeType(accessType).generic();
-        MethodHandle invoker = Transformers.invoker(generic);
-        return invoker.asSpreader(Object[].class, generic.parameterCount());
+        MethodType type = accessModeType(accessType);
+        MethodHandle invoker = MethodHandles.exactInvoker(type);
+        invoker = Transformers.explicitCastArguments(invoker,
+                type.generic().insertParameterTypes(0, MethodHandle.class));
+        return invoker.asSpreader(Object[].class, type.parameterCount());
     }
 
     private MethodHandle getInvokerHandle(int accessType) {
