@@ -41,6 +41,7 @@ import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -193,16 +194,14 @@ final class _Utils {
         throw new IllegalArgumentException("String too large");
     }
 
-    // Port-changed: rename "copy" to "copyCString"
-    public static void copyCString(MemorySegment addr, byte[] bytes) {
+    public static void copy(MemorySegment addr, byte[] bytes) {
         var heapSegment = MemorySegment.ofArray(bytes);
         addr.copyFrom(heapSegment);
-        addr.set(JAVA_BYTE, bytes.length, (byte) 0);
     }
 
     public static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {
         MemorySegment addr = allocator.allocate(bytes.length + 1);
-        copyCString(addr, bytes);
+        copy(addr, Arrays.copyOf(bytes, bytes.length + 1));
         return addr;
     }
 
