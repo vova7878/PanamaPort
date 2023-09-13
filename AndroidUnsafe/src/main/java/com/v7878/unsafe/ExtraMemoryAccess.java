@@ -1,18 +1,39 @@
 package com.v7878.unsafe;
 
+import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
+import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
+import static com.v7878.unsafe.ClassUtils.setClassStatus;
+import static com.v7878.unsafe.DexFileUtils.loadClass;
+import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.ARM;
 import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.ARM64;
 import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.RISCV64;
 import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86;
 import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86_64;
 import static com.v7878.unsafe.NativeCodeBlob.processASM;
+import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Utils.assert_;
+import static com.v7878.unsafe.Utils.ensureClassInitialized;
+import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.VM.kPoisonReferences;
 
 import androidx.annotation.Keep;
 
+import com.v7878.dex.ClassDef;
+import com.v7878.dex.Dex;
+import com.v7878.dex.EncodedMethod;
+import com.v7878.dex.MethodId;
+import com.v7878.dex.ProtoId;
+import com.v7878.dex.TypeId;
 import com.v7878.unsafe.NativeCodeBlob.ASM;
 
+import java.lang.foreign.Linker;
+import java.lang.reflect.Modifier;
+
 import dalvik.annotation.optimization.CriticalNative;
+import dalvik.system.DexFile;
 
 public class ExtraMemoryAccess {
 
@@ -209,21 +230,21 @@ public class ExtraMemoryAccess {
         static native void swapLongs64(long dst, long src, long count);
     }
 
-    public static void swapShorts(long dst, long src, long count) {
+    private static void swapShorts(long dst, long src, long count) {
         if (IS64BIT)
             Swaps.swapShorts64(dst, src, count);
         else
             Swaps.swapShorts32((int) dst, (int) src, (int) count);
     }
 
-    public static void swapInts(long dst, long src, long count) {
+    private static void swapInts(long dst, long src, long count) {
         if (IS64BIT)
             Swaps.swapInts64(dst, src, count);
         else
             Swaps.swapInts32((int) dst, (int) src, (int) count);
     }
 
-    public static void swapLongs(long dst, long src, long count) {
+    private static void swapLongs(long dst, long src, long count) {
         if (IS64BIT)
             Swaps.swapLongs64(dst, src, count);
         else
@@ -245,6 +266,146 @@ public class ExtraMemoryAccess {
                 break;
             case 8:
                 swapLongs(dstAddress, srcAddress, bytes / 8);
+                break;
+            default:
+                throw new IllegalArgumentException("Illegal element size: " + elemSize);
+        }
+    }
+
+    @Keep
+    static abstract class CopyInvoker {
+        private static final long MEMCPY = Linker.nativeLinker()
+                .defaultLookup().find("memcpy").get().address();
+        private static final long COPY_SWAP_SHORTS;
+        private static final long COPY_SWAP_INTS;
+        private static final long COPY_SWAP_LONGS;
+
+        static {
+            processASM();
+
+            ensureClassInitialized(Swaps.class);
+
+            Class<?> word = IS64BIT ? long.class : int.class;
+            String suffix = IS64BIT ? "64" : "32";
+            COPY_SWAP_SHORTS = getExecutableData(getDeclaredMethod(Swaps.class,
+                    "swapShorts" + suffix, word, word, word));
+            COPY_SWAP_INTS = getExecutableData(getDeclaredMethod(Swaps.class,
+                    "swapInts" + suffix, word, word, word));
+            COPY_SWAP_LONGS = getExecutableData(getDeclaredMethod(Swaps.class,
+                    "swapLongs" + suffix, word, word, word));
+        }
+
+        @ASM(iset = X86, code = {
+                (byte) 0x8b, 0x4c, 0x24, 0x14, // mov    ecx, DWORD PTR [esp+0x14]
+                (byte) 0x8b, 0x54, 0x24, 0x0c, // mov    edx, DWORD PTR [esp+0xc]
+                (byte) 0x89, 0x4c, 0x24, 0x0c, // mov    DWORD PTR [esp+0xc], ecx
+                (byte) 0x8b, 0x4c, 0x24, 0x10, // mov    ecx, DWORD PTR [esp+0x10]
+                0x01, (byte) 0xca,             // add    edx, ecx
+                (byte) 0x8b, 0x44, 0x24, 0x08, // mov    eax, DWORD PTR [esp+0x8]
+                (byte) 0x89, 0x54, 0x24, 0x08, // mov    DWORD PTR [esp+0x8], edx
+                (byte) 0x8b, 0x54, 0x24, 0x04, // mov    edx, DWORD PTR [esp+0x4]
+                0x01, (byte) 0xd0,             // add    eax, edx
+                (byte) 0x89, 0x44, 0x24, 0x04, // mov    DWORD PTR [esp+0x4], eax
+                (byte) 0xff, 0x64, 0x24, 0x18, // jmp    DWORD PTR [esp+0x18]
+        })
+        @ASM(iset = ARM /*, TODO*/)
+        @CriticalNative
+        static native void invoke32(int dst_ref, int dst_offset, int src_ref,
+                                    int src_offset, int count, int symbol);
+
+        @ASM(iset = X86_64, code = {
+                (byte) 0x89, (byte) 0xFF,       // mov edi, edi
+                0x48, 0x01, (byte) 0xF7,        // add rdi, rsi
+                (byte) 0x89, (byte) 0xD6,       // mov esi, edx
+                0x48, 0x01, (byte) 0xCE,        // add rsi, rcx
+                0x4C, (byte) 0x89, (byte) 0xC2, // mov rdx, r8
+                0x41, (byte) 0xFF, (byte) 0xE1, // jmp r9
+        })
+        @ASM(iset = ARM64, code = {
+                0x20, 0x40, 0x20, (byte) 0x8B,        // add  x0, x1, w0, uxtw
+                0x61, 0x40, 0x22, (byte) 0x8B,        // add  x1, x3, w2, uxtw
+                (byte) 0xE2, 0x03, 0x04, (byte) 0xAA, // mov  x2, x4
+                (byte) 0xA0, 0x00, 0x1F, (byte) 0xD6  // br   x5
+        })
+        @ASM(iset = RISCV64 /*, TODO*/)
+        @CriticalNative
+        static native void invoke64(int dst_ref, long dst_offset, int src_ref,
+                                    long src_offset, long count, long symbol);
+
+        abstract void invoke32(Object dst_ref, int dst_offset, Object src_ref,
+                               int src_offset, int count, int symbol);
+
+        abstract void invoke64(Object dst_ref, long dst_offset, Object src_ref,
+                               long src_offset, long count, long symbol);
+
+        public static void invoke(Object src_ref, long src_offset, Object dst_ref,
+                                  long dst_offset, long count, long symbol) {
+            if (IS64BIT) {
+                INSTANCE.invoke64(dst_ref, dst_offset, src_ref, src_offset, count, symbol);
+            } else {
+                INSTANCE.invoke32(dst_ref, (int) dst_offset, src_ref,
+                        (int) src_offset, (int) count, (int) symbol);
+            }
+        }
+
+        private static final CopyInvoker INSTANCE = nothrows_run(() -> {
+            assert_(!kPoisonReferences.get(), AssertionError::new); // TODO
+
+            Class<?> word = IS64BIT ? long.class : int.class;
+            TypeId word_id = TypeId.of(word);
+            String suffix = IS64BIT ? "64" : "32";
+
+            String impl_name = CopyInvoker.class.getName() + "$Impl";
+            TypeId impl_id = TypeId.of(impl_name);
+            ClassDef impl_def = new ClassDef(impl_id);
+            impl_def.setSuperClass(TypeId.of(CopyInvoker.class));
+
+            MethodId raw_invoke_id = new MethodId(TypeId.of(CopyInvoker.class), new ProtoId(TypeId.V,
+                    TypeId.I, word_id, TypeId.I, word_id, word_id, word_id), "invoke" + suffix);
+            MethodId invoke_id = new MethodId(impl_id, new ProtoId(TypeId.V, TypeId.of(Object.class),
+                    word_id, TypeId.of(Object.class), word_id, word_id, word_id), "invoke" + suffix);
+
+            // note: it's broken - object is cast to int
+            impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
+                    invoke_id, Modifier.PUBLIC).withCode(0, b -> b
+                    .invoke_range(STATIC, raw_invoke_id, IS64BIT ? 10 : 6, b.p(0))
+                    .return_void()
+            ));
+
+            DexFile dex = openDexFile(new Dex(impl_def).compile());
+            Class<?> impl = loadClass(dex, impl_name, CopyInvoker.class.getClassLoader());
+            setClassStatus(impl, ClassUtils.ClassStatus.Verified);
+
+            return (CopyInvoker) allocateInstance(impl);
+        });
+    }
+
+    public static void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes) {
+        if (bytes == 0) {
+            return;
+        }
+
+        CopyInvoker.invoke(srcBase, srcOffset, destBase, destOffset, bytes, CopyInvoker.MEMCPY);
+    }
+
+    public static void copySwapMemory(Object srcBase, long srcOffset, Object destBase,
+                                      long destOffset, long bytes, long elemSize) {
+        if (bytes == 0) {
+            return;
+        }
+
+        switch ((int) elemSize) {
+            case 2:
+                CopyInvoker.invoke(srcBase, srcOffset, destBase,
+                        destOffset, bytes / 2, CopyInvoker.COPY_SWAP_SHORTS);
+                break;
+            case 4:
+                CopyInvoker.invoke(srcBase, srcOffset, destBase,
+                        destOffset, bytes / 4, CopyInvoker.COPY_SWAP_INTS);
+                break;
+            case 8:
+                CopyInvoker.invoke(srcBase, srcOffset, destBase,
+                        destOffset, bytes / 8, CopyInvoker.COPY_SWAP_LONGS);
                 break;
             default:
                 throw new IllegalArgumentException("Illegal element size: " + elemSize);
