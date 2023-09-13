@@ -270,4 +270,12 @@ public class Utils {
     public static RuntimeException newIllegalArgumentException(String message, Object obj1, Object obj2) {
         return new IllegalArgumentException(message + ": " + obj1 + ", " + obj2);
     }
+
+    @Keep
+    public static void ensureClassInitialized(Class<?> clazz) {
+        try {
+            Class.forName(clazz.getName(), true, clazz.getClassLoader());
+        } catch (ClassNotFoundException ignored) {
+        }
+    }
 }
