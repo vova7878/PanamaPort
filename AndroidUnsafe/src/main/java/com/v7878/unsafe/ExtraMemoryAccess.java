@@ -378,6 +378,12 @@ public class ExtraMemoryAccess {
 
             return (CopyInvoker) allocateInstance(impl);
         });
+
+        static final boolean inited;
+
+        static {
+            inited = true;
+        }
     }
 
     public static void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes) {
@@ -385,7 +391,11 @@ public class ExtraMemoryAccess {
             return;
         }
 
-        CopyInvoker.invoke(srcBase, srcOffset, destBase, destOffset, bytes, CopyInvoker.MEMCPY);
+        if (CopyInvoker.inited) {
+            CopyInvoker.invoke(srcBase, srcOffset, destBase, destOffset, bytes, CopyInvoker.MEMCPY);
+        } else {
+            AndroidUnsafe.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
+        }
     }
 
     public static void copySwapMemory(Object srcBase, long srcOffset, Object destBase,
