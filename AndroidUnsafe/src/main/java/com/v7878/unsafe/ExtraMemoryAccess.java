@@ -35,6 +35,7 @@ import java.lang.reflect.Modifier;
 import dalvik.annotation.optimization.CriticalNative;
 import dalvik.system.DexFile;
 
+@SuppressWarnings("deprecation")
 public class ExtraMemoryAccess {
 
     @Keep
@@ -310,6 +311,7 @@ public class ExtraMemoryAccess {
         })
         @ASM(iset = ARM /*, TODO*/)
         @CriticalNative
+        @SuppressWarnings("unused")
         static native void invoke32(int dst_ref, int dst_offset, int src_ref,
                                     int src_offset, int count, int symbol);
 
@@ -329,6 +331,7 @@ public class ExtraMemoryAccess {
         })
         @ASM(iset = RISCV64 /*, TODO*/)
         @CriticalNative
+        @SuppressWarnings("unused")
         static native void invoke64(int dst_ref, long dst_offset, int src_ref,
                                     long src_offset, long count, long symbol);
 
