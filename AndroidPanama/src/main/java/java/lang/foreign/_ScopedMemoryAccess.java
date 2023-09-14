@@ -1,6 +1,7 @@
 package java.lang.foreign;
 
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.ExtraMemoryAccess;
 import com.v7878.unsafe.access.JavaNioAccess;
 
 import java.io.FileDescriptor;
@@ -20,9 +21,7 @@ final class _ScopedMemoryAccess {
                                   long bytes) {
         try (SessionScopedLock ignored1 = lock(srcSession);
              SessionScopedLock ignored2 = lock(dstSession)) {
-            AndroidUnsafe.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
-            //TODO
-            //ExtraMemoryAccess.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
+            ExtraMemoryAccess.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
         }
     }
 
@@ -30,9 +29,10 @@ final class _ScopedMemoryAccess {
                                       Object srcBase, long srcOffset,
                                       Object destBase, long destOffset,
                                       long bytes, long elemSize) {
-        //TODO
-        //ExtraMemoryAccess.copySwapMemory(srcBase, srcOffset, destBase, destOffset, bytes, elemSize);
-        throw new UnsupportedOperationException("Not supported yet");
+        try (SessionScopedLock ignored1 = lock(srcSession);
+             SessionScopedLock ignored2 = lock(dstSession)) {
+            ExtraMemoryAccess.copySwapMemory(srcBase, srcOffset, destBase, destOffset, bytes, elemSize);
+        }
     }
 
     public static void setMemory(_MemorySessionImpl session, Object base, long offset, long bytes, byte value) {
