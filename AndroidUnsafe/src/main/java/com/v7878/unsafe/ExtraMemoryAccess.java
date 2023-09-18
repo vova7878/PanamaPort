@@ -14,7 +14,6 @@ import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86;
 import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86_64;
 import static com.v7878.unsafe.NativeCodeBlob.processASM;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.ensureClassInitialized;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.VM.kPoisonReferences;
@@ -312,8 +311,8 @@ public class ExtraMemoryAccess {
         @ASM(iset = ARM /*, TODO*/)
         @CriticalNative
         @SuppressWarnings("unused")
-        static native void invoke32(int dst_ref, int dst_offset, int src_ref,
-                                    int src_offset, int count, int symbol);
+        static native void invoke32n(int dst_ref, int dst_offset, int src_ref,
+                                     int src_offset, int count, int symbol);
 
         @ASM(iset = X86_64, code = {
                 (byte) 0x89, (byte) 0xFF,       // mov edi, edi
@@ -332,8 +331,49 @@ public class ExtraMemoryAccess {
         @ASM(iset = RISCV64 /*, TODO*/)
         @CriticalNative
         @SuppressWarnings("unused")
-        static native void invoke64(int dst_ref, long dst_offset, int src_ref,
-                                    long src_offset, long count, long symbol);
+        static native void invoke64n(int dst_ref, long dst_offset, int src_ref,
+                                     long src_offset, long count, long symbol);
+
+        @ASM(iset = X86, code = {
+                (byte) 0x8B, 0x4C, 0x24, 0x14, // mov ecx, dword ptr [esp + 0x14]
+                (byte) 0x8B, 0x54, 0x24, 0x0C, // mov edx, dword ptr [esp + 0xc]
+                (byte) 0x89, 0x4C, 0x24, 0x0C, // mov dword ptr [esp + 0xc], ecx
+                (byte) 0x8B, 0x4C, 0x24, 0x10, // mov ecx, dword ptr [esp + 0x10]
+                (byte) 0x8B, 0x44, 0x24, 0x08, // mov eax, dword ptr [esp + 8]
+                0x29, (byte) 0xD1,             // sub ecx, edx
+                (byte) 0x8B, 0x54, 0x24, 0x04, // mov edx, dword ptr [esp + 4]
+                (byte) 0x89, 0x4C, 0x24, 0x08, // mov dword ptr [esp + 8], ecx
+                0x29, (byte) 0xD0,             // sub eax, edx
+                (byte) 0x89, 0x44, 0x24, 0x04, // mov dword ptr [esp + 4], eax
+                (byte) 0xFF, 0x64, 0x24, 0x18, // jmp dword ptr [esp + 0x18]
+        })
+        @ASM(iset = ARM /*, TODO*/)
+        @CriticalNative
+        @SuppressWarnings("unused")
+        static native void invoke32p(int dst_ref, int dst_offset, int src_ref,
+                                     int src_offset, int count, int symbol);
+
+        @ASM(iset = X86_64, code = {
+                (byte) 0xF7, (byte) 0xDF,       // neg edi
+                0x48, 0x01, (byte) 0xF7,        // add rdi, rsi
+                (byte) 0xF7, (byte) 0xDA,       // neg edx
+                0x48, (byte) 0x8D, 0x34, 0x0A,  // lea rsi, [rdx + rcx]
+                0x4C, (byte) 0x89, (byte) 0xC2, // mov rdx, r8
+                0x41, (byte) 0xFF, (byte) 0xE1, // jmp r9
+        })
+        @ASM(iset = ARM64, code = {
+                (byte) 0xE8, 0x03, 0x00, 0x4B,        // neg w8, w0
+                0x00, 0x01, 0x01, (byte) 0x8B,        // add x0, x8, x1
+                (byte) 0xE8, 0x03, 0x02, 0x4B,        // neg w8, w2
+                0x01, 0x01, 0x03, (byte) 0x8B,        // add x1, x8, x3
+                (byte) 0xE2, 0x03, 0x04, (byte) 0xAA, // mov x2, x4
+                (byte) 0xA0, 0x00, 0x1F, (byte) 0xD6, // br  x5
+        })
+        @ASM(iset = RISCV64 /*, TODO*/)
+        @CriticalNative
+        @SuppressWarnings("unused")
+        static native void invoke64p(int dst_ref, long dst_offset, int src_ref,
+                                     long src_offset, long count, long symbol);
 
         abstract void invoke32(Object dst_ref, int dst_offset, Object src_ref,
                                int src_offset, int count, int symbol);
@@ -352,11 +392,10 @@ public class ExtraMemoryAccess {
         }
 
         private static final CopyInvoker INSTANCE = nothrows_run(() -> {
-            assert_(!kPoisonReferences.get(), AssertionError::new); // TODO
-
             Class<?> word = IS64BIT ? long.class : int.class;
             TypeId word_id = TypeId.of(word);
             String suffix = IS64BIT ? "64" : "32";
+            String suffix2 = suffix + (kPoisonReferences.get() ? "p" : "n");
 
             String impl_name = CopyInvoker.class.getName() + "$Impl";
             TypeId impl_id = TypeId.of(impl_name);
@@ -364,7 +403,7 @@ public class ExtraMemoryAccess {
             impl_def.setSuperClass(TypeId.of(CopyInvoker.class));
 
             MethodId raw_invoke_id = new MethodId(TypeId.of(CopyInvoker.class), new ProtoId(TypeId.V,
-                    TypeId.I, word_id, TypeId.I, word_id, word_id, word_id), "invoke" + suffix);
+                    TypeId.I, word_id, TypeId.I, word_id, word_id, word_id), "invoke" + suffix2);
             MethodId invoke_id = new MethodId(impl_id, new ProtoId(TypeId.V, TypeId.of(Object.class),
                     word_id, TypeId.of(Object.class), word_id, word_id, word_id), "invoke" + suffix);
 
