@@ -249,6 +249,10 @@ public class Utils {
         return s.indexOf('\u0000') >= 0;
     }
 
+    public static String toHexString(long value) {
+        return "0x" + Long.toHexString(value);
+    }
+
     public static ClassLoader newEmptyClassLoader(ClassLoader parent) {
         // new every time, needed for GC
         return new ClassLoader(parent) {

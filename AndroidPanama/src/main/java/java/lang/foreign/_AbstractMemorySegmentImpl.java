@@ -32,6 +32,7 @@ import android.annotation.SuppressLint;
 
 import com.v7878.misc.Checks;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.access.JavaNioAccess;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
@@ -542,7 +543,11 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     @Override
     public String toString() {
-        return "MemorySegment{ heapBase: " + heapBase() + " address:" + address() + " limit: " + length + " }";
+        return "MemorySegment{ " +
+                heapBase().map(hb -> "heapBase: " + hb + ", ").orElse("") +
+                "address: " + Utils.toHexString(address()) +
+                ", byteSize: " + length +
+                " }";
     }
 
     @Override
