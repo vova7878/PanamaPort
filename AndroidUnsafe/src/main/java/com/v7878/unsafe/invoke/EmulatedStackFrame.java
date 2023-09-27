@@ -323,8 +323,9 @@ public class EmulatedStackFrame {
         }
 
         public void putNextValue(Object value) {
+            char shorty = TypeId.of(getCurrentArgumentType()).getShorty();
             argumentIdx++;
-            switch (TypeId.of(getCurrentArgumentType()).getShorty()) {
+            switch (shorty) {
                 case 'V':
                     break;
                 case 'L':
@@ -415,8 +416,9 @@ public class EmulatedStackFrame {
         }
 
         public Object nextValue() {
+            char shorty = TypeId.of(getCurrentArgumentType()).getShorty();
             argumentIdx++;
-            switch (TypeId.of(getCurrentArgumentType()).getShorty()) {
+            switch (shorty) {
                 case 'L':
                     return frame.references()[referencesOffset++];
                 case 'Z':
