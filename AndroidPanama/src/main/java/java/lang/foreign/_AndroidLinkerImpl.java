@@ -35,8 +35,6 @@ import com.v7878.dex.FieldId;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
-import com.v7878.unsafe.JNIUtils;
-import com.v7878.unsafe.NativeCodeBlob;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
@@ -406,127 +404,9 @@ final class _AndroidLinkerImpl implements Linker {
 
         putObject(stub, staticFieldOffset(getDeclaredField(stub, "target")), target);
 
-        return makeUpCallStubNativeCode(
+        return _UpcallNativeStubs.makeUpcallNativeStub(
                 getDeclaredMethod(stub, "function", stub_call_type.parameterArray()),
                 stub_proto.getReturnType().getShorty(), arena);
-    }
-
-    private static byte[] long_to_arr(long v) {
-        return new byte[]{
-                (byte) (v),
-                (byte) (v >> 8),
-                (byte) (v >> 16),
-                (byte) (v >> 24),
-                (byte) (v >> 32),
-                (byte) (v >> 40),
-                (byte) (v >> 48),
-                (byte) (v >> 56)};
-    }
-
-    private static MemorySegment makeUpCallStubNativeCode(
-            Method function, char r_shorty, Arena arena) {
-        long clazz = JNIUtils.NewGlobalRef(function.getDeclaringClass(), arena);
-        long method_id = JNIUtils.FromReflectedMethod(function);
-        long jvm = JNIUtils.getJavaVMPtr().address();
-
-        byte[] j = long_to_arr(jvm);
-        byte[] c = long_to_arr(clazz);
-        byte[] m = long_to_arr(method_id);
-
-        byte[] code;
-
-        //<type> stub(...) {
-        //    JavaVM* vm = (JavaVM*) <j>;
-        //    JNIEnv* env;
-        //
-        //    int res = (*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_6);
-        //    if (res != JNI_OK) {
-        //        exit(res);
-        //    }
-        //
-        //    va_list args;
-        //    va_start(args);
-        //
-        //    jclass clazz = (jclass) <c>;
-        //    jmethodID m_id = (jmethodID) <m>;
-        //    <type> r = (*env)->CallStatic<type>MethodV(env, clazz, m_id, args);
-        //
-        //    va_end(args);
-        //    return r;
-        //}
-
-        switch (NativeCodeBlob.CURRENT_INSTRUCTION_SET) {
-            case X86_64:
-                byte[] call = switch (r_shorty) {
-                    case 'Z' -> new byte[]{(byte) 0xb0, 0x03};
-                    case 'B' -> new byte[]{(byte) 0xc8, 0x03};
-                    case 'C' -> new byte[]{(byte) 0xe0, 0x03};
-                    case 'S' -> new byte[]{(byte) 0xf8, 0x03};
-                    case 'I' -> new byte[]{0x10, 0x04};
-                    case 'F' -> new byte[]{0x40, 0x04};
-                    case 'J' -> new byte[]{0x28, 0x04};
-                    case 'D' -> new byte[]{0x58, 0x04};
-                    case 'V' -> new byte[]{0x70, 0x04};
-                    default -> throw new AssertionError("Unexpected return type: " + r_shorty);
-                };
-                code = new byte[]{
-                        (byte) 0x48, (byte) 0x81, (byte) 0xec, (byte) 0xd8, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-
-                        (byte) 0x48, (byte) 0x89, (byte) 0x7c, (byte) 0x24, (byte) 0x20,
-                        (byte) 0x48, (byte) 0x89, (byte) 0x74, (byte) 0x24, (byte) 0x28,
-                        (byte) 0x48, (byte) 0x89, (byte) 0x54, (byte) 0x24, (byte) 0x30,
-                        (byte) 0x48, (byte) 0x89, (byte) 0x4c, (byte) 0x24, (byte) 0x38,
-                        (byte) 0x4c, (byte) 0x89, (byte) 0x44, (byte) 0x24, (byte) 0x40,
-                        (byte) 0x4c, (byte) 0x89, (byte) 0x4c, (byte) 0x24, (byte) 0x48,
-
-                        (byte) 0x84, (byte) 0xc0,
-                        (byte) 0x74, (byte) 0x37,
-
-                        (byte) 0x0f, (byte) 0x29, (byte) 0x44, (byte) 0x24, (byte) 0x50,
-                        (byte) 0x0f, (byte) 0x29, (byte) 0x4c, (byte) 0x24, (byte) 0x60,
-                        (byte) 0x0f, (byte) 0x29, (byte) 0x54, (byte) 0x24, (byte) 0x70,
-                        (byte) 0x0f, (byte) 0x29, (byte) 0x9c, (byte) 0x24, (byte) 0x80, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-                        (byte) 0x0f, (byte) 0x29, (byte) 0xa4, (byte) 0x24, (byte) 0x90, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-                        (byte) 0x0f, (byte) 0x29, (byte) 0xac, (byte) 0x24, (byte) 0xa0, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-                        (byte) 0x0f, (byte) 0x29, (byte) 0xb4, (byte) 0x24, (byte) 0xb0, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-                        (byte) 0x0f, (byte) 0x29, (byte) 0xbc, (byte) 0x24, (byte) 0xc0, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-
-                        (byte) 0x48, (byte) 0xbf, j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7],
-
-                        (byte) 0x48, (byte) 0x8b, (byte) 0x07,
-                        (byte) 0xba, (byte) 0x06, (byte) 0x00, (byte) 0x01, (byte) 0x00,
-                        (byte) 0x48, (byte) 0x8d, (byte) 0x74, (byte) 0x24, (byte) 0x18,
-
-                        (byte) 0xff, (byte) 0x50, (byte) 0x30,
-
-                        (byte) 0x85, (byte) 0xc0,
-                        (byte) 0x75, (byte) 0x53,
-                        (byte) 0xc7, (byte) 0x04, (byte) 0x24, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-                        (byte) 0xc7, (byte) 0x44, (byte) 0x24, (byte) 0x04, (byte) 0x30, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-                        (byte) 0x48, (byte) 0x8d, (byte) 0x84, (byte) 0x24, (byte) 0xe0, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-
-                        (byte) 0x48, (byte) 0x89, (byte) 0x44, (byte) 0x24, (byte) 0x08,
-                        (byte) 0x48, (byte) 0x8d, (byte) 0x44, (byte) 0x24, (byte) 0x20,
-                        (byte) 0x48, (byte) 0x89, (byte) 0x44, (byte) 0x24, (byte) 0x10,
-                        (byte) 0x48, (byte) 0x8B, (byte) 0x7C, (byte) 0x24, (byte) 0x18,
-                        (byte) 0x48, (byte) 0x89, (byte) 0xE1,
-                        (byte) 0x48, (byte) 0x8B, (byte) 0x07,
-                        (byte) 0x48, (byte) 0xBA, m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7],
-                        (byte) 0x48, (byte) 0xBE, c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7],
-                        (byte) 0xFF, (byte) 0x90, call[0], call[1], (byte) 0x00, (byte) 0x00,
-                        (byte) 0x48, (byte) 0x81, (byte) 0xC4, (byte) 0xD8, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-                        (byte) 0xC3,
-                        (byte) 0x89, (byte) 0xC7,
-                        (byte) 0xE8, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-                        // TODO: exit pointer
-                        0, 0, 0, 0, 0, 0, 0, 0
-                };
-                break;
-            default:
-                //TODO
-                throw new UnsupportedOperationException("Unsupported yet");
-        }
-        return NativeCodeBlob.makeCodeBlob(arena, code)[0];
     }
 
     private static void checkLayouts(FunctionDescriptor descriptor) {
