@@ -13,3 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "PanamaPort"
+include ':AndroidUnsafe'
