@@ -13,9 +13,3 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "PanamaPort"
-include ':keep_annotation'
-include ':fake_panama'
-include ':fake_buffer'
-include ':AndroidUnsafe'
-include ':AndroidPanama'
-include ':VarHandleApi'
