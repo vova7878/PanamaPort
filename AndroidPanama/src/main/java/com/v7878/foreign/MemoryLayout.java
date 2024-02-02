@@ -27,15 +27,13 @@
 
 package com.v7878.foreign;
 
+import com.v7878.foreign._LayoutPath.PathElementImpl.PathKind;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-
-import jdk.internal.foreign.LayoutPath;
-import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
-import jdk.internal.foreign.Utils;
 
 /**
  * A memory layout describes the contents of a memory segment.
@@ -833,7 +831,7 @@ public sealed interface MemoryLayout
      * @implSpec Implementations of this interface are immutable, thread-safe and
      * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
      */
-    sealed interface PathElement permits LayoutPath.PathElementImpl {
+    sealed interface PathElement permits _LayoutPath.PathElementImpl {
 
         /**
          * {@return a path element which selects a member layout with the given name in a
@@ -848,7 +846,7 @@ public sealed interface MemoryLayout
          */
         static PathElement groupElement(String name) {
             Objects.requireNonNull(name);
-            return new LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
+            return new _LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
                     path -> path.groupElement(name));
         }
 
@@ -863,7 +861,7 @@ public sealed interface MemoryLayout
             if (index < 0) {
                 throw new IllegalArgumentException("Index < 0");
             }
-            return new LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
+            return new _LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
                     path -> path.groupElement(index));
         }
 
@@ -878,7 +876,7 @@ public sealed interface MemoryLayout
             if (index < 0) {
                 throw new IllegalArgumentException("Index must be positive: " + index);
             }
-            return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT_INDEX,
+            return new _LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT_INDEX,
                     path -> path.sequenceElement(index));
         }
 
@@ -911,7 +909,7 @@ public sealed interface MemoryLayout
             if (step == 0) {
                 throw new IllegalArgumentException("Step must be != 0: " + step);
             }
-            return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_RANGE,
+            return new _LayoutPath.PathElementImpl(PathKind.SEQUENCE_RANGE,
                     path -> path.sequenceElement(start, step));
         }
 
@@ -924,8 +922,8 @@ public sealed interface MemoryLayout
          * {@code 0 <= I < C}.
          */
         static PathElement sequenceElement() {
-            return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT,
-                    LayoutPath::sequenceElement);
+            return new _LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT,
+                    _LayoutPath::sequenceElement);
         }
 
         /**
@@ -933,8 +931,8 @@ public sealed interface MemoryLayout
          * {@linkplain AddressLayout#targetLayout() target layout} (where set)}
          */
         static PathElement dereferenceElement() {
-            return new LayoutPath.PathElementImpl(PathKind.DEREF_ELEMENT,
-                    LayoutPath::derefElement);
+            return new _LayoutPath.PathElementImpl(PathKind.DEREF_ELEMENT,
+                    _LayoutPath::derefElement);
         }
     }
 
@@ -1001,11 +999,11 @@ public sealed interface MemoryLayout
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
-        Utils.checkNonNegativeArgument(elementCount, "elementCount");
+        _Utils.checkNonNegativeArgument(elementCount, "elementCount");
         Objects.requireNonNull(elementLayout);
-        Utils.checkElementAlignment(elementLayout,
+        _Utils.checkElementAlignment(elementLayout,
                 "Element layout size is not multiple of alignment");
-        return Utils.wrapOverflow(() ->
+        return _Utils.wrapOverflow(() ->
                 _SequenceLayoutImpl.of(elementCount, elementLayout));
     }
 
@@ -1043,7 +1041,7 @@ public sealed interface MemoryLayout
      */
     static StructLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        return Utils.wrapOverflow(() ->
+        return _Utils.wrapOverflow(() ->
                 _StructLayoutImpl.of(Stream.of(elements)
                         .map(Objects::requireNonNull)
                         .toList()));

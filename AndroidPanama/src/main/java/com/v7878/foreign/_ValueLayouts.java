@@ -33,10 +33,7 @@ import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Optional;
 
-import jdk.internal.foreign.Utils;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -138,7 +135,7 @@ final class _ValueLayouts {
             assert !carrier.isPrimitive() ||
                     // Primitive class byteSize must always correspond
                     byteSize == (carrier == boolean.class ? 1 :
-                            Utils.byteWidthOfPrimitive(carrier));
+                            _Utils.byteWidthOfPrimitive(carrier));
         }
 
         static boolean isValidCarrier(Class<?> carrier) {
@@ -157,7 +154,7 @@ final class _ValueLayouts {
         public final VarHandle varHandle() {
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = Utils.makeSegmentViewVarHandle(self());
+                handle = _Utils.makeSegmentViewVarHandle(self());
             }
             return handle;
         }
@@ -323,9 +320,7 @@ final class _ValueLayouts {
         }
 
         @Override
-        @CallerSensitive
         public AddressLayout withTargetLayout(MemoryLayout layout) {
-            Reflection.ensureNativeAccess(Reflection.getCallerClass(), AddressLayout.class, "withTargetLayout");
             Objects.requireNonNull(layout);
             return new OfAddressImpl(order(), byteSize(), byteAlignment(), layout, name());
         }

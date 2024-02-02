@@ -27,7 +27,8 @@
 
 package com.v7878.foreign;
 
-import java.lang.foreign.Linker.Option;
+import com.v7878.foreign.Linker.Option;
+
 import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;
 import java.util.Optional;

@@ -28,7 +28,9 @@
 
 package com.v7878.foreign;
 
-import java.lang.foreign.MemoryLayout.PathElement;
+import com.v7878.foreign.MemoryLayout.PathElement;
+import com.v7878.foreign._LayoutPath.PathElementImpl.PathKind;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -38,10 +40,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-
-import jdk.internal.foreign.LayoutPath;
-import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
-import jdk.internal.foreign.Utils;
 
 abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayout>
         permits _AbstractGroupLayout, _PaddingLayoutImpl, _SequenceLayoutImpl, _ValueLayouts.AbstractValueLayout {
@@ -140,7 +138,7 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     }
 
     private static long requirePowerOfTwoAndGreaterOrEqualToOne(long value) {
-        if (!Utils.isPowerOfTwo(value) || // value must be a power of two
+        if (!_Utils.isPowerOfTwo(value) || // value must be a power of two
                 value < 1) { // value must be greater or equal to 1
             throw new IllegalArgumentException("Invalid alignment: " + value);
         }
@@ -148,8 +146,8 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     }
 
     public long scale(long offset, long index) {
-        Utils.checkNonNegativeArgument(offset, "offset");
-        Utils.checkNonNegativeArgument(index, "index");
+        _Utils.checkNonNegativeArgument(offset, "offset");
+        _Utils.checkNonNegativeArgument(index, "index");
         return Math.addExact(offset, Math.multiplyExact(byteSize(), index));
     }
 
@@ -171,12 +169,12 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
 
 
     public long byteOffset(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::offset,
+        return computePathOp(_LayoutPath.rootPath((MemoryLayout) this), _LayoutPath::offset,
                 EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
     }
 
     public MethodHandle byteOffsetHandle(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::offsetHandle,
+        return computePathOp(_LayoutPath.rootPath((MemoryLayout) this), _LayoutPath::offsetHandle,
                 EnumSet.of(PathKind.DEREF_ELEMENT), elements);
     }
 
@@ -185,7 +183,7 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
         if (this instanceof ValueLayout vl && elements.length == 0) {
             return vl.varHandle(); // fast path
         }
-        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::dereferenceHandle,
+        return computePathOp(_LayoutPath.rootPath((MemoryLayout) this), _LayoutPath::dereferenceHandle,
                 Set.of(), elements);
     }
 
@@ -194,20 +192,20 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     }
 
     public MethodHandle sliceHandle(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::sliceHandle,
+        return computePathOp(_LayoutPath.rootPath((MemoryLayout) this), _LayoutPath::sliceHandle,
                 Set.of(PathKind.DEREF_ELEMENT), elements);
     }
 
     public MemoryLayout select(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::layout,
+        return computePathOp(_LayoutPath.rootPath((MemoryLayout) this), _LayoutPath::layout,
                 EnumSet.of(PathKind.SEQUENCE_ELEMENT_INDEX, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
     }
 
-    private static <Z> Z computePathOp(LayoutPath path, Function<LayoutPath, Z> finalizer,
+    private static <Z> Z computePathOp(_LayoutPath path, Function<_LayoutPath, Z> finalizer,
                                        Set<PathKind> badKinds, PathElement... elements) {
         Objects.requireNonNull(elements);
         for (PathElement e : elements) {
-            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl) Objects.requireNonNull(e);
+            _LayoutPath.PathElementImpl pathElem = (_LayoutPath.PathElementImpl) Objects.requireNonNull(e);
             if (badKinds.contains(pathElem.kind())) {
                 throw new IllegalArgumentException(String.format("Invalid %s selection in layout path", pathElem.kind().description()));
             }

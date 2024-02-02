@@ -37,7 +37,6 @@ import java.util.function.BiFunction;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.Utils;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
@@ -216,7 +215,7 @@ public interface SymbolLookup {
         }
         return name -> {
             Objects.requireNonNull(name);
-            if (Utils.containsNullChars(name)) return Optional.empty();
+            if (_Utils.containsNullChars(name)) return Optional.empty();
             JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
             // note: ClassLoader::findNative supports a null loader
             long addr = javaLangAccess.findNative(loader, name);
@@ -249,9 +248,7 @@ public interface SymbolLookup {
      * {@code LoadLibrary} function.
      */
     static SymbolLookup libraryLookup(String name, Arena arena) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(),
-                SymbolLookup.class, "libraryLookup");
-        if (Utils.containsNullChars(name)) {
+        if (_Utils.containsNullChars(name)) {
             throw new IllegalArgumentException("Cannot open library: " + name);
         }
         return libraryLookup(name, RawNativeLibraries::load, arena);
@@ -278,8 +275,6 @@ public interface SymbolLookup {
      * {@code dlsym} and {@code dlclose} functions.
      */
     static SymbolLookup libraryLookup(Path path, Arena arena) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(),
-                SymbolLookup.class, "libraryLookup");
         if (path.getFileSystem() != FileSystems.getDefault()) {
             throw new IllegalArgumentException("Path not in default file system: " + path);
         }
@@ -308,7 +303,7 @@ public interface SymbolLookup {
         });
         return name -> {
             Objects.requireNonNull(name);
-            if (Utils.containsNullChars(name)) return Optional.empty();
+            if (_Utils.containsNullChars(name)) return Optional.empty();
             long addr = library.find(name);
             return addr == 0L ?
                     Optional.empty() :

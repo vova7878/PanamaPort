@@ -31,8 +31,6 @@ package com.v7878.foreign;
 import java.util.Objects;
 import java.util.Optional;
 
-import jdk.internal.foreign.Utils;
-
 final class _SequenceLayoutImpl extends _AbstractLayout<_SequenceLayoutImpl> implements SequenceLayout {
 
     private final long elemCount;
@@ -71,7 +69,7 @@ final class _SequenceLayoutImpl extends _AbstractLayout<_SequenceLayoutImpl> imp
      * @throws IllegalArgumentException if {@code elementCount < 0}.
      */
     public SequenceLayout withElementCount(long elementCount) {
-        return Utils.wrapOverflow(() ->
+        return _Utils.wrapOverflow(() ->
                 new _SequenceLayoutImpl(elementCount, elementLayout, byteAlignment(), name()));
     }
 
