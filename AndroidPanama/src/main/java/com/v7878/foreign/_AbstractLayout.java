@@ -188,7 +188,10 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     }
 
     public VarHandle arrayElementVarHandle(PathElement... elements) {
-        return MethodHandles.collectCoordinates(varHandle(elements), 1, scaleHandle());
+        //TODO
+        //return MethodHandles.collectCoordinates(varHandle(elements), 1, scaleHandle());
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     public MethodHandle sliceHandle(PathElement... elements) {

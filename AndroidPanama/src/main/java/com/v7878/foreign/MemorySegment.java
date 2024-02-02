@@ -54,10 +54,6 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.SegmentFactories;
-
 /**
  * A memory segment provides access to a contiguous region of memory.
  * <p>
@@ -517,7 +513,9 @@ import jdk.internal.foreign.SegmentFactories;
  * @implSpec Implementations of this interface are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
+//TODO
+//public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
+public interface MemorySegment {
 
     /**
      * {@return the address of this memory segment}
@@ -1332,7 +1330,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                                  {@link CharBuffer#wrap(char[], int, int)} are not backed by an array.
      */
     static MemorySegment ofBuffer(Buffer buffer) {
-        return AbstractMemorySegmentImpl.ofBuffer(buffer);
+        //TODO
+        //return AbstractMemorySegmentImpl.ofBuffer(buffer);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -1345,7 +1346,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a byte array
      */
     static MemorySegment ofArray(byte[] byteArray) {
-        return SegmentFactories.fromArray(byteArray);
+        //TODO
+        //return SegmentFactories.fromArray(byteArray);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -1358,7 +1362,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a char array
      */
     static MemorySegment ofArray(char[] charArray) {
-        return SegmentFactories.fromArray(charArray);
+        //TODO
+        //return SegmentFactories.fromArray(charArray);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -1371,7 +1378,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a short array
      */
     static MemorySegment ofArray(short[] shortArray) {
-        return SegmentFactories.fromArray(shortArray);
+        //TODO
+        //return SegmentFactories.fromArray(shortArray);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -1384,7 +1394,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by an int array
      */
     static MemorySegment ofArray(int[] intArray) {
-        return SegmentFactories.fromArray(intArray);
+        //TODO
+        //return SegmentFactories.fromArray(intArray);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -1397,7 +1410,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a float array
      */
     static MemorySegment ofArray(float[] floatArray) {
-        return SegmentFactories.fromArray(floatArray);
+        //TODO
+        //return SegmentFactories.fromArray(floatArray);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -1410,7 +1426,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a long array
      */
     static MemorySegment ofArray(long[] longArray) {
-        return SegmentFactories.fromArray(longArray);
+        //TODO
+        //return SegmentFactories.fromArray(longArray);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -1423,7 +1442,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a double array
      */
     static MemorySegment ofArray(double[] doubleArray) {
-        return SegmentFactories.fromArray(doubleArray);
+        //TODO
+        //return SegmentFactories.fromArray(doubleArray);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -1447,7 +1469,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a zero-length native segment with the given address
      */
     static MemorySegment ofAddress(long address) {
-        return SegmentFactories.makeNativeSegmentUnchecked(address, 0);
+        //TODO
+        //return SegmentFactories.makeNativeSegmentUnchecked(address, 0);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -1564,9 +1589,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
         Objects.requireNonNull(srcElementLayout);
         Objects.requireNonNull(dstSegment);
         Objects.requireNonNull(dstElementLayout);
-        AbstractMemorySegmentImpl.copy(srcSegment, srcElementLayout, srcOffset,
-                dstSegment, dstElementLayout, dstOffset,
-                elementCount);
+        //TODO
+        //AbstractMemorySegmentImpl.copy(srcSegment, srcElementLayout, srcOffset,
+        //        dstSegment, dstElementLayout, dstOffset,
+        //        elementCount);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -2456,9 +2484,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
         Objects.requireNonNull(dstArray);
         Objects.requireNonNull(srcLayout);
 
-        AbstractMemorySegmentImpl.copy(srcSegment, srcLayout, srcOffset,
-                dstArray, dstIndex,
-                elementCount);
+        //TODO
+        //AbstractMemorySegmentImpl.copy(srcSegment, srcLayout, srcOffset,
+        //        dstArray, dstIndex,
+        //        elementCount);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -2506,9 +2537,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
         Objects.requireNonNull(dstSegment);
         Objects.requireNonNull(dstLayout);
 
-        AbstractMemorySegmentImpl.copy(srcArray, srcIndex,
-                dstSegment, dstLayout, dstOffset,
-                elementCount);
+        //TODO
+        //AbstractMemorySegmentImpl.copy(srcArray, srcIndex,
+        //        dstSegment, dstLayout, dstOffset,
+        //        elementCount);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -2557,8 +2591,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     static long mismatch(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
                          MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
-        return AbstractMemorySegmentImpl.mismatch(srcSegment, srcFromOffset, srcToOffset,
-                dstSegment, dstFromOffset, dstToOffset);
+        //TODO
+        //return AbstractMemorySegmentImpl.mismatch(srcSegment, srcFromOffset, srcToOffset,
+        //        dstSegment, dstFromOffset, dstToOffset);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -2606,7 +2643,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * assert segment1.scope().equals(segment2.scope());
      *}
      */
-    sealed interface Scope permits MemorySessionImpl {
+    //TODO
+    //sealed interface Scope permits MemorySessionImpl {
+    interface Scope {
         /**
          * {@return {@code true}, if the regions of memory backing the memory segments
          * associated with this scope are still valid}

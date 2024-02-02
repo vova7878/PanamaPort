@@ -29,16 +29,7 @@ package com.v7878.foreign;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.CapturableState;
-import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.SharedUtils;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code
@@ -567,7 +558,9 @@ import jdk.internal.foreign.abi.SharedUtils;
  * @implSpec Implementations of this interface are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public sealed interface Linker permits AbstractLinker {
+//TODO
+//public sealed interface Linker permits AbstractLinker {
+public interface Linker {
 
     /**
      * {@return a linker for the ABI associated with the underlying native platform}
@@ -586,7 +579,10 @@ public sealed interface Linker permits AbstractLinker {
      * and {@code libdl}.
      */
     static Linker nativeLinker() {
-        return SharedUtils.getSystemLinker();
+        //TODO
+        //return SharedUtils.getSystemLinker();
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -773,8 +769,9 @@ public sealed interface Linker permits AbstractLinker {
     /**
      * A linker option is used to provide additional parameters to a linkage request.
      */
-    sealed interface Option
-            permits LinkerOptions.LinkerOptionImpl {
+    //TODO
+    //sealed interface Option permits LinkerOptions.LinkerOptionImpl {
+    interface Option {
 
         /**
          * {@return a linker option used to denote the index indicating the start of the
@@ -804,7 +801,10 @@ public sealed interface Linker permits AbstractLinker {
          * available.
          */
         static Option firstVariadicArg(int index) {
-            return new LinkerOptions.FirstVariadicArg(index);
+            //TODO
+            //return new LinkerOptions.FirstVariadicArg(index);
+
+            throw new UnsupportedOperationException("Not supported yet");
         }
 
         /**
@@ -852,11 +852,14 @@ public sealed interface Linker permits AbstractLinker {
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
-            Set<CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
-                    .map(Objects::requireNonNull)
-                    .map(CapturableState::forName)
-                    .collect(Collectors.toSet());
-            return new LinkerOptions.CaptureCallState(set);
+            //TODO
+            //Set<CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
+            //        .map(Objects::requireNonNull)
+            //        .map(CapturableState::forName)
+            //        .collect(Collectors.toSet());
+            //return new LinkerOptions.CaptureCallState(set);
+
+            throw new UnsupportedOperationException("Not supported yet");
         }
 
         /**
@@ -885,7 +888,10 @@ public sealed interface Linker permits AbstractLinker {
          * @see #captureCallState(String...)
          */
         static StructLayout captureStateLayout() {
-            return CapturableState.LAYOUT;
+            //TODO
+            //return CapturableState.LAYOUT;
+
+            throw new UnsupportedOperationException("Not supported yet");
         }
 
         /**
@@ -914,9 +920,12 @@ public sealed interface Linker permits AbstractLinker {
          *                        Java heap.
          */
         static Option critical(boolean allowHeapAccess) {
-            return allowHeapAccess
-                    ? LinkerOptions.Critical.ALLOW_HEAP
-                    : LinkerOptions.Critical.DONT_ALLOW_HEAP;
+            //TODO
+            //return allowHeapAccess
+            //        ? LinkerOptions.Critical.ALLOW_HEAP
+            //        : LinkerOptions.Critical.DONT_ALLOW_HEAP;
+
+            throw new UnsupportedOperationException("Not supported yet");
         }
     }
 }

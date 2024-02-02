@@ -28,6 +28,7 @@
 
 package com.v7878.foreign;
 
+import static com.v7878.misc.Math.ceilDiv;
 import static java.util.stream.Collectors.joining;
 
 import java.lang.invoke.MethodHandle;
@@ -35,7 +36,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
@@ -114,7 +114,7 @@ class _LayoutPath {
         long nelems = step > 0 ?
                 seq.elementCount() - start :
                 start + 1;
-        long maxIndex = Math.ceilDiv(nelems, Math.abs(step));
+        long maxIndex = ceilDiv(nelems, Math.abs(step));
         return _LayoutPath.nestedPath(elem, offset + (start * elemSize),
                 addStride(elemSize * step), addBound(maxIndex), derefAdapters, this);
     }
@@ -167,20 +167,26 @@ class _LayoutPath {
     }
 
     public _LayoutPath derefElement() {
-        if (!(layout instanceof AddressLayout addressLayout) ||
-                addressLayout.targetLayout().isEmpty()) {
-            throw badLayoutPath(
-                    String.format("Cannot dereference layout: %s", breadcrumbs()));
-        }
-        MemoryLayout derefLayout = addressLayout.targetLayout().get();
-        MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
-        handle = MethodHandles.filterReturnValue(handle,
-                MethodHandles.insertArguments(MH_SEGMENT_RESIZE, 1, derefLayout));
-        return derefPath(derefLayout, handle, this);
+        //TODO
+        //if (!(layout instanceof AddressLayout addressLayout) ||
+        //        addressLayout.targetLayout().isEmpty()) {
+        //    throw badLayoutPath(
+        //            String.format("Cannot dereference layout: %s", breadcrumbs()));
+        //}
+        //MemoryLayout derefLayout = addressLayout.targetLayout().get();
+        //MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
+        //handle = MethodHandles.filterReturnValue(handle,
+        //        MethodHandles.insertArguments(MH_SEGMENT_RESIZE, 1, derefLayout));
+        //return derefPath(derefLayout, handle, this);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     private static MemorySegment resizeSegment(MemorySegment segment, MemoryLayout layout) {
-        return _Utils.longToAddress(segment.address(), layout.byteSize(), layout.byteAlignment());
+        //TODO
+        //return _Utils.longToAddress(segment.address(), layout.byteSize(), layout.byteAlignment());
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     // Layout path projections
@@ -194,7 +200,8 @@ class _LayoutPath {
     }
 
     public VarHandle dereferenceHandle(boolean adapt) {
-        if (!(layout instanceof ValueLayout valueLayout)) {
+        //TODO
+        /*if (!(layout instanceof ValueLayout valueLayout)) {
             throw new IllegalArgumentException(
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
@@ -232,7 +239,9 @@ class _LayoutPath {
                 handle = MethodHandles.collectCoordinates(handle, 0, adapter);
             }
         }
-        return handle;
+        return handle;*/
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     private static long addScaledOffset(long base, long index, long stride, long bound) {
@@ -281,11 +290,14 @@ class _LayoutPath {
     }
 
     private static void checkAlign(MemorySegment segment, long offset, MemoryLayout constraint) {
-        if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, constraint)) {
-            throw new IllegalArgumentException(String.format(
-                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
-                    , offset, constraint.byteAlignment(), constraint, segment));
-        }
+        //TODO
+        //if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, constraint)) {
+        //    throw new IllegalArgumentException(String.format(
+        //            "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
+        //            , offset, constraint.byteAlignment(), constraint, segment));
+        //}
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     public MemoryLayout layout() {

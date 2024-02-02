@@ -33,8 +33,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import jdk.internal.foreign.FunctionDescriptorImpl;
-
 /**
  * A function descriptor models the signature of a foreign function. A function
  * descriptor is made up of zero or more argument layouts, and zero or one return layout.
@@ -47,7 +45,7 @@ import jdk.internal.foreign.FunctionDescriptorImpl;
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @see MemoryLayout
  */
-public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
+public sealed interface FunctionDescriptor permits _FunctionDescriptorImpl {
 
     /**
      * {@return the return layout (if any) of this function descriptor}
@@ -130,7 +128,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
     static FunctionDescriptor of(MemoryLayout resLayout, MemoryLayout... argLayouts) {
         Objects.requireNonNull(resLayout);
         // Null checks are implicit in List.of(argLayouts)
-        return FunctionDescriptorImpl.of(resLayout, List.of(argLayouts));
+        return _FunctionDescriptorImpl.of(resLayout, List.of(argLayouts));
     }
 
     /**
@@ -144,6 +142,6 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      */
     static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
         // Null checks are implicit in List.of(argLayouts)
-        return FunctionDescriptorImpl.ofVoid(List.of(argLayouts));
+        return _FunctionDescriptorImpl.ofVoid(List.of(argLayouts));
     }
 }

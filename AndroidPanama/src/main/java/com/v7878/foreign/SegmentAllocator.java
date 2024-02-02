@@ -46,11 +46,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.ArenaImpl;
-import jdk.internal.foreign.SlicingAllocator;
-import jdk.internal.foreign.StringSupport;
-
 /**
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}.
  * Clients implementing this interface must implement the {@link #allocate(long, long)}
@@ -110,7 +105,7 @@ public interface SegmentAllocator {
 
     default MemorySegment allocateFrom(String str) {
         Objects.requireNonNull(str);
-        return allocateFrom(str, sun.nio.cs.UTF_8.INSTANCE);
+        return allocateFrom(str, StandardCharsets.UTF_8);
     }
 
     /**
@@ -146,7 +141,8 @@ public interface SegmentAllocator {
      */
 
     default MemorySegment allocateFrom(String str, Charset charset) {
-        Objects.requireNonNull(charset);
+        //TODO
+        /*Objects.requireNonNull(charset);
         Objects.requireNonNull(str);
         int termCharSize = StringSupport.CharsetKind.of(charset).terminatorCharSize();
         MemorySegment segment;
@@ -164,7 +160,9 @@ public interface SegmentAllocator {
         for (int i = 0; i < termCharSize; i++) {
             segment.set(JAVA_BYTE, length + i, (byte) 0);
         }
-        return segment;
+        return segment;*/
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -678,7 +676,7 @@ public interface SegmentAllocator {
      */
     static SegmentAllocator slicingAllocator(MemorySegment segment) {
         assertWritable(segment);
-        return new SlicingAllocator(segment);
+        return new _SlicingAllocator(segment);
     }
 
     /**
@@ -707,8 +705,11 @@ public interface SegmentAllocator {
      * written to the underlying segment by a different thread.
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
-        assertWritable(segment);
-        return (AbstractMemorySegmentImpl) segment;
+        //TODO
+        //assertWritable(segment);
+        //return (AbstractMemorySegmentImpl) segment;
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     private static void assertWritable(MemorySegment segment) {
@@ -718,24 +719,32 @@ public interface SegmentAllocator {
         }
     }
 
-
     private MemorySegment allocateNoInit(long byteSize) {
-        return this instanceof ArenaImpl arenaImpl ?
-                arenaImpl.allocateNoInit(byteSize, 1) :
-                allocate(byteSize);
+        //TODO
+        //return this instanceof ArenaImpl arenaImpl ?
+        //        arenaImpl.allocateNoInit(byteSize, 1) :
+        //        allocate(byteSize);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
 
     private MemorySegment allocateNoInit(MemoryLayout layout) {
-        return this instanceof ArenaImpl arenaImpl ?
-                arenaImpl.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
-                allocate(layout);
+        //TODO
+        //return this instanceof ArenaImpl arenaImpl ?
+        //        arenaImpl.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
+        //        allocate(layout);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
 
     private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
-        return this instanceof ArenaImpl arenaImpl ?
-                arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
-                allocate(layout, size);
+        //TODO
+        //return this instanceof ArenaImpl arenaImpl ?
+        //        arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
+        //        allocate(layout, size);
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 }

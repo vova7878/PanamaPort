@@ -28,13 +28,13 @@
 
 package com.v7878.foreign;
 
+import com.v7878.dex.TypeId;
+import com.v7878.unsafe.AndroidUnsafe;
+
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Optional;
-
-import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -57,11 +57,10 @@ final class _ValueLayouts {
 
     abstract static sealed class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends _AbstractLayout<V> {
 
-        static final int ADDRESS_SIZE_BYTES = Unsafe.ADDRESS_SIZE;
+        static final int ADDRESS_SIZE_BYTES = AndroidUnsafe.ADDRESS_SIZE;
 
         private final Class<?> carrier;
         private final ByteOrder order;
-        @Stable
         private VarHandle handle;
 
         AbstractValueLayout(Class<?> carrier, ByteOrder order, long byteSize, long byteAlignment, Optional<String> name) {
@@ -92,7 +91,8 @@ final class _ValueLayouts {
 
         @Override
         public String toString() {
-            char descriptor = carrier.descriptorString().charAt(0);
+            //TODO
+            char descriptor = TypeId.of(carrier).getShorty();
             if (order == ByteOrder.LITTLE_ENDIAN) {
                 descriptor = Character.toLowerCase(descriptor);
             }

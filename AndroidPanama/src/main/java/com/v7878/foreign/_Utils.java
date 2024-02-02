@@ -28,26 +28,35 @@
 
 package com.v7878.foreign;
 
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_INDEX_SCALE;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_INDEX_SCALE;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_DOUBLE_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_DOUBLE_INDEX_SCALE;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_INDEX_SCALE;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_INDEX_SCALE;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.misc.Unsafe;
-import sun.invoke.util.Wrapper;
 
 /**
  * This class contains misc helper functions to support creation of memory segments.
  */
 final class _Utils {
 
+    //TODO: delete?
     public static final boolean IS_WINDOWS = false; // privilegedGetProperty("os.name").startsWith("Windows");
 
     // Suppresses default constructor, ensuring non-instantiability.
@@ -66,10 +75,13 @@ final class _Utils {
                     MethodType.methodType(boolean.class, byte.class));
             BOOL_TO_BYTE = lookup.findStatic(_Utils.class, "booleanToByte",
                     MethodType.methodType(byte.class, boolean.class));
-            ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
-                    MethodType.methodType(long.class, MemorySegment.class));
-            LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
-                    MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
+            //TODO
+            //ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
+            //        MethodType.methodType(long.class, MemorySegment.class));
+            //LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
+            //        MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
+            ADDRESS_TO_LONG = null;
+            LONG_TO_ADDRESS = null;
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -85,7 +97,8 @@ final class _Utils {
     }
 
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
-        final class VarHandleCache {
+        //TODO
+        /*final class VarHandleCache {
             private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
 
             static VarHandle put(ValueLayout layout, VarHandle handle) {
@@ -128,7 +141,9 @@ final class _Utils {
                                     pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
                             MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
-        return VarHandleCache.put(layout, handle);
+        return VarHandleCache.put(layout, handle);*/
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     public static boolean byteToBoolean(byte b) {
@@ -139,19 +154,19 @@ final class _Utils {
         return b ? (byte) 1 : (byte) 0;
     }
 
-    public static MemorySegment longToAddress(long addr, long size, long align) {
-        if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
-        }
-        return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
-    }
-
-    public static MemorySegment longToAddress(long addr, long size, long align, MemorySessionImpl scope) {
-        if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
-        }
-        return SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
-    }
+    //public static MemorySegment longToAddress(long addr, long size, long align) {
+    //    if (!isAligned(addr, align)) {
+    //        throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
+    //    }
+    //    return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
+    //}
+    //
+    //public static MemorySegment longToAddress(long addr, long size, long align, MemorySessionImpl scope) {
+    //    if (!isAligned(addr, align)) {
+    //        throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
+    //    }
+    //    return SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
+    //}
 
     public static boolean isAligned(long offset, long align) {
         return (offset & (align - 1)) == 0;
@@ -248,11 +263,22 @@ final class _Utils {
         if (padding != 0) {
             layouts.add(MemoryLayout.paddingLayout(padding));
         }
-        return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
+        return MemoryLayout.structLayout(layouts.toArray(new MemoryLayout[0]));
     }
 
     public static int byteWidthOfPrimitive(Class<?> primitive) {
-        return Wrapper.forPrimitiveType(primitive).bitWidth() / 8;
+        // Port-changed: just check all primitive types
+        //return Wrapper.forPrimitiveType(primitive).bitWidth() / 8;
+        if (primitive == byte.class || primitive == boolean.class) {
+            return 1;
+        } else if (primitive == short.class || primitive == char.class) {
+            return 2;
+        } else if (primitive == int.class || primitive == float.class) {
+            return 4;
+        } else if (primitive == long.class || primitive == double.class) {
+            return 8;
+        }
+        throw new IllegalArgumentException("Unsupported primitive class: " + primitive);
     }
 
     public static boolean isPowerOfTwo(long value) {
@@ -277,23 +303,17 @@ final class _Utils {
 
     public record BaseAndScale(int base, long scale) {
 
-        public static final BaseAndScale BYTE =
-                new BaseAndScale(Unsafe.ARRAY_BYTE_BASE_OFFSET, Unsafe.ARRAY_BYTE_INDEX_SCALE);
-        public static final BaseAndScale CHAR =
-                new BaseAndScale(Unsafe.ARRAY_CHAR_BASE_OFFSET, Unsafe.ARRAY_CHAR_INDEX_SCALE);
-        public static final BaseAndScale SHORT =
-                new BaseAndScale(Unsafe.ARRAY_SHORT_BASE_OFFSET, Unsafe.ARRAY_SHORT_INDEX_SCALE);
-        public static final BaseAndScale INT =
-                new BaseAndScale(Unsafe.ARRAY_INT_BASE_OFFSET, Unsafe.ARRAY_INT_INDEX_SCALE);
-        public static final BaseAndScale FLOAT =
-                new BaseAndScale(Unsafe.ARRAY_FLOAT_BASE_OFFSET, Unsafe.ARRAY_FLOAT_INDEX_SCALE);
-        public static final BaseAndScale LONG =
-                new BaseAndScale(Unsafe.ARRAY_LONG_BASE_OFFSET, Unsafe.ARRAY_LONG_INDEX_SCALE);
-        public static final BaseAndScale DOUBLE =
-                new BaseAndScale(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, Unsafe.ARRAY_DOUBLE_INDEX_SCALE);
+        public static final BaseAndScale BYTE = new BaseAndScale(ARRAY_BYTE_BASE_OFFSET, ARRAY_BYTE_INDEX_SCALE);
+        public static final BaseAndScale CHAR = new BaseAndScale(ARRAY_CHAR_BASE_OFFSET, ARRAY_CHAR_INDEX_SCALE);
+        public static final BaseAndScale SHORT = new BaseAndScale(ARRAY_SHORT_BASE_OFFSET, ARRAY_SHORT_INDEX_SCALE);
+        public static final BaseAndScale INT = new BaseAndScale(ARRAY_INT_BASE_OFFSET, ARRAY_INT_INDEX_SCALE);
+        public static final BaseAndScale FLOAT = new BaseAndScale(ARRAY_FLOAT_BASE_OFFSET, ARRAY_FLOAT_INDEX_SCALE);
+        public static final BaseAndScale LONG = new BaseAndScale(ARRAY_LONG_BASE_OFFSET, ARRAY_LONG_INDEX_SCALE);
+        public static final BaseAndScale DOUBLE = new BaseAndScale(ARRAY_DOUBLE_BASE_OFFSET, ARRAY_DOUBLE_INDEX_SCALE);
 
         public static BaseAndScale of(Object array) {
-            return switch (array) {
+            //TODO
+            /*return switch (array) {
                 case byte[] _ -> BaseAndScale.BYTE;
                 case char[] _ -> BaseAndScale.CHAR;
                 case short[] _ -> BaseAndScale.SHORT;
@@ -303,9 +323,9 @@ final class _Utils {
                 case double[] _ -> BaseAndScale.DOUBLE;
                 default ->
                         throw new IllegalArgumentException("Not a supported array class: " + array.getClass().getSimpleName());
-            };
+            };*/
+
+            throw new UnsupportedOperationException("Not supported yet");
         }
-
     }
-
 }

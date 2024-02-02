@@ -27,16 +27,15 @@
 
 package com.v7878.foreign;
 
-import java.util.function.Consumer;
+import com.v7878.foreign.MemorySegment.Scope;
 
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.ref.CleanerFactory;
+import java.util.function.Consumer;
 
 /**
  * An arena controls the lifecycle of native memory segments, providing both flexible
  * allocation and timely deallocation.
  * <p>
- * An arena has a {@linkplain MemorySegment.Scope scope} - the <em>arena scope</em>.
+ * An arena has a {@linkplain Scope scope} - the <em>arena scope</em>.
  * All the segments allocated by the arena are associated with the arena scope. As such,
  * the arena determines the temporal bounds of all the memory segments allocated by it.
  * <p>
@@ -223,7 +222,10 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @return a new arena that is managed, automatically, by the garbage collector
      */
     static Arena ofAuto() {
-        return MemorySessionImpl.createImplicit(CleanerFactory.cleaner()).asArena();
+        //TODO
+        //return MemorySessionImpl.createImplicit(CleanerFactory.cleaner()).asArena();
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -236,10 +238,13 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * are zero-initialized.
      */
     static Arena global() {
-        class Holder {
-            static final Arena GLOBAL = MemorySessionImpl.GLOBAL_SESSION.asArena();
-        }
-        return Holder.GLOBAL;
+        //TODO
+        //class Holder {
+        //    static final Arena GLOBAL = MemorySessionImpl.GLOBAL_SESSION.asArena();
+        //}
+        //return Holder.GLOBAL;
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -251,7 +256,10 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * are zero-initialized.
      */
     static Arena ofConfined() {
-        return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
+        //TODO
+        //return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
@@ -262,7 +270,10 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * are zero-initialized.
      */
     static Arena ofShared() {
-        return MemorySessionImpl.createShared().asArena();
+        //TODO
+        //return MemorySessionImpl.createShared().asArena();
+
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     /**
