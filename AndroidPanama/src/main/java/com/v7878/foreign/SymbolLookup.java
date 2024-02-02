@@ -208,7 +208,7 @@ public interface SymbolLookup {
         //if ((loader == null || loader instanceof BuiltinClassLoader)) {
         //    loaderArena = Arena.global();
         //} else {
-        //    MemorySessionImpl session = MemorySessionImpl.createHeap(loader);
+        //    _MemorySessionImpl session = _MemorySessionImpl.createHeap(loader);
         //    loaderArena = session.asArena();
         //}
         //return name -> {
@@ -301,7 +301,7 @@ public interface SymbolLookup {
             throw new IllegalArgumentException("Cannot open library: " + libDesc);
         }
         // register hook to unload library when 'libScope' becomes not alive
-        MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
+        _MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new _MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 nativeLibraries.unload(library);

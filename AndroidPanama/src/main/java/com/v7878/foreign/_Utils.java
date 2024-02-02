@@ -161,7 +161,7 @@ final class _Utils {
     //    return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
     //}
     //
-    //public static MemorySegment longToAddress(long addr, long size, long align, MemorySessionImpl scope) {
+    //public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
     //    if (!isAligned(addr, align)) {
     //        throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
     //    }

@@ -720,31 +720,22 @@ public interface SegmentAllocator {
     }
 
     private MemorySegment allocateNoInit(long byteSize) {
-        //TODO
-        //return this instanceof ArenaImpl arenaImpl ?
-        //        arenaImpl.allocateNoInit(byteSize, 1) :
-        //        allocate(byteSize);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(byteSize, 1) :
+                allocate(byteSize);
     }
 
 
     private MemorySegment allocateNoInit(MemoryLayout layout) {
-        //TODO
-        //return this instanceof ArenaImpl arenaImpl ?
-        //        arenaImpl.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
-        //        allocate(layout);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
+                allocate(layout);
     }
 
 
     private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
-        //TODO
-        //return this instanceof ArenaImpl arenaImpl ?
-        //        arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
-        //        allocate(layout, size);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
+                allocate(layout, size);
     }
 }

@@ -2643,9 +2643,7 @@ public interface MemorySegment {
      * assert segment1.scope().equals(segment2.scope());
      *}
      */
-    //TODO
-    //sealed interface Scope permits MemorySessionImpl {
-    interface Scope {
+    sealed interface Scope permits _MemorySessionImpl {
         /**
          * {@return {@code true}, if the regions of memory backing the memory segments
          * associated with this scope are still valid}

@@ -31,9 +31,9 @@ import com.v7878.foreign._LayoutPath.PathElementImpl.PathKind;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * A memory layout describes the contents of a memory segment.
@@ -994,8 +994,7 @@ public sealed interface MemoryLayout
      * @param elementLayout the sequence element layout
      * @return the new sequence layout with the given element layout and size
      * @throws IllegalArgumentException if {@code elementCount} is negative
-     * @throws IllegalArgumentException if {@code elementLayout.byteSize() * elementCount}
-     *                                  overflows
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() * elementCount} overflows
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
@@ -1005,6 +1004,24 @@ public sealed interface MemoryLayout
                 "Element layout size is not multiple of alignment");
         return _Utils.wrapOverflow(() ->
                 _SequenceLayoutImpl.of(elementCount, elementLayout));
+    }
+
+    /**
+     * Creates a sequence layout with the given element layout and the maximum element
+     * count such that it does not overflow a {@code long}.
+     * <p>
+     * This is equivalent to the following code:
+     * {@snippet lang = java:
+     * sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
+     *}
+     *
+     * @param elementLayout the sequence element layout.
+     * @return a new sequence layout with the given element layout and maximum element count.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
+     */
+    static SequenceLayout sequenceLayout(MemoryLayout elementLayout) {
+        Objects.requireNonNull(elementLayout);
+        return sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
     }
 
     /**
@@ -1042,9 +1059,12 @@ public sealed interface MemoryLayout
     static StructLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
         return _Utils.wrapOverflow(() ->
-                _StructLayoutImpl.of(Stream.of(elements)
-                        .map(Objects::requireNonNull)
-                        .toList()));
+                _StructLayoutImpl.of(List.of(elements)));
+    }
+
+    // TODO: javadoc
+    static StructLayout paddedStructLayout(MemoryLayout... elements) {
+        return _Utils.computePaddedStructLayout(elements);
     }
 
     /**
@@ -1055,8 +1075,6 @@ public sealed interface MemoryLayout
      */
     static UnionLayout unionLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        return _UnionLayoutImpl.of(Stream.of(elements)
-                .map(Objects::requireNonNull)
-                .toList());
+        return _UnionLayoutImpl.of(List.of(elements));
     }
 }

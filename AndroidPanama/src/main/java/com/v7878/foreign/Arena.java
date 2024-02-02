@@ -222,10 +222,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @return a new arena that is managed, automatically, by the garbage collector
      */
     static Arena ofAuto() {
-        //TODO
-        //return MemorySessionImpl.createImplicit(CleanerFactory.cleaner()).asArena();
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return _MemorySessionImpl.createImplicit().asArena();
     }
 
     /**
@@ -238,13 +235,10 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * are zero-initialized.
      */
     static Arena global() {
-        //TODO
-        //class Holder {
-        //    static final Arena GLOBAL = MemorySessionImpl.GLOBAL_SESSION.asArena();
-        //}
-        //return Holder.GLOBAL;
-
-        throw new UnsupportedOperationException("Not supported yet");
+        class Holder {
+            static final Arena GLOBAL = _MemorySessionImpl.GLOBAL_SESSION.asArena();
+        }
+        return Holder.GLOBAL;
     }
 
     /**
@@ -256,10 +250,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * are zero-initialized.
      */
     static Arena ofConfined() {
-        //TODO
-        //return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return _MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
     }
 
     /**
@@ -270,10 +261,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * are zero-initialized.
      */
     static Arena ofShared() {
-        //TODO
-        //return MemorySessionImpl.createShared().asArena();
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return _MemorySessionImpl.createShared().asArena();
     }
 
     /**
