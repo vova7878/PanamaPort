@@ -182,10 +182,7 @@ class _LayoutPath {
     }
 
     private static MemorySegment resizeSegment(MemorySegment segment, MemoryLayout layout) {
-        //TODO
-        //return _Utils.longToAddress(segment.address(), layout.byteSize(), layout.byteAlignment());
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return _Utils.longToAddress(segment.address(), layout.byteSize(), layout.byteAlignment());
     }
 
     // Layout path projections

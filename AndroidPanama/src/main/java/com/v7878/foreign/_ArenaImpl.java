@@ -48,11 +48,8 @@ public final class _ArenaImpl implements Arena {
     }
 
     public MemorySegment allocateNoInit(long byteSize, long byteAlignment) {
-        //TODO
-        //_Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        //return _SegmentFactories.allocateSegment(byteSize, byteAlignment, session, shouldReserveMemory);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        _Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
+        return _SegmentFactories.allocateSegment(byteSize, byteAlignment, session, shouldReserveMemory);
     }
 
     @Override

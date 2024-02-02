@@ -77,10 +77,10 @@ final class _Utils {
             //TODO
             //ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
             //        MethodType.methodType(long.class, MemorySegment.class));
-            //LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
-            //        MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
             ADDRESS_TO_LONG = null;
-            LONG_TO_ADDRESS = null;
+
+            LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -157,19 +157,19 @@ final class _Utils {
         return b ? (byte) 1 : (byte) 0;
     }
 
-    //public static MemorySegment longToAddress(long addr, long size, long align) {
-    //    if (!isAligned(addr, align)) {
-    //        throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
-    //    }
-    //    return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
-    //}
-    //
-    //public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
-    //    if (!isAligned(addr, align)) {
-    //        throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
-    //    }
-    //    return SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
-    //}
+    public static MemorySegment longToAddress(long addr, long size, long align) {
+        if (!isAligned(addr, align)) {
+            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
+        }
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
+    }
+
+    public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
+        if (!isAligned(addr, align)) {
+            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
+        }
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
+    }
 
     public static boolean isAligned(long offset, long align) {
         return (offset & (align - 1)) == 0;

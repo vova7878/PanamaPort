@@ -36,6 +36,8 @@ import java.util.Objects;
  */
 non-sealed class _GlobalSession extends _MemorySessionImpl {
 
+    public static final _GlobalSession INSTANCE = new _GlobalSession();
+
     public _GlobalSession() {
         super(null, null);
     }
@@ -77,14 +79,12 @@ non-sealed class _GlobalSession extends _MemorySessionImpl {
         final Object ref;
 
         public HeapSession(Object ref) {
-            super();
             this.ref = Objects.requireNonNull(ref);
         }
 
         @Override
         public boolean equals(Object obj) {
-            return obj instanceof HeapSession session &&
-                    ref == session.ref;
+            return obj instanceof HeapSession session && ref == session.ref;
         }
 
         @Override

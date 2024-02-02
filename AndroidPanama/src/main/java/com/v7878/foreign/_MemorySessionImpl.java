@@ -80,7 +80,6 @@ abstract sealed class _MemorySessionImpl implements Scope
     static final ScopedAccessError WRONG_THREAD = new ScopedAccessError(_MemorySessionImpl::wrongThread);
 
     // This is the session of all zero-length memory segments
-    public static final _MemorySessionImpl GLOBAL_SESSION = new _GlobalSession();
 
     final ResourceList resourceList;
     final Thread owner;

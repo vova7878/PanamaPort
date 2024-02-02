@@ -141,16 +141,12 @@ public abstract sealed class _AbstractMemorySegmentImpl
     }
 
     public MemorySegment reinterpretInternal(long newSize, Scope scope, Consumer<MemorySegment> cleanup) {
-        //TODO
-        //_Utils.checkNonNegativeArgument(newSize, "newSize");
-        //if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
-        //Runnable action = cleanup != null ?
-        //        () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
-        //        null;
-        //return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
-        //        (_MemorySessionImpl) scope, action);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        _Utils.checkNonNegativeArgument(newSize, "newSize");
+        if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
+        Runnable action = cleanup == null ? null : () -> cleanup.accept(
+                SegmentFactories.makeNativeSegmentUnchecked(address(), newSize));
+        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
+                (_MemorySessionImpl) scope, action);
     }
 
     private _AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {

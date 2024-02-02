@@ -1346,10 +1346,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a byte array
      */
     static MemorySegment ofArray(byte[] byteArray) {
-        //TODO
-        //return SegmentFactories.fromArray(byteArray);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return SegmentFactories.fromArray(byteArray);
     }
 
     /**
@@ -1362,10 +1359,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a char array
      */
     static MemorySegment ofArray(char[] charArray) {
-        //TODO
-        //return SegmentFactories.fromArray(charArray);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return SegmentFactories.fromArray(charArray);
     }
 
     /**
@@ -1378,10 +1372,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a short array
      */
     static MemorySegment ofArray(short[] shortArray) {
-        //TODO
-        //return SegmentFactories.fromArray(shortArray);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return SegmentFactories.fromArray(shortArray);
     }
 
     /**
@@ -1394,10 +1385,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by an int array
      */
     static MemorySegment ofArray(int[] intArray) {
-        //TODO
-        //return SegmentFactories.fromArray(intArray);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return SegmentFactories.fromArray(intArray);
     }
 
     /**
@@ -1410,10 +1398,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a float array
      */
     static MemorySegment ofArray(float[] floatArray) {
-        //TODO
-        //return SegmentFactories.fromArray(floatArray);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return SegmentFactories.fromArray(floatArray);
     }
 
     /**
@@ -1426,10 +1411,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a long array
      */
     static MemorySegment ofArray(long[] longArray) {
-        //TODO
-        //return SegmentFactories.fromArray(longArray);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return SegmentFactories.fromArray(longArray);
     }
 
     /**
@@ -1442,10 +1424,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a double array
      */
     static MemorySegment ofArray(double[] doubleArray) {
-        //TODO
-        //return SegmentFactories.fromArray(doubleArray);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return SegmentFactories.fromArray(doubleArray);
     }
 
     /**
@@ -1469,10 +1448,7 @@ public interface MemorySegment {
      * @return a zero-length native segment with the given address
      */
     static MemorySegment ofAddress(long address) {
-        //TODO
-        //return SegmentFactories.makeNativeSegmentUnchecked(address, 0);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return SegmentFactories.makeNativeSegmentUnchecked(address, 0);
     }
 
     /**
