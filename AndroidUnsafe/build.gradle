@@ -29,6 +29,11 @@ dependencies {
     compileOnly 'com.github.vova7878:KeepAnnotation:v0.0.1'
     compileOnly 'com.github.vova7878:OptimizationAnnotations:v0.0.2'
 
+    compileOnly project(':fake_buffers')
+
+    //TODO: compileOnlyApi?
+    compileOnly project(':fake_panama')
+
     implementation 'com.github.vova7878:SunUnsafeWrapper:v0.0.1'
     implementation 'com.github.vova7878:DexFile:v0.0.3'
     implementation 'com.github.vova7878:AndroidMisc:v0.0.2'

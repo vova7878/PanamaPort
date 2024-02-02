@@ -16,3 +16,4 @@ rootProject.name = "PanamaPort"
 include ':AndroidUnsafe'
 include ':VarHandleApi'
 include ':fake_panama'
+include ':fake_buffers'

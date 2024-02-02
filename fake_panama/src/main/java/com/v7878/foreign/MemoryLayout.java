@@ -96,7 +96,15 @@ public interface MemoryLayout {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    static SequenceLayout sequenceLayout(MemoryLayout elementLayout) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     static StructLayout structLayout(MemoryLayout... elements) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    static StructLayout paddedStructLayout(MemoryLayout... elements) {
         throw new UnsupportedOperationException("Stub!");
     }
 

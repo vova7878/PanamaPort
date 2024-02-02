@@ -1,0 +1,145 @@
+package com.v7878.unsafe.foreign;
+
+import static com.v7878.foreign.MemoryLayout.sequenceLayout;
+import static com.v7878.foreign.MemorySegment.NULL;
+import static com.v7878.foreign.ValueLayout.ADDRESS;
+import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
+import static com.v7878.foreign.ValueLayout.JAVA_INT;
+import static com.v7878.foreign.ValueLayout.JAVA_LONG;
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.Utils.nothrows_run;
+
+import com.v7878.foreign.Arena;
+import com.v7878.foreign.FunctionDescriptor;
+import com.v7878.foreign.Linker;
+import com.v7878.foreign.MemorySegment;
+import com.v7878.foreign.ValueLayout;
+import com.v7878.unsafe.Utils;
+
+import java.lang.invoke.MethodHandle;
+import java.nio.file.Path;
+import java.util.Objects;
+
+//TODO: move dl* handles to LibDL class
+public class RawNativeLibraries {
+    public static final int RTLD_LOCAL = 0;
+    public static final int RTLD_LAZY = 0x1;
+    public static final int RTLD_NOW = IS64BIT ? 0x2 : 0x0;
+    public static final int RTLD_GLOBAL = IS64BIT ? 0x100 : 0x2;
+    public static final int RTLD_NOLOAD = 0x00004;
+    public static final int RTLD_NODELETE = 0x01000;
+
+    public static final long RTLD_DEFAULT = IS64BIT ? 0L : -1L;
+    public static final long RTLD_NEXT = IS64BIT ? -1L : -2L;
+
+    private static final ValueLayout WORD = IS64BIT ? JAVA_LONG : JAVA_INT;
+
+    private static final MethodHandle dlopen = Linker.nativeLinker()
+            .downcallHandle(LibDL.dlopen, FunctionDescriptor.of(WORD, WORD, JAVA_INT)
+                    /*TODO: , isTrivial()*/);
+
+    public static long dlopen(String path, int flags) {
+        Objects.requireNonNull(path);
+        if (Utils.containsNullChars(path)) return 0;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_path = arena.allocateFrom(path);
+            return nothrows_run(() -> IS64BIT ?
+                    (long) dlopen.invokeExact(c_path.address(), flags) :
+                    (int) dlopen.invokeExact((int) c_path.address(), flags));
+        }
+    }
+
+    public static long dlopen(String path) {
+        return dlopen(path, RTLD_NOW);
+    }
+
+    private static final MethodHandle dlsym = Linker.nativeLinker()
+            .downcallHandle(LibDL.dlsym, FunctionDescriptor.of(WORD, WORD, WORD)
+                    /*TODO: , isTrivial()*/);
+
+    public static long dlsym(long handle, String name) {
+        Objects.requireNonNull(name);
+        if (Utils.containsNullChars(name)) return 0;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_name = arena.allocateFrom(name);
+            return nothrows_run(() -> IS64BIT ?
+                    (long) dlsym.invokeExact(handle, c_name.address()) :
+                    (int) dlsym.invokeExact((int) handle, (int) c_name.address()));
+        }
+    }
+
+    private static final MethodHandle dlclose = Linker.nativeLinker()
+            .downcallHandle(LibDL.dlclose, FunctionDescriptor.of(JAVA_INT, WORD)
+                    /*TODO: , isTrivial()*/);
+
+    public static void dlclose(long handle) {
+        //TODO: check result?
+        Object ignore = nothrows_run(() -> IS64BIT ?
+                (int) dlclose.invokeExact(handle) :
+                (int) dlclose.invokeExact((int) handle));
+    }
+
+    private static final MethodHandle dlerror = Linker.nativeLinker()
+            .downcallHandle(LibDL.dlerror, FunctionDescriptor.of(
+                            ADDRESS.withTargetLayout(sequenceLayout(JAVA_BYTE)))
+                    /*TODO: , isTrivial()*/);
+
+    public static String dlerror() {
+        MemorySegment msg = (MemorySegment) nothrows_run(() -> dlerror.invoke());
+        return NULL.equals(msg) ? null : msg.getString(0);
+    }
+
+    public static NativeLibrary load(Path path) {
+        return load(path.toFile().toString());
+    }
+
+    public static NativeLibrary load(String pathname) {
+        long handle = dlopen(pathname);
+        //TODO: check dlerror
+        if (handle == 0) return null;
+        return new RawNativeLibraryImpl(handle, pathname);
+    }
+
+    public static void unload(NativeLibrary lib) {
+        Objects.requireNonNull(lib);
+        RawNativeLibraryImpl nl = (RawNativeLibraryImpl) lib;
+        nl.unload();
+    }
+
+
+    private static class RawNativeLibraryImpl extends NativeLibrary {
+        private final String name;
+        private long handle;
+
+        RawNativeLibraryImpl(long handle, String name) {
+            this.handle = handle;
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        private long handle() {
+            if (handle == 0) {
+                throw new IllegalStateException("library is closed");
+            }
+            return handle;
+        }
+
+        @Override
+        public long find(String symbol_name) {
+            synchronized (this) {
+                return dlsym(handle(), symbol_name);
+            }
+        }
+
+        public void unload() {
+            synchronized (this) {
+                dlclose(handle());
+                handle = 0;
+            }
+        }
+    }
+}

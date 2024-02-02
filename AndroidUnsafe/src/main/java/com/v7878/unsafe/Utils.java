@@ -2,6 +2,7 @@ package com.v7878.unsafe;
 
 
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.Stack.getStackClass1;
 
 import android.annotation.SuppressLint;
 
@@ -257,10 +258,9 @@ public class Utils {
         };
     }
 
-    //TODO
-    //public static ClassLoader newEmptyClassLoader() {
-    //    return newEmptyClassLoader(getStackClass1().getClassLoader());
-    //}
+    public static ClassLoader newEmptyClassLoader() {
+        return newEmptyClassLoader(getStackClass1().getClassLoader());
+    }
 
     public static RuntimeException newIllegalArgumentException(String message) {
         return new IllegalArgumentException(message);
