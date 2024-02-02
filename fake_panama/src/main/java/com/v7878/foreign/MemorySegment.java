@@ -22,6 +22,15 @@
 
 package com.v7878.foreign;
 
+import static com.v7878.foreign.ValueLayout.OfBoolean;
+import static com.v7878.foreign.ValueLayout.OfByte;
+import static com.v7878.foreign.ValueLayout.OfChar;
+import static com.v7878.foreign.ValueLayout.OfDouble;
+import static com.v7878.foreign.ValueLayout.OfFloat;
+import static com.v7878.foreign.ValueLayout.OfInt;
+import static com.v7878.foreign.ValueLayout.OfLong;
+import static com.v7878.foreign.ValueLayout.OfShort;
+
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -88,19 +97,19 @@ public interface MemorySegment {
 
     ByteBuffer asByteBuffer();
 
-    byte[] toArray(ValueLayout.OfByte elementLayout);
+    byte[] toArray(OfByte elementLayout);
 
-    short[] toArray(ValueLayout.OfShort elementLayout);
+    short[] toArray(OfShort elementLayout);
 
-    char[] toArray(ValueLayout.OfChar elementLayout);
+    char[] toArray(OfChar elementLayout);
 
-    int[] toArray(ValueLayout.OfInt elementLayout);
+    int[] toArray(OfInt elementLayout);
 
-    float[] toArray(ValueLayout.OfFloat elementLayout);
+    float[] toArray(OfFloat elementLayout);
 
-    long[] toArray(ValueLayout.OfLong elementLayout);
+    long[] toArray(OfLong elementLayout);
 
-    double[] toArray(ValueLayout.OfDouble elementLayout);
+    double[] toArray(OfDouble elementLayout);
 
     String getString(long offset);
 
@@ -159,73 +168,73 @@ public interface MemorySegment {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    byte get(ValueLayout.OfByte layout, long offset);
+    byte get(OfByte layout, long offset);
 
-    void set(ValueLayout.OfByte layout, long offset, byte value);
+    void set(OfByte layout, long offset, byte value);
 
-    boolean get(ValueLayout.OfBoolean layout, long offset);
+    boolean get(OfBoolean layout, long offset);
 
-    void set(ValueLayout.OfBoolean layout, long offset, boolean value);
+    void set(OfBoolean layout, long offset, boolean value);
 
-    char get(ValueLayout.OfChar layout, long offset);
+    char get(OfChar layout, long offset);
 
-    void set(ValueLayout.OfChar layout, long offset, char value);
+    void set(OfChar layout, long offset, char value);
 
-    short get(ValueLayout.OfShort layout, long offset);
+    short get(OfShort layout, long offset);
 
-    void set(ValueLayout.OfShort layout, long offset, short value);
+    void set(OfShort layout, long offset, short value);
 
-    int get(ValueLayout.OfInt layout, long offset);
+    int get(OfInt layout, long offset);
 
-    void set(ValueLayout.OfInt layout, long offset, int value);
+    void set(OfInt layout, long offset, int value);
 
-    float get(ValueLayout.OfFloat layout, long offset);
+    float get(OfFloat layout, long offset);
 
-    void set(ValueLayout.OfFloat layout, long offset, float value);
+    void set(OfFloat layout, long offset, float value);
 
-    long get(ValueLayout.OfLong layout, long offset);
+    long get(OfLong layout, long offset);
 
-    void set(ValueLayout.OfLong layout, long offset, long value);
+    void set(OfLong layout, long offset, long value);
 
-    double get(ValueLayout.OfDouble layout, long offset);
+    double get(OfDouble layout, long offset);
 
-    void set(ValueLayout.OfDouble layout, long offset, double value);
+    void set(OfDouble layout, long offset, double value);
 
     MemorySegment get(AddressLayout layout, long offset);
 
     void set(AddressLayout layout, long offset, MemorySegment value);
 
-    byte getAtIndex(ValueLayout.OfByte layout, long index);
+    byte getAtIndex(OfByte layout, long index);
 
-    boolean getAtIndex(ValueLayout.OfBoolean layout, long index);
+    boolean getAtIndex(OfBoolean layout, long index);
 
-    char getAtIndex(ValueLayout.OfChar layout, long index);
+    char getAtIndex(OfChar layout, long index);
 
-    void setAtIndex(ValueLayout.OfChar layout, long index, char value);
+    void setAtIndex(OfChar layout, long index, char value);
 
-    short getAtIndex(ValueLayout.OfShort layout, long index);
+    short getAtIndex(OfShort layout, long index);
 
-    void setAtIndex(ValueLayout.OfByte layout, long index, byte value);
+    void setAtIndex(OfByte layout, long index, byte value);
 
-    void setAtIndex(ValueLayout.OfBoolean layout, long index, boolean value);
+    void setAtIndex(OfBoolean layout, long index, boolean value);
 
-    void setAtIndex(ValueLayout.OfShort layout, long index, short value);
+    void setAtIndex(OfShort layout, long index, short value);
 
-    int getAtIndex(ValueLayout.OfInt layout, long index);
+    int getAtIndex(OfInt layout, long index);
 
-    void setAtIndex(ValueLayout.OfInt layout, long index, int value);
+    void setAtIndex(OfInt layout, long index, int value);
 
-    float getAtIndex(ValueLayout.OfFloat layout, long index);
+    float getAtIndex(OfFloat layout, long index);
 
-    void setAtIndex(ValueLayout.OfFloat layout, long index, float value);
+    void setAtIndex(OfFloat layout, long index, float value);
 
-    long getAtIndex(ValueLayout.OfLong layout, long index);
+    long getAtIndex(OfLong layout, long index);
 
-    void setAtIndex(ValueLayout.OfLong layout, long index, long value);
+    void setAtIndex(OfLong layout, long index, long value);
 
-    double getAtIndex(ValueLayout.OfDouble layout, long index);
+    double getAtIndex(OfDouble layout, long index);
 
-    void setAtIndex(ValueLayout.OfDouble layout, long index, double value);
+    void setAtIndex(OfDouble layout, long index, double value);
 
     MemorySegment getAtIndex(AddressLayout layout, long index);
 

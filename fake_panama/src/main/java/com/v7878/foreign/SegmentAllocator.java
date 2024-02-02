@@ -22,6 +22,14 @@
 
 package com.v7878.foreign;
 
+import static com.v7878.foreign.ValueLayout.OfByte;
+import static com.v7878.foreign.ValueLayout.OfChar;
+import static com.v7878.foreign.ValueLayout.OfDouble;
+import static com.v7878.foreign.ValueLayout.OfFloat;
+import static com.v7878.foreign.ValueLayout.OfInt;
+import static com.v7878.foreign.ValueLayout.OfLong;
+import static com.v7878.foreign.ValueLayout.OfShort;
+
 import java.nio.charset.Charset;
 
 @FunctionalInterface
@@ -35,31 +43,31 @@ public interface SegmentAllocator {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfByte layout, byte value) {
+    default MemorySegment allocateFrom(OfByte layout, byte value) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfChar layout, char value) {
+    default MemorySegment allocateFrom(OfChar layout, char value) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfShort layout, short value) {
+    default MemorySegment allocateFrom(OfShort layout, short value) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfInt layout, int value) {
+    default MemorySegment allocateFrom(OfInt layout, int value) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfFloat layout, float value) {
+    default MemorySegment allocateFrom(OfFloat layout, float value) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfLong layout, long value) {
+    default MemorySegment allocateFrom(OfLong layout, long value) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfDouble layout, double value) {
+    default MemorySegment allocateFrom(OfDouble layout, double value) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -75,31 +83,31 @@ public interface SegmentAllocator {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfByte elementLayout, byte... elements) {
+    default MemorySegment allocateFrom(OfByte elementLayout, byte... elements) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfShort elementLayout, short... elements) {
+    default MemorySegment allocateFrom(OfShort elementLayout, short... elements) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfChar elementLayout, char... elements) {
+    default MemorySegment allocateFrom(OfChar elementLayout, char... elements) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfInt elementLayout, int... elements) {
+    default MemorySegment allocateFrom(OfInt elementLayout, int... elements) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfFloat elementLayout, float... elements) {
+    default MemorySegment allocateFrom(OfFloat elementLayout, float... elements) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfLong elementLayout, long... elements) {
+    default MemorySegment allocateFrom(OfLong elementLayout, long... elements) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    default MemorySegment allocateFrom(ValueLayout.OfDouble elementLayout, double... elements) {
+    default MemorySegment allocateFrom(OfDouble elementLayout, double... elements) {
         throw new UnsupportedOperationException("Stub!");
     }
 
