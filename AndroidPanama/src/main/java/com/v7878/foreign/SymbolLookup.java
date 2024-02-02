@@ -38,7 +38,6 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Utils;
-import jdk.internal.javac.Restricted;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
@@ -243,15 +242,12 @@ public interface SymbolLookup {
      * @throws WrongThreadException     if {@code arena} is a confined arena, and this method
      *                                  is called from a thread {@code T}, other than the arena's owner thread
      * @throws IllegalArgumentException if {@code name} does not identify a valid library
-     * @throws IllegalCallerException   If the caller is in a module that does not have
-     *                                  native access enabled
      * @implNote The process of resolving a library name is OS-specific. For instance,
      * in a POSIX-compliant OS, the library name is resolved according to the
      * specification of the {@code dlopen} function for that OS. In Windows,
      * the library name is resolved according to the specification of the
      * {@code LoadLibrary} function.
      */
-    @Restricted
     static SymbolLookup libraryLookup(String name, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(),
                 SymbolLookup.class, "libraryLookup");
@@ -277,13 +273,10 @@ public interface SymbolLookup {
      *                                  is called from a thread {@code T}, other than the arena's owner thread
      * @throws IllegalArgumentException if {@code path} does not point to a valid library
      *                                  in the default file system
-     * @throws IllegalCallerException   If the caller is in a module that does not have
-     *                                  native access enabled
      * @implNote On Linux, the functionalities provided by this factory method and the
      * returned symbol lookup are implemented using the {@code dlopen},
      * {@code dlsym} and {@code dlclose} functions.
      */
-    @Restricted
     static SymbolLookup libraryLookup(Path path, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(),
                 SymbolLookup.class, "libraryLookup");

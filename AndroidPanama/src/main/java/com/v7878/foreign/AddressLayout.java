@@ -32,8 +32,6 @@ import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;
 import java.util.Optional;
 
-import jdk.internal.javac.Restricted;
-
 /**
  * A value layout used to model the address of some region of memory. The carrier
  * associated with an address layout is {@code MemorySegment.class}. The size and
@@ -96,8 +94,6 @@ public sealed interface AddressLayout extends ValueLayout permits _ValueLayouts.
      * @param layout the target layout
      * @return an address layout with same characteristics as this layout, but with the
      * provided target layout
-     * @throws IllegalCallerException If the caller is in a module that does not have
-     *                                native access enabled
      * @apiNote This method can also be used to create an address layout which, when used, creates
      * native memory segments with maximal size (e.g. {@linkplain Long#MAX_VALUE}). This
      * can be done by using a target sequence layout with unspecified size, as follows:
@@ -108,7 +104,6 @@ public sealed interface AddressLayout extends ValueLayout permits _ValueLayouts.
      *}
      * @see #targetLayout()
      */
-    @Restricted
     AddressLayout withTargetLayout(MemoryLayout layout);
 
     /**

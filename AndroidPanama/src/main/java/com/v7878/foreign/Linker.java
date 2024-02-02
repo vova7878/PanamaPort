@@ -39,7 +39,6 @@ import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.CapturableState;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.javac.Restricted;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code
@@ -611,11 +610,8 @@ public sealed interface Linker permits AbstractLinker {
      *                                  {@code address.equals(MemorySegment.NULL)}
      * @throws IllegalArgumentException if an invalid combination of linker options
      *                                  is given
-     * @throws IllegalCallerException   If the caller is in a module that does not have
-     *                                  native access enabled
      * @see SymbolLookup
      */
-    @Restricted
     MethodHandle downcallHandle(MemorySegment address,
                                 FunctionDescriptor function,
                                 Option... options);
@@ -680,10 +676,7 @@ public sealed interface Linker permits AbstractLinker {
      *                                  supported by this linker
      * @throws IllegalArgumentException if an invalid combination of linker options
      *                                  is given
-     * @throws IllegalCallerException   If the caller is in a module that does not have
-     *                                  native access enabled
      */
-    @Restricted
     MethodHandle downcallHandle(FunctionDescriptor function, Option... options);
 
     /**
@@ -728,10 +721,7 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalStateException    if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException     if {@code arena} is a confined arena, and this method
      *                                  is called from a thread {@code T}, other than the arena's owner thread
-     * @throws IllegalCallerException   If the caller is in a module that does not have
-     *                                  native access enabled
      */
-    @Restricted
     MemorySegment upcallStub(MethodHandle target,
                              FunctionDescriptor function,
                              Arena arena,

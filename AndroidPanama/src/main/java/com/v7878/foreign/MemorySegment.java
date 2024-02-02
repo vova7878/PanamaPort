@@ -57,7 +57,6 @@ import java.util.stream.Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
-import jdk.internal.javac.Restricted;
 
 /**
  * A memory segment provides access to a contiguous region of memory.
@@ -699,10 +698,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException      if {@code newSize < 0}
      * @throws UnsupportedOperationException if this segment is not a
      *                                       {@linkplain #isNative() native} segment
-     * @throws IllegalCallerException        if the caller is in a module that does not have
-     *                                       native access enabled
      */
-    @Restricted
     MemorySegment reinterpret(long newSize);
 
     /**
@@ -734,8 +730,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException         if {@code arena.scope().isAlive() == false}
      * @throws UnsupportedOperationException if this segment is not a
      *                                       {@linkplain #isNative() native} segment
-     * @throws IllegalCallerException        if the caller is in a module that does not have
-     *                                       native access enabled
      * @apiNote The cleanup action (if present) should take care not to leak the received
      * segment to external clients that might access the segment after its
      * backing region of memory is no longer available. Furthermore, if the
@@ -745,7 +739,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * A failure to do so will permanently prevent the regions of memory
      * allocated by the automatic arena from being deallocated.
      */
-    @Restricted
     MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup);
 
     /**
@@ -780,8 +773,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                                       {@linkplain #isNative() native} segment
      * @throws IllegalArgumentException      if {@code newSize < 0}
      * @throws IllegalStateException         if {@code arena.scope().isAlive() == false}
-     * @throws IllegalCallerException        if the caller is in a module that does not have
-     *                                       native access enabled
      * @apiNote The cleanup action (if present) should take care not to leak the received
      * segment to external clients that might access the segment after its
      * backing region of memory is no longer available. Furthermore, if the
@@ -791,7 +782,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * A failure to do so will permanently prevent the regions of memory
      * allocated by the automatic arena from being deallocated.
      */
-    @Restricted
     MemorySegment reinterpret(long newSize,
                               Arena arena,
                               Consumer<MemorySegment> cleanup);
