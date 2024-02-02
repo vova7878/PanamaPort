@@ -27,7 +27,6 @@
 
 package com.v7878.foreign;
 
-import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
 /**

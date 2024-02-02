@@ -34,7 +34,6 @@ import static java.util.stream.Collectors.joining;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -290,14 +289,11 @@ class _LayoutPath {
     }
 
     private static void checkAlign(MemorySegment segment, long offset, MemoryLayout constraint) {
-        //TODO
-        //if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, constraint)) {
-        //    throw new IllegalArgumentException(String.format(
-        //            "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
-        //            , offset, constraint.byteAlignment(), constraint, segment));
-        //}
-
-        throw new UnsupportedOperationException("Not supported yet");
+        if (!((_AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, constraint)) {
+            throw new IllegalArgumentException(String.format(
+                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
+                    , offset, constraint.byteAlignment(), constraint, segment));
+        }
     }
 
     public MemoryLayout layout() {

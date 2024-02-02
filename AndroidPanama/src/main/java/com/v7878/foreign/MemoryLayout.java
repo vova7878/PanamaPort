@@ -30,7 +30,6 @@ package com.v7878.foreign;
 import com.v7878.foreign._LayoutPath.PathElementImpl.PathKind;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.VarHandle;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;

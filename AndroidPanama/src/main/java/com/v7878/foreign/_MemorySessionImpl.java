@@ -52,7 +52,7 @@ import java.util.function.Supplier;
  * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
 
-//TODO: move to ScopedMemoryAccess
+//TODO: move to _ScopedMemoryAccess
 final class ScopedAccessError extends Error {
 
     private final Supplier<RuntimeException> runtimeExceptionSupplier;
@@ -88,7 +88,7 @@ abstract sealed class _MemorySessionImpl implements Scope
     int state = OPEN;
 
     public Arena asArena() {
-        return new ArenaImpl(this);
+        return new _ArenaImpl(this);
     }
 
     public static _MemorySessionImpl toMemorySession(Arena arena) {
@@ -220,10 +220,7 @@ abstract sealed class _MemorySessionImpl implements Scope
     }
 
     public static void checkValidState(MemorySegment segment) {
-        //TODO
-        //((AbstractMemorySegmentImpl) segment).sessionImpl().checkValidState();
-
-        throw new UnsupportedOperationException("Not supported yet");
+        ((_AbstractMemorySegmentImpl) segment).sessionImpl().checkValidState();
     }
 
     @Override

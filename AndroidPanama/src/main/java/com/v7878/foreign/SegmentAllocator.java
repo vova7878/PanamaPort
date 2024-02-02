@@ -144,13 +144,13 @@ public interface SegmentAllocator {
         //TODO
         /*Objects.requireNonNull(charset);
         Objects.requireNonNull(str);
-        int termCharSize = StringSupport.CharsetKind.of(charset).terminatorCharSize();
+        int termCharSize = _StringSupport.CharsetKind.of(charset).terminatorCharSize();
         MemorySegment segment;
         int length;
-        if (StringSupport.bytesCompatible(str, charset)) {
+        if (_StringSupport.bytesCompatible(str, charset)) {
             length = str.length();
             segment = allocateNoInit((long) length + termCharSize);
-            StringSupport.copyToSegmentRaw(str, segment, 0);
+            _StringSupport.copyToSegmentRaw(str, segment, 0);
         } else {
             byte[] bytes = str.getBytes(charset);
             length = bytes.length;
@@ -705,11 +705,8 @@ public interface SegmentAllocator {
      * written to the underlying segment by a different thread.
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
-        //TODO
-        //assertWritable(segment);
-        //return (AbstractMemorySegmentImpl) segment;
-
-        throw new UnsupportedOperationException("Not supported yet");
+        assertWritable(segment);
+        return (_AbstractMemorySegmentImpl) segment;
     }
 
     private static void assertWritable(MemorySegment segment) {
@@ -720,21 +717,21 @@ public interface SegmentAllocator {
     }
 
     private MemorySegment allocateNoInit(long byteSize) {
-        return this instanceof ArenaImpl arenaImpl ?
+        return this instanceof _ArenaImpl arenaImpl ?
                 arenaImpl.allocateNoInit(byteSize, 1) :
                 allocate(byteSize);
     }
 
 
     private MemorySegment allocateNoInit(MemoryLayout layout) {
-        return this instanceof ArenaImpl arenaImpl ?
+        return this instanceof _ArenaImpl arenaImpl ?
                 arenaImpl.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
                 allocate(layout);
     }
 
 
     private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
-        return this instanceof ArenaImpl arenaImpl ?
+        return this instanceof _ArenaImpl arenaImpl ?
                 arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
                 allocate(layout, size);
     }

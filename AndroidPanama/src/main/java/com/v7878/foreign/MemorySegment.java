@@ -514,7 +514,7 @@ import java.util.stream.Stream;
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
 //TODO
-//public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
+//public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
 public interface MemorySegment {
 
     /**
@@ -1331,7 +1331,7 @@ public interface MemorySegment {
      */
     static MemorySegment ofBuffer(Buffer buffer) {
         //TODO
-        //return AbstractMemorySegmentImpl.ofBuffer(buffer);
+        //return _AbstractMemorySegmentImpl.ofBuffer(buffer);
 
         throw new UnsupportedOperationException("Not supported yet");
     }
@@ -1590,7 +1590,7 @@ public interface MemorySegment {
         Objects.requireNonNull(dstSegment);
         Objects.requireNonNull(dstElementLayout);
         //TODO
-        //AbstractMemorySegmentImpl.copy(srcSegment, srcElementLayout, srcOffset,
+        //_AbstractMemorySegmentImpl.copy(srcSegment, srcElementLayout, srcOffset,
         //        dstSegment, dstElementLayout, dstOffset,
         //        elementCount);
 
@@ -2484,12 +2484,9 @@ public interface MemorySegment {
         Objects.requireNonNull(dstArray);
         Objects.requireNonNull(srcLayout);
 
-        //TODO
-        //AbstractMemorySegmentImpl.copy(srcSegment, srcLayout, srcOffset,
-        //        dstArray, dstIndex,
-        //        elementCount);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        _AbstractMemorySegmentImpl.copy(srcSegment, srcLayout, srcOffset,
+                dstArray, dstIndex,
+                elementCount);
     }
 
     /**
@@ -2537,12 +2534,9 @@ public interface MemorySegment {
         Objects.requireNonNull(dstSegment);
         Objects.requireNonNull(dstLayout);
 
-        //TODO
-        //AbstractMemorySegmentImpl.copy(srcArray, srcIndex,
-        //        dstSegment, dstLayout, dstOffset,
-        //        elementCount);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        _AbstractMemorySegmentImpl.copy(srcArray, srcIndex,
+                dstSegment, dstLayout, dstOffset,
+                elementCount);
     }
 
     /**
@@ -2591,11 +2585,8 @@ public interface MemorySegment {
      */
     static long mismatch(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
                          MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
-        //TODO
-        //return AbstractMemorySegmentImpl.mismatch(srcSegment, srcFromOffset, srcToOffset,
-        //        dstSegment, dstFromOffset, dstToOffset);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return _AbstractMemorySegmentImpl.mismatch(srcSegment, srcFromOffset, srcToOffset,
+                dstSegment, dstFromOffset, dstToOffset);
     }
 
     /**

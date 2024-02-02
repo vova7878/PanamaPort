@@ -31,7 +31,6 @@ package com.v7878.foreign;
 import com.v7878.dex.TypeId;
 import com.v7878.unsafe.AndroidUnsafe;
 
-import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Optional;

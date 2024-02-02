@@ -27,12 +27,12 @@
 
 package com.v7878.foreign;
 
-public final class ArenaImpl implements Arena {
+public final class _ArenaImpl implements Arena {
 
     private final _MemorySessionImpl session;
     private final boolean shouldReserveMemory;
 
-    ArenaImpl(_MemorySessionImpl session) {
+    _ArenaImpl(_MemorySessionImpl session) {
         this.session = session;
         shouldReserveMemory = session instanceof _ImplicitSession;
     }

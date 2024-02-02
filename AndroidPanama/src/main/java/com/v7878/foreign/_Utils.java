@@ -46,7 +46,6 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -94,6 +93,10 @@ final class _Utils {
     public static MemorySegment alignUp(MemorySegment ms, long alignment) {
         long offset = ms.address();
         return ms.asSlice(alignUp(offset, alignment) - offset);
+    }
+
+    public static long remainsToAlignment(long addr, long alignment) {
+        return alignUp(addr, alignment) - addr;
     }
 
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
