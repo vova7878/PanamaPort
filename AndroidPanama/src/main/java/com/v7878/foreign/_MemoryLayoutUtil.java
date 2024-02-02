@@ -39,5 +39,4 @@ final class _MemoryLayoutUtil {
         }
         return byteSize;
     }
-
 }

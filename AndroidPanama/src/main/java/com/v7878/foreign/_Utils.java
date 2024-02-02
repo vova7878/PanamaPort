@@ -161,14 +161,14 @@ final class _Utils {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
+        return _SegmentFactories.makeNativeSegmentUnchecked(addr, size);
     }
 
     public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
+        return _SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
     }
 
     public static boolean isAligned(long offset, long align) {

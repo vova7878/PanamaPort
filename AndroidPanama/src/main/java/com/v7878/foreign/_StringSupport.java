@@ -38,7 +38,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Miscellaneous functions to read and write strings, in various charsets.
  */
-public final class _StringSupport {
+final class _StringSupport {
 
     //TODO?
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;

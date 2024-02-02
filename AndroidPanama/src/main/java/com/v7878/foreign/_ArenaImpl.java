@@ -27,14 +27,12 @@
 
 package com.v7878.foreign;
 
-public final class _ArenaImpl implements Arena {
+final class _ArenaImpl implements Arena {
 
     private final _MemorySessionImpl session;
-    private final boolean shouldReserveMemory;
 
     _ArenaImpl(_MemorySessionImpl session) {
         this.session = session;
-        shouldReserveMemory = session instanceof _ImplicitSession;
     }
 
     @Override
@@ -49,7 +47,7 @@ public final class _ArenaImpl implements Arena {
 
     public MemorySegment allocateNoInit(long byteSize, long byteAlignment) {
         _Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return _SegmentFactories.allocateSegment(byteSize, byteAlignment, session, shouldReserveMemory);
+        return _SegmentFactories.allocateSegment(byteSize, byteAlignment, session);
     }
 
     @Override

@@ -66,7 +66,7 @@ import java.util.stream.StreamSupport;
  * are defined for each memory segment kind, see {@link _NativeMemorySegmentImpl}, {@link _HeapMemorySegmentImpl} and
  * {@link _MappedMemorySegmentImpl}.
  */
-public abstract sealed class _AbstractMemorySegmentImpl
+abstract sealed class _AbstractMemorySegmentImpl
         implements MemorySegment, SegmentAllocator, BiFunction<String, List<Number>, RuntimeException>
         permits _HeapMemorySegmentImpl, _NativeMemorySegmentImpl {
 
@@ -144,8 +144,8 @@ public abstract sealed class _AbstractMemorySegmentImpl
         _Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
         Runnable action = cleanup == null ? null : () -> cleanup.accept(
-                SegmentFactories.makeNativeSegmentUnchecked(address(), newSize));
-        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
+                _SegmentFactories.makeNativeSegmentUnchecked(address(), newSize));
+        return _SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
                 (_MemorySessionImpl) scope, action);
     }
 

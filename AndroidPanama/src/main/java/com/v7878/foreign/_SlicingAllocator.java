@@ -27,7 +27,7 @@
 
 package com.v7878.foreign;
 
-public final class _SlicingAllocator implements SegmentAllocator {
+final class _SlicingAllocator implements SegmentAllocator {
 
     private final MemorySegment segment;
 

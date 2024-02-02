@@ -44,9 +44,9 @@ import java.util.Objects;
 /**
  * This class is used to retrieve concrete memory segment implementations, while making sure that classes
  * are initialized in the right order (that is, that {@code MemorySegment} is always initialized first).
- * See {@link SegmentFactories#ensureInitialized()}.
+ * See {@link _SegmentFactories#ensureInitialized()}.
  */
-public class SegmentFactories {
+class _SegmentFactories {
 
     // The maximum alignment supported by malloc - typically 16 bytes on
     // 64-bit platforms and 8 bytes on 32-bit platforms.

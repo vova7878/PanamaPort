@@ -1346,7 +1346,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a byte array
      */
     static MemorySegment ofArray(byte[] byteArray) {
-        return SegmentFactories.fromArray(byteArray);
+        return _SegmentFactories.fromArray(byteArray);
     }
 
     /**
@@ -1359,7 +1359,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a char array
      */
     static MemorySegment ofArray(char[] charArray) {
-        return SegmentFactories.fromArray(charArray);
+        return _SegmentFactories.fromArray(charArray);
     }
 
     /**
@@ -1372,7 +1372,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a short array
      */
     static MemorySegment ofArray(short[] shortArray) {
-        return SegmentFactories.fromArray(shortArray);
+        return _SegmentFactories.fromArray(shortArray);
     }
 
     /**
@@ -1385,7 +1385,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by an int array
      */
     static MemorySegment ofArray(int[] intArray) {
-        return SegmentFactories.fromArray(intArray);
+        return _SegmentFactories.fromArray(intArray);
     }
 
     /**
@@ -1398,7 +1398,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a float array
      */
     static MemorySegment ofArray(float[] floatArray) {
-        return SegmentFactories.fromArray(floatArray);
+        return _SegmentFactories.fromArray(floatArray);
     }
 
     /**
@@ -1411,7 +1411,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a long array
      */
     static MemorySegment ofArray(long[] longArray) {
-        return SegmentFactories.fromArray(longArray);
+        return _SegmentFactories.fromArray(longArray);
     }
 
     /**
@@ -1424,7 +1424,7 @@ public interface MemorySegment {
      * @return a heap memory segment backed by a double array
      */
     static MemorySegment ofArray(double[] doubleArray) {
-        return SegmentFactories.fromArray(doubleArray);
+        return _SegmentFactories.fromArray(doubleArray);
     }
 
     /**
@@ -1448,7 +1448,7 @@ public interface MemorySegment {
      * @return a zero-length native segment with the given address
      */
     static MemorySegment ofAddress(long address) {
-        return SegmentFactories.makeNativeSegmentUnchecked(address, 0);
+        return _SegmentFactories.makeNativeSegmentUnchecked(address, 0);
     }
 
     /**
