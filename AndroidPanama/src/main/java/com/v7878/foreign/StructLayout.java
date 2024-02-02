@@ -23,17 +23,17 @@
  * questions.
  */
 
-package java.lang.foreign;
+// Port-changed: Extensive modifications made throughout the class for Android.
+
+package com.v7878.foreign;
 
 import jdk.internal.foreign.layout.StructLayoutImpl;
 
 /**
  * A group layout whose member layouts are laid out one after the other.
  *
- * @implSpec
- * Implementing classes are immutable, thread-safe and
+ * @implSpec Implementing classes are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- *
  * @since 22
  */
 public sealed interface StructLayout extends GroupLayout permits StructLayoutImpl {
@@ -52,6 +52,7 @@ public sealed interface StructLayout extends GroupLayout permits StructLayoutImp
 
     /**
      * {@inheritDoc}
+     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override

@@ -23,10 +23,13 @@
  * questions.
  */
 
-package java.lang.foreign;
+// Port-changed: Extensive modifications made throughout the class for Android.
+
+package com.v7878.foreign;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+
 import jdk.internal.foreign.layout.ValueLayouts;
 
 /**
@@ -39,27 +42,25 @@ import jdk.internal.foreign.layout.ValueLayouts;
  * that should be used when {@linkplain MemorySegment#get(OfInt, long) accessing} a
  * region of memory using the value layout.
  * <p>
-
+ * <p>
  * This class defines useful value layout constants for Java primitive types and
  * addresses.
  *
  * @apiNote Some characteristics of the Java layout constants are platform-dependent.
- *          For instance, the byte order of these constants is set to the
- *          {@linkplain ByteOrder#nativeOrder() native byte order}, thus making it easy
- *          to work with other APIs, such as arrays and {@link java.nio.ByteBuffer}.
- *          Moreover, the alignment constraint of {@link ValueLayout#JAVA_LONG} and
- *          {@link ValueLayout#JAVA_DOUBLE} is set to 8 bytes on 64-bit platforms,
- *          but only to 4 bytes on 32-bit platforms.
- *
+ * For instance, the byte order of these constants is set to the
+ * {@linkplain ByteOrder#nativeOrder() native byte order}, thus making it easy
+ * to work with other APIs, such as arrays and {@link java.nio.ByteBuffer}.
+ * Moreover, the alignment constraint of {@link ValueLayout#JAVA_LONG} and
+ * {@link ValueLayout#JAVA_DOUBLE} is set to 8 bytes on 64-bit platforms,
+ * but only to 4 bytes on 32-bit platforms.
  * @implSpec implementing classes and subclasses are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- *
  * @sealedGraph
  * @since 22
  */
 public sealed interface ValueLayout extends MemoryLayout
         permits ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar,
-        ValueLayout.OfShort, ValueLayout.OfInt,  ValueLayout.OfFloat,
+        ValueLayout.OfShort, ValueLayout.OfInt, ValueLayout.OfFloat,
         ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
 
     /**
@@ -101,7 +102,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
     /**
      * {@return a var handle which can be used to access values described by this value
-     *          layout, in a given memory segment}
+     * layout, in a given memory segment}
      * <p>
      * The returned var handle's {@linkplain VarHandle#varType() var type} is the
      * {@linkplain ValueLayout#carrier() carrier type} of this value layout, and the
@@ -114,13 +115,11 @@ public sealed interface ValueLayout extends MemoryLayout
      * this value layout's {@linkplain MemoryLayout#byteAlignment() alignment constraint}.
      *
      * @apiNote This method is similar, but more efficient than calling
-     *          {@code MemoryLayout#varHandle(PathElement...)} with an empty path
-     *          element array, as it avoids the creation of the var args array.
-     *
+     * {@code MemoryLayout#varHandle(PathElement...)} with an empty path
+     * element array, as it avoids the creation of the var args array.
      * @apiNote The returned var handle features certain
-     *          <a href="MemoryLayout.html#access-mode-restrictions">access mode restrictions</a>
-     *          common to all memory access var handles derived from memory layouts.
-     *
+     * <a href="MemoryLayout.html#access-mode-restrictions">access mode restrictions</a>
+     * common to all memory access var handles derived from memory layouts.
      * @see MemoryLayout#varHandle(PathElement...)
      */
     VarHandle varHandle();
@@ -131,7 +130,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_BOOLEAN
      * @since 22
      */
-        sealed interface OfBoolean extends ValueLayout permits ValueLayouts.OfBooleanImpl {
+    sealed interface OfBoolean extends ValueLayout permits ValueLayouts.OfBooleanImpl {
 
         /**
          * {@inheritDoc}
@@ -147,6 +146,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         *
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
@@ -166,7 +166,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_BYTE
      * @since 22
      */
-        sealed interface OfByte extends ValueLayout permits ValueLayouts.OfByteImpl {
+    sealed interface OfByte extends ValueLayout permits ValueLayouts.OfByteImpl {
 
         /**
          * {@inheritDoc}
@@ -182,6 +182,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         *
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
@@ -202,7 +203,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_CHAR_UNALIGNED
      * @since 22
      */
-        sealed interface OfChar extends ValueLayout permits ValueLayouts.OfCharImpl {
+    sealed interface OfChar extends ValueLayout permits ValueLayouts.OfCharImpl {
 
         /**
          * {@inheritDoc}
@@ -218,6 +219,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         *
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
@@ -238,7 +240,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_SHORT_UNALIGNED
      * @since 22
      */
-        sealed interface OfShort extends ValueLayout permits ValueLayouts.OfShortImpl {
+    sealed interface OfShort extends ValueLayout permits ValueLayouts.OfShortImpl {
 
         /**
          * {@inheritDoc}
@@ -254,6 +256,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         *
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
@@ -274,7 +277,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_INT_UNALIGNED
      * @since 22
      */
-        sealed interface OfInt extends ValueLayout permits ValueLayouts.OfIntImpl {
+    sealed interface OfInt extends ValueLayout permits ValueLayouts.OfIntImpl {
 
         /**
          * {@inheritDoc}
@@ -290,6 +293,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         *
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
@@ -310,7 +314,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_FLOAT_UNALIGNED
      * @since 22
      */
-        sealed interface OfFloat extends ValueLayout permits ValueLayouts.OfFloatImpl {
+    sealed interface OfFloat extends ValueLayout permits ValueLayouts.OfFloatImpl {
 
         /**
          * {@inheritDoc}
@@ -345,7 +349,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_LONG_UNALIGNED
      * @since 22
      */
-        sealed interface OfLong extends ValueLayout permits ValueLayouts.OfLongImpl {
+    sealed interface OfLong extends ValueLayout permits ValueLayouts.OfLongImpl {
 
         /**
          * {@inheritDoc}
@@ -361,6 +365,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         *
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
@@ -381,7 +386,7 @@ public sealed interface ValueLayout extends MemoryLayout
      * @see #JAVA_DOUBLE_UNALIGNED
      * @since 22
      */
-        sealed interface OfDouble extends ValueLayout permits ValueLayouts.OfDoubleImpl {
+    sealed interface OfDouble extends ValueLayout permits ValueLayouts.OfDoubleImpl {
 
         /**
          * {@inheritDoc}
@@ -397,6 +402,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
         /**
          * {@inheritDoc}
+         *
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
@@ -472,11 +478,12 @@ public sealed interface ValueLayout extends MemoryLayout
      * machine address ({@code size_t}), and byte order set to
      * {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
-     * {@snippet lang=java :
+     * {@snippet lang = java:
      * ADDRESS.withByteAlignment(1);
-     * }
+     *}
+     *
      * @apiNote Care should be taken when using unaligned value layouts as they may
-     *          induce performance and portability issues.
+     * induce performance and portability issues.
      */
     AddressLayout ADDRESS_UNALIGNED = ADDRESS.withByteAlignment(1);
 
@@ -484,11 +491,12 @@ public sealed interface ValueLayout extends MemoryLayout
      * An unaligned value layout constant whose size is the same as that of a Java {@code char}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
-     * {@snippet lang=java :
+     * {@snippet lang = java:
      * JAVA_CHAR.withByteAlignment(1);
-     * }
+     *}
+     *
      * @apiNote Care should be taken when using unaligned value layouts as they may
-     *          induce performance and portability issues.
+     * induce performance and portability issues.
      */
     OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withByteAlignment(1);
 
@@ -496,11 +504,12 @@ public sealed interface ValueLayout extends MemoryLayout
      * An unaligned value layout constant whose size is the same as that of a Java {@code short}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
-     * {@snippet lang=java :
+     * {@snippet lang = java:
      * JAVA_SHORT.withByteAlignment(1);
-     * }
+     *}
+     *
      * @apiNote Care should be taken when using unaligned value layouts as they may
-     *          induce performance and portability issues.
+     * induce performance and portability issues.
      */
     OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withByteAlignment(1);
 
@@ -508,11 +517,12 @@ public sealed interface ValueLayout extends MemoryLayout
      * An unaligned value layout constant whose size is the same as that of a Java {@code int}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
-     * {@snippet lang=java :
+     * {@snippet lang = java:
      * JAVA_INT.withByteAlignment(1);
-     * }
+     *}
+     *
      * @apiNote Care should be taken when using unaligned value layouts as they may
-     *          induce performance and portability issues.
+     * induce performance and portability issues.
      */
     OfInt JAVA_INT_UNALIGNED = JAVA_INT.withByteAlignment(1);
 
@@ -520,11 +530,12 @@ public sealed interface ValueLayout extends MemoryLayout
      * An unaligned value layout constant whose size is the same as that of a Java {@code long}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
-     * {@snippet lang=java :
+     * {@snippet lang = java:
      * JAVA_LONG.withByteAlignment(1);
-     * }
+     *}
+     *
      * @apiNote Care should be taken when using unaligned value layouts as they may
-     *          induce performance and portability issues.
+     * induce performance and portability issues.
      */
     OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withByteAlignment(1);
 
@@ -532,11 +543,12 @@ public sealed interface ValueLayout extends MemoryLayout
      * An unaligned value layout constant whose size is the same as that of a Java {@code float}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
-     * {@snippet lang=java :
+     * {@snippet lang = java:
      * JAVA_FLOAT.withByteAlignment(1);
-     * }
+     *}
+     *
      * @apiNote Care should be taken when using unaligned value layouts as they may
-     *          induce performance and portability issues.
+     * induce performance and portability issues.
      */
     OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withByteAlignment(1);
 
@@ -544,11 +556,12 @@ public sealed interface ValueLayout extends MemoryLayout
      * An unaligned value layout constant whose size is the same as that of a Java {@code double}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
-     * {@snippet lang=java :
+     * {@snippet lang = java:
      * JAVA_DOUBLE.withByteAlignment(1);
-     * }
+     *}
+     *
      * @apiNote Care should be taken when using unaligned value layouts as they may
-     *          induce performance and portability issues.
+     * induce performance and portability issues.
      */
     OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withByteAlignment(1);
 

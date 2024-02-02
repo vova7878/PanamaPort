@@ -23,7 +23,9 @@
  * questions.
  */
 
-package java.lang.foreign;
+// Port-changed: Extensive modifications made throughout the class for Android.
+
+package com.v7878.foreign;
 
 import jdk.internal.foreign.layout.PaddingLayoutImpl;
 
@@ -32,10 +34,8 @@ import jdk.internal.foreign.layout.PaddingLayoutImpl;
  * typically not accessed by applications, and is typically used for aligning member
  * layouts around word boundaries.
  *
- * @implSpec
- * Implementing classes are immutable, thread-safe and
+ * @implSpec Implementing classes are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- *
  * @since 22
  */
 public sealed interface PaddingLayout extends MemoryLayout permits PaddingLayoutImpl {
@@ -54,6 +54,7 @@ public sealed interface PaddingLayout extends MemoryLayout permits PaddingLayout
 
     /**
      * {@inheritDoc}
+     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     PaddingLayout withByteAlignment(long byteAlignment);

@@ -23,17 +23,17 @@
  * questions.
  */
 
-package java.lang.foreign;
+// Port-changed: Extensive modifications made throughout the class for Android.
+
+package com.v7878.foreign;
 
 import jdk.internal.foreign.layout.UnionLayoutImpl;
 
 /**
  * A group layout whose member layouts are laid out at the same starting offset.
  *
- * @implSpec
- * Implementing classes are immutable, thread-safe and
+ * @implSpec Implementing classes are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- *
  * @since 22
  */
 public sealed interface UnionLayout extends GroupLayout permits UnionLayoutImpl {
@@ -52,6 +52,7 @@ public sealed interface UnionLayout extends GroupLayout permits UnionLayoutImpl 
 
     /**
      * {@inheritDoc}
+     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override

@@ -23,16 +23,18 @@
  * questions.
  */
 
-package java.lang.foreign;
+// Port-changed: Extensive modifications made throughout the class for Android.
 
-import jdk.internal.foreign.layout.ValueLayouts;
-import jdk.internal.javac.Restricted;
-import jdk.internal.reflect.CallerSensitive;
+package com.v7878.foreign;
 
 import java.lang.foreign.Linker.Option;
 import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;
 import java.util.Optional;
+
+import jdk.internal.foreign.layout.ValueLayouts;
+import jdk.internal.javac.Restricted;
+import jdk.internal.reflect.CallerSensitive;
 
 /**
  * A value layout used to model the address of some region of memory. The carrier
@@ -53,10 +55,8 @@ import java.util.Optional;
  *     <li>When creating an upcall stub, using {@link Linker#upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...)}.
  * </ul>
  *
- * @implSpec
- * Implementations of this interface are immutable, thread-safe and
+ * @implSpec Implementations of this interface are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- *
  * @see #ADDRESS
  * @see #ADDRESS_UNALIGNED
  * @since 22
@@ -95,8 +95,13 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * specified layout. Moreover, if the accessed raw address is not compatible with
      * the alignment constraint in the provided layout, {@linkplain IllegalArgumentException}
      * will be thrown.
-     * @apiNote
-     * This method can also be used to create an address layout which, when used, creates
+     *
+     * @param layout the target layout
+     * @return an address layout with same characteristics as this layout, but with the
+     * provided target layout
+     * @throws IllegalCallerException If the caller is in a module that does not have
+     *                                native access enabled
+     * @apiNote This method can also be used to create an address layout which, when used, creates
      * native memory segments with maximal size (e.g. {@linkplain Long#MAX_VALUE}). This
      * can be done by using a target sequence layout with unspecified size, as follows:
      * {@snippet lang = java:
@@ -104,12 +109,6 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * AddressLayout unboundedLayout = addressLayout.withTargetLayout(
      *         MemoryLayout.sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
      *}
-     *
-     * @param layout the target layout
-     * @return an address layout with same characteristics as this layout, but with the
-     *          provided target layout
-     * @throws IllegalCallerException If the caller is in a module that does not have
-     *         native access enabled
      * @see #targetLayout()
      */
     @CallerSensitive
@@ -120,11 +119,10 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * Returns an address layout with the same carrier, alignment constraint, name and
      * order as this address layout, but with no target layout.
      *
-     * @apiNote This can be useful to compare two address layouts that have different
-     *          target layouts, but are otherwise equal.
-     *
      * @return an address layout with same characteristics as this layout, but with no
-     *         target layout
+     * target layout
+     * @apiNote This can be useful to compare two address layouts that have different
+     * target layouts, but are otherwise equal.
      * @see #targetLayout()
      */
     AddressLayout withoutTargetLayout();

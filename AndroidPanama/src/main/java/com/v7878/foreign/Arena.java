@@ -23,13 +23,14 @@
  * questions.
  */
 
-package java.lang.foreign;
+// Port-changed: Extensive modifications made throughout the class for Android.
+
+package com.v7878.foreign;
+
+import java.util.function.Consumer;
 
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.ref.CleanerFactory;
-
-import java.lang.foreign.MemorySegment.Scope;
-import java.util.function.Consumer;
 
 /**
  * An arena controls the lifecycle of native memory segments, providing both flexible
@@ -79,7 +80,7 @@ import java.util.function.Consumer;
  * successfully, its scope is {@linkplain Scope#isAlive() invalidated}. As a result, all
  * the memory segments allocated by the arena can no longer be accessed, and their
  * regions of memory are deallocated:
- *
+ * <p>
  * {@snippet lang = java:
  * MemorySegment segment = null;
  * try (Arena arena = Arena.ofConfined()) { // @highlight regex='ofConfined()'
@@ -88,7 +89,7 @@ import java.util.function.Consumer;
  * } // segment region deallocated here
  * segment.get(ValueLayout.JAVA_BYTE, 0); // throws IllegalStateException
  *}
- *
+ * <p>
  * Memory segments allocated with a {@linkplain #ofConfined() confined arena} can only be
  * accessed (and closed) by the thread that created the arena. If access to a memory
  * segment from multiple threads is required, clients can allocate segments in a
@@ -100,34 +101,34 @@ import java.util.function.Consumer;
  * <caption style="display:none">Arenas characteristics</caption>
  * <thead>
  * <tr>
- *     <th scope="col">Kind</th>
- *     <th scope="col">Bounded lifetime</th>
- *     <th scope="col">Explicitly closeable</th>
- *     <th scope="col">Accessible from multiple threads</th>
+ * <th scope="col">Kind</th>
+ * <th scope="col">Bounded lifetime</th>
+ * <th scope="col">Explicitly closeable</th>
+ * <th scope="col">Accessible from multiple threads</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr><th scope="row" style="font-weight:normal">Global</th>
- *     <td style="text-align:center;">No</td>
- *     <td style="text-align:center;">No</td>
- *     <td style="text-align:center;">Yes</td></tr>
+ * <td style="text-align:center;">No</td>
+ * <td style="text-align:center;">No</td>
+ * <td style="text-align:center;">Yes</td></tr>
  * <tr><th scope="row" style="font-weight:normal">Automatic</th>
- *     <td style="text-align:center;">Yes</td>
- *     <td style="text-align:center;">No</td>
- *     <td style="text-align:center;">Yes</td></tr>
+ * <td style="text-align:center;">Yes</td>
+ * <td style="text-align:center;">No</td>
+ * <td style="text-align:center;">Yes</td></tr>
  * <tr><th scope="row" style="font-weight:normal">Confined</th>
- *     <td style="text-align:center;">Yes</td>
- *     <td style="text-align:center;">Yes</td>
- *     <td style="text-align:center;">No</td></tr>
+ * <td style="text-align:center;">Yes</td>
+ * <td style="text-align:center;">Yes</td>
+ * <td style="text-align:center;">No</td></tr>
  * <tr><th scope="row" style="font-weight:normal">Shared</th>
- *     <td style="text-align:center;">Yes</td>
- *     <td style="text-align:center;">Yes</td>
- *     <td style="text-align:center;">Yes</td></tr>
+ * <td style="text-align:center;">Yes</td>
+ * <td style="text-align:center;">Yes</td>
+ * <td style="text-align:center;">Yes</td></tr>
  * </tbody>
  * </table></blockquote>
  *
  * <h2 id = "thread-confinement">Safety and thread-confinement</h2>
- *
+ * <p>
  * Arenas provide strong temporal safety guarantees: a memory segment allocated by an
  * arena cannot be accessed <em>after</em> the arena has been closed. The cost of
  * providing this guarantee varies based on the number of threads that have access to the
@@ -157,7 +158,7 @@ import java.util.function.Consumer;
  * arena can be closed by any thread.
  *
  * <h2 id = "custom-arenas">Custom arenas</h2>
- *
+ * <p>
  * Clients can define custom arenas to implement more efficient allocation strategies,
  * or to have better control over when (and by whom) an arena can be closed. As an
  * example, the following code defines a <em>slicing arena</em> that behaves like a
@@ -167,7 +168,7 @@ import java.util.function.Consumer;
  * When the slicing arena is closed, the underlying confined arena is also closed; this
  * will invalidate all segments allocated with the slicing arena (since the scope of the
  * slicing arena is the same as that of the underlying confined arena):
- *
+ * <p>
  * {@snippet lang = java:
  * class SlicingArena implements Arena {
  *     final Arena arena = Arena.ofConfined();
@@ -190,12 +191,12 @@ import java.util.function.Consumer;
  *     }
  *
  * }
- * }
- *
+ *}
+ * <p>
  * In other words, a slicing arena provides a vastly more efficient and scalable
  * allocation strategy, while still retaining the timely deallocation guarantee provided
  * by the underlying confined arena:
- *
+ * <p>
  * {@snippet lang = java:
  * try (Arena slicingArena = new SlicingArena(1000)) {
  *     for (int i = 0; i < 10; i++) {
@@ -203,13 +204,10 @@ import java.util.function.Consumer;
  *         ...
  *     }
  * } // all memory allocated is released here
- * }
+ *}
  *
- * @implSpec
- * Implementations of this interface are thread-safe.
- *
+ * @implSpec Implementations of this interface are thread-safe.
  * @see MemorySegment
- *
  * @since 22
  */
 public interface Arena extends SegmentAllocator, AutoCloseable {
@@ -231,9 +229,9 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
 
     /**
      * {@return the global arena} Segments allocated with the global arena can be
-     *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
-     *          Calling {@link #close()} on the returned arena will result in
-     *          an {@link UnsupportedOperationException}.
+     * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
+     * Calling {@link #close()} on the returned arena will result in
+     * an {@link UnsupportedOperationException}.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
      * are zero-initialized.
@@ -247,8 +245,8 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
 
     /**
      * {@return a new confined arena} Segments allocated with the confined arena can be
-     *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by the thread
-     *          that created the arena, the arena's <em>owner thread</em>.
+     * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by the thread
+     * that created the arena, the arena's <em>owner thread</em>.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
      * are zero-initialized.
@@ -259,7 +257,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
 
     /**
      * {@return a new shared arena} Segments allocated with the global arena can be
-     *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
+     * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
      * are zero-initialized.
@@ -276,26 +274,24 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * the allocated off-heap region of memory backing the segment, and the address is
      * aligned according the provided alignment constraint.
      *
-     * @implSpec
-     * Implementations of this method must return a native segment featuring the
-     * requested size, and that is compatible with the provided alignment constraint.
-     * Furthermore, for any two segments {@code S1, S2} returned by this method, the
-     * following invariant must hold:
-     *
-     * {@snippet lang = java:
-     *     S1.asOverlappingSlice(S2).isEmpty() == true
-     * }
-     *
-     * @param byteSize the size (in bytes) of the off-heap region of memory backing
-     *                 the native memory segment
+     * @param byteSize      the size (in bytes) of the off-heap region of memory backing
+     *                      the native memory segment
      * @param byteAlignment the alignment constraint (in bytes) of the off-heap region
      *                      of memory backing the native memory segment
      * @return a new native memory segment
      * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code byteAlignment <= 0},
-     *         or if {@code byteAlignment} is not a power of 2
-     * @throws IllegalStateException if this arena has already been {@linkplain #close() closed}
-     * @throws WrongThreadException if this arena is confined, and this method is called
-     *         from a thread other than the arena's owner thread
+     *                                  or if {@code byteAlignment} is not a power of 2
+     * @throws IllegalStateException    if this arena has already been {@linkplain #close() closed}
+     * @throws WrongThreadException     if this arena is confined, and this method is called
+     *                                  from a thread other than the arena's owner thread
+     * @implSpec Implementations of this method must return a native segment featuring the
+     * requested size, and that is compatible with the provided alignment constraint.
+     * Furthermore, for any two segments {@code S1, S2} returned by this method, the
+     * following invariant must hold:
+     * <p>
+     * {@snippet lang = java:
+     *     S1.asOverlappingSlice(S2).isEmpty() == true
+     *}
      */
     @Override
     MemorySegment allocate(long byteSize, long byteAlignment);
@@ -311,29 +307,26 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * can no longer be accessed. Furthermore, any off-heap region of memory backing the
      * segments obtained from this arena are also released.
      *
-     * @apiNote This operation is not idempotent; that is, closing an already closed arena
-     *          <em>always</em> results in an exception being thrown. This reflects a
-     *          deliberate design choice: failure to close an arena might reveal a bug
-     *          in the underlying application logic.
-     *
-     * @implSpec If this method completes normally, then
-     *           {@code this.scope().isAlive() == false}.
-     *           Implementations are allowed to throw {@link UnsupportedOperationException}
-     *           if an explicit close operation is not supported.
-     *
-     * @see Scope#isAlive()
-     *
-     * @throws IllegalStateException if the arena has already been closed
-     * @throws IllegalStateException if a segment associated with this arena is being
-     *         accessed concurrently, e.g. by a
-     *         {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}
-     * @throws WrongThreadException if this arena is confined, and this method is called
-     *         from a thread other than the arena's owner thread
+     * @throws IllegalStateException         if the arena has already been closed
+     * @throws IllegalStateException         if a segment associated with this arena is being
+     *                                       accessed concurrently, e.g. by a
+     *                                       {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}
+     * @throws WrongThreadException          if this arena is confined, and this method is called
+     *                                       from a thread other than the arena's owner thread
      * @throws UnsupportedOperationException if this arena cannot be closed explicitly
-     * @throws RuntimeException if an exception is thrown while executing a custom cleanup action
-     *                          associated with this arena (e.g. as a result of calling
-     *                          {@link MemorySegment#reinterpret(long, Arena, Consumer)} or
-     *                          {@link MemorySegment#reinterpret(Arena, Consumer)}).
+     * @throws RuntimeException              if an exception is thrown while executing a custom cleanup action
+     *                                       associated with this arena (e.g. as a result of calling
+     *                                       {@link MemorySegment#reinterpret(long, Arena, Consumer)} or
+     *                                       {@link MemorySegment#reinterpret(Arena, Consumer)}).
+     * @apiNote This operation is not idempotent; that is, closing an already closed arena
+     * <em>always</em> results in an exception being thrown. This reflects a
+     * deliberate design choice: failure to close an arena might reveal a bug
+     * in the underlying application logic.
+     * @implSpec If this method completes normally, then
+     * {@code this.scope().isAlive() == false}.
+     * Implementations are allowed to throw {@link UnsupportedOperationException}
+     * if an explicit close operation is not supported.
+     * @see Scope#isAlive()
      */
     @Override
     void close();
