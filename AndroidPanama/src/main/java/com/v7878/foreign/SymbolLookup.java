@@ -42,7 +42,6 @@ import jdk.internal.javac.Restricted;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
-import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 /**
@@ -134,8 +133,6 @@ import jdk.internal.reflect.Reflection;
  * SymbolLookup stdlib = nativeLinker.defaultLookup();
  * MemorySegment malloc = stdlib.find("malloc").orElseThrow();
  *}
- *
- * @since 22
  */
 @FunctionalInterface
 public interface SymbolLookup {
@@ -205,7 +202,6 @@ public interface SymbolLookup {
      * @see System#load(String)
      * @see System#loadLibrary(String)
      */
-    @CallerSensitive
     static SymbolLookup loaderLookup() {
         Class<?> caller = Reflection.getCallerClass();
         // If there's no caller class, fallback to system loader
@@ -255,7 +251,6 @@ public interface SymbolLookup {
      * the library name is resolved according to the specification of the
      * {@code LoadLibrary} function.
      */
-    @CallerSensitive
     @Restricted
     static SymbolLookup libraryLookup(String name, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(),
@@ -288,7 +283,6 @@ public interface SymbolLookup {
      * returned symbol lookup are implemented using the {@code dlopen},
      * {@code dlsym} and {@code dlclose} functions.
      */
-    @CallerSensitive
     @Restricted
     static SymbolLookup libraryLookup(Path path, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(),

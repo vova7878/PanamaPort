@@ -208,7 +208,6 @@ import jdk.internal.ref.CleanerFactory;
  *
  * @implSpec Implementations of this interface are thread-safe.
  * @see MemorySegment
- * @since 22
  */
 public interface Arena extends SegmentAllocator, AutoCloseable {
 

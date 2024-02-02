@@ -33,7 +33,6 @@ import java.nio.ByteOrder;
 import java.util.Optional;
 
 import jdk.internal.javac.Restricted;
-import jdk.internal.reflect.CallerSensitive;
 
 /**
  * A value layout used to model the address of some region of memory. The carrier
@@ -58,7 +57,6 @@ import jdk.internal.reflect.CallerSensitive;
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @see #ADDRESS
  * @see #ADDRESS_UNALIGNED
- * @since 22
  */
 public sealed interface AddressLayout extends ValueLayout permits _ValueLayouts.OfAddressImpl {
 
@@ -110,7 +108,6 @@ public sealed interface AddressLayout extends ValueLayout permits _ValueLayouts.
      *}
      * @see #targetLayout()
      */
-    @CallerSensitive
     @Restricted
     AddressLayout withTargetLayout(MemoryLayout layout);
 

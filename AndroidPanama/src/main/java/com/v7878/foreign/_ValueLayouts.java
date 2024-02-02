@@ -28,7 +28,6 @@
 
 package com.v7878.foreign;
 
-import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -38,7 +37,6 @@ import jdk.internal.foreign.Utils;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -156,7 +154,6 @@ final class _ValueLayouts {
                     || carrier == MemorySegment.class;
         }
 
-        @ForceInline
         public final VarHandle varHandle() {
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity

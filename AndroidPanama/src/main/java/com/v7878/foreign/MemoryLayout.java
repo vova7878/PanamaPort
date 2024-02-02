@@ -441,8 +441,6 @@ import jdk.internal.foreign.Utils;
  *
  * @implSpec Implementations of this interface are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- * @sealedGraph
- * @since 22
  */
 public sealed interface MemoryLayout
         permits SequenceLayout, GroupLayout, PaddingLayout, ValueLayout {
@@ -834,7 +832,6 @@ public sealed interface MemoryLayout
      *
      * @implSpec Implementations of this interface are immutable, thread-safe and
      * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
-     * @since 22
      */
     sealed interface PathElement permits LayoutPath.PathElementImpl {
 

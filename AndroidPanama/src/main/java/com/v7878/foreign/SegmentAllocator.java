@@ -27,6 +27,21 @@
 
 package com.v7878.foreign;
 
+import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
+import static com.v7878.foreign.ValueLayout.JAVA_CHAR;
+import static com.v7878.foreign.ValueLayout.JAVA_DOUBLE;
+import static com.v7878.foreign.ValueLayout.JAVA_FLOAT;
+import static com.v7878.foreign.ValueLayout.JAVA_INT;
+import static com.v7878.foreign.ValueLayout.JAVA_LONG;
+import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
+import static com.v7878.foreign.ValueLayout.OfByte;
+import static com.v7878.foreign.ValueLayout.OfChar;
+import static com.v7878.foreign.ValueLayout.OfDouble;
+import static com.v7878.foreign.ValueLayout.OfFloat;
+import static com.v7878.foreign.ValueLayout.OfInt;
+import static com.v7878.foreign.ValueLayout.OfLong;
+import static com.v7878.foreign.ValueLayout.OfShort;
+
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -35,7 +50,6 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.ArenaImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}.
@@ -76,7 +90,6 @@ import jdk.internal.vm.annotation.ForceInline;
  * <p>
  * Clients should consider using an {@linkplain Arena arena} instead, which, provides
  * strong thread-safety, lifetime and non-overlapping guarantees.
- * @since 22
  */
 @FunctionalInterface
 public interface SegmentAllocator {
@@ -94,7 +107,7 @@ public interface SegmentAllocator {
      * @param str the Java string to be converted into a C string
      * @return a new native segment containing the converted C string
      */
-    @ForceInline
+
     default MemorySegment allocateFrom(String str) {
         Objects.requireNonNull(str);
         return allocateFrom(str, sun.nio.cs.UTF_8.INSTANCE);
@@ -131,7 +144,7 @@ public interface SegmentAllocator {
      *         and 2 for {@link StandardCharsets#UTF_16}.</li>
      * </ul>
      */
-    @ForceInline
+
     default MemorySegment allocateFrom(String str, Charset charset) {
         Objects.requireNonNull(charset);
         Objects.requireNonNull(str);
@@ -146,10 +159,10 @@ public interface SegmentAllocator {
             byte[] bytes = str.getBytes(charset);
             length = bytes.length;
             segment = allocateNoInit((long) bytes.length + termCharSize);
-            MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
+            MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, 0, bytes.length);
         }
         for (int i = 0; i < termCharSize; i++) {
-            segment.set(ValueLayout.JAVA_BYTE, length + i, (byte) 0);
+            segment.set(JAVA_BYTE, length + i, (byte) 0);
         }
         return segment;
     }
@@ -171,7 +184,7 @@ public interface SegmentAllocator {
      *  return seg;
      *}
      */
-    default MemorySegment allocateFrom(ValueLayout.OfByte layout, byte value) {
+    default MemorySegment allocateFrom(OfByte layout, byte value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
@@ -195,7 +208,7 @@ public interface SegmentAllocator {
      *  return seg;
      *}
      */
-    default MemorySegment allocateFrom(ValueLayout.OfChar layout, char value) {
+    default MemorySegment allocateFrom(OfChar layout, char value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
@@ -219,7 +232,7 @@ public interface SegmentAllocator {
      *  return seg;
      *}
      */
-    default MemorySegment allocateFrom(ValueLayout.OfShort layout, short value) {
+    default MemorySegment allocateFrom(OfShort layout, short value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
@@ -243,7 +256,7 @@ public interface SegmentAllocator {
      *  return seg;
      *}
      */
-    default MemorySegment allocateFrom(ValueLayout.OfInt layout, int value) {
+    default MemorySegment allocateFrom(OfInt layout, int value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
@@ -267,7 +280,7 @@ public interface SegmentAllocator {
      *  return seg;
      *}
      */
-    default MemorySegment allocateFrom(ValueLayout.OfFloat layout, float value) {
+    default MemorySegment allocateFrom(OfFloat layout, float value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
@@ -291,7 +304,7 @@ public interface SegmentAllocator {
      *  return seg;
      *}
      */
-    default MemorySegment allocateFrom(ValueLayout.OfLong layout, long value) {
+    default MemorySegment allocateFrom(OfLong layout, long value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
@@ -315,7 +328,7 @@ public interface SegmentAllocator {
      *  return seg;
      *}
      */
-    default MemorySegment allocateFrom(ValueLayout.OfDouble layout, double value) {
+    default MemorySegment allocateFrom(OfDouble layout, double value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
@@ -388,7 +401,7 @@ public interface SegmentAllocator {
      * return dest;
      *}
      */
-    @ForceInline
+
     default MemorySegment allocateFrom(ValueLayout elementLayout,
                                        MemorySegment source,
                                        ValueLayout sourceElementLayout,
@@ -423,10 +436,10 @@ public interface SegmentAllocator {
      *                   ValueLayout.JAVA_BYTE, 0, array.length)
      *}
      */
-    @ForceInline
-    default MemorySegment allocateFrom(ValueLayout.OfByte elementLayout, byte... elements) {
+
+    default MemorySegment allocateFrom(OfByte elementLayout, byte... elements) {
         return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
-                ValueLayout.JAVA_BYTE, 0, elements.length);
+                JAVA_BYTE, 0, elements.length);
     }
 
     /**
@@ -450,10 +463,10 @@ public interface SegmentAllocator {
      *                   ValueLayout.JAVA_SHORT, 0, array.length)
      *}
      */
-    @ForceInline
-    default MemorySegment allocateFrom(ValueLayout.OfShort elementLayout, short... elements) {
+
+    default MemorySegment allocateFrom(OfShort elementLayout, short... elements) {
         return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
-                ValueLayout.JAVA_SHORT, 0, elements.length);
+                JAVA_SHORT, 0, elements.length);
     }
 
     /**
@@ -477,10 +490,10 @@ public interface SegmentAllocator {
      *                   ValueLayout.JAVA_CHAR, 0, array.length)
      *}
      */
-    @ForceInline
-    default MemorySegment allocateFrom(ValueLayout.OfChar elementLayout, char... elements) {
+
+    default MemorySegment allocateFrom(OfChar elementLayout, char... elements) {
         return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
-                ValueLayout.JAVA_CHAR, 0, elements.length);
+                JAVA_CHAR, 0, elements.length);
     }
 
     /**
@@ -504,10 +517,10 @@ public interface SegmentAllocator {
      *                   ValueLayout.JAVA_INT, 0, array.length)
      *}
      */
-    @ForceInline
-    default MemorySegment allocateFrom(ValueLayout.OfInt elementLayout, int... elements) {
+
+    default MemorySegment allocateFrom(OfInt elementLayout, int... elements) {
         return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
-                ValueLayout.JAVA_INT, 0, elements.length);
+                JAVA_INT, 0, elements.length);
     }
 
     /**
@@ -531,10 +544,10 @@ public interface SegmentAllocator {
      *                   ValueLayout.JAVA_FLOAT, 0, array.length)
      *}
      */
-    @ForceInline
-    default MemorySegment allocateFrom(ValueLayout.OfFloat elementLayout, float... elements) {
+
+    default MemorySegment allocateFrom(OfFloat elementLayout, float... elements) {
         return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
-                ValueLayout.JAVA_FLOAT, 0, elements.length);
+                JAVA_FLOAT, 0, elements.length);
     }
 
     /**
@@ -558,10 +571,10 @@ public interface SegmentAllocator {
      *                   ValueLayout.JAVA_LONG, 0, array.length)
      *}
      */
-    @ForceInline
-    default MemorySegment allocateFrom(ValueLayout.OfLong elementLayout, long... elements) {
+
+    default MemorySegment allocateFrom(OfLong elementLayout, long... elements) {
         return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
-                ValueLayout.JAVA_LONG, 0, elements.length);
+                JAVA_LONG, 0, elements.length);
     }
 
     /**
@@ -585,10 +598,10 @@ public interface SegmentAllocator {
      *                   ValueLayout.JAVA_DOUBLE, 0, array.length)
      *}
      */
-    @ForceInline
-    default MemorySegment allocateFrom(ValueLayout.OfDouble elementLayout, double... elements) {
+
+    default MemorySegment allocateFrom(OfDouble elementLayout, double... elements) {
         return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
-                ValueLayout.JAVA_DOUBLE, 0, elements.length);
+                JAVA_DOUBLE, 0, elements.length);
     }
 
     /**
@@ -705,21 +718,21 @@ public interface SegmentAllocator {
         }
     }
 
-    @ForceInline
+
     private MemorySegment allocateNoInit(long byteSize) {
         return this instanceof ArenaImpl arenaImpl ?
                 arenaImpl.allocateNoInit(byteSize, 1) :
                 allocate(byteSize);
     }
 
-    @ForceInline
+
     private MemorySegment allocateNoInit(MemoryLayout layout) {
         return this instanceof ArenaImpl arenaImpl ?
                 arenaImpl.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
                 allocate(layout);
     }
 
-    @ForceInline
+
     private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
         return this instanceof ArenaImpl arenaImpl ?
                 arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :

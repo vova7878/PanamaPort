@@ -53,8 +53,6 @@ import java.nio.ByteOrder;
  * but only to 4 bytes on 32-bit platforms.
  * @implSpec implementing classes and subclasses are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- * @sealedGraph
- * @since 22
  */
 public sealed interface ValueLayout extends MemoryLayout
         permits ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar,
@@ -126,7 +124,6 @@ public sealed interface ValueLayout extends MemoryLayout
      * A value layout whose carrier is {@code boolean.class}.
      *
      * @see #JAVA_BOOLEAN
-     * @since 22
      */
     sealed interface OfBoolean extends ValueLayout permits _ValueLayouts.OfBooleanImpl {
 
@@ -162,7 +159,6 @@ public sealed interface ValueLayout extends MemoryLayout
      * A value layout whose carrier is {@code byte.class}.
      *
      * @see #JAVA_BYTE
-     * @since 22
      */
     sealed interface OfByte extends ValueLayout permits _ValueLayouts.OfByteImpl {
 
@@ -199,7 +195,6 @@ public sealed interface ValueLayout extends MemoryLayout
      *
      * @see #JAVA_CHAR
      * @see #JAVA_CHAR_UNALIGNED
-     * @since 22
      */
     sealed interface OfChar extends ValueLayout permits _ValueLayouts.OfCharImpl {
 
@@ -236,7 +231,6 @@ public sealed interface ValueLayout extends MemoryLayout
      *
      * @see #JAVA_SHORT
      * @see #JAVA_SHORT_UNALIGNED
-     * @since 22
      */
     sealed interface OfShort extends ValueLayout permits _ValueLayouts.OfShortImpl {
 
@@ -273,7 +267,6 @@ public sealed interface ValueLayout extends MemoryLayout
      *
      * @see #JAVA_INT
      * @see #JAVA_INT_UNALIGNED
-     * @since 22
      */
     sealed interface OfInt extends ValueLayout permits _ValueLayouts.OfIntImpl {
 
@@ -310,7 +303,6 @@ public sealed interface ValueLayout extends MemoryLayout
      *
      * @see #JAVA_FLOAT
      * @see #JAVA_FLOAT_UNALIGNED
-     * @since 22
      */
     sealed interface OfFloat extends ValueLayout permits _ValueLayouts.OfFloatImpl {
 
@@ -345,7 +337,6 @@ public sealed interface ValueLayout extends MemoryLayout
      *
      * @see #JAVA_LONG
      * @see #JAVA_LONG_UNALIGNED
-     * @since 22
      */
     sealed interface OfLong extends ValueLayout permits _ValueLayouts.OfLongImpl {
 
@@ -382,7 +373,6 @@ public sealed interface ValueLayout extends MemoryLayout
      *
      * @see #JAVA_DOUBLE
      * @see #JAVA_DOUBLE_UNALIGNED
-     * @since 22
      */
     sealed interface OfDouble extends ValueLayout permits _ValueLayouts.OfDoubleImpl {
 

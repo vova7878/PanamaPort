@@ -32,7 +32,6 @@ package com.v7878.foreign;
  *
  * @implSpec Implementing classes are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- * @since 22
  */
 public sealed interface StructLayout extends GroupLayout permits _StructLayoutImpl {
 

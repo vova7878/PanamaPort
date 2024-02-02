@@ -40,7 +40,6 @@ import jdk.internal.foreign.abi.CapturableState;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.javac.Restricted;
-import jdk.internal.reflect.CallerSensitive;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code
@@ -568,7 +567,6 @@ import jdk.internal.reflect.CallerSensitive;
  *
  * @implSpec Implementations of this interface are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- * @since 22
  */
 public sealed interface Linker permits AbstractLinker {
 
@@ -617,7 +615,6 @@ public sealed interface Linker permits AbstractLinker {
      *                                  native access enabled
      * @see SymbolLookup
      */
-    @CallerSensitive
     @Restricted
     MethodHandle downcallHandle(MemorySegment address,
                                 FunctionDescriptor function,
@@ -686,7 +683,6 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalCallerException   If the caller is in a module that does not have
      *                                  native access enabled
      */
-    @CallerSensitive
     @Restricted
     MethodHandle downcallHandle(FunctionDescriptor function, Option... options);
 
@@ -735,7 +731,6 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalCallerException   If the caller is in a module that does not have
      *                                  native access enabled
      */
-    @CallerSensitive
     @Restricted
     MemorySegment upcallStub(MethodHandle target,
                              FunctionDescriptor function,
@@ -787,8 +782,6 @@ public sealed interface Linker permits AbstractLinker {
 
     /**
      * A linker option is used to provide additional parameters to a linkage request.
-     *
-     * @since 22
      */
     sealed interface Option
             permits LinkerOptions.LinkerOptionImpl {
