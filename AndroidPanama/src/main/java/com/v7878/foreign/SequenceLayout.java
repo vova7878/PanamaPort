@@ -27,8 +27,6 @@
 
 package com.v7878.foreign;
 
-import jdk.internal.foreign.layout.SequenceLayoutImpl;
-
 /**
  * A compound layout that denotes a homogeneous repetition of a given
  * <em>element layout</em>. The repetition count is said to be the sequence layout's
@@ -53,7 +51,7 @@ import jdk.internal.foreign.layout.SequenceLayoutImpl;
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @since 22
  */
-public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayoutImpl {
+public sealed interface SequenceLayout extends MemoryLayout permits _SequenceLayoutImpl {
 
 
     /**

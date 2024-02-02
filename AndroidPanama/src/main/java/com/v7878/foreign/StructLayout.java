@@ -27,8 +27,6 @@
 
 package com.v7878.foreign;
 
-import jdk.internal.foreign.layout.StructLayoutImpl;
-
 /**
  * A group layout whose member layouts are laid out one after the other.
  *
@@ -36,7 +34,7 @@ import jdk.internal.foreign.layout.StructLayoutImpl;
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @since 22
  */
-public sealed interface StructLayout extends GroupLayout permits StructLayoutImpl {
+public sealed interface StructLayout extends GroupLayout permits _StructLayoutImpl {
 
     /**
      * {@inheritDoc}

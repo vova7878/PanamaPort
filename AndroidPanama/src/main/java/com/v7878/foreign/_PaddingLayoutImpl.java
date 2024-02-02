@@ -23,19 +23,21 @@
  *  questions.
  *
  */
-package jdk.internal.foreign.layout;
 
-import java.lang.foreign.PaddingLayout;
+// Port-changed: Extensive modifications made throughout the class for Android.
+
+package com.v7878.foreign;
+
 import java.util.Objects;
 import java.util.Optional;
 
-public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> implements PaddingLayout {
+final class _PaddingLayoutImpl extends _AbstractLayout<_PaddingLayoutImpl> implements PaddingLayout {
 
-    private PaddingLayoutImpl(long byteSize) {
+    private _PaddingLayoutImpl(long byteSize) {
         this(byteSize, 1, Optional.empty());
     }
 
-    private PaddingLayoutImpl(long byteSize, long byteAlignment, Optional<String> name) {
+    private _PaddingLayoutImpl(long byteSize, long byteAlignment, Optional<String> name) {
         super(byteSize, byteAlignment, name);
     }
 
@@ -47,9 +49,9 @@ public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> i
     @Override
     public boolean equals(Object other) {
         return this == other ||
-                other instanceof PaddingLayoutImpl otherPadding &&
-                super.equals(other) &&
-                byteSize() == otherPadding.byteSize();
+                other instanceof _PaddingLayoutImpl otherPadding &&
+                        super.equals(other) &&
+                        byteSize() == otherPadding.byteSize();
     }
 
     @Override
@@ -58,8 +60,8 @@ public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> i
     }
 
     @Override
-    PaddingLayoutImpl dup(long byteAlignment, Optional<String> name) {
-        return new PaddingLayoutImpl(byteSize(), byteAlignment, name);
+    _PaddingLayoutImpl dup(long byteAlignment, Optional<String> name) {
+        return new _PaddingLayoutImpl(byteSize(), byteAlignment, name);
     }
 
     @Override
@@ -68,7 +70,7 @@ public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> i
     }
 
     public static PaddingLayout of(long byteSize) {
-        return new PaddingLayoutImpl(byteSize);
+        return new _PaddingLayoutImpl(byteSize);
     }
 
 }

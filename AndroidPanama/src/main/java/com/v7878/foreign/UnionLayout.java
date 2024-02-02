@@ -27,8 +27,6 @@
 
 package com.v7878.foreign;
 
-import jdk.internal.foreign.layout.UnionLayoutImpl;
-
 /**
  * A group layout whose member layouts are laid out at the same starting offset.
  *
@@ -36,7 +34,7 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @since 22
  */
-public sealed interface UnionLayout extends GroupLayout permits UnionLayoutImpl {
+public sealed interface UnionLayout extends GroupLayout permits _UnionLayoutImpl {
 
     /**
      * {@inheritDoc}

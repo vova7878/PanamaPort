@@ -23,19 +23,12 @@
  *  questions.
  *
  */
-package jdk.internal.foreign.layout;
 
-import jdk.internal.foreign.LayoutPath;
-import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
-import jdk.internal.foreign.Utils;
+// Port-changed: Extensive modifications made throughout the class for Android.
 
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
+package com.v7878.foreign;
+
 import java.lang.foreign.MemoryLayout.PathElement;
-import java.lang.foreign.SequenceLayout;
-import java.lang.foreign.StructLayout;
-import java.lang.foreign.UnionLayout;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -46,15 +39,19 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & MemoryLayout>
-        permits AbstractGroupLayout, PaddingLayoutImpl, SequenceLayoutImpl, ValueLayouts.AbstractValueLayout {
+import jdk.internal.foreign.LayoutPath;
+import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
+import jdk.internal.foreign.Utils;
+
+abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayout>
+        permits _AbstractGroupLayout, _PaddingLayoutImpl, _SequenceLayoutImpl, _ValueLayouts.AbstractValueLayout {
 
     private final long byteSize;
     private final long byteAlignment;
     private final Optional<String> name;
 
-    AbstractLayout(long byteSize, long byteAlignment, Optional<String> name) {
-        this.byteSize = MemoryLayoutUtil.requireByteSizeValid(byteSize, true);
+    _AbstractLayout(long byteSize, long byteAlignment, Optional<String> name) {
+        this.byteSize = _MemoryLayoutUtil.requireByteSizeValid(byteSize, true);
         this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToOne(byteAlignment);
         this.name = Objects.requireNonNull(name);
     }
@@ -118,7 +115,7 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
      */
     @Override
     public boolean equals(Object other) {
-        return other instanceof AbstractLayout<?> otherLayout &&
+        return other instanceof _AbstractLayout<?> otherLayout &&
                 name.equals(otherLayout.name) &&
                 byteSize == otherLayout.byteSize &&
                 byteAlignment == otherLayout.byteAlignment;
@@ -159,6 +156,7 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     public MethodHandle scaleHandle() {
         class Holder {
             static final MethodHandle MH_SCALE;
+
             static {
                 try {
                     MH_SCALE = MethodHandles.lookup().findVirtual(MemoryLayout.class, "scale",
@@ -209,7 +207,7 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
                                        Set<PathKind> badKinds, PathElement... elements) {
         Objects.requireNonNull(elements);
         for (PathElement e : elements) {
-            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl)Objects.requireNonNull(e);
+            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl) Objects.requireNonNull(e);
             if (badKinds.contains(pathElem.kind())) {
                 throw new IllegalArgumentException(String.format("Invalid %s selection in layout path", pathElem.kind().description()));
             }

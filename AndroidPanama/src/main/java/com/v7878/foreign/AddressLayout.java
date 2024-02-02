@@ -32,7 +32,6 @@ import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;
 import java.util.Optional;
 
-import jdk.internal.foreign.layout.ValueLayouts;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 
@@ -61,7 +60,7 @@ import jdk.internal.reflect.CallerSensitive;
  * @see #ADDRESS_UNALIGNED
  * @since 22
  */
-public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.OfAddressImpl {
+public sealed interface AddressLayout extends ValueLayout permits _ValueLayouts.OfAddressImpl {
 
     /**
      * {@inheritDoc}

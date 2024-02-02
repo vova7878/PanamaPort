@@ -27,8 +27,6 @@
 
 package com.v7878.foreign;
 
-import jdk.internal.foreign.layout.PaddingLayoutImpl;
-
 /**
  * A padding layout. A padding layout specifies the size of extra space which is
  * typically not accessed by applications, and is typically used for aligning member
@@ -38,7 +36,7 @@ import jdk.internal.foreign.layout.PaddingLayoutImpl;
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  * @since 22
  */
-public sealed interface PaddingLayout extends MemoryLayout permits PaddingLayoutImpl {
+public sealed interface PaddingLayout extends MemoryLayout permits _PaddingLayoutImpl {
 
     /**
      * {@inheritDoc}

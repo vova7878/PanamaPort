@@ -23,7 +23,16 @@
  *  questions.
  *
  */
-package jdk.internal.foreign.layout;
+
+// Port-changed: Extensive modifications made throughout the class for Android.
+
+package com.v7878.foreign;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
+import java.util.Objects;
+import java.util.Optional;
 
 import jdk.internal.foreign.Utils;
 import jdk.internal.misc.Unsafe;
@@ -31,15 +40,6 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
-
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -54,12 +54,13 @@ import java.util.Optional;
  *
  * @implSpec This class and its subclasses are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public final class ValueLayouts {
+final class _ValueLayouts {
 
     // Suppresses default constructor, ensuring non-instantiability.
-    private ValueLayouts() {}
+    private _ValueLayouts() {
+    }
 
-    abstract static sealed class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
+    abstract static sealed class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends _AbstractLayout<V> {
 
         static final int ADDRESS_SIZE_BYTES = Unsafe.ADDRESS_SIZE;
 
@@ -310,13 +311,13 @@ public final class ValueLayouts {
 
         @Override
         OfAddressImpl dup(ByteOrder order, long byteAlignment, Optional<String> name) {
-            return new OfAddressImpl(order, byteSize(), byteAlignment,targetLayout, name);
+            return new OfAddressImpl(order, byteSize(), byteAlignment, targetLayout, name);
         }
 
         @Override
         public boolean equals(Object other) {
             return super.equals(other) &&
-                    Objects.equals(((OfAddressImpl)other).targetLayout, this.targetLayout);
+                    Objects.equals(((OfAddressImpl) other).targetLayout, this.targetLayout);
         }
 
         @Override
@@ -374,8 +375,9 @@ public final class ValueLayouts {
      *     <li>{@link ValueLayout.OfDouble}, for {@code double.class}</li>
      *     <li>{@link AddressLayout}, for {@code MemorySegment.class}</li>
      * </ul>
+     *
      * @param carrier the value layout carrier.
-     * @param order the value layout's byte order.
+     * @param order   the value layout's byte order.
      * @return a value layout with the given Java carrier and byte-order.
      * @throws IllegalArgumentException if the carrier type is not supported.
      */
@@ -383,23 +385,23 @@ public final class ValueLayouts {
         Objects.requireNonNull(carrier);
         Objects.requireNonNull(order);
         if (carrier == boolean.class) {
-            return ValueLayouts.OfBooleanImpl.of(order);
+            return _ValueLayouts.OfBooleanImpl.of(order);
         } else if (carrier == char.class) {
-            return ValueLayouts.OfCharImpl.of(order);
+            return _ValueLayouts.OfCharImpl.of(order);
         } else if (carrier == byte.class) {
-            return ValueLayouts.OfByteImpl.of(order);
+            return _ValueLayouts.OfByteImpl.of(order);
         } else if (carrier == short.class) {
-            return ValueLayouts.OfShortImpl.of(order);
+            return _ValueLayouts.OfShortImpl.of(order);
         } else if (carrier == int.class) {
-            return ValueLayouts.OfIntImpl.of(order);
+            return _ValueLayouts.OfIntImpl.of(order);
         } else if (carrier == float.class) {
-            return ValueLayouts.OfFloatImpl.of(order);
+            return _ValueLayouts.OfFloatImpl.of(order);
         } else if (carrier == long.class) {
-            return ValueLayouts.OfLongImpl.of(order);
+            return _ValueLayouts.OfLongImpl.of(order);
         } else if (carrier == double.class) {
-            return ValueLayouts.OfDoubleImpl.of(order);
+            return _ValueLayouts.OfDoubleImpl.of(order);
         } else if (carrier == MemorySegment.class) {
-            return ValueLayouts.OfAddressImpl.of(order);
+            return _ValueLayouts.OfAddressImpl.of(order);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + carrier.getName());
         }

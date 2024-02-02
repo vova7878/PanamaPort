@@ -23,11 +23,14 @@
  *  questions.
  *
  */
-package jdk.internal.foreign.layout;
 
-public final class MemoryLayoutUtil {
+// Port-changed: Extensive modifications made throughout the class for Android.
 
-    private MemoryLayoutUtil() {
+package com.v7878.foreign;
+
+final class _MemoryLayoutUtil {
+
+    private _MemoryLayoutUtil() {
     }
 
     public static long requireByteSizeValid(long byteSize, boolean allowZero) {

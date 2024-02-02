@@ -36,11 +36,6 @@ import java.util.stream.Stream;
 import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
 import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.layout.MemoryLayoutUtil;
-import jdk.internal.foreign.layout.PaddingLayoutImpl;
-import jdk.internal.foreign.layout.SequenceLayoutImpl;
-import jdk.internal.foreign.layout.StructLayoutImpl;
-import jdk.internal.foreign.layout.UnionLayoutImpl;
 
 /**
  * A memory layout describes the contents of a memory segment.
@@ -994,7 +989,7 @@ public sealed interface MemoryLayout
      * @throws IllegalArgumentException if {@code byteSize <= 0}
      */
     static PaddingLayout paddingLayout(long byteSize) {
-        return PaddingLayoutImpl.of(MemoryLayoutUtil.requireByteSizeValid(byteSize, false));
+        return _PaddingLayoutImpl.of(_MemoryLayoutUtil.requireByteSizeValid(byteSize, false));
     }
 
     /**
@@ -1014,7 +1009,7 @@ public sealed interface MemoryLayout
         Utils.checkElementAlignment(elementLayout,
                 "Element layout size is not multiple of alignment");
         return Utils.wrapOverflow(() ->
-                SequenceLayoutImpl.of(elementCount, elementLayout));
+                _SequenceLayoutImpl.of(elementCount, elementLayout));
     }
 
     /**
@@ -1052,7 +1047,7 @@ public sealed interface MemoryLayout
     static StructLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
         return Utils.wrapOverflow(() ->
-                StructLayoutImpl.of(Stream.of(elements)
+                _StructLayoutImpl.of(Stream.of(elements)
                         .map(Objects::requireNonNull)
                         .toList()));
     }
@@ -1065,7 +1060,7 @@ public sealed interface MemoryLayout
      */
     static UnionLayout unionLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        return UnionLayoutImpl.of(Stream.of(elements)
+        return _UnionLayoutImpl.of(Stream.of(elements)
                 .map(Objects::requireNonNull)
                 .toList());
     }
