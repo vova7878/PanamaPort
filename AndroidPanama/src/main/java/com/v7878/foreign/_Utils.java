@@ -311,15 +311,23 @@ final class _Utils {
         return "0x" + Long.toHexString(value);
     }
 
-    public record BaseAndScale(int base, long scale) {
+    public enum BaseAndScale {
 
-        public static final BaseAndScale BYTE = new BaseAndScale(ARRAY_BYTE_BASE_OFFSET, ARRAY_BYTE_INDEX_SCALE);
-        public static final BaseAndScale CHAR = new BaseAndScale(ARRAY_CHAR_BASE_OFFSET, ARRAY_CHAR_INDEX_SCALE);
-        public static final BaseAndScale SHORT = new BaseAndScale(ARRAY_SHORT_BASE_OFFSET, ARRAY_SHORT_INDEX_SCALE);
-        public static final BaseAndScale INT = new BaseAndScale(ARRAY_INT_BASE_OFFSET, ARRAY_INT_INDEX_SCALE);
-        public static final BaseAndScale FLOAT = new BaseAndScale(ARRAY_FLOAT_BASE_OFFSET, ARRAY_FLOAT_INDEX_SCALE);
-        public static final BaseAndScale LONG = new BaseAndScale(ARRAY_LONG_BASE_OFFSET, ARRAY_LONG_INDEX_SCALE);
-        public static final BaseAndScale DOUBLE = new BaseAndScale(ARRAY_DOUBLE_BASE_OFFSET, ARRAY_DOUBLE_INDEX_SCALE);
+        BYTE(ARRAY_BYTE_BASE_OFFSET, ARRAY_BYTE_INDEX_SCALE),
+        CHAR(ARRAY_CHAR_BASE_OFFSET, ARRAY_CHAR_INDEX_SCALE),
+        SHORT(ARRAY_SHORT_BASE_OFFSET, ARRAY_SHORT_INDEX_SCALE),
+        INT(ARRAY_INT_BASE_OFFSET, ARRAY_INT_INDEX_SCALE),
+        FLOAT(ARRAY_FLOAT_BASE_OFFSET, ARRAY_FLOAT_INDEX_SCALE),
+        LONG(ARRAY_LONG_BASE_OFFSET, ARRAY_LONG_INDEX_SCALE),
+        DOUBLE(ARRAY_DOUBLE_BASE_OFFSET, ARRAY_DOUBLE_INDEX_SCALE);
+
+        private final int base;
+        private final long scale;
+
+        BaseAndScale(int base, long scale) {
+            this.base = base;
+            this.scale = scale;
+        }
 
         public static BaseAndScale of(Object array) {
             // Port-changed: Android Studio doesn't like this construction
@@ -353,6 +361,14 @@ final class _Utils {
                 throw new IllegalArgumentException("Not a supported array class: "
                         + array.getClass().getSimpleName());
             }
+        }
+
+        public int base() {
+            return base;
+        }
+
+        public long scale() {
+            return scale;
         }
     }
 }
