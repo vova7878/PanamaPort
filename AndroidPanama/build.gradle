@@ -28,12 +28,12 @@ android {
 dependencies {
     compileOnly 'com.github.vova7878:KeepAnnotation:v0.0.1'
     compileOnly 'com.github.vova7878:OptimizationAnnotations:v0.0.2'
-
     compileOnly 'com.github.vova7878:SunCleanerStub:v0.0.1'
 
     api project(':VarHandleApi')
 
     implementation project(':AndroidUnsafe')
+
     implementation 'com.github.vova7878:AndroidMisc:v0.0.2'
     implementation 'com.github.vova7878:DexFile:v0.0.3'
 }
