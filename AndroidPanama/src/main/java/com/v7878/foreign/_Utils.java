@@ -43,6 +43,8 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 
+import androidx.annotation.Keep;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -71,11 +73,8 @@ final class _Utils {
                     MethodType.methodType(boolean.class, byte.class));
             BOOL_TO_BYTE = lookup.findStatic(_Utils.class, "booleanToByte",
                     MethodType.methodType(byte.class, boolean.class));
-            //TODO
-            //ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
-            //        MethodType.methodType(long.class, MemorySegment.class));
-            ADDRESS_TO_LONG = null;
-
+            ADDRESS_TO_LONG = lookup.findStatic(_Utils.class, "unboxSegment",
+                    MethodType.methodType(long.class, MemorySegment.class));
             LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
                     MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
         } catch (Throwable ex) {
@@ -146,14 +145,29 @@ final class _Utils {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    @Keep
     public static boolean byteToBoolean(byte b) {
         return b != 0;
     }
 
+    @Keep
     private static byte booleanToByte(boolean b) {
         return b ? (byte) 1 : (byte) 0;
     }
 
+    public static void checkNative(MemorySegment segment) {
+        if (!segment.isNative()) {
+            throw new IllegalArgumentException("Heap segment not allowed: " + segment);
+        }
+    }
+
+    @Keep
+    public static long unboxSegment(MemorySegment segment) {
+        checkNative(segment);
+        return segment.address();
+    }
+
+    @Keep
     public static MemorySegment longToAddress(long addr, long size, long align) {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
@@ -293,10 +307,6 @@ final class _Utils {
         }
     }
 
-    public static boolean containsNullChars(String s) {
-        return s.indexOf('\u0000') >= 0;
-    }
-
     public static String toHexString(long value) {
         return "0x" + Long.toHexString(value);
     }
@@ -312,20 +322,37 @@ final class _Utils {
         public static final BaseAndScale DOUBLE = new BaseAndScale(ARRAY_DOUBLE_BASE_OFFSET, ARRAY_DOUBLE_INDEX_SCALE);
 
         public static BaseAndScale of(Object array) {
-            //TODO
-            /*return switch (array) {
-                case byte[] _ -> BaseAndScale.BYTE;
-                case char[] _ -> BaseAndScale.CHAR;
-                case short[] _ -> BaseAndScale.SHORT;
-                case int[] _ -> BaseAndScale.INT;
-                case float[] _ -> BaseAndScale.FLOAT;
-                case long[] _ -> BaseAndScale.LONG;
-                case double[] _ -> BaseAndScale.DOUBLE;
-                default ->
-                        throw new IllegalArgumentException("Not a supported array class: " + array.getClass().getSimpleName());
-            };*/
+            // Port-changed: Android Studio doesn't like this construction
+            //return switch (array) {
+            //    case byte[] _ -> BaseAndScale.BYTE;
+            //    case char[] _ -> BaseAndScale.CHAR;
+            //    case short[] _ -> BaseAndScale.SHORT;
+            //    case int[] _ -> BaseAndScale.INT;
+            //    case float[] _ -> BaseAndScale.FLOAT;
+            //    case long[] _ -> BaseAndScale.LONG;
+            //    case double[] _ -> BaseAndScale.DOUBLE;
+            //    default -> throw new IllegalArgumentException("Not a supported array class: "
+            //            + array.getClass().getSimpleName());
+            //};
 
-            throw new UnsupportedOperationException("Not supported yet");
+            if (array instanceof byte[]) {
+                return BaseAndScale.BYTE;
+            } else if (array instanceof char[]) {
+                return BaseAndScale.CHAR;
+            } else if (array instanceof short[]) {
+                return BaseAndScale.SHORT;
+            } else if (array instanceof int[]) {
+                return BaseAndScale.INT;
+            } else if (array instanceof float[]) {
+                return BaseAndScale.FLOAT;
+            } else if (array instanceof long[]) {
+                return BaseAndScale.LONG;
+            } else if (array instanceof double[]) {
+                return BaseAndScale.DOUBLE;
+            } else {
+                throw new IllegalArgumentException("Not a supported array class: "
+                        + array.getClass().getSimpleName());
+            }
         }
     }
 }

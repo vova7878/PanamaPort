@@ -166,19 +166,16 @@ class _LayoutPath {
     }
 
     public _LayoutPath derefElement() {
-        //TODO
-        //if (!(layout instanceof AddressLayout addressLayout) ||
-        //        addressLayout.targetLayout().isEmpty()) {
-        //    throw badLayoutPath(
-        //            String.format("Cannot dereference layout: %s", breadcrumbs()));
-        //}
-        //MemoryLayout derefLayout = addressLayout.targetLayout().get();
-        //MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
-        //handle = MethodHandles.filterReturnValue(handle,
-        //        MethodHandles.insertArguments(MH_SEGMENT_RESIZE, 1, derefLayout));
-        //return derefPath(derefLayout, handle, this);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        if (!(layout instanceof AddressLayout addressLayout) ||
+                !addressLayout.targetLayout().isPresent()) {
+            throw badLayoutPath(
+                    String.format("Cannot dereference layout: %s", breadcrumbs()));
+        }
+        MemoryLayout derefLayout = addressLayout.targetLayout().get();
+        MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
+        handle = MethodHandles.filterReturnValue(handle,
+                MethodHandles.insertArguments(MH_SEGMENT_RESIZE, 1, derefLayout));
+        return derefPath(derefLayout, handle, this);
     }
 
     private static MemorySegment resizeSegment(MemorySegment segment, MemoryLayout layout) {
@@ -206,7 +203,7 @@ class _LayoutPath {
         // we check the root layout instead
         ValueLayout accessedLayout = enclosing != null ? valueLayout.withByteAlignment(1) : valueLayout;
         VarHandle handle = accessedLayout.varHandle();
-        handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
+        handle = VarHandles.collectCoordinates(handle, 1, offsetHandle());
 
         // we only have to check the alignment of the root layout for the first dereference we do,
         // as each dereference checks the alignment of the target address when constructing its segment
@@ -215,15 +212,15 @@ class _LayoutPath {
             // insert align check for the root layout on the initial MS + offset
             List<Class<?>> coordinateTypes = handle.coordinateTypes();
             MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
-            handle = MethodHandles.collectCoordinates(handle, 0, alignCheck);
+            handle = VarHandles.collectCoordinates(handle, 0, alignCheck);
             int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, coordinateTypes.size())).toArray();
-            handle = MethodHandles.permuteCoordinates(handle, coordinateTypes, reorder);
+            handle = VarHandles.permuteCoordinates(handle, coordinateTypes, reorder);
         }
 
         if (adapt) {
             if (derefAdapters.length > 0) {
                 // plug up the base offset if we have at least 1 enclosing dereference
-                handle = MethodHandles.insertCoordinates(handle, 1, 0);
+                handle = VarHandles.insertCoordinates(handle, 1, 0);
             }
             for (int i = derefAdapters.length; i > 0; i--) {
                 MethodHandle adapter = derefAdapters[i - 1];
@@ -232,7 +229,7 @@ class _LayoutPath {
                     // plug in a constant 0 base offset for all but the outermost access in a deref chain
                     adapter = MethodHandles.insertArguments(adapter, 1, 0);
                 }
-                handle = MethodHandles.collectCoordinates(handle, 0, adapter);
+                handle = VarHandles.collectCoordinates(handle, 0, adapter);
             }
         }
         return handle;*/
@@ -356,6 +353,7 @@ class _LayoutPath {
     }
 
     private String breadcrumbs() {
+        //TODO
         return Stream.iterate(this, Objects::nonNull, lp -> lp.enclosing)
                 .map(_LayoutPath::layout)
                 .map(Object::toString)

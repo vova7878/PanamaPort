@@ -27,9 +27,16 @@
 
 package com.v7878.foreign;
 
+import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
+import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.foreign.NativeLibrary;
+import com.v7878.unsafe.foreign.RawNativeLibraries;
+
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * A <em>symbol lookup</em> retrieves the address of a symbol in one or more libraries.
@@ -248,13 +255,10 @@ public interface SymbolLookup {
      * {@code LoadLibrary} function.
      */
     static SymbolLookup libraryLookup(String name, Arena arena) {
-        //TODO
-        //if (_Utils.containsNullChars(name)) {
-        //    throw new IllegalArgumentException("Cannot open library: " + name);
-        //}
-        //return libraryLookup(name, RawNativeLibraries::load, arena);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        if (Utils.containsNullChars(name)) {
+            throw new IllegalArgumentException("Cannot open library: " + name);
+        }
+        return libraryLookup(name, RawNativeLibraries::load, arena);
     }
 
     /**
@@ -278,43 +282,48 @@ public interface SymbolLookup {
      * {@code dlsym} and {@code dlclose} functions.
      */
     static SymbolLookup libraryLookup(Path path, Arena arena) {
-        //TODO
-        //if (path.getFileSystem() != FileSystems.getDefault()) {
-        //    throw new IllegalArgumentException("Path not in default file system: " + path);
-        //}
-        //return libraryLookup(path, RawNativeLibraries::load, arena);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        if (path.getFileSystem() != FileSystems.getDefault()) {
+            throw new IllegalArgumentException("Path not in default file system: " + path);
+        }
+        return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
-    /*private static <Z>
-    SymbolLookup libraryLookup(Z libDesc,
-                               BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc,
-                               Arena libArena) {
+    // Port-added: check dlerror
+    private static String format_dlerror(String msg) {
+        StringBuilder out = new StringBuilder();
+        out.append(msg);
+        String err = RawNativeLibraries.dlerror();
+        if (err == null) {
+            out.append("; no dlerror message");
+        } else {
+            out.append("; dlerror: ");
+            out.append(err);
+        }
+        return out.toString();
+    }
 
+    private static <Z> SymbolLookup libraryLookup(Z libDesc, Function<Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
         Objects.requireNonNull(libDesc);
         Objects.requireNonNull(libArena);
+
         // attempt to load native library from path or name
-        RawNativeLibraries nativeLibraries = RawNativeLibraries.newInstance(MethodHandles.lookup());
-        NativeLibrary library = loadLibraryFunc.apply(nativeLibraries, libDesc);
+        NativeLibrary library = loadLibraryFunc.apply(libDesc);
         if (library == null) {
-            throw new IllegalArgumentException("Cannot open library: " + libDesc);
+            // Port-added: use format_dlerror
+            throw new IllegalArgumentException(format_dlerror("Cannot open library: " + libDesc));
         }
         // register hook to unload library when 'libScope' becomes not alive
-        _MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new _MemorySessionImpl.ResourceList.ResourceCleanup() {
+        _MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new ResourceCleanup() {
             @Override
             public void cleanup() {
-                nativeLibraries.unload(library);
+                RawNativeLibraries.unload(library);
             }
         });
         return name -> {
-            Objects.requireNonNull(name);
-            if (_Utils.containsNullChars(name)) return Optional.empty();
             long addr = library.find(name);
-            return addr == 0L ?
-                    Optional.empty() :
+            return addr == 0L ? Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr)
                             .reinterpret(libArena, null));
         };
-    }*/
+    }
 }

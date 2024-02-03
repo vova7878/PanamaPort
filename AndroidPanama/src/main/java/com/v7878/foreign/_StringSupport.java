@@ -32,8 +32,6 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
 
-import android.annotation.SuppressLint;
-
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -316,7 +314,14 @@ final class _StringSupport {
 
     public static boolean bytesCompatible(String string, Charset charset) {
         //TODO
-        //return JAVA_LANG_ACCESS.bytesCompatible(string, charset);
+        //if (isLatin1()) {
+        //    if (charset == ISO_8859_1.INSTANCE) {
+        //        return true; // ok, same encoding
+        //    } else if (charset == UTF_8.INSTANCE || charset == US_ASCII.INSTANCE) {
+        //        return !StringCoding.hasNegatives(value, 0, value.length); // ok, if ASCII-compatible
+        //    }
+        //}
+        //return false;
 
         throw new UnsupportedOperationException("Not supported yet");
     }
@@ -334,7 +339,7 @@ final class _StringSupport {
 
     public static void copyToSegmentRaw(String string, MemorySegment segment, long offset) {
         //TODO
-        //JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset);
+        //MemorySegment.copy(value, 0, segment, ValueLayout.JAVA_BYTE, offset, value.length);
 
         throw new UnsupportedOperationException("Not supported yet");
     }
