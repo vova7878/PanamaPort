@@ -141,8 +141,7 @@ public interface SegmentAllocator {
      */
 
     default MemorySegment allocateFrom(String str, Charset charset) {
-        //TODO
-        /*Objects.requireNonNull(charset);
+        Objects.requireNonNull(charset);
         Objects.requireNonNull(str);
         int termCharSize = _StringSupport.CharsetKind.of(charset).terminatorCharSize();
         MemorySegment segment;
@@ -160,9 +159,7 @@ public interface SegmentAllocator {
         for (int i = 0; i < termCharSize; i++) {
             segment.set(JAVA_BYTE, length + i, (byte) 0);
         }
-        return segment;*/
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return segment;
     }
 
     /**

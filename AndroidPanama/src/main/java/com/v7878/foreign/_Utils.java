@@ -55,9 +55,6 @@ import java.util.function.Supplier;
  */
 final class _Utils {
 
-    //TODO: delete?
-    public static final boolean IS_WINDOWS = false; // privilegedGetProperty("os.name").startsWith("Windows");
-
     // Suppresses default constructor, ensuring non-instantiability.
     private _Utils() {
     }

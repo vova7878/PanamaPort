@@ -23,6 +23,7 @@
 package com.v7878.foreign;
 
 import java.lang.invoke.MethodHandle;
+import java.nio.ByteOrder;
 import java.util.Optional;
 
 public interface MemoryLayout {
@@ -109,6 +110,10 @@ public interface MemoryLayout {
     }
 
     static UnionLayout unionLayout(MemoryLayout... elements) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    static ValueLayout valueLayout(Class<?> carrier, ByteOrder order) {
         throw new UnsupportedOperationException("Stub!");
     }
 }

@@ -29,16 +29,15 @@
 package com.v7878.foreign;
 
 import java.util.List;
-import java.util.Optional;
 
 final class _StructLayoutImpl extends _AbstractGroupLayout<_StructLayoutImpl> implements StructLayout {
 
-    private _StructLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
+    private _StructLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, String name) {
         super(Kind.STRUCT, elements, byteSize, byteAlignment, minByteAlignment, name);
     }
 
     @Override
-    _StructLayoutImpl dup(long byteAlignment, Optional<String> name) {
+    _StructLayoutImpl dup(long byteAlignment, String name) {
         return new _StructLayoutImpl(memberLayouts(), byteSize(), byteAlignment, minByteAlignment, name);
     }
 
@@ -52,7 +51,6 @@ final class _StructLayoutImpl extends _AbstractGroupLayout<_StructLayoutImpl> im
             size = Math.addExact(size, elem.byteSize());
             align = Math.max(align, elem.byteAlignment());
         }
-        return new _StructLayoutImpl(elements, size, align, align, Optional.empty());
+        return new _StructLayoutImpl(elements, size, align, align, null);
     }
-
 }

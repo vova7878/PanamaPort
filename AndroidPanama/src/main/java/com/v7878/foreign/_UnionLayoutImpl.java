@@ -29,16 +29,15 @@
 package com.v7878.foreign;
 
 import java.util.List;
-import java.util.Optional;
 
 final class _UnionLayoutImpl extends _AbstractGroupLayout<_UnionLayoutImpl> implements UnionLayout {
 
-    private _UnionLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
+    private _UnionLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, String name) {
         super(Kind.UNION, elements, byteSize, byteAlignment, minByteAlignment, name);
     }
 
     @Override
-    _UnionLayoutImpl dup(long byteAlignment, Optional<String> name) {
+    _UnionLayoutImpl dup(long byteAlignment, String name) {
         return new _UnionLayoutImpl(memberLayouts(), byteSize(), byteAlignment, minByteAlignment, name);
     }
 
@@ -49,7 +48,7 @@ final class _UnionLayoutImpl extends _AbstractGroupLayout<_UnionLayoutImpl> impl
             size = Math.max(size, elem.byteSize());
             align = Math.max(align, elem.byteAlignment());
         }
-        return new _UnionLayoutImpl(elements, size, align, align, Optional.empty());
+        return new _UnionLayoutImpl(elements, size, align, align, null);
     }
 
 }

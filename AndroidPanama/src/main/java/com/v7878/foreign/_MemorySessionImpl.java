@@ -34,40 +34,9 @@ import androidx.annotation.Keep;
 
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.foreign._GlobalSession.HeapSession;
+import com.v7878.foreign._ScopedMemoryAccess.ScopedAccessError;
 
 import java.util.Objects;
-import java.util.function.Supplier;
-
-/**
- * This class manages the temporal bounds associated with a memory segment as well
- * as thread confinement. A session has a liveness bit, which is updated when the session is closed
- * (this operation is triggered by {@link _MemorySessionImpl#close()}). This bit is consulted prior
- * to memory access (see {@link #checkValidStateRaw()}).
- * There are two kinds of memory session: confined memory session and shared memory session.
- * A confined memory session has an associated owner thread that confines some operations to
- * associated owner thread such as {@link #close()} or {@link #checkValidStateRaw()}.
- * Shared sessions do not feature an owner thread - meaning their operations can be called, in a racy
- * manner, by multiple threads. To guarantee temporal safety in the presence of concurrent thread,
- * shared sessions use a more sophisticated synchronization mechanism, which guarantees that no concurrent
- * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
- */
-
-//TODO: move to _ScopedMemoryAccess
-final class ScopedAccessError extends Error {
-
-    private final Supplier<RuntimeException> runtimeExceptionSupplier;
-
-    public ScopedAccessError(Supplier<RuntimeException> runtimeExceptionSupplier) {
-        super("Invalid memory access", null, false, false);
-        this.runtimeExceptionSupplier = runtimeExceptionSupplier;
-    }
-
-    static final long serialVersionUID = 1L;
-
-    public RuntimeException newRuntimeException() {
-        return runtimeExceptionSupplier.get();
-    }
-}
 
 abstract sealed class _MemorySessionImpl implements Scope
         permits _ConfinedSession, _GlobalSession, _SharedSession {

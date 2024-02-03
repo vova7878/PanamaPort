@@ -71,26 +71,25 @@ final class _MappedMemorySegmentImpl extends _NativeMemorySegmentImpl {
 
     // support for mapped segments
 
-    //TODO
-    //public void load() {
-    //    if (unmapper != null) {
-    //        SCOPED_MEMORY_ACCESS.load(sessionImpl(), min, unmapper.isSync(), length);
-    //    }
-    //}
-    //
-    //public void unload() {
-    //    if (unmapper != null) {
-    //        SCOPED_MEMORY_ACCESS.unload(sessionImpl(), min, unmapper.isSync(), length);
-    //    }
-    //}
-    //
-    //public boolean isLoaded() {
-    //    return unmapper == null || SCOPED_MEMORY_ACCESS.isLoaded(sessionImpl(), min, unmapper.isSync(), length);
-    //}
-    //
-    //public void force() {
-    //    if (unmapper != null) {
-    //        SCOPED_MEMORY_ACCESS.force(sessionImpl(), unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
-    //    }
-    //}
+    public void load() {
+        if (unmapper != null) {
+            _ScopedMemoryAccess.load(sessionImpl(), min, length);
+        }
+    }
+
+    public void unload() {
+        if (unmapper != null) {
+            _ScopedMemoryAccess.unload(sessionImpl(), min, length);
+        }
+    }
+
+    public boolean isLoaded() {
+        return unmapper == null || _ScopedMemoryAccess.isLoaded(sessionImpl(), min, length);
+    }
+
+    public void force() {
+        if (unmapper != null) {
+            _ScopedMemoryAccess.force(sessionImpl(), unmapper.fileDescriptor(), min, 0, length);
+        }
+    }
 }

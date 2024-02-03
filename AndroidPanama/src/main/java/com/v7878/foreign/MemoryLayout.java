@@ -30,6 +30,7 @@ package com.v7878.foreign;
 import com.v7878.foreign._LayoutPath.PathElementImpl.PathKind;
 
 import java.lang.invoke.MethodHandle;
+import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -1018,6 +1019,7 @@ public sealed interface MemoryLayout
      * @return a new sequence layout with the given element layout and maximum element count.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      */
+    // Port-added
     static SequenceLayout sequenceLayout(MemoryLayout elementLayout) {
         Objects.requireNonNull(elementLayout);
         return sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
@@ -1061,7 +1063,16 @@ public sealed interface MemoryLayout
                 _StructLayoutImpl.of(List.of(elements)));
     }
 
-    // TODO: javadoc
+    /**
+     * Creates a struct layout with the given member layouts and automatically align
+     * element layouts, by inserting additional {@linkplain PaddingLayout padding layout} elements.
+     *
+     * @param elements The member layouts of the struct layout
+     * @return a struct layout with the given member layouts
+     * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes}
+     *                                  of the member layouts overflows
+     */
+    // Port-added
     static StructLayout paddedStructLayout(MemoryLayout... elements) {
         return _Utils.computePaddedStructLayout(elements);
     }
@@ -1075,5 +1086,30 @@ public sealed interface MemoryLayout
     static UnionLayout unionLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
         return _UnionLayoutImpl.of(List.of(elements));
+    }
+
+    /**
+     * Creates a value layout of given Java carrier and byte order. The type of resulting value layout is determined
+     * by the carrier provided:
+     * <ul>
+     *     <li>{@link ValueLayout.OfBoolean}, for {@code boolean.class}</li>
+     *     <li>{@link ValueLayout.OfByte}, for {@code byte.class}</li>
+     *     <li>{@link ValueLayout.OfShort}, for {@code short.class}</li>
+     *     <li>{@link ValueLayout.OfChar}, for {@code char.class}</li>
+     *     <li>{@link ValueLayout.OfInt}, for {@code int.class}</li>
+     *     <li>{@link ValueLayout.OfFloat}, for {@code float.class}</li>
+     *     <li>{@link ValueLayout.OfLong}, for {@code long.class}</li>
+     *     <li>{@link ValueLayout.OfDouble}, for {@code double.class}</li>
+     *     <li>{@link AddressLayout}, for {@code MemorySegment.class}</li>
+     * </ul>
+     *
+     * @param carrier the value layout carrier.
+     * @param order   the value layout's byte order.
+     * @return a value layout with the given Java carrier and byte-order.
+     * @throws IllegalArgumentException if the carrier type is not supported.
+     */
+    // Port-added
+    static ValueLayout valueLayout(Class<?> carrier, ByteOrder order) {
+        return _ValueLayouts.valueLayout(carrier, order);
     }
 }

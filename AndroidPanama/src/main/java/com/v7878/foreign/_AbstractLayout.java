@@ -28,8 +28,11 @@
 
 package com.v7878.foreign;
 
+import android.annotation.SuppressLint;
+
 import com.v7878.foreign.MemoryLayout.PathElement;
 import com.v7878.foreign._LayoutPath.PathElementImpl.PathKind;
+import com.v7878.unsafe.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -45,25 +48,29 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
 
     private final long byteSize;
     private final long byteAlignment;
-    private final Optional<String> name;
+    private final String name;
 
-    _AbstractLayout(long byteSize, long byteAlignment, Optional<String> name) {
+    _AbstractLayout(long byteSize, long byteAlignment, String name) {
         this.byteSize = _MemoryLayoutUtil.requireByteSizeValid(byteSize, true);
         this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToOne(byteAlignment);
-        this.name = Objects.requireNonNull(name);
+        this.name = name;
     }
 
     public final L withName(String name) {
-        return dup(byteAlignment(), Optional.of(name));
+        return dup(byteAlignment(), name);
     }
 
     @SuppressWarnings("unchecked")
     public final L withoutName() {
-        return name.isPresent() ? dup(byteAlignment(), Optional.empty()) : (L) this;
+        return name == null ? (L) this : dup(byteAlignment(), null);
+    }
+
+    protected final String plain_name() {
+        return name;
     }
 
     public final Optional<String> name() {
-        return name;
+        return Optional.ofNullable(name);
     }
 
     public L withByteAlignment(long byteAlignment) {
@@ -113,7 +120,7 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     @Override
     public boolean equals(Object other) {
         return other instanceof _AbstractLayout<?> otherLayout &&
-                name.equals(otherLayout.name) &&
+                Objects.equals(name, otherLayout.name) &&
                 byteSize == otherLayout.byteSize &&
                 byteAlignment == otherLayout.byteAlignment;
     }
@@ -124,14 +131,17 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     @Override
     public abstract String toString();
 
-    abstract L dup(long byteAlignment, Optional<String> name);
+    abstract L dup(long byteAlignment, String name);
 
-    String decorateLayoutString(String s) {
-        if (name().isPresent()) {
-            s = String.format("%s(%s)", s, name().get());
-        }
+    // Port-changed
+    @SuppressLint("DefaultLocale")
+    protected String decorateLayoutString(String s) {
+        s = String.format("%s%d", s, byteSize());
         if (!hasNaturalAlignment()) {
-            s = byteAlignment() + "%" + s;
+            s = String.format("%s%%%d", s, byteAlignment());
+        }
+        if (name != null) {
+            s = String.format("%s(%s)", s, name);
         }
         return s;
     }
@@ -187,10 +197,7 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     }
 
     public VarHandle arrayElementVarHandle(PathElement... elements) {
-        //TODO
-        //return MethodHandles.collectCoordinates(varHandle(elements), 1, scaleHandle());
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return VarHandles.collectCoordinates(varHandle(elements), 1, scaleHandle());
     }
 
     public MethodHandle sliceHandle(PathElement... elements) {

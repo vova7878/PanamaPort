@@ -513,9 +513,7 @@ import java.util.stream.Stream;
  * @implSpec Implementations of this interface are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-//TODO
-//public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
-public interface MemorySegment {
+public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
 
     /**
      * {@return the address of this memory segment}
@@ -1330,10 +1328,7 @@ public interface MemorySegment {
      *                                  {@link CharBuffer#wrap(char[], int, int)} are not backed by an array.
      */
     static MemorySegment ofBuffer(Buffer buffer) {
-        //TODO
-        //return _AbstractMemorySegmentImpl.ofBuffer(buffer);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return _AbstractMemorySegmentImpl.ofBuffer(buffer);
     }
 
     /**
@@ -1565,12 +1560,9 @@ public interface MemorySegment {
         Objects.requireNonNull(srcElementLayout);
         Objects.requireNonNull(dstSegment);
         Objects.requireNonNull(dstElementLayout);
-        //TODO
-        //_AbstractMemorySegmentImpl.copy(srcSegment, srcElementLayout, srcOffset,
-        //        dstSegment, dstElementLayout, dstOffset,
-        //        elementCount);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        _AbstractMemorySegmentImpl.copy(srcSegment, srcElementLayout, srcOffset,
+                dstSegment, dstElementLayout, dstOffset,
+                elementCount);
     }
 
     /**
