@@ -20,8 +20,6 @@ import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
-import static com.v7878.unsafe.Reflection.MethodHandleMirror;
-import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructor;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
@@ -65,7 +63,6 @@ import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
 
-@SuppressWarnings("deprecation")
 public class Transformers {
 
     private static final Class<?> invoke_transformer = nothrows_run(
@@ -103,16 +100,16 @@ public class Transformers {
                 new EncodedField(impl_field, ACC_PRIVATE, null)
         );
 
-        //public Transformer(MethodType type, TransformerImpl impl) {
-        //    super(type);
+        //public Transformer(MethodType type, int invokeKind, TransformerImpl impl) {
+        //    super(type, invokeKind);
         //    this.impl = impl;
         //}
         transformer_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                MethodId.constructor(transformer_id, mt, TypeId.of(TransformerImpl.class)),
+                MethodId.constructor(transformer_id, mt, TypeId.I, TypeId.of(TransformerImpl.class)),
                 ACC_PUBLIC | ACC_CONSTRUCTOR).withCode(0, b -> b
-                .invoke(DIRECT, MethodId.constructor(TypeId.of(invoke_transformer), mt),
-                        b.this_(), b.p(0))
-                .iop(PUT_OBJECT, b.p(1), b.this_(), impl_field)
+                .invoke(DIRECT, MethodId.constructor(TypeId.of(invoke_transformer), mt, TypeId.I),
+                        b.this_(), b.p(0), b.p(1))
+                .iop(PUT_OBJECT, b.p(2), b.this_(), impl_field)
                 .return_void()
         ));
 
@@ -373,18 +370,16 @@ public class Transformers {
         Class<?> transformer = loadClass(dex, transformer_name, loader);
         //noinspection unchecked
         transformer_constructor = (Constructor<MethodHandle>) nothrows_run(() -> transformer
-                .getDeclaredConstructor(MethodType.class, TransformerImpl.class));
+                .getDeclaredConstructor(MethodType.class, int.class, TransformerImpl.class));
     }
 
     private static MethodHandle makeTransformer(
             MethodType fixed, TransformerImpl impl, boolean variadic) {
-        MethodHandle out = nothrows_run(() -> transformer_constructor.newInstance(fixed, impl));
-        if (variadic && CORRECT_SDK_INT < 33) {
-            //TODO: safer way
-            MethodHandleMirror[] m = arrayCast(MethodHandleMirror.class, out);
-            m[0].handleKind = /*INVOKE_CALLSITE_TRANSFORM*/ 6;
-        }
-        return out;
+        final int INVOKE_CALLSITE_TRANSFORM_26_32 = 6;
+        final int INVOKE_TRANSFORM_26_34 = 5;
+        int kind = variadic && CORRECT_SDK_INT < 33 ?
+                INVOKE_CALLSITE_TRANSFORM_26_32 : INVOKE_TRANSFORM_26_34;
+        return nothrows_run(() -> transformer_constructor.newInstance(fixed, kind, impl));
     }
 
     public static MethodHandle makeTransformer(MethodType type, TransformerF callback) {
