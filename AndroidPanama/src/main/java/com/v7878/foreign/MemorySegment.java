@@ -36,7 +36,12 @@ import static com.v7878.foreign.ValueLayout.OfFloat;
 import static com.v7878.foreign.ValueLayout.OfLong;
 import static com.v7878.foreign.ValueLayout.OfShort;
 
+import androidx.annotation.Keep;
+
 import com.v7878.foreign.ValueLayout.OfInt;
+import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
+import com.v7878.unsafe.Utils.FineClosable;
+import com.v7878.unsafe.access.JavaForeignAccess;
 
 import java.io.UncheckedIOException;
 import java.nio.Buffer;
@@ -2628,5 +2633,29 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
          */
         @Override
         int hashCode();
+    }
+
+    // Port-added: JavaForeignAccess
+    @Keep
+    @SuppressWarnings("unused")
+    private static JavaForeignAccess initAccess() {
+        return new JavaForeignAccess() {
+            @Override
+            public FineClosable _lock(Scope scope) {
+                _MemorySessionImpl session = (_MemorySessionImpl) scope;
+                session.acquire0();
+                return session::release0;
+            }
+
+            @Override
+            protected void _addCloseAction(Scope scope, Runnable cleanup) {
+                ((_MemorySessionImpl) scope).addCloseAction(cleanup);
+            }
+
+            @Override
+            protected void _addOrCleanupIfFail(Scope scope, Runnable cleanup) {
+                ((_MemorySessionImpl) scope).addOrCleanupIfFail(ResourceCleanup.ofRunnable(cleanup));
+            }
+        };
     }
 }
