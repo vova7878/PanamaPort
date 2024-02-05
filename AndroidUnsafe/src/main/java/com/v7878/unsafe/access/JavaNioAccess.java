@@ -22,7 +22,10 @@ import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredFields0;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
+import static com.v7878.unsafe.Reflection.unreflect;
+import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.access.JavaNioAccess.FD_OFFSET;
 
 import com.v7878.dex.ClassDef;
@@ -37,6 +40,7 @@ import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
 import java.io.FileDescriptor;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -90,13 +94,14 @@ class SegmentBufferAccess {
     }
 }
 
-@SuppressWarnings("deprecation")
 public class JavaNioAccess {
 
     public interface UnmapperProxy {
 
         FileDescriptor fileDescriptor();
     }
+
+    private static final MethodHandle attachment;
 
     static {
         String nio_direct_buf_name = "java.nio.DirectByteBuffer";
@@ -202,6 +207,8 @@ public class JavaNioAccess {
                     makeExecutablePublicNonFinal(method);
                 }
             }
+
+            attachment = unreflect(searchMethod(methods, "attachment"));
 
             Constructor<?>[] constructors = getDeclaredConstructors(nio_direct_buf_class);
             for (Constructor<?> constructor : constructors) {
@@ -341,6 +348,15 @@ public class JavaNioAccess {
         }
         FileDescriptor fd = (FileDescriptor) getObject(buffer, FD_OFFSET);
         return fd == null ? null : () -> fd;
+    }
+
+    public static Object attachment(Buffer buffer) {
+        Objects.requireNonNull(buffer);
+        assert_(buffer.isDirect(), () ->
+                new IllegalArgumentException("unable to get indirect buffer attachment"));
+        var tmp = AS_BUFFERS.contains(buffer.getClass()) ?
+                getObject(buffer, BB_OFFSET) : buffer;
+        return nothrows_run(() -> attachment.invoke(tmp));
     }
 
     public static void force(FileDescriptor fd, long address, long offset, long length) {
