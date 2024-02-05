@@ -251,14 +251,15 @@ public class VM {
         Object test = newNonMovableArray(int.class, 0);
         long address = addressOfNonMovableArray(test);
         assert_(isSigned32Bit(address), AssertionError::new);
-        int real = (int) address;
+        int actual = (int) address;
         int raw = rawObjectToInt(test);
-        if (real == raw) {
+        if (actual == raw) {
             return false;
-        } else if (real == -raw) {
+        } else if (actual == -raw) {
             return true;
         } else {
-            throw new IllegalStateException(real + " " + raw);
+            throw new AssertionError(
+                    "unknown type of poisoning: actual:" + actual + " raw:" + raw);
         }
     });
 
