@@ -35,8 +35,10 @@ import com.v7878.foreign._HeapMemorySegmentImpl.OfDouble;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfFloat;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfInt;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfLong;
+import com.v7878.foreign._HeapMemorySegmentImpl.OfObject;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfShort;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
 import java.util.Objects;
@@ -74,6 +76,14 @@ class _SegmentFactories {
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize) {
         ensureInitialized();
         return new _NativeMemorySegmentImpl(min, byteSize, false, _GlobalSession.INSTANCE);
+    }
+
+    // Port-added
+    public static MemorySegment fromObject(Object obj) {
+        ensureInitialized();
+        Objects.requireNonNull(obj);
+        return new OfObject(0, obj, VM.alignedSizeOf(obj), false,
+                _MemorySessionImpl.createHeap(obj));
     }
 
     public static MemorySegment fromArray(byte[] arr) {

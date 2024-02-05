@@ -2656,6 +2656,11 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             protected void _addOrCleanupIfFail(Scope scope, Runnable cleanup) {
                 ((_MemorySessionImpl) scope).addOrCleanupIfFail(ResourceCleanup.ofRunnable(cleanup));
             }
+
+            @Override
+            protected MemorySegment _objectSegment(Object obj) {
+                return _SegmentFactories.fromObject(obj);
+            }
         };
     }
 }

@@ -33,4 +33,10 @@ public abstract class JavaForeignAccess {
     public static void addOrCleanupIfFail(Scope scope, Runnable cleanup) {
         INSTANCE._addOrCleanupIfFail(scope, cleanup);
     }
+
+    protected abstract MemorySegment _objectSegment(Object obj);
+
+    public static MemorySegment objectSegment(Object obj) {
+        return INSTANCE._objectSegment(obj);
+    }
 }

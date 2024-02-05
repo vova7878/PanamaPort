@@ -28,6 +28,7 @@
 
 package com.v7878.foreign;
 
+import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaNioAccess;
 
 import java.nio.ByteBuffer;
@@ -54,6 +55,7 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
     // note that the alignment of a long[]/double[] depends on the platform: it's 4-byte on x86, but 8 bytes on x64
     // (as specified by the JAVA_LONG layout constant).
 
+    private static final long MAX_ALIGN_OBJECT = VM.OBJECT_ALIGNMENT;
     private static final long MAX_ALIGN_BYTE_ARRAY = ValueLayout.JAVA_BYTE.byteAlignment();
     private static final long MAX_ALIGN_SHORT_ARRAY = ValueLayout.JAVA_SHORT.byteAlignment();
     private static final long MAX_ALIGN_INT_ARRAY = ValueLayout.JAVA_INT.byteAlignment();
@@ -85,14 +87,41 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
 
     @Override
     ByteBuffer makeByteBuffer() {
-        if (!(base instanceof byte[] baseByte)) {
-            // TODO: allow it?
+        if (!(base instanceof byte[] baseByte && this instanceof OfByte)) {
             throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
         }
         return JavaNioAccess.newHeapByteBuffer(baseByte, (int) offset - BYTE_ARRAY_BASE, (int) byteSize(), scope);
     }
 
     // factories
+
+    // Port-added
+    public static final class OfObject extends _HeapMemorySegmentImpl {
+
+        OfObject(long offset, Object base, long length, boolean readOnly, _MemorySessionImpl session) {
+            super(offset, base, length, readOnly, session);
+        }
+
+        @Override
+        OfObject dup(long offset, long size, boolean readOnly, _MemorySessionImpl scope) {
+            return new OfObject(this.offset + offset, base, size, readOnly, scope);
+        }
+
+        @Override
+        public Object unsafeGetBase() {
+            return Objects.requireNonNull(base);
+        }
+
+        @Override
+        public long maxAlignMask() {
+            return MAX_ALIGN_OBJECT;
+        }
+
+        @Override
+        public long address() {
+            return offset;
+        }
+    }
 
     public static final class OfByte extends _HeapMemorySegmentImpl {
 
