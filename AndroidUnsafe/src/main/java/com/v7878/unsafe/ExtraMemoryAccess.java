@@ -34,7 +34,6 @@ import java.lang.reflect.Modifier;
 import dalvik.annotation.optimization.CriticalNative;
 import dalvik.system.DexFile;
 
-@SuppressWarnings("deprecation")
 public class ExtraMemoryAccess {
 
     @Keep

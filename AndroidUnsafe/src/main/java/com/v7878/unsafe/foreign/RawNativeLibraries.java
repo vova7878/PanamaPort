@@ -1,26 +1,17 @@
 package com.v7878.unsafe.foreign;
 
-import static com.v7878.foreign.MemoryLayout.sequenceLayout;
 import static com.v7878.foreign.MemorySegment.NULL;
-import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
-import static com.v7878.foreign.ValueLayout.JAVA_INT;
-import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
-import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.foreign.Arena;
-import com.v7878.foreign.FunctionDescriptor;
-import com.v7878.foreign.Linker;
+import com.v7878.foreign.MemoryLayout;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.foreign.ValueLayout;
 import com.v7878.unsafe.Utils;
 
-import java.lang.invoke.MethodHandle;
 import java.nio.file.Path;
 import java.util.Objects;
 
-//TODO: move dl* handles to LibDL class
 public class RawNativeLibraries {
     public static final int RTLD_LOCAL = 0;
     public static final int RTLD_LAZY = 0x1;
@@ -32,20 +23,12 @@ public class RawNativeLibraries {
     public static final long RTLD_DEFAULT = IS64BIT ? 0L : -1L;
     public static final long RTLD_NEXT = IS64BIT ? -1L : -2L;
 
-    private static final ValueLayout WORD = IS64BIT ? JAVA_LONG : JAVA_INT;
-
-    private static final MethodHandle dlopen = Linker.nativeLinker()
-            .downcallHandle(LibDL.dlopen, FunctionDescriptor.of(WORD, WORD, JAVA_INT)
-                    /*TODO: , isTrivial()*/);
-
     public static long dlopen(String path, int flags) {
         Objects.requireNonNull(path);
         if (Utils.containsNullChars(path)) return 0;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_path = arena.allocateFrom(path);
-            return nothrows_run(() -> IS64BIT ?
-                    (long) dlopen.invokeExact(c_path.address(), flags) :
-                    (int) dlopen.invokeExact((int) c_path.address(), flags));
+            return LibDL.dlopen(c_path.address(), flags);
         }
     }
 
@@ -53,39 +36,23 @@ public class RawNativeLibraries {
         return dlopen(path, RTLD_NOW);
     }
 
-    private static final MethodHandle dlsym = Linker.nativeLinker()
-            .downcallHandle(LibDL.dlsym, FunctionDescriptor.of(WORD, WORD, WORD)
-                    /*TODO: , isTrivial()*/);
-
     public static long dlsym(long handle, String name) {
         Objects.requireNonNull(name);
         if (Utils.containsNullChars(name)) return 0;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_name = arena.allocateFrom(name);
-            return nothrows_run(() -> IS64BIT ?
-                    (long) dlsym.invokeExact(handle, c_name.address()) :
-                    (int) dlsym.invokeExact((int) handle, (int) c_name.address()));
+            return LibDL.dlsym(handle, c_name.address());
         }
     }
 
-    private static final MethodHandle dlclose = Linker.nativeLinker()
-            .downcallHandle(LibDL.dlclose, FunctionDescriptor.of(JAVA_INT, WORD)
-                    /*TODO: , isTrivial()*/);
-
     public static void dlclose(long handle) {
         //TODO: check result?
-        Object ignore = nothrows_run(() -> IS64BIT ?
-                (int) dlclose.invokeExact(handle) :
-                (int) dlclose.invokeExact((int) handle));
+        int ignore = LibDL.dlclose(handle);
     }
 
-    private static final MethodHandle dlerror = Linker.nativeLinker()
-            .downcallHandle(LibDL.dlerror, FunctionDescriptor.of(
-                            ADDRESS.withTargetLayout(sequenceLayout(JAVA_BYTE)))
-                    /*TODO: , isTrivial()*/);
-
     public static String dlerror() {
-        MemorySegment msg = (MemorySegment) nothrows_run(() -> dlerror.invoke());
+        MemorySegment msg = MemorySegment.ofAddress(LibDL.dlerror())
+                .reinterpret(MemoryLayout.sequenceLayout(JAVA_BYTE).byteSize());
         return NULL.equals(msg) ? null : msg.getString(0);
     }
 

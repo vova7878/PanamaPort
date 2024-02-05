@@ -558,9 +558,7 @@ import java.util.function.Consumer;
  * @implSpec Implementations of this interface are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-//TODO
-//public sealed interface Linker permits AbstractLinker {
-public interface Linker {
+public sealed interface Linker permits _AbstractAndroidLinker {
 
     /**
      * {@return a linker for the ABI associated with the underlying native platform}
@@ -579,10 +577,7 @@ public interface Linker {
      * and {@code libdl}.
      */
     static Linker nativeLinker() {
-        //TODO
-        //return SharedUtils.getSystemLinker();
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return _AbstractAndroidLinker.getSystemLinker();
     }
 
     /**

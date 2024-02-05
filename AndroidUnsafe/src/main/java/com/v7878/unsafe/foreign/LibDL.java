@@ -1,14 +1,23 @@
 package com.v7878.unsafe.foreign;
 
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
+import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+
+import androidx.annotation.Keep;
+
 import com.v7878.foreign.MemorySegment;
 import com.v7878.unsafe.foreign.ELF.SymTab;
 import com.v7878.unsafe.foreign.MMap.MMapEntry;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
+
+import dalvik.annotation.optimization.CriticalNative;
 
 public class LibDL {
 
@@ -43,5 +52,72 @@ public class LibDL {
             throw new IllegalStateException(ex);
         }
         return ELF.readSymTab(ByteBuffer.wrap(tmp).order(ByteOrder.nativeOrder()), true);
+    }
+
+    static {
+        String suffix = IS64BIT ? "64" : "32";
+        Class<?> word = IS64BIT ? long.class : int.class;
+
+        Method symbol = getDeclaredMethod(LibDL.class, "dlopen" + suffix, word, int.class);
+        setExecutableData(symbol, dladdr.address());
+
+        symbol = getDeclaredMethod(LibDL.class, "dlerror" + suffix);
+        setExecutableData(symbol, dlerror.address());
+
+        symbol = getDeclaredMethod(LibDL.class, "dlsym" + suffix, word, word);
+        setExecutableData(symbol, dlsym.address());
+
+        symbol = getDeclaredMethod(LibDL.class, "dlclose" + suffix, word);
+        setExecutableData(symbol, dlclose.address());
+
+        //TODO: dladdr, dlvsym
+    }
+
+    @Keep
+    @CriticalNative
+    private static native long dlopen64(long filename, int flags);
+
+    @Keep
+    @CriticalNative
+    private static native int dlopen32(int filename, int flags);
+
+    public static long dlopen(long filename, int flags) {
+        return IS64BIT ? dlopen64(filename, flags) : dlopen32((int) filename, flags) & 0xffffffffL;
+    }
+
+    @Keep
+    @CriticalNative
+    private static native long dlerror64();
+
+    @Keep
+    @CriticalNative
+    private static native int dlerror32();
+
+    public static long dlerror() {
+        return IS64BIT ? dlerror64() : dlerror32() & 0xffffffffL;
+    }
+
+    @Keep
+    @CriticalNative
+    private static native long dlsym64(long handle, long symbol);
+
+    @Keep
+    @CriticalNative
+    private static native int dlsym32(int handle, int symbol);
+
+    public static long dlsym(long handle, long symbol) {
+        return IS64BIT ? dlsym64(handle, symbol) : dlsym32((int) handle, (int) symbol) & 0xffffffffL;
+    }
+
+    @Keep
+    @CriticalNative
+    private static native int dlclose64(long handle);
+
+    @Keep
+    @CriticalNative
+    private static native int dlclose32(int handle);
+
+    public static int dlclose(long handle) {
+        return IS64BIT ? dlclose64(handle) : dlclose32((int) handle);
     }
 }
