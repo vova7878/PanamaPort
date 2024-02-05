@@ -47,7 +47,11 @@ final class _ScopedMemoryAccess {
         //TODO
         //return session == null ? null : session.lock();
 
-        throw new UnsupportedOperationException("Not supported yet");
+        if (session == null) {
+            return null;
+        }
+        session.acquire0();
+        return session::release0;
     }
 
     public static void copyMemory(_MemorySessionImpl srcSession, _MemorySessionImpl dstSession,

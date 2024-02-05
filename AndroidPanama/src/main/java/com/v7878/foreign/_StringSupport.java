@@ -323,7 +323,7 @@ final class _StringSupport {
         //}
         //return false;
 
-        throw new UnsupportedOperationException("Not supported yet");
+        return false;
     }
 
     public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset) {

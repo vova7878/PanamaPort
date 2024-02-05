@@ -42,14 +42,21 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 
 import androidx.annotation.Keep;
+
+import com.v7878.unsafe.invoke.Transformers;
+import com.v7878.unsafe.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
@@ -95,9 +102,15 @@ final class _Utils {
         return alignUp(addr, alignment) - addr;
     }
 
+    // Port-added: specific implementation
+    private static VarHandle makeRawSegmentViewVarHandle(
+            Class<?> carrier, long alignmentMask, ByteOrder order) {
+        return _VarHandleSegmentViewBase.makeRawSegmentViewVarHandle(carrier,
+                alignmentMask, ByteOrder.nativeOrder().equals(order));
+    }
+
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
-        //TODO
-        /*final class VarHandleCache {
+        final class VarHandleCache {
             private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
 
             static VarHandle put(ValueLayout layout, VarHandle handle) {
@@ -119,30 +132,24 @@ final class _Utils {
 
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
-            baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
-                case Long.BYTES -> long.class;
-                case Integer.BYTES -> int.class;
-                default -> throw new UnsupportedOperationException("Unsupported address layout");
-            };
+            baseCarrier = IS64BIT ? long.class : int.class;
         } else if (layout.carrier() == boolean.class) {
             baseCarrier = byte.class;
         }
 
-        handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
+        handle = makeRawSegmentViewVarHandle(baseCarrier,
                 layout.byteAlignment() - 1, layout.order());
 
         if (layout.carrier() == boolean.class) {
-            handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
+            handle = VarHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
         } else if (layout instanceof AddressLayout addressLayout) {
-            handle = MethodHandles.filterValue(handle,
-                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
-                    MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
+            handle = VarHandles.filterValue(handle,
+                    Transformers.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
+                    Transformers.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
                                     pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
                             MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
-        return VarHandleCache.put(layout, handle);*/
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return VarHandleCache.put(layout, handle);
     }
 
     @Keep
