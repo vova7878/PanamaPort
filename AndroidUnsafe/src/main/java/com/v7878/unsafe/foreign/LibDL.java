@@ -59,7 +59,7 @@ public class LibDL {
         Class<?> word = IS64BIT ? long.class : int.class;
 
         Method symbol = getDeclaredMethod(LibDL.class, "dlopen" + suffix, word, int.class);
-        setExecutableData(symbol, dladdr.address());
+        setExecutableData(symbol, dlopen.address());
 
         symbol = getDeclaredMethod(LibDL.class, "dlerror" + suffix);
         setExecutableData(symbol, dlerror.address());
