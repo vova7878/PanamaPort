@@ -67,6 +67,8 @@ public class AndroidUnsafe {
     }
 
     public static final boolean IS64BIT = ADDRESS_SIZE == 8;
+    public static final boolean IS_BIG_ENDIAN =
+            ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN);
 
     public static final boolean UNALIGNED_ACCESS;
 
@@ -101,7 +103,7 @@ public class AndroidUnsafe {
     }
 
     public static boolean isBigEndian() {
-        return ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN);
+        return IS_BIG_ENDIAN;
     }
 
     public static <T> T throwException(Throwable th) {
