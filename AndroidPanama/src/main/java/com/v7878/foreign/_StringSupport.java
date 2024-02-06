@@ -31,6 +31,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
+import static com.v7878.unsafe.ExtraMemoryAccess.SOFT_MAX_ARRAY_LENGTH;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -39,9 +40,6 @@ import java.nio.charset.StandardCharsets;
  * Miscellaneous functions to read and write strings, in various charsets.
  */
 final class _StringSupport {
-
-    //TODO?
-    public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
 
     private _StringSupport() {
     }

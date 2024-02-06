@@ -28,6 +28,7 @@
 package com.v7878.foreign;
 
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
+import static com.v7878.unsafe.ExtraMemoryAccess.LOG2_ARRAY_BYTE_INDEX_SCALE;
 import static com.v7878.unsafe.Utils.assert_;
 
 import android.annotation.SuppressLint;
@@ -202,7 +203,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         long remaining = length;
         int i, size;
         boolean lastSubRange = false;
-        //noinspection ConstantValue
         while (remaining > 7 && !lastSubRange) {
             if (remaining > Integer.MAX_VALUE) {
                 size = Integer.MAX_VALUE;
@@ -213,7 +213,7 @@ abstract sealed class _AbstractMemorySegmentImpl
             i = _ScopedMemoryAccess.vectorizedMismatch(aSession, bSession,
                     a, aOffset + off,
                     b, bOffset + off,
-                    size, /* TODO>? ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE*/ 0);
+                    size, LOG2_ARRAY_BYTE_INDEX_SCALE);
             if (i >= 0)
                 return off + i;
 
@@ -576,7 +576,7 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     private static Object bufferRef(Buffer buffer) {
         if (buffer.isDirect()) {
-            // direct buffer, return either the buffer attachment
+            // direct buffer, return the buffer attachment
             return Objects.requireNonNull(JavaNioAccess.attachment(buffer));
         } else {
             // heap buffer, return the underlying array

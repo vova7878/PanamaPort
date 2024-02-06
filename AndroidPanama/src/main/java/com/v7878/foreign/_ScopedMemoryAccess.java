@@ -84,8 +84,11 @@ final class _ScopedMemoryAccess {
                                          Object aBase, long aOffset,
                                          Object bBase, long bOffset,
                                          int length, int log2ArrayIndexScale) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        try (var ignored1 = lock(aSession);
+             var ignored2 = lock(bSession)) {
+            return ExtraMemoryAccess.vectorizedMismatch(
+                    aBase, aOffset, bBase, bOffset, length, log2ArrayIndexScale);
+        }
     }
 
     public static boolean isLoaded(_MemorySessionImpl session, long address, long length) {
