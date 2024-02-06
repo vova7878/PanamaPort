@@ -135,29 +135,59 @@ class _LinkerOptions {
         }
     }
 
-    public record FirstVariadicArg(int index) implements LinkerOptionImpl {
+    public static final class FirstVariadicArg implements LinkerOptionImpl {
+        private final int index;
+
+        public FirstVariadicArg(int index) {
+            this.index = index;
+        }
+
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             if (index < 0 || index > descriptor.argumentLayouts().size()) {
                 throw new IllegalArgumentException("Index '" + index + "' not in bounds for descriptor: " + descriptor);
             }
         }
+
+        public int index() {
+            return index;
+        }
     }
 
-    public record CaptureCallState(Set<_CapturableState> saved) implements LinkerOptionImpl {
+    public static final class CaptureCallState implements LinkerOptionImpl {
+        private final Set<_CapturableState> saved;
+
+        public CaptureCallState(Set<_CapturableState> saved) {
+            this.saved = saved;
+        }
+
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // done during construction
         }
+
+        public Set<_CapturableState> saved() {
+            return saved;
+        }
     }
 
-    public record Critical(boolean allowHeapAccess) implements LinkerOptionImpl {
+    public static final class Critical implements LinkerOptionImpl {
         public static final Critical ALLOW_HEAP = new Critical(true);
         public static final Critical DONT_ALLOW_HEAP = new Critical(false);
+
+        private final boolean allowHeapAccess;
+
+        public Critical(boolean allowHeapAccess) {
+            this.allowHeapAccess = allowHeapAccess;
+        }
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // always allowed
+        }
+
+        public boolean allowHeapAccess() {
+            return allowHeapAccess;
         }
     }
 }
