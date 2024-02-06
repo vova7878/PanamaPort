@@ -29,7 +29,11 @@ package com.v7878.foreign;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code
@@ -764,9 +768,7 @@ public sealed interface Linker permits _AbstractAndroidLinker {
     /**
      * A linker option is used to provide additional parameters to a linkage request.
      */
-    //TODO
-    //sealed interface Option permits LinkerOptions.LinkerOptionImpl {
-    interface Option {
+    sealed interface Option permits _LinkerOptions.LinkerOptionImpl {
 
         /**
          * {@return a linker option used to denote the index indicating the start of the
@@ -796,10 +798,7 @@ public sealed interface Linker permits _AbstractAndroidLinker {
          * available.
          */
         static Option firstVariadicArg(int index) {
-            //TODO
-            //return new LinkerOptions.FirstVariadicArg(index);
-
-            throw new UnsupportedOperationException("Not supported yet");
+            return new _LinkerOptions.FirstVariadicArg(index);
         }
 
         /**
@@ -847,14 +846,11 @@ public sealed interface Linker permits _AbstractAndroidLinker {
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
-            //TODO
-            //Set<CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
-            //        .map(Objects::requireNonNull)
-            //        .map(CapturableState::forName)
-            //        .collect(Collectors.toSet());
-            //return new LinkerOptions.CaptureCallState(set);
-
-            throw new UnsupportedOperationException("Not supported yet");
+            Set<_CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
+                    .map(Objects::requireNonNull)
+                    .map(_CapturableState::forName)
+                    .collect(Collectors.toSet());
+            return new _LinkerOptions.CaptureCallState(set);
         }
 
         /**
@@ -883,10 +879,7 @@ public sealed interface Linker permits _AbstractAndroidLinker {
          * @see #captureCallState(String...)
          */
         static StructLayout captureStateLayout() {
-            //TODO
-            //return CapturableState.LAYOUT;
-
-            throw new UnsupportedOperationException("Not supported yet");
+            return _CapturableState.LAYOUT;
         }
 
         /**
@@ -915,12 +908,9 @@ public sealed interface Linker permits _AbstractAndroidLinker {
          *                        Java heap.
          */
         static Option critical(boolean allowHeapAccess) {
-            //TODO
-            //return allowHeapAccess
-            //        ? LinkerOptions.Critical.ALLOW_HEAP
-            //        : LinkerOptions.Critical.DONT_ALLOW_HEAP;
-
-            throw new UnsupportedOperationException("Not supported yet");
+            return allowHeapAccess
+                    ? _LinkerOptions.Critical.ALLOW_HEAP
+                    : _LinkerOptions.Critical.DONT_ALLOW_HEAP;
         }
     }
 }
