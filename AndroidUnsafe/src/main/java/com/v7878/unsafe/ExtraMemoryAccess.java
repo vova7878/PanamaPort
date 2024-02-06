@@ -520,10 +520,7 @@ public class ExtraMemoryAccess {
                 }
                 tail -= wordTail;
             }
-            return ~tail;
-        } else {
-            return ~tail;
         }
+        return ~tail;
     }
-
 }

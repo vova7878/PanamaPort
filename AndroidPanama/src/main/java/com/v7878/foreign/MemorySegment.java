@@ -87,7 +87,7 @@ import java.util.stream.Stream;
  * <a href="#segment-deref">access operations</a>. An access operation on a memory
  * segment always and only provides access to the region for which the segment was
  * obtained.
- *
+ * <p>
  * <h2 id="segment-characteristics">Characteristics of memory segments</h2>
  * <p>
  * Every memory segment has an {@linkplain #address() address}, expressed as a
@@ -127,7 +127,7 @@ import java.util.stream.Stream;
  * Conversely, native segments can only be accessed compatibly with the
  * <a href="Arena.html#thread-confinement">confinement characteristics</a> of the arena
  * used to obtain them.
- *
+ * <p>
  * <h2 id="segment-deref">Accessing memory segments</h2>
  * <p>
  * A memory segment can be read or written using various access operations provided in
@@ -180,7 +180,7 @@ import java.util.stream.Stream;
  * Var handles for more complex access expressions (e.g. struct field access, pointer
  * dereference) can be created directly from memory layouts, using
  * <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
- *
+ * <p>
  * <h2 id="slicing">Slicing memory segments</h2>
  * <p>
  * Memory segments support {@linkplain MemorySegment#asSlice(long, long) slicing}.

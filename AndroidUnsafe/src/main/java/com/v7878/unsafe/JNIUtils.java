@@ -59,7 +59,6 @@ import dalvik.annotation.optimization.CriticalNative;
 import dalvik.annotation.optimization.FastNative;
 import dalvik.system.DexFile;
 
-@SuppressWarnings("deprecation")
 public class JNIUtils {
     public static final GroupLayout JNI_NATIVE_INTERFACE_LAYOUT = structLayout(
             ADDRESS.withName("reserved0"),

@@ -152,8 +152,8 @@ class _LinkerOptions {
     }
 
     public record Critical(boolean allowHeapAccess) implements LinkerOptionImpl {
-        public static Critical ALLOW_HEAP = new Critical(true);
-        public static Critical DONT_ALLOW_HEAP = new Critical(false);
+        public static final Critical ALLOW_HEAP = new Critical(true);
+        public static final Critical DONT_ALLOW_HEAP = new Critical(false);
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {

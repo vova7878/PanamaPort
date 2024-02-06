@@ -68,7 +68,7 @@ import java.util.stream.Stream;
  * the OS and processor combination associated with the ABI. For example, a linker for
  * Linux/x64 might choose two libraries: {@code libc} and {@code libm}. The functions in
  * these libraries are exposed via a {@linkplain #defaultLookup() symbol lookup}.
- *
+ * <p>
  * <h2 id="native-linker">Calling native functions</h2>
  * <p>
  * The {@linkplain #nativeLinker() native linker} can be used to link against functions
@@ -280,7 +280,7 @@ import java.util.stream.Stream;
  * <p>
  * A native linker only supports function descriptors whose argument/return layouts are
  * layouts supported by that linker and are not sequence layouts.
- *
+ * <p>
  * <h3 id="function-pointers">Function pointers</h3>
  * <p>
  * Sometimes, it is useful to pass Java code as a function pointer to some native
@@ -360,7 +360,7 @@ import java.util.stream.Stream;
  * of the off-heap array will be sorted according to our comparator function, written in
  * Java. We then extract a new Java array from the segment, which contains the sorted
  * elements.
- *
+ * <p>
  * <h3 id="by-ref">Functions returning pointers</h3>
  * <p>
  * When interacting with native functions, it is common for those functions to allocate
@@ -452,7 +452,7 @@ import java.util.stream.Stream;
  * managed by the confined arena. More specifically, the obtained segment has the desired
  * size, can only be accessed by a single thread (the thread that created the confined
  * arena), and its lifetime is tied to the surrounding <em>try-with-resources</em> block.
- *
+ * <p>
  * <h3 id="variadic-funcs">Variadic functions</h3>
  * <p>
  * Variadic functions are C functions that can accept a variable number and type of

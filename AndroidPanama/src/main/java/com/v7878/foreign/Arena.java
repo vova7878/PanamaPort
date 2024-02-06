@@ -155,7 +155,7 @@ import java.util.function.Consumer;
  * any thread. This might be useful when multiple threads need to access the same memory
  * segment concurrently (e.g. in the case of parallel processing). Moreover, a shared
  * arena can be closed by any thread.
- *
+ * <p>
  * <h2 id = "custom-arenas">Custom arenas</h2>
  * <p>
  * Clients can define custom arenas to implement more efficient allocation strategies,

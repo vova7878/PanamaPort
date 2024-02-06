@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
 
-@SuppressWarnings("deprecation")
 public class DexFileUtils {
     private static class std {
 
@@ -170,24 +169,22 @@ public class DexFileUtils {
             ADDRESS.withName("oat_dex_file_")
     );
 
-    public static final GroupLayout DEXFILE_LAYOUT = nothrows_run(() -> {
-        return switch (CORRECT_SDK_INT) {
-            case 34     // android 14
-                    -> dex_file_14_layout;
-            case 33,    // android 13
-                    32, // android 12L
-                    31, // android 12
-                    30  // android 11
-                    -> dex_file_13_11_layout;
-            case 29     // android 10
-                    -> dex_file_10_layout;
-            case 28     // android 9
-                    -> dex_file_9_layout;
-            case 27,    // android 8.1
-                    26  // android 8
-                    -> dex_file_8xx_layout;
-            default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-        };
+    public static final GroupLayout DEXFILE_LAYOUT = nothrows_run(() -> switch (CORRECT_SDK_INT) {
+        case 34     // android 14
+                -> dex_file_14_layout;
+        case 33,    // android 13
+                32, // android 12L
+                31, // android 12
+                30  // android 11
+                -> dex_file_13_11_layout;
+        case 29     // android 10
+                -> dex_file_10_layout;
+        case 28     // android 9
+                -> dex_file_9_layout;
+        case 27,    // android 8.1
+                26  // android 8
+                -> dex_file_8xx_layout;
+        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
     });
 
     private static final Class<?> dexCacheClass

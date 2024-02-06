@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 enum _CapturableState {
-    GET_LAST_ERROR("GetLastError", JAVA_INT, 1 << 0, false),
+    GET_LAST_ERROR("GetLastError", JAVA_INT, 1, false),
     WSA_GET_LAST_ERROR("WSAGetLastError", JAVA_INT, 1 << 1, false),
     ERRNO("errno", JAVA_INT, 1 << 2, true);
 

@@ -117,7 +117,7 @@ import java.util.Optional;
  * A layout's alignment can be overridden if needed
  * (see {@link MemoryLayout#withByteAlignment(long)}), which can be useful to describe
  * layouts with weaker or stronger alignment constraints.
- *
+ * <p>
  * <h2 id="layout-paths">Layout paths</h2>
  * <p>
  * A <em>layout path</em> is used to unambiguously select a layout that is nested in some
@@ -255,7 +255,7 @@ import java.util.Optional;
  * </ul>
  * Any attempt to provide a layout path {@code P} that is not well-formed for an initial
  * layout {@code C_0} will result in an {@link IllegalArgumentException}.
- *
+ * <p>
  * <h2 id="access-mode-restrictions">Access mode restrictions</h2>
  * <p>
  * A var handle returned by {@link #varHandle(PathElement...)} or
@@ -298,7 +298,7 @@ import java.util.Optional;
  * other access modes will result in {@link UnsupportedOperationException} being thrown.
  * Moreover, while supported, access modes {@code get} and {@code set} might lead to
  * word tearing.
- *
+ * <p>
  * <h2 id="variable-length">Working with variable-length arrays</h2>
  * <p>
  * We have seen how sequence layouts are used to describe the contents of an array whose
@@ -314,7 +314,7 @@ import java.util.Optional;
  * While variable-length arrays cannot be modeled directly using sequence layouts,
  * clients can still enjoy structured access to elements of variable-length arrays
  * using var handles as demonstrated in the following sections.
- *
+ * <p>
  * <h3 id="variable-length-toplevel">Toplevel variable-length arrays</h3>
  * <p>
  * Consider the following struct declaration in C:
@@ -383,7 +383,7 @@ import java.util.Optional;
  * expression simpler. This is achieved using the
  * {@link java.lang.invoke.MethodHandles#insertCoordinates(VarHandle, int, Object...)}
  * var handle adapter.
- *
+ * <p>
  * <h3 id="variable-length-nested">Nested variable-length arrays</h3>
  * <p>
  * Consider the following struct declaration in C:
