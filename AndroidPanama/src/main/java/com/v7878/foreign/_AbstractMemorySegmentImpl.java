@@ -584,6 +584,20 @@ abstract sealed class _AbstractMemorySegmentImpl
         }
     }
 
+    private static int getScaleFactor(Buffer buffer) {
+        if (buffer instanceof ByteBuffer) {
+            return 0;
+        } else if (buffer instanceof CharBuffer || buffer instanceof ShortBuffer) {
+            return 1;
+        } else if (buffer instanceof IntBuffer || buffer instanceof FloatBuffer) {
+            return 2;
+        } else if (buffer instanceof LongBuffer || buffer instanceof DoubleBuffer) {
+            return 3;
+        } else {
+            throw new AssertionError("Cannot get here");
+        }
+    }
+
     public static void copy(MemorySegment srcSegment, ValueLayout srcElementLayout, long srcOffset,
                             MemorySegment dstSegment, ValueLayout dstElementLayout, long dstOffset,
                             long elementCount) {
@@ -686,7 +700,7 @@ abstract sealed class _AbstractMemorySegmentImpl
             if (srcImpl.get(JAVA_BYTE, srcFromOffset) != dstImpl.get(JAVA_BYTE, dstFromOffset)) {
                 return 0;
             }
-            i = _AbstractMemorySegmentImpl.vectorizedMismatchLargeForBytes(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+            i = vectorizedMismatchLargeForBytes(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcFromOffset,
                     dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstFromOffset,
                     bytes);
@@ -703,20 +717,6 @@ abstract sealed class _AbstractMemorySegmentImpl
             }
         }
         return srcBytes != dstBytes ? bytes : -1;
-    }
-
-    private static int getScaleFactor(Buffer buffer) {
-        if (buffer instanceof ByteBuffer) {
-            return 0;
-        } else if (buffer instanceof CharBuffer || buffer instanceof ShortBuffer) {
-            return 1;
-        } else if (buffer instanceof IntBuffer || buffer instanceof FloatBuffer) {
-            return 2;
-        } else if (buffer instanceof LongBuffer || buffer instanceof DoubleBuffer) {
-            return 3;
-        } else {
-            throw new AssertionError("Cannot get here");
-        }
     }
 
     // accessors
