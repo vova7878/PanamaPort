@@ -56,6 +56,11 @@ public class RawNativeLibraries {
         return NULL.equals(msg) ? null : msg.getString(0);
     }
 
+    public static long findNative(ClassLoader loader, String name) {
+        //TODO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
     public static NativeLibrary load(Path path) {
         return load(path.toFile().toString());
     }

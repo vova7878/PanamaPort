@@ -21,7 +21,22 @@ import dalvik.annotation.optimization.CriticalNative;
 
 public class LibDL {
 
-    //TODO?: android_handle_signal android_get_LD_LIBRARY_PATH android_dlopen_ext
+    // TODO: void android_get_LD_LIBRARY_PATH(char* buffer, size_t buffer_size)
+    // TODO: void android_update_LD_LIBRARY_PATH(const char* ld_library_path)
+    // TODO: void* android_dlopen_ext(const char* filename, int flag, const android_dlextinfo* extinfo)
+    // TODO: bool android_init_anonymous_namespace(const char* shared_libs_sonames,
+    //                                      const char* library_search_path)
+    // TODO: android_namespace_t* android_create_namespace(const char* name,
+    //                                                     const char* ld_library_path,
+    //                                                     const char* default_library_path,
+    //                                                     uint64_t type,
+    //                                                     const char* permitted_when_isolated_path,
+    //                                                     struct android_namespace_t* parent)
+    // TODO: bool android_link_namespaces(struct android_namespace_t* namespace_from,
+    //                             struct android_namespace_t* namespace_to,
+    //                             const char* shared_libs_sonames)
+    // TODO: android_namespace_t* android_get_exported_namespace(const char* name)
+
     public static final MemorySegment dladdr;
     public static final MemorySegment dlclose;
     public static final MemorySegment dlerror;
@@ -58,12 +73,14 @@ public class LibDL {
         String suffix = IS64BIT ? "64" : "32";
         Class<?> word = IS64BIT ? long.class : int.class;
 
+        //TODO: noinline, nocompile
         Method symbol = getDeclaredMethod(LibDL.class, "dlopen" + suffix, word, int.class);
         setExecutableData(symbol, dlopen.address());
 
         symbol = getDeclaredMethod(LibDL.class, "dlerror" + suffix);
         setExecutableData(symbol, dlerror.address());
 
+        //TODO: noinline, nocompile
         symbol = getDeclaredMethod(LibDL.class, "dlsym" + suffix, word, word);
         setExecutableData(symbol, dlsym.address());
 
