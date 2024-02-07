@@ -28,6 +28,7 @@
 package com.v7878.foreign;
 
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
+import com.v7878.unsafe.Stack;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.foreign.NativeLibrary;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
@@ -205,32 +206,26 @@ public interface SymbolLookup {
      * @see System#loadLibrary(String)
      */
     static SymbolLookup loaderLookup() {
-        //TODO
-        //Class<?> caller = Reflection.getCallerClass();
-        //// If there's no caller class, fallback to system loader
-        //ClassLoader loader = caller != null ?
-        //        caller.getClassLoader() :
-        //        ClassLoader.getSystemClassLoader();
-        //Arena loaderArena;// builtin loaders never go away
-        //if ((loader == null || loader instanceof BuiltinClassLoader)) {
-        //    loaderArena = Arena.global();
-        //} else {
-        //    _MemorySessionImpl session = _MemorySessionImpl.createHeap(loader);
-        //    loaderArena = session.asArena();
-        //}
-        //return name -> {
-        //    Objects.requireNonNull(name);
-        //    if (_Utils.containsNullChars(name)) return Optional.empty();
-        //    JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
-        //    // note: ClassLoader::findNative supports a null loader
-        //    long addr = javaLangAccess.findNative(loader, name);
-        //    return addr == 0L ?
-        //            Optional.empty() :
-        //            Optional.of(MemorySegment.ofAddress(addr)
-        //                    .reinterpret(loaderArena, null));
-        //};
-
-        throw new UnsupportedOperationException("Not supported yet");
+        Class<?> caller = Stack.getStackClass1();
+        // If there's no caller class, fallback to system loader
+        ClassLoader loader = caller != null ?
+                caller.getClassLoader() :
+                ClassLoader.getSystemClassLoader();
+        Arena loaderArena;// builtin loaders never go away
+        if (loader == null || loader == Object.class.getClassLoader()) {
+            loaderArena = Arena.global();
+        } else {
+            _MemorySessionImpl session = _MemorySessionImpl.createHeap(loader);
+            loaderArena = session.asArena();
+        }
+        return name -> {
+            // note: ClassLoader::findNative supports a null loader
+            long addr = RawNativeLibraries.findNative(loader, name);
+            return addr == 0L ?
+                    Optional.empty() :
+                    Optional.of(MemorySegment.ofAddress(addr)
+                            .reinterpret(loaderArena, null));
+        };
     }
 
     /**
