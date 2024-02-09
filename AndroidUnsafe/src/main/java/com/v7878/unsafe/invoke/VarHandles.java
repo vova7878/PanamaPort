@@ -89,7 +89,7 @@ public final class VarHandles {
         newCoordinates.addAll(pos, filter.type().parameterList());
 
         return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> Transformers.collectArguments(modeHandle, pos, filter));
+                (mode, modeHandle) -> MethodHandlesFixes.collectArguments(modeHandle, pos, filter));
     }
 
     private static class IndirectVarHandle extends AbstractVarHandle {

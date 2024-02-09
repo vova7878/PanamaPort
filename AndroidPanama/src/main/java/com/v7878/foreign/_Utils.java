@@ -46,7 +46,7 @@ import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 
 import androidx.annotation.Keep;
 
-import com.v7878.unsafe.invoke.Transformers;
+import com.v7878.unsafe.invoke.MethodHandlesFixes;
 import com.v7878.unsafe.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
@@ -144,8 +144,8 @@ final class _Utils {
             handle = VarHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
         } else if (layout instanceof AddressLayout addressLayout) {
             handle = VarHandles.filterValue(handle,
-                    Transformers.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
-                    Transformers.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
+                    MethodHandlesFixes.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
+                    MethodHandlesFixes.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
                                     pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
                             MethodType.methodType(MemorySegment.class, baseCarrier)));
         }

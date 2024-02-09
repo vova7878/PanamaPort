@@ -4,7 +4,6 @@ import static com.v7878.dex.DexConstants.ACC_CONSTRUCTOR;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.DexConstants.ACC_STATIC;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.SUPER;
@@ -20,17 +19,10 @@ import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
-import static com.v7878.unsafe.Reflection.getDeclaredConstructor;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
-import static com.v7878.unsafe.Stack.getStackClass1;
-import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.runOnce;
-
-import android.util.ArrayMap;
 
 import androidx.annotation.Keep;
 
@@ -44,29 +36,22 @@ import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.dex.bytecode.CodeBuilder;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
-import com.v7878.unsafe.Utils;
-import com.v7878.unsafe.Utils.SoftReferenceCache;
-import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
 
 public class Transformers {
 
-    private static final Class<?> invoke_transformer = nothrows_run(
+    public static final Class<?> INVOKE_TRANSFORMER = nothrows_run(
             () -> Class.forName("java.lang.invoke.Transformers$Transformer"));
+
     private static final MethodHandle directAsVarargsCollector = nothrows_run(() -> unreflectDirect(
             getDeclaredMethod(MethodHandle.class, "asVarargsCollector", Class.class)));
     private static final MethodHandle directBindTo = nothrows_run(() -> unreflectDirect(
@@ -90,7 +75,7 @@ public class Transformers {
         TypeId transformer_id = TypeId.of(transformer_name);
 
         ClassDef transformer_def = new ClassDef(transformer_id);
-        transformer_def.setSuperClass(TypeId.of(invoke_transformer));
+        transformer_def.setSuperClass(TypeId.of(INVOKE_TRANSFORMER));
         transformer_def.getInterfaces().add(TypeId.of(Cloneable.class));
         transformer_def.setAccessFlags(ACC_PUBLIC | ACC_FINAL);
 
@@ -107,7 +92,7 @@ public class Transformers {
         transformer_def.getClassData().getDirectMethods().add(new EncodedMethod(
                 MethodId.constructor(transformer_id, mt, TypeId.I, TypeId.of(TransformerImpl.class)),
                 ACC_PUBLIC | ACC_CONSTRUCTOR).withCode(0, b -> b
-                .invoke(DIRECT, MethodId.constructor(TypeId.of(invoke_transformer), mt, TypeId.I),
+                .invoke(DIRECT, MethodId.constructor(TypeId.of(INVOKE_TRANSFORMER), mt, TypeId.I),
                         b.this_(), b.p(0), b.p(1))
                 .iop(PUT_OBJECT, b.p(2), b.this_(), impl_field)
                 .return_void()
@@ -522,7 +507,7 @@ public class Transformers {
 
     public static void invokeExactWithFrameNoChecks(
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        if (invoke_transformer.isInstance(target)) {
+        if (INVOKE_TRANSFORMER.isInstance(target)) {
             // FIXME: android 8-12L convert nominalType to type (PLATFORM-BUG!)
             invoker.transform(target, stackFrame.esf);
         } else {
@@ -542,218 +527,5 @@ public class Transformers {
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
         MethodHandle adaptedTarget = target.asType(stackFrame.type());
         invokeExactWithFrameNoChecks(adaptedTarget, stackFrame);
-    }
-
-    private static class CollectArguments implements TransformerI {
-        private final MethodHandle target;
-        private final MethodHandle collector;
-        private final int pos;
-        private final int collector_count;
-
-        CollectArguments(MethodHandle target, MethodHandle collector, int pos) {
-            this.target = target;
-            this.collector = collector;
-            this.pos = pos;
-            this.collector_count = collector.type().parameterCount();
-        }
-
-        @Override
-        public void transform(EmulatedStackFrame stack) throws Throwable {
-            StackFrameAccessor this_accessor = stack.createAccessor();
-
-            // First invoke the collector.
-            EmulatedStackFrame collectorFrame = EmulatedStackFrame.create(collector.type());
-            StackFrameAccessor collector_accessor = collectorFrame.createAccessor();
-            EmulatedStackFrame.copyArguments(this_accessor, pos,
-                    collector_accessor, 0, collector_count);
-            invokeExactWithFrameNoChecks(collector, collectorFrame);
-
-            // Start constructing the target frame.
-            EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
-            StackFrameAccessor target_accessor = targetFrame.createAccessor();
-            EmulatedStackFrame.copyArguments(this_accessor, 0,
-                    target_accessor, 0, pos);
-
-            // If return type of collector is not void, we have a return value to copy.
-            target_accessor.moveTo(pos);
-            if (collector.type().returnType() != void.class) {
-                EmulatedStackFrame.copyNext(collector_accessor.moveToReturn(),
-                        target_accessor, collector.type().returnType());
-            }
-
-            // Finish constructing the target frame.
-            int this_pos = pos + collector_count;
-            EmulatedStackFrame.copyArguments(this_accessor, this_pos,
-                    target_accessor, target_accessor.argumentIdx,
-                    stack.type().parameterCount() - this_pos);
-
-            // Invoke the target.
-            invokeExactWithFrameNoChecks(target, targetFrame);
-            targetFrame.copyReturnValueTo(stack);
-        }
-    }
-
-    // fix for PLATFORM-BUG!
-    public static MethodHandle collectArguments(MethodHandle target, int pos, MethodHandle filter) {
-        MethodType newType = collectArgumentsChecks(target, pos, filter);
-        return makeTransformer(newType, new CollectArguments(target, filter, pos));
-    }
-
-    private static MethodType collectArgumentsChecks(MethodHandle target, int pos, MethodHandle filter) {
-        MethodType targetType = target.type();
-        MethodType filterType = filter.type();
-        Class<?> rtype = filterType.returnType();
-        List<Class<?>> filterArgs = filterType.parameterList();
-        if (rtype == void.class) {
-            return targetType.insertParameterTypes(pos, filterArgs);
-        }
-        if (rtype != targetType.parameterType(pos)) {
-            throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
-        }
-        return targetType.dropParameterTypes(pos, pos + 1).insertParameterTypes(pos, filterArgs);
-    }
-
-    // fix for PLATFORM-BUG!
-    public static MethodHandle identity(Class<?> type) {
-        Objects.requireNonNull(type);
-        return makeTransformer(MethodType.methodType(type, type), (TransformerI) stack ->
-                EmulatedStackFrame.copyNext(stack.createAccessor().moveTo(0),
-                        stack.createAccessor().moveToReturn(), type));
-    }
-
-    private static void addClass(Map<String, Class<?>> map, Class<?> clazz) {
-        Class<?> component = clazz.getComponentType();
-        while (component != null) {
-            clazz = component;
-            component = clazz.getComponentType();
-        }
-
-        if (clazz.getClassLoader() != null && clazz.getClassLoader() != Object.class.getClassLoader()) {
-            map.put(clazz.getName(), clazz);
-        }
-    }
-
-    private static ClassLoader getInvokerClassLoader(MethodType type) {
-        ArrayMap<String, Class<?>> map = new ArrayMap<>(type.parameterCount() + 1);
-        for (int i = 0; i < type.parameterCount(); i++) {
-            addClass(map, type.parameterType(i));
-        }
-        addClass(map, type.returnType());
-
-        if (map.size() == 0) {
-            return Utils.newEmptyClassLoader();
-        }
-
-        // new every time, needed for GC
-        return new ClassLoader(getStackClass1().getClassLoader()) {
-            @Override
-            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                Class<?> out = map.get(name);
-                if (out != null) {
-                    return out;
-                }
-                return super.loadClass(name, resolve);
-            }
-
-            @Override
-            public Class<?> loadClass(String name) throws ClassNotFoundException {
-                return loadClass(name, false);
-            }
-        };
-    }
-
-    private static String getInvokerName(ProtoId proto) {
-        return Transformers.class.getName() + "$$$Invoker_" + proto.getShorty();
-    }
-
-    private static MethodHandle newInvoker(MethodType type, boolean exact) {
-        ProtoId proto = ProtoId.of(type);
-        MethodType itype = type.insertParameterTypes(0, MethodHandle.class);
-
-        String invoker_name = getInvokerName(proto);
-        TypeId invoker_id = TypeId.of(invoker_name);
-        ClassDef invoker_def = new ClassDef(invoker_id);
-        invoker_def.setSuperClass(TypeId.of(Object.class));
-
-        MethodId invoke = new MethodId(TypeId.of(MethodHandle.class),
-                new ProtoId(TypeId.of(Object.class), TypeId.of(Object[].class)),
-                exact ? "invokeExact" : "invoke");
-
-        MethodId iid = new MethodId(invoker_id, ProtoId.of(itype), "invoke");
-        invoker_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                iid, ACC_STATIC).withCode(2 /* locals for wide result */, b -> {
-                    b.invoke_polymorphic_range(invoke, proto,
-                            proto.getInputRegistersCount() + 1, b.p(0));
-                    switch (proto.getReturnType().getShorty()) {
-                        case 'V' -> b.return_void();
-                        case 'L' -> b.move_result_object(b.l(0))
-                                .return_object(b.l(0));
-                        case 'J', 'D' -> b.move_result_wide(b.l(0))
-                                .return_wide(b.l(0));
-                        default -> b.move_result(b.l(0))
-                                .return_(b.l(0));
-                    }
-                }
-        ));
-
-        DexFile dex = openDexFile(new Dex(invoker_def).compile());
-        Class<?> invoker = loadClass(dex, invoker_name, getInvokerClassLoader(type));
-
-        return unreflect(getDeclaredMethod(invoker, "invoke", itype.parameterArray()));
-    }
-
-    private static final SoftReferenceCache<MethodType, MethodHandle>
-            invokers_cache = new SoftReferenceCache<>();
-
-    public static MethodHandle invoker(MethodType type) {
-        Objects.requireNonNull(type);
-        return invokers_cache.get(type, t -> newInvoker(t, false));
-    }
-
-    private static final SoftReferenceCache<MethodType, MethodHandle>
-            exact_invokers_cache = new SoftReferenceCache<>();
-
-    public static MethodHandle exactInvoker(MethodType type) {
-        Objects.requireNonNull(type);
-        return exact_invokers_cache.get(type, t -> newInvoker(t, true));
-    }
-
-    private static class JustInvoke implements TransformerI {
-        private final MethodHandle target;
-
-        JustInvoke(MethodHandle target) {
-            this.target = target;
-        }
-
-        @Override
-        public void transform(EmulatedStackFrame stack) throws Throwable {
-            // Invoke the target with checks
-            invokeExactWithFrame(target, stack);
-        }
-    }
-
-    public static MethodHandle protectHandle(MethodHandle target) {
-        return makeTransformer(target.type(), new JustInvoke(target));
-    }
-
-    private static void explicitCastArgumentsChecks(MethodHandle target, MethodType newType) {
-        if (target.type().parameterCount() != newType.parameterCount()) {
-            throw new WrongMethodTypeException("cannot explicitly cast " + target +
-                    " to " + newType);
-        }
-    }
-
-    private static final Supplier<MethodHandle> new_eca = runOnce(() -> nothrows_run(() -> {
-        Class<?> eca = Class.forName("java.lang.invoke.Transformers$ExplicitCastArguments");
-        return unreflect(getDeclaredConstructor(eca, MethodHandle.class, MethodType.class));
-    }));
-
-    // fix for PLATFORM-BUG! (Again... Android's MethodHandle API is cursed)
-    public static MethodHandle explicitCastArguments(MethodHandle target, MethodType newType) {
-        if (invoke_transformer.isInstance(target)) {
-            explicitCastArgumentsChecks(target, newType);
-            return (MethodHandle) nothrows_run(() -> new_eca.get().invoke(target, newType));
-        }
-        return MethodHandles.explicitCastArguments(target, newType);
     }
 }
