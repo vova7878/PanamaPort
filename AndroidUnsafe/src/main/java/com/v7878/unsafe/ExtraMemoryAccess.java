@@ -457,6 +457,15 @@ public class ExtraMemoryAccess {
         }
     }
 
+    public static void setMemory(Object base, long offset, long bytes, byte value) {
+        if (bytes == 0) {
+            return;
+        }
+
+        //TODO: fast variant
+        AndroidUnsafe.setMemory(base, offset, bytes, value);
+    }
+
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
 
     public static final int LOG2_ARRAY_BOOLEAN_INDEX_SCALE = exactLog2(ARRAY_BOOLEAN_INDEX_SCALE);
