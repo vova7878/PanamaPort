@@ -27,6 +27,7 @@ import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.runOnce;
 import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.foreign.LibArt.ART;
 
 import androidx.annotation.Keep;
 
@@ -39,9 +40,7 @@ import com.v7878.dex.TypeId;
 import com.v7878.foreign.AddressLayout;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
-import com.v7878.foreign.Linker;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.foreign.SymbolLookup;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.access.JavaForeignAccess;
 
@@ -519,19 +518,17 @@ public class JNIUtils {
             Method dgr = searchMethod(methods, "DeleteGlobalRef" + suffix, word, word);
             setExecutableData(dgr, getJNINativeInterfaceFunction("DeleteGlobalRef").address());
 
-            SymbolLookup art = Linker.nativeLinker().defaultLookup();
-
-            MemorySegment nlr = art.find("_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE").get();
+            MemorySegment nlr = ART.find("_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE").get();
             setExecutableData(searchMethod(methods, "RawNewLocalRef" + suffix, word, word), nlr.address());
 
-            MemorySegment dlr = art.find("_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject").get();
+            MemorySegment dlr = ART.find("_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject").get();
             setExecutableData(searchMethod(methods, "DeleteLocalRef" + suffix, word, word), dlr.address());
 
             // art.find("_ZN3art9JNIEnvExt9PushFrameEi").get();
             MemorySegment push = JNIUtils.getJNINativeInterfaceFunction("PushLocalFrame");
             setExecutableData(searchMethod(methods, "PushLocalFrame" + suffix, word, int.class), push.address());
 
-            MemorySegment pop = art.find("_ZN3art9JNIEnvExt8PopFrameEv").get();
+            MemorySegment pop = ART.find("_ZN3art9JNIEnvExt8PopFrameEv").get();
             setExecutableData(searchMethod(methods, "PopLocalFrame" + suffix, word), pop.address());
         }
 
@@ -729,8 +726,7 @@ public class JNIUtils {
     }
 
     private static final Supplier<MemorySegment> runtimePtr = runOnce(() ->
-            Linker.nativeLinker().defaultLookup()
-                    .find("_ZN3art7Runtime9instance_E")
+            ART.find("_ZN3art7Runtime9instance_E")
                     .get().reinterpret(ADDRESS_SIZE).get(ADDRESS, 0));
 
     public static MemorySegment getRuntimePtr() {
