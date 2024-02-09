@@ -26,6 +26,7 @@ public class RawNativeLibraries {
     public static long dlopen(String path, int flags) {
         Objects.requireNonNull(path);
         if (Utils.containsNullChars(path)) return 0;
+
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_path = arena.allocateFrom(path);
             return LibDL.dlopen(c_path.address(), flags);
@@ -36,13 +37,17 @@ public class RawNativeLibraries {
         return dlopen(path, RTLD_NOW);
     }
 
-    public static long dlsym(long handle, String name) {
-        Objects.requireNonNull(name);
-        if (Utils.containsNullChars(name)) return 0;
+    private static long dlsym_nochecks(long handle, String name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_name = arena.allocateFrom(name);
             return LibDL.dlsym(handle, c_name.address());
         }
+    }
+
+    public static long dlsym(long handle, String name) {
+        Objects.requireNonNull(name);
+        if (Utils.containsNullChars(name)) return 0;
+        return dlsym_nochecks(handle, name);
     }
 
     public static void dlclose(long handle) {
@@ -57,8 +62,20 @@ public class RawNativeLibraries {
     }
 
     public static long findNative(ClassLoader loader, String name) {
-        //TODO
-        throw new UnsupportedOperationException("Not implemented yet");
+        Objects.requireNonNull(loader);
+        Objects.requireNonNull(name);
+        if (Utils.containsNullChars(name)) return 0;
+
+        long[] out = new long[1];
+        JniLibraries.forEachHandlesInClassLoader(loader, library -> {
+            long res = dlsym_nochecks(library.address(), name);
+            if (res != 0) {
+                out[0] = res;
+                return true;
+            }
+            return false;
+        });
+        return out[0];
     }
 
     public static NativeLibrary load(Path path) {
