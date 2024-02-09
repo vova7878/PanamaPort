@@ -6,7 +6,6 @@ import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.structLayout;
 import static com.v7878.foreign.MemorySegment.NULL;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
-import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
@@ -39,7 +38,6 @@ import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.foreign.AddressLayout;
 import com.v7878.foreign.Arena;
-import com.v7878.foreign.FunctionDescriptor;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.Linker;
 import com.v7878.foreign.MemorySegment;
@@ -316,27 +314,27 @@ public class JNIUtils {
     private static final long env_offset = nothrows_run(() -> {
         long tmp;
         switch (CORRECT_SDK_INT) {
-            case 34 -> { // android 14
+            case 34 /*android 14*/ -> {
                 tmp = 21 * 4; // tls32_
                 tmp += 4; // padding
                 tmp += 8 * 8; // tls64_
                 tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             }
-            case 33 -> { // android 13
+            case 33 /*android 13*/ -> {
                 tmp = 20 * 4; // tls32_
                 tmp += 8 * 8; // tls64_
                 tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
-            } // android 12L
-            case 32, 31 -> { // android 12
+            }
+            case 32 /*android 12L*/, 31 /*android 12*/ -> {
                 tmp = 4; // StateAndFlags
                 tmp += 21 * 4; // tls32_
                 tmp += 8 * 8; // tls64_
                 tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             }
-            case 30 -> { // android 11
+            case 30 /*android 11*/ -> {
                 tmp = 4; // StateAndFlags
                 tmp += 22 * 4; // tls32_
                 tmp += 4; // padding
@@ -344,22 +342,22 @@ public class JNIUtils {
                 tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             }
-            case 29 -> { // android 10
+            case 29 /*android 10*/ -> {
                 tmp = 4; // StateAndFlags
                 tmp += 20 * 4; // tls32_
                 tmp += 4; // padding
                 tmp += 8 * 8; // tls64_
                 tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
-            } // android 9
-            case 28, 27 -> { // android 8.1
+            }
+            case 28 /*android 9*/, 27 /*android 8.1*/ -> {
                 tmp = 4; // StateAndFlags
                 tmp += 17 * 4; // tls32_
                 tmp += 8 * 8; // tls64_
                 tmp += 7L * ADDRESS_SIZE; // tlsPtr_
                 return tmp;
             }
-            case 26 -> { // android 8
+            case 26 /*android 8*/ -> {
                 tmp = 4; // StateAndFlags
                 tmp += 15 * 4; // tls32_
                 tmp += 8 * 8; // tls64_
@@ -401,18 +399,34 @@ public class JNIUtils {
                 JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
     }
 
-    private static final Supplier<MemorySegment> javaVMPtr = runOnce(() -> {
-        MemorySegment env = getCurrentEnvPtr();
-        MethodHandle get_vm = Linker.nativeLinker().downcallHandle(
-                getJNINativeInterfaceFunction("GetJavaVM"),
-                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment jvm = arena.allocate(ADDRESS);
-            int status = (int) nothrows_run(() -> get_vm.invoke(env, jvm));
-            if (status != 0) {
-                throw new IllegalStateException("can`t get JavaVM: " + status);
+    private static final Supplier<MemorySegment> javaVMPtr = runOnce(new Supplier<MemorySegment>() {
+        @Keep
+        @CriticalNative
+        public static native int GetJavaVM32(int env, int jvm);
+
+        @Keep
+        @CriticalNative
+        public static native int GetJavaVM64(long env, long jvm);
+
+        @Override
+        public MemorySegment get() {
+            Class<?> word = IS64BIT ? long.class : int.class;
+            String suffix = IS64BIT ? "64" : "32";
+            String name = "GetJavaVM";
+
+            MemorySegment env = getCurrentEnvPtr();
+            Method get_vm = getDeclaredMethod(this.getClass(),
+                    name + suffix, word, word);
+            setExecutableData(get_vm, getJNINativeInterfaceFunction(name).address());
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment jvm = arena.allocate(ADDRESS);
+                int status = IS64BIT ? GetJavaVM64(env.address(), jvm.address()) :
+                        GetJavaVM32((int) env.address(), (int) jvm.address());
+                if (status != 0) {
+                    throw new IllegalStateException("can`t get JavaVM: " + status);
+                }
+                return jvm.get(ADDRESS.withTargetLayout(ADDRESS), 0);
             }
-            return jvm.get(ADDRESS.withTargetLayout(ADDRESS), 0);
         }
     });
 
