@@ -75,9 +75,9 @@ final class _ScopedMemoryAccess {
     }
 
     public static void setMemory(_MemorySessionImpl session, Object base, long offset, long bytes, byte value) {
-        //TODO
-        //ExtraMemoryAccess.setMemory(base, offset, bytes, value);
-        throw new UnsupportedOperationException("Not supported yet");
+        try (var ignored = lock(session)) {
+            ExtraMemoryAccess.setMemory(base, offset, bytes, value);
+        }
     }
 
     public static int vectorizedMismatch(_MemorySessionImpl aSession, _MemorySessionImpl bSession,
