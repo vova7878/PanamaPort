@@ -370,11 +370,15 @@ public class JNIUtils {
     private static final long nativePeerOffset = nothrows_run(
             () -> fieldOffset(getDeclaredField(Thread.class, "nativePeer")));
 
-    public static MemorySegment getNativePeer(Thread thread) {
+    public static long getRawNativePeer(Thread thread) {
         Objects.requireNonNull(thread);
         long tmp = getLongO(thread, nativePeerOffset);
         assert_(tmp != 0, () -> new IllegalStateException("nativePeer == nullptr"));
-        return MemorySegment.ofAddress(tmp);
+        return tmp;
+    }
+
+    public static MemorySegment getNativePeer(Thread thread) {
+        return MemorySegment.ofAddress(getRawNativePeer(thread));
     }
 
     public static MemorySegment getEnvPtr(Thread thread) {
