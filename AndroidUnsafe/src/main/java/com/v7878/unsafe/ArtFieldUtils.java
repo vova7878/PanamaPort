@@ -9,6 +9,7 @@ import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.Reflection.getArtField;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
@@ -19,7 +20,7 @@ import java.lang.reflect.Modifier;
 public class ArtFieldUtils {
 
     private static final GroupLayout art_field_layout = paddedStructLayout(
-            JAVA_INT /*TODO: JAVA_OBJECT*/.withName("declaring_class_"),
+            JAVA_OBJECT.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),
             JAVA_INT.withName("field_dex_idx_"),
             JAVA_INT.withName("offset_")

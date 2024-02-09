@@ -15,9 +15,11 @@ import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.runOnce;
+import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.unsafe.foreign.ExtraLayouts.std;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
@@ -30,30 +32,15 @@ import java.util.function.Supplier;
 import dalvik.system.DexFile;
 
 public class DexFileUtils {
-    private static class std {
-
-        static final GroupLayout string = paddedStructLayout(
-                ADDRESS /*TODO: WORD*/.withName("mLength"),
-                ADDRESS /*TODO: WORD*/.withName("mCapacity"),
-                ADDRESS.withName("mData")
-        );
-        static final GroupLayout shared_ptr = paddedStructLayout(
-                ADDRESS.withName("__ptr_"),
-                ADDRESS.withName("__cntrl_")
-        );
-        static final GroupLayout unique_ptr = paddedStructLayout(
-                ADDRESS.withName("__ptr_")
-        );
-    }
 
     private static final GroupLayout array_ref_layout = paddedStructLayout(
             ADDRESS.withName("array_"),
-            ADDRESS /*TODO: WORD*/.withName("size_")
+            WORD.withName("size_")
     );
     private static final GroupLayout dex_file_14_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
-            ADDRESS /*TODO: WORD*/.withName("size_"),
+            WORD.withName("size_"),
             array_ref_layout.withName("data_"),
             std.string.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
@@ -65,9 +52,9 @@ public class DexFileUtils {
             ADDRESS.withName("proto_ids_"),
             ADDRESS.withName("class_defs_"),
             ADDRESS.withName("method_handles_"),
-            ADDRESS /*TODO: WORD*/.withName("num_method_handles_"),
+            WORD.withName("num_method_handles_"),
             ADDRESS.withName("call_site_ids_"),
-            ADDRESS /*TODO: WORD*/.withName("num_call_site_ids_"),
+            WORD.withName("num_call_site_ids_"),
             ADDRESS.withName("hiddenapi_class_data_"),
             ADDRESS.withName("oat_dex_file_"),
             std.shared_ptr.withName("container_"),
@@ -77,9 +64,9 @@ public class DexFileUtils {
     private static final GroupLayout dex_file_13_11_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
-            ADDRESS /*TODO: WORD*/.withName("size_"),
+            WORD.withName("size_"),
             ADDRESS.withName("data_begin_"),
-            ADDRESS /*TODO: WORD*/.withName("data_size_"),
+            WORD.withName("data_size_"),
             std.string.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
             ADDRESS.withName("header_"),
@@ -90,9 +77,9 @@ public class DexFileUtils {
             ADDRESS.withName("proto_ids_"),
             ADDRESS.withName("class_defs_"),
             ADDRESS.withName("method_handles_"),
-            ADDRESS /*TODO: WORD*/.withName("num_method_handles_"),
+            WORD.withName("num_method_handles_"),
             ADDRESS.withName("call_site_ids_"),
-            ADDRESS /*TODO: WORD*/.withName("num_call_site_ids_"),
+            WORD.withName("num_call_site_ids_"),
             ADDRESS.withName("hiddenapi_class_data_"),
             ADDRESS.withName("oat_dex_file_"),
             std.unique_ptr.withName("container_"),
@@ -102,9 +89,9 @@ public class DexFileUtils {
     private static final GroupLayout dex_file_10_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
-            ADDRESS /*TODO: WORD*/.withName("size_"),
+            WORD.withName("size_"),
             ADDRESS.withName("data_begin_"),
-            ADDRESS /*TODO: WORD*/.withName("data_size_"),
+            WORD.withName("data_size_"),
             std.string.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
             ADDRESS.withName("header_"),
@@ -115,9 +102,9 @@ public class DexFileUtils {
             ADDRESS.withName("proto_ids_"),
             ADDRESS.withName("class_defs_"),
             ADDRESS.withName("method_handles_"),
-            ADDRESS /*TODO: WORD*/.withName("num_method_handles_"),
+            WORD.withName("num_method_handles_"),
             ADDRESS.withName("call_site_ids_"),
-            ADDRESS /*TODO: WORD*/.withName("num_call_site_ids_"),
+            WORD.withName("num_call_site_ids_"),
             ADDRESS.withName("hiddenapi_class_data_"),
             ADDRESS.withName("oat_dex_file_"),
             std.unique_ptr.withName("container_"),
@@ -127,9 +114,9 @@ public class DexFileUtils {
     private static final GroupLayout dex_file_9_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
-            ADDRESS /*TODO: WORD*/.withName("size_"),
+            WORD.withName("size_"),
             ADDRESS.withName("data_begin_"),
-            ADDRESS /*TODO: WORD*/.withName("data_size_"),
+            WORD.withName("data_size_"),
             std.string.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
             ADDRESS.withName("header_"),
@@ -140,9 +127,9 @@ public class DexFileUtils {
             ADDRESS.withName("proto_ids_"),
             ADDRESS.withName("class_defs_"),
             ADDRESS.withName("method_handles_"),
-            ADDRESS /*TODO: WORD*/.withName("num_method_handles_"),
+            WORD.withName("num_method_handles_"),
             ADDRESS.withName("call_site_ids_"),
-            ADDRESS /*TODO: WORD*/.withName("num_call_site_ids_"),
+            WORD.withName("num_call_site_ids_"),
             ADDRESS.withName("oat_dex_file_"),
             std.unique_ptr.withName("container_"),
             JAVA_BOOLEAN.withName("is_compact_dex_"),
@@ -151,7 +138,7 @@ public class DexFileUtils {
     private static final GroupLayout dex_file_8xx_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
-            ADDRESS /*TODO: WORD*/.withName("size_"),
+            WORD.withName("size_"),
             std.string.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
             std.unique_ptr.withName("mem_map_"),
@@ -163,9 +150,9 @@ public class DexFileUtils {
             ADDRESS.withName("proto_ids_"),
             ADDRESS.withName("class_defs_"),
             ADDRESS.withName("method_handles_"),
-            ADDRESS /*TODO: WORD*/.withName("num_method_handles_"),
+            WORD.withName("num_method_handles_"),
             ADDRESS.withName("call_site_ids_"),
-            ADDRESS /*TODO: WORD*/.withName("num_call_site_ids_"),
+            WORD.withName("num_call_site_ids_"),
             ADDRESS.withName("oat_dex_file_")
     );
 

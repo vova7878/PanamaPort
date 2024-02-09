@@ -15,6 +15,7 @@ import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordN;
 import static com.v7878.unsafe.Reflection.getArtMethod;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
@@ -24,7 +25,7 @@ import java.lang.reflect.Modifier;
 
 public class ArtMethodUtils {
     private static final GroupLayout art_method_14_12_layout = paddedStructLayout(
-            JAVA_INT /*TODO: JAVA_OBJECT*/.withName("declaring_class_"),
+            JAVA_OBJECT.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),
             JAVA_INT.withName("dex_method_index_"),
             JAVA_SHORT.withName("method_index_"),
@@ -39,7 +40,7 @@ public class ArtMethodUtils {
     );
 
     private static final GroupLayout art_method_11_10_layout = paddedStructLayout(
-            JAVA_INT /*TODO: JAVA_OBJECT*/.withName("declaring_class_"),
+            JAVA_OBJECT.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),
             JAVA_INT.withName("dex_code_item_offset_"),
             JAVA_INT.withName("dex_method_index_"),
@@ -55,7 +56,7 @@ public class ArtMethodUtils {
     );
 
     private static final GroupLayout art_method_9_layout = paddedStructLayout(
-            JAVA_INT /*TODO: JAVA_OBJECT*/.withName("declaring_class_"),
+            JAVA_OBJECT.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),
             JAVA_INT.withName("dex_code_item_offset_"),
             JAVA_INT.withName("dex_method_index_"),
@@ -68,7 +69,7 @@ public class ArtMethodUtils {
     );
 
     private static final GroupLayout art_method_8xx_layout = paddedStructLayout(
-            JAVA_INT /*TODO: JAVA_OBJECT*/.withName("declaring_class_"),
+            JAVA_OBJECT.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),
             JAVA_INT.withName("dex_code_item_offset_"),
             JAVA_INT.withName("dex_method_index_"),
