@@ -51,126 +51,103 @@ public abstract class AbstractVarHandle extends VarHandle {
     // Compare and set accessors
 
     public final boolean compareAndSet(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return (boolean) invoke(AccessMode.COMPARE_AND_SET, args);
     }
 
     public final Object compareAndExchange(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.COMPARE_AND_EXCHANGE, args);
     }
 
     public final Object compareAndExchangeAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE, args);
     }
 
     public final Object compareAndExchangeRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.COMPARE_AND_EXCHANGE_RELEASE, args);
     }
 
     // Weak (spurious failures allowed)
 
     public final boolean weakCompareAndSetPlain(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return (boolean) invoke(AccessMode.WEAK_COMPARE_AND_SET_PLAIN, args);
     }
 
     public final boolean weakCompareAndSet(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return (boolean) invoke(AccessMode.WEAK_COMPARE_AND_SET, args);
     }
 
     public final boolean weakCompareAndSetAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return (boolean) invoke(AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE, args);
     }
 
     public final boolean weakCompareAndSetRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return (boolean) invoke(AccessMode.WEAK_COMPARE_AND_SET_RELEASE, args);
     }
 
     public final Object getAndSet(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_SET, args);
     }
 
     public final Object getAndSetAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_SET_ACQUIRE, args);
     }
 
     public final Object getAndSetRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_SET_RELEASE, args);
     }
 
     // Primitive adders
     // Throw UnsupportedOperationException for refs
 
     public final Object getAndAdd(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_ADD, args);
     }
 
     public final Object getAndAddAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_ADD_ACQUIRE, args);
     }
 
     public final Object getAndAddRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_ADD_RELEASE, args);
     }
 
     // Bitwise operations
     // Throw UnsupportedOperationException for refs
 
     public final Object getAndBitwiseOr(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_BITWISE_OR, args);
     }
 
     public final Object getAndBitwiseOrAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_BITWISE_OR_ACQUIRE, args);
     }
 
     public final Object getAndBitwiseOrRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_BITWISE_OR_RELEASE, args);
     }
 
     public final Object getAndBitwiseAnd(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_BITWISE_AND, args);
     }
 
     public final Object getAndBitwiseAndAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_BITWISE_AND_ACQUIRE, args);
     }
 
     public final Object getAndBitwiseAndRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_BITWISE_AND_RELEASE, args);
     }
 
     public final Object getAndBitwiseXor(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_BITWISE_XOR, args);
     }
 
     public final Object getAndBitwiseXorAcquire(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_BITWISE_XOR_ACQUIRE, args);
     }
 
     public final Object getAndBitwiseXorRelease(Object... args) {
-        //TODO
-        throw new UnsupportedOperationException("Not supported yet");
+        return invoke(AccessMode.GET_AND_BITWISE_XOR_RELEASE, args);
     }
 
     //
