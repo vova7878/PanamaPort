@@ -1,8 +1,11 @@
 package com.v7878.unsafe.invoke;
 
 import static com.v7878.dex.DexConstants.ACC_STATIC;
+import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
+import static com.v7878.unsafe.Reflection.fieldOffset;
+import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Stack.getStackClass1;
@@ -33,13 +36,17 @@ import dalvik.system.DexFile;
 
 public class MethodHandlesFixes {
 
+    private static final long RTYPE_OFFSET = fieldOffset(
+            getDeclaredField(MethodType.class, "rtype"));
+    private static final long PTYPES_OFFSET = fieldOffset(
+            getDeclaredField(MethodType.class, "ptypes"));
+
     private static Class<?> rtype(MethodType type) {
-        return type.returnType();
+        return (Class<?>) getObject(Objects.requireNonNull(type), RTYPE_OFFSET);
     }
 
     private static Class<?>[] ptypes(MethodType type) {
-        //TODO: faster way
-        return type.parameterArray();
+        return (Class<?>[]) getObject(Objects.requireNonNull(type), PTYPES_OFFSET);
     }
 
     private static class CollectArguments implements TransformerI {
@@ -295,7 +302,7 @@ public class MethodHandlesFixes {
 
         private static byte readPrimitiveAsByte(StackFrameAccessor reader, final Class<?> from) {
             return switch (TypeId.of(from).getShorty()) {
-                case 'B' -> (byte) reader.nextByte();
+                case 'B' -> reader.nextByte();
                 case 'C' -> (byte) reader.nextChar();
                 case 'S' -> (byte) reader.nextShort();
                 case 'I' -> (byte) reader.nextInt();
@@ -310,7 +317,7 @@ public class MethodHandlesFixes {
         private static char readPrimitiveAsChar(StackFrameAccessor reader, Class<?> from) {
             return switch (TypeId.of(from).getShorty()) {
                 case 'B' -> (char) reader.nextByte();
-                case 'C' -> (char) reader.nextChar();
+                case 'C' -> reader.nextChar();
                 case 'S' -> (char) reader.nextShort();
                 case 'I' -> (char) reader.nextInt();
                 case 'J' -> (char) reader.nextLong();
@@ -325,7 +332,7 @@ public class MethodHandlesFixes {
             return switch (TypeId.of(from).getShorty()) {
                 case 'B' -> (short) reader.nextByte();
                 case 'C' -> (short) reader.nextChar();
-                case 'S' -> (short) reader.nextShort();
+                case 'S' -> reader.nextShort();
                 case 'I' -> (short) reader.nextInt();
                 case 'J' -> (short) reader.nextLong();
                 case 'F' -> (short) reader.nextFloat();
@@ -340,7 +347,7 @@ public class MethodHandlesFixes {
                 case 'B' -> (int) reader.nextByte();
                 case 'C' -> (int) reader.nextChar();
                 case 'S' -> (int) reader.nextShort();
-                case 'I' -> (int) reader.nextInt();
+                case 'I' -> reader.nextInt();
                 case 'J' -> (int) reader.nextLong();
                 case 'F' -> (int) reader.nextFloat();
                 case 'D' -> (int) reader.nextDouble();
@@ -355,7 +362,7 @@ public class MethodHandlesFixes {
                 case 'C' -> (long) reader.nextChar();
                 case 'S' -> (long) reader.nextShort();
                 case 'I' -> (long) reader.nextInt();
-                case 'J' -> (long) reader.nextLong();
+                case 'J' -> reader.nextLong();
                 case 'F' -> (long) reader.nextFloat();
                 case 'D' -> (long) reader.nextDouble();
                 case 'Z' -> reader.nextBoolean() ? 1L : 0L;
@@ -370,7 +377,7 @@ public class MethodHandlesFixes {
                 case 'S' -> (float) reader.nextShort();
                 case 'I' -> (float) reader.nextInt();
                 case 'J' -> (float) reader.nextLong();
-                case 'F' -> (float) reader.nextFloat();
+                case 'F' -> reader.nextFloat();
                 case 'D' -> (float) reader.nextDouble();
                 case 'Z' -> reader.nextBoolean() ? 1.0f : 0.0f;
                 default -> throw unexpectedType(from);
@@ -385,7 +392,7 @@ public class MethodHandlesFixes {
                 case 'I' -> (double) reader.nextInt();
                 case 'J' -> (double) reader.nextLong();
                 case 'F' -> (double) reader.nextFloat();
-                case 'D' -> (double) reader.nextDouble();
+                case 'D' -> reader.nextDouble();
                 case 'Z' -> reader.nextBoolean() ? 1.0 : 0.0;
                 default -> throw unexpectedType(from);
             };
@@ -413,10 +420,10 @@ public class MethodHandlesFixes {
                 case 'B' -> writer.putNextByte((byte) 0);
                 case 'C' -> writer.putNextChar((char) 0);
                 case 'S' -> writer.putNextShort((short) 0);
-                case 'I' -> writer.putNextInt((int) 0);
-                case 'J' -> writer.putNextLong((long) 0);
+                case 'I' -> writer.putNextInt(0);
+                case 'J' -> writer.putNextLong(0);
                 case 'F' -> writer.putNextFloat((float) 0);
-                case 'D' -> writer.putNextDouble((double) 0);
+                case 'D' -> writer.putNextDouble(0);
                 default -> throw unexpectedType(to);
             }
         }
@@ -467,12 +474,12 @@ public class MethodHandlesFixes {
                     switch (to_char) {
                         case 'B' -> writer.putNextByte(b);
                         case 'Z' -> writer.putNextBoolean(toBoolean(b));
-                        case 'S' -> writer.putNextShort((short) b);
+                        case 'S' -> writer.putNextShort(b);
                         case 'C' -> writer.putNextChar((char) b);
-                        case 'I' -> writer.putNextInt((int) b);
-                        case 'J' -> writer.putNextLong((long) b);
-                        case 'F' -> writer.putNextFloat((float) b);
-                        case 'D' -> writer.putNextDouble((double) b);
+                        case 'I' -> writer.putNextInt(b);
+                        case 'J' -> writer.putNextLong(b);
+                        case 'F' -> writer.putNextFloat(b);
+                        case 'D' -> writer.putNextDouble(b);
                         default -> throw badCast(from, to);
                     }
                 }
@@ -483,10 +490,10 @@ public class MethodHandlesFixes {
                         case 'B' -> writer.putNextByte((byte) s);
                         case 'S' -> writer.putNextShort(s);
                         case 'C' -> writer.putNextChar((char) s);
-                        case 'I' -> writer.putNextInt((int) s);
-                        case 'J' -> writer.putNextLong((long) s);
-                        case 'F' -> writer.putNextFloat((float) s);
-                        case 'D' -> writer.putNextDouble((double) s);
+                        case 'I' -> writer.putNextInt(s);
+                        case 'J' -> writer.putNextLong(s);
+                        case 'F' -> writer.putNextFloat(s);
+                        case 'D' -> writer.putNextDouble(s);
                         default -> throw badCast(from, to);
                     }
                 }
@@ -497,10 +504,10 @@ public class MethodHandlesFixes {
                         case 'B' -> writer.putNextByte((byte) c);
                         case 'S' -> writer.putNextShort((short) c);
                         case 'C' -> writer.putNextChar(c);
-                        case 'I' -> writer.putNextInt((int) c);
-                        case 'J' -> writer.putNextLong((long) c);
-                        case 'F' -> writer.putNextFloat((float) c);
-                        case 'D' -> writer.putNextDouble((double) c);
+                        case 'I' -> writer.putNextInt(c);
+                        case 'J' -> writer.putNextLong(c);
+                        case 'F' -> writer.putNextFloat(c);
+                        case 'D' -> writer.putNextDouble(c);
                         default -> throw badCast(from, to);
                     }
                 }
@@ -512,9 +519,9 @@ public class MethodHandlesFixes {
                         case 'S' -> writer.putNextShort((short) i);
                         case 'C' -> writer.putNextChar((char) i);
                         case 'I' -> writer.putNextInt(i);
-                        case 'J' -> writer.putNextLong((long) i);
+                        case 'J' -> writer.putNextLong(i);
                         case 'F' -> writer.putNextFloat((float) i);
-                        case 'D' -> writer.putNextDouble((double) i);
+                        case 'D' -> writer.putNextDouble(i);
                         default -> throw badCast(from, to);
                     }
                 }
@@ -542,7 +549,7 @@ public class MethodHandlesFixes {
                         case 'I' -> writer.putNextInt((int) f);
                         case 'J' -> writer.putNextLong((long) f);
                         case 'F' -> writer.putNextFloat(f);
-                        case 'D' -> writer.putNextDouble((double) f);
+                        case 'D' -> writer.putNextDouble(f);
                         default -> throw badCast(from, to);
                     }
                 }
