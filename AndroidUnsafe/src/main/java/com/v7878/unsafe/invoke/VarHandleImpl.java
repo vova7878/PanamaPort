@@ -44,8 +44,7 @@ public class VarHandleImpl extends AbstractVarHandle {
         this.impl = impl;
     }
 
-    protected MethodHandle getMethodHandleUncached(int modeOrdinal) {
-        AccessMode mode = AccessMode.values()[modeOrdinal];
+    protected MethodHandle getMethodHandleUncached(AccessMode mode) {
         return Transformers.makeTransformer(accessModeType(mode),
                 (TransformerI) stack -> impl.transform(this, mode, stack));
     }

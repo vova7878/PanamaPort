@@ -160,17 +160,12 @@ public abstract class AbstractVarHandle extends VarHandle {
         return List.of(coordinates);
     }
 
-    public final MethodType accessModeType(AccessMode accessMode) {
-        return accessModeType(accessType(accessMode).ordinal());
+    public final MethodType accessModeType(AccessMode mode) {
+        return accessModeType(accessType(mode));
     }
 
-    public final MethodHandle toMethodHandle(AccessMode accessMode) {
-        if (isAccessModeSupported(accessMode)) {
-            return getMethodHandle(accessMode.ordinal());
-        } else {
-            //TODO
-            throw new UnsupportedOperationException("Not supported yet");
-        }
+    public final MethodHandle toMethodHandle(AccessMode mode) {
+        return getMethodHandle(mode);
     }
 
     // implementation details
@@ -211,39 +206,49 @@ public abstract class AbstractVarHandle extends VarHandle {
     private MethodHandle[] invokerMethodHandleTable;
 
     private Object invoke(AccessMode mode, Object[] args) {
-        return nothrows_run(() -> getInvokerHandle(accessType(mode).ordinal())
+        return nothrows_run(() -> getInvokerHandle(accessType(mode))
                 .invokeExact(toMethodHandle(mode), args));
     }
 
-    private MethodType accessModeType(int type) {
+    private MethodType accessModeType(AccessType type) {
+        int typeOrdinal = type.ordinal();
         MethodType[] mtTable = methodTypeTable;
         if (mtTable == null) {
             mtTable = methodTypeTable = new MethodType[AccessType.values().length];
         }
-        MethodType mt = mtTable[type];
+        MethodType mt = mtTable[typeOrdinal];
         if (mt == null) {
-            mt = mtTable[type] = accessModeTypeUncached(type);
+            mt = mtTable[typeOrdinal] = accessModeTypeUncached(type);
         }
         return mt;
     }
 
-    private MethodType accessModeTypeUncached(int type) {
-        return AccessType.values()[type].accessModeType(varType, coordinates);
+    private MethodType accessModeTypeUncached(AccessType type) {
+        return type.accessModeType(varType, coordinates);
     }
 
-    private MethodHandle getMethodHandle(int mode) {
+    private MethodHandle getMethodHandle(AccessMode mode) {
+        int modeOrdinal = mode.ordinal();
         MethodHandle[] mhTable = methodHandleTable;
         if (mhTable == null) {
             mhTable = methodHandleTable = new MethodHandle[AccessMode.values().length];
         }
-        MethodHandle mh = mhTable[mode];
+        MethodHandle mh = mhTable[modeOrdinal];
         if (mh == null) {
-            mh = mhTable[mode] = getMethodHandleUncached(mode);
+            if (isAccessModeSupported(mode)) {
+                mh = getMethodHandleUncached(mode);
+            } else {
+                mh = Transformers.makeTransformer(accessModeType(mode), (thiz, stackFrame) -> {
+                    //TODO: correct message
+                    throw new UnsupportedOperationException(mode + " is not supported");
+                });
+            }
+            return mhTable[modeOrdinal] = mh;
         }
         return mh;
     }
 
-    private MethodHandle getInvokerHandleUncached(int accessType) {
+    private MethodHandle getInvokerHandleUncached(AccessType accessType) {
         MethodType type = accessModeType(accessType);
         MethodHandle invoker = MethodHandles.exactInvoker(type);
         invoker = MethodHandlesFixes.explicitCastArguments(invoker,
@@ -251,17 +256,18 @@ public abstract class AbstractVarHandle extends VarHandle {
         return invoker.asSpreader(Object[].class, type.parameterCount());
     }
 
-    private MethodHandle getInvokerHandle(int accessType) {
+    private MethodHandle getInvokerHandle(AccessType type) {
+        int typeOrdinal = type.ordinal();
         MethodHandle[] mhTable = invokerMethodHandleTable;
         if (mhTable == null) {
             mhTable = invokerMethodHandleTable = new MethodHandle[AccessType.values().length];
         }
-        MethodHandle mh = mhTable[accessType];
+        MethodHandle mh = mhTable[typeOrdinal];
         if (mh == null) {
-            mh = mhTable[accessType] = getInvokerHandleUncached(accessType);
+            mh = mhTable[typeOrdinal] = getInvokerHandleUncached(type);
         }
         return mh;
     }
 
-    protected abstract MethodHandle getMethodHandleUncached(int modeOrdinal);
+    protected abstract MethodHandle getMethodHandleUncached(AccessMode mode);
 }

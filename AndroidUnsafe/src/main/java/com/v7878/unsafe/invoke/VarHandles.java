@@ -104,8 +104,7 @@ public final class VarHandles {
         }
 
         @Override
-        protected MethodHandle getMethodHandleUncached(int modeOrdinal) {
-            AccessMode mode = AccessMode.values()[modeOrdinal];
+        protected MethodHandle getMethodHandleUncached(AccessMode mode) {
             MethodHandle targetHandle = target.toMethodHandle(mode);
             MethodHandle out = handleFactory.apply(mode, targetHandle);
             if (!out.type().equals(accessModeType(mode))) { // NPE check
