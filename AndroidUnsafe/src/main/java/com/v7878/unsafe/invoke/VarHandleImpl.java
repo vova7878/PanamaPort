@@ -1,6 +1,6 @@
 package com.v7878.unsafe.invoke;
 
-import com.v7878.foreign.VarHandle;
+import com.v7878.invoke.VarHandle;
 import com.v7878.unsafe.invoke.Transformers.TransformerI;
 
 import java.lang.invoke.MethodHandle;

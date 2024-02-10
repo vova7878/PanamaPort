@@ -31,6 +31,8 @@ package com.v7878.foreign;
 import static com.v7878.misc.Math.ceilDiv;
 import static java.util.stream.Collectors.joining;
 
+import com.v7878.invoke.VarHandle;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;

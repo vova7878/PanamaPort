@@ -22,6 +22,8 @@
 
 package com.v7878.foreign;
 
+import com.v7878.invoke.VarHandle;
+
 import java.nio.ByteOrder;
 import java.util.function.Supplier;
 

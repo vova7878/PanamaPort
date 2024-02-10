@@ -28,6 +28,7 @@
 package com.v7878.foreign;
 
 import com.v7878.foreign._LayoutPath.PathElementImpl.PathKind;
+import com.v7878.invoke.VarHandle;
 
 import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;

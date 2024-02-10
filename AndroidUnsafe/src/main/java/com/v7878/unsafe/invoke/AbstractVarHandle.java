@@ -2,7 +2,7 @@ package com.v7878.unsafe.invoke;
 
 import static com.v7878.unsafe.Utils.nothrows_run;
 
-import com.v7878.foreign.VarHandle;
+import com.v7878.invoke.VarHandle;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package com.v7878.foreign;
+package com.v7878.invoke;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;

@@ -2,7 +2,8 @@ package com.v7878.foreign;
 
 import static com.v7878.unsafe.invoke.VarHandleImpl.isReadOnly;
 
-import com.v7878.foreign.VarHandle.AccessMode;
+import com.v7878.invoke.VarHandle;
+import com.v7878.invoke.VarHandle.AccessMode;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.VarHandleImpl;

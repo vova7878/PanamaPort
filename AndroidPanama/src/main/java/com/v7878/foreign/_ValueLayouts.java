@@ -29,6 +29,7 @@
 package com.v7878.foreign;
 
 import com.v7878.dex.TypeId;
+import com.v7878.invoke.VarHandle;
 import com.v7878.unsafe.AndroidUnsafe;
 
 import java.nio.ByteOrder;

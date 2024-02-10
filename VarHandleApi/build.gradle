@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.v7878.foreign'
+    namespace 'com.v7878.invoke'
     compileSdk 34
 
     defaultConfig {
