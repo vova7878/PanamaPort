@@ -68,6 +68,8 @@ public class VM {
     public static final int OBJECT_FIELD_SIZE_SHIFT = 2;
     public static final int OBJECT_FIELD_SIZE = 1 << OBJECT_FIELD_SIZE_SHIFT;
 
+    public static final int STRING_HEADER_SIZE = objectSizeField(StringMirror.class);
+
     private static final Supplier<Field> shadow$_klass_ =
             runOnce(() -> getDeclaredField(Object.class, "shadow$_klass_"));
     private static final Supplier<Field> shadow$_monitor_ =
@@ -203,14 +205,17 @@ public class VM {
         return StringMirror.COMPACT_STRINGS && ((sm[0].count & 1) == 0);
     }
 
+    public static int stringDataSize(String s) {
+        return s.length() * (isCompressedString(s) ? 1 : 2);
+    }
+
     public static int sizeOf(Object obj) {
         Objects.requireNonNull(obj);
         if (obj instanceof String sobj) {
-            int data_size = sobj.length() * (isCompressedString(sobj) ? 1 : 2);
-            return roundUp(objectSizeField(StringMirror.class) + data_size, OBJECT_ALIGNMENT);
+            return roundUp(STRING_HEADER_SIZE + stringDataSize(sobj), OBJECT_ALIGNMENT);
         }
-        if (obj instanceof Class) {
-            return classSizeField((Class<?>) obj);
+        if (obj instanceof Class<?> cobj) {
+            return classSizeField(cobj);
         }
         Class<?> clazz = obj.getClass();
         if (clazz.isArray()) {
