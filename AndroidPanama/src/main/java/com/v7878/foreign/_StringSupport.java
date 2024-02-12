@@ -32,9 +32,13 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
 import static com.v7878.unsafe.ExtraMemoryAccess.SOFT_MAX_ARRAY_LENGTH;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import com.v7878.unsafe.VM;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Miscellaneous functions to read and write strings, in various charsets.
@@ -289,9 +293,9 @@ final class _StringSupport {
 
         public static CharsetKind of(Charset charset) {
             // Comparing the charset to specific internal implementations avoids loading the class `StandardCharsets`
-            if (charset == StandardCharsets.UTF_8 ||
-                    charset == StandardCharsets.ISO_8859_1 ||
-                    charset == StandardCharsets.US_ASCII) {
+            if (charset == UTF_8 ||
+                    charset == ISO_8859_1 ||
+                    charset == US_ASCII) {
                 return SINGLE_BYTE;
             }
             //TODO
@@ -311,17 +315,19 @@ final class _StringSupport {
     }
 
     public static boolean bytesCompatible(String string, Charset charset) {
-        //TODO
-        //if (isLatin1()) {
+        // Port-changed
+        //if (string.isLatin1()) {
         //    if (charset == ISO_8859_1.INSTANCE) {
         //        return true; // ok, same encoding
         //    } else if (charset == UTF_8.INSTANCE || charset == US_ASCII.INSTANCE) {
+        //        byte[] value = string.value;
         //        return !StringCoding.hasNegatives(value, 0, value.length); // ok, if ASCII-compatible
         //    }
         //}
         //return false;
 
-        return false;
+        // On Android, compressed strings only contain characters 0x01-0x7f
+        return VM.isCompressedString(string) && (charset == ISO_8859_1 || charset == UTF_8 || charset == US_ASCII);
     }
 
     public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset) {
@@ -336,10 +342,9 @@ final class _StringSupport {
     }
 
     public static void copyToSegmentRaw(String string, MemorySegment segment, long offset) {
-        //TODO
-        //MemorySegment.copy(value, 0, segment, ValueLayout.JAVA_BYTE, offset, value.length);
-
-        throw new UnsupportedOperationException("Not supported yet");
+        // Port-changed
+        MemorySegment.copy(_SegmentFactories.fromObject(string), VM.STRING_HEADER_SIZE,
+                segment, ValueLayout.JAVA_BYTE, offset, VM.stringDataSize(string));
     }
 
     private static IllegalArgumentException newIaeStringTooLarge() {
