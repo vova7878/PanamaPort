@@ -92,6 +92,49 @@ public final class VarHandles {
                 (mode, modeHandle) -> MethodHandlesFixes.collectArguments(modeHandle, pos, filter));
     }
 
+    public static VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(values);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        if (pos < 0 || pos >= targetCoordinates.size()) {
+            throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
+        } else if (pos + values.length > targetCoordinates.size()) {
+            throw new IllegalArgumentException("Too many values");
+        }
+
+        if (values.length == 0) return target;
+
+        List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
+        for (Object value : values) {
+            Class<?> pt = newCoordinates.get(pos);
+            if (pt.isPrimitive()) {
+                //TODO!: fix check
+                //Wrapper w = Wrapper.forPrimitiveType(pt);
+                //w.convert(value, pt);
+            } else {
+                pt.cast(value);
+            }
+            newCoordinates.remove(pos);
+        }
+
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) -> MethodHandles.insertArguments(modeHandle, pos, values));
+    }
+
+    public static VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder) {
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(newCoordinates);
+        Objects.requireNonNull(reorder);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        MethodHandlesFixes.permuteArgumentChecks(reorder,
+                MethodType.methodType(void.class, newCoordinates),
+                MethodType.methodType(void.class, targetCoordinates));
+
+        return IndirectVarHandle.permuteCoordinates(target, targetCoordinates, newCoordinates, reorder);
+    }
+
     private static class IndirectVarHandle extends AbstractVarHandle {
         private final VarHandle target;
         private final BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory;
@@ -143,6 +186,44 @@ public final class VarHandles {
                 }
                 throw new AssertionError("Cannot get here");
             });
+        }
+
+        private static int numTrailingArgs(AccessType at) {
+            return switch (at) {
+                case GET -> 0;
+                case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC, SET -> 1;
+                case COMPARE_AND_SET, COMPARE_AND_EXCHANGE -> 2;
+            };
+        }
+
+        private static int[] reorderArrayFor(AccessType at, List<Class<?>> newCoordinates, int[] reorder) {
+            int numTrailingArgs = numTrailingArgs(at);
+            int[] adjustedReorder = new int[reorder.length + numTrailingArgs];
+            System.arraycopy(reorder, 0, adjustedReorder, 0, reorder.length);
+            for (int i = 0; i < numTrailingArgs; i++) {
+                adjustedReorder[reorder.length + i] = newCoordinates.size() + i;
+            }
+            return adjustedReorder;
+        }
+
+        private static MethodType methodTypeFor(AccessType at, MethodType oldType,
+                                                List<Class<?>> oldCoordinates, List<Class<?>> newCoordinates) {
+            int numTrailingArgs = numTrailingArgs(at);
+            MethodType adjustedType = MethodType.methodType(oldType.returnType(), newCoordinates);
+            for (int i = 0; i < numTrailingArgs; i++) {
+                adjustedType = adjustedType.appendParameterTypes(
+                        oldType.parameterType(oldCoordinates.size() + i));
+            }
+            return adjustedType;
+        }
+
+        public static IndirectVarHandle permuteCoordinates(
+                VarHandle target, List<Class<?>> targetCoordinates,
+                List<Class<?>> newCoordinates, int... reorder) {
+            return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                    (mode, modeHandle) -> MethodHandlesFixes.permuteArguments(modeHandle,
+                            methodTypeFor(accessType(mode), modeHandle.type(), targetCoordinates, newCoordinates),
+                            reorderArrayFor(accessType(mode), newCoordinates, reorder)));
         }
     }
 }
