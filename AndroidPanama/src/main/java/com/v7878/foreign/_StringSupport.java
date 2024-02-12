@@ -34,6 +34,9 @@ import static com.v7878.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
 import static com.v7878.unsafe.ExtraMemoryAccess.SOFT_MAX_ARRAY_LENGTH;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.v7878.unsafe.VM;
@@ -281,6 +284,10 @@ final class _StringSupport {
         DOUBLE_BYTE(2),
         QUAD_BYTE(4);
 
+        private static final Charset UTF_32LE = Charset.forName("UTF-32LE");
+        private static final Charset UTF_32BE = Charset.forName("UTF-32BE");
+        private static final Charset UTF_32 = Charset.forName("UTF-32");
+
         final int terminatorCharSize;
 
         CharsetKind(int terminatorCharSize) {
@@ -292,23 +299,19 @@ final class _StringSupport {
         }
 
         public static CharsetKind of(Charset charset) {
-            // Comparing the charset to specific internal implementations avoids loading the class `StandardCharsets`
-            if (charset == UTF_8 ||
-                    charset == ISO_8859_1 ||
-                    charset == US_ASCII) {
+            if (UTF_8.equals(charset) ||
+                    ISO_8859_1.equals(charset) ||
+                    US_ASCII.equals(charset)) {
                 return SINGLE_BYTE;
-            }
-            //TODO
-            /*else if (charset instanceof sun.nio.cs.UTF_16LE ||
-                    charset instanceof sun.nio.cs.UTF_16BE ||
-                    charset instanceof sun.nio.cs.UTF_16) {
+            } else if (UTF_16LE.equals(charset) ||
+                    UTF_16BE.equals(charset) ||
+                    UTF_16.equals(charset)) {
                 return DOUBLE_BYTE;
-            } else if (charset instanceof sun.nio.cs.UTF_32LE ||
-                    charset instanceof sun.nio.cs.UTF_32BE ||
-                    charset instanceof sun.nio.cs.UTF_32) {
+            } else if (UTF_32LE.equals(charset) ||
+                    UTF_32BE.equals(charset) ||
+                    UTF_32.equals(charset)) {
                 return QUAD_BYTE;
-            } else*/
-            {
+            } else {
                 throw new IllegalArgumentException("Unsupported charset: " + charset);
             }
         }
@@ -344,7 +347,7 @@ final class _StringSupport {
     public static void copyToSegmentRaw(String string, MemorySegment segment, long offset) {
         // Port-changed
         MemorySegment.copy(_SegmentFactories.fromObject(string), VM.STRING_HEADER_SIZE,
-                segment, ValueLayout.JAVA_BYTE, offset, VM.stringDataSize(string));
+                segment, offset, VM.stringDataSize(string));
     }
 
     private static IllegalArgumentException newIaeStringTooLarge() {
