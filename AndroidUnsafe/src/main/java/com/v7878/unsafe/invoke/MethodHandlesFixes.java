@@ -29,6 +29,7 @@ import com.v7878.unsafe.invoke.Transformers.TransformerI;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
@@ -651,5 +652,62 @@ public class MethodHandlesFixes {
         //    return target.asType(newType);
         //}
         return Transformers.makeTransformer(newType, new ExplicitCastArguments(target, newType));
+    }
+
+
+    static class PermuteArguments implements TransformerI {
+        private final MethodHandle target;
+        private final int[] reorder;
+
+        PermuteArguments(MethodHandle target, int[] reorder) {
+            this.target = target;
+            this.reorder = reorder;
+        }
+
+        @Override
+        public void transform(EmulatedStackFrame emulatedStackFrame) throws Throwable {
+            StackFrameAccessor reader = emulatedStackFrame.createAccessor();
+            EmulatedStackFrame calleeFrame = EmulatedStackFrame.create(target.type());
+            StackFrameAccessor writer = calleeFrame.createAccessor();
+            Class<?>[] ptypes = ptypes(emulatedStackFrame.type());
+            for (int i = 0; i < reorder.length; ++i) {
+                final int readerIndex = reorder[i];
+                reader.moveTo(readerIndex);
+                EmulatedStackFrame.copyNext(reader, writer, ptypes[readerIndex]);
+            }
+            invokeExactWithFrameNoChecks(target, calleeFrame);
+            calleeFrame.copyReturnValueTo(emulatedStackFrame);
+        }
+    }
+
+    static void permuteArgumentChecks(int[] reorder, MethodType newType, MethodType oldType) {
+        if (newType.returnType() != oldType.returnType())
+            throw newIllegalArgumentException("return types do not match",
+                    oldType, newType);
+        if (reorder.length != oldType.parameterCount())
+            throw newIllegalArgumentException("old type parameter count and reorder array length do not match",
+                    oldType, Arrays.toString(reorder));
+
+        int limit = newType.parameterCount();
+        for (int j = 0; j < reorder.length; j++) {
+            int i = reorder[j];
+            if (i < 0 || i >= limit) {
+                throw newIllegalArgumentException("index is out of bounds for new type",
+                        i, newType);
+            }
+            Class<?> src = newType.parameterType(i);
+            Class<?> dst = oldType.parameterType(j);
+            if (src != dst)
+                throw newIllegalArgumentException("parameter types do not match after reorder",
+                        oldType, newType);
+        }
+    }
+
+    // fix for PLATFORM-BUG! (Again... Android's MethodHandle API is cursed x2)
+    public static MethodHandle permuteArguments(MethodHandle target, MethodType newType, int... reorder) {
+        reorder = reorder.clone();  // get a private copy
+        MethodType oldType = target.type();
+        permuteArgumentChecks(reorder, newType, oldType);
+        return Transformers.makeTransformer(newType, new PermuteArguments(target, reorder));
     }
 }
