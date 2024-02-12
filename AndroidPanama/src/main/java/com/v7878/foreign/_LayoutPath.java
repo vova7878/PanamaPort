@@ -32,6 +32,8 @@ import static com.v7878.misc.Math.ceilDiv;
 import static java.util.stream.Collectors.joining;
 
 import com.v7878.invoke.VarHandle;
+import com.v7878.unsafe.invoke.MethodHandlesFixes;
+import com.v7878.unsafe.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -195,8 +197,7 @@ class _LayoutPath {
     }
 
     public VarHandle dereferenceHandle(boolean adapt) {
-        //TODO
-        /*if (!(layout instanceof ValueLayout valueLayout)) {
+        if (!(layout instanceof ValueLayout valueLayout)) {
             throw new IllegalArgumentException(
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
@@ -210,33 +211,32 @@ class _LayoutPath {
         // we only have to check the alignment of the root layout for the first dereference we do,
         // as each dereference checks the alignment of the target address when constructing its segment
         // (see _Utils::longToAddress)
-        if (derefAdapters.length == 0 && enclosing != null) {
-            // insert align check for the root layout on the initial MS + offset
-            List<Class<?>> coordinateTypes = handle.coordinateTypes();
-            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
-            handle = VarHandles.collectCoordinates(handle, 0, alignCheck);
-            int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, coordinateTypes.size())).toArray();
-            handle = VarHandles.permuteCoordinates(handle, coordinateTypes, reorder);
-        }
+        //TODO!!!
+        //if (derefAdapters.length == 0 && enclosing != null) {
+        //    // insert align check for the root layout on the initial MS + offset
+        //    List<Class<?>> coordinateTypes = handle.coordinateTypes();
+        //    MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
+        //    handle = VarHandles.collectCoordinates(handle, 0, alignCheck);
+        //    int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, coordinateTypes.size())).toArray();
+        //    handle = VarHandles.permuteCoordinates(handle, coordinateTypes, reorder);
+        //}
 
         if (adapt) {
             if (derefAdapters.length > 0) {
                 // plug up the base offset if we have at least 1 enclosing dereference
                 handle = VarHandles.insertCoordinates(handle, 1, 0);
             }
-            for (int i = derefAdapters.length; i > 0; i--) {
-                MethodHandle adapter = derefAdapters[i - 1];
+            for (int i = derefAdapters.length - 1; i >= 0; i--) {
+                MethodHandle adapter = derefAdapters[i];
                 // the first/outermost adapter will have a base offset coordinate, the rest are constant 0
-                if (i > 1) {
+                if (i > 0) {
                     // plug in a constant 0 base offset for all but the outermost access in a deref chain
                     adapter = MethodHandles.insertArguments(adapter, 1, 0);
                 }
                 handle = VarHandles.collectCoordinates(handle, 0, adapter);
             }
         }
-        return handle;*/
-
-        throw new UnsupportedOperationException("Not supported yet");
+        return handle;
     }
 
     private static long addScaledOffset(long base, long index, long stride, long bound) {
@@ -250,9 +250,8 @@ class _LayoutPath {
             MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i], bounds[i]);
             // (J, ...) -> J to (J, J, ...) -> J
             // i.e. new coord is prefixed. Last coord will correspond to innermost layout
-            mh = MethodHandles.collectArguments(mh, 0, collector);
+            mh = MethodHandlesFixes.collectArguments(mh, 0, collector);
         }
-
         return mh;
     }
 
@@ -270,15 +269,15 @@ class _LayoutPath {
             sliceHandle = MH_SLICE_LAYOUT; // (MS, long, MemoryLayout) -> MS
             sliceHandle = MethodHandles.insertArguments(sliceHandle, 2, layout); // (MS, long) -> MS
         }
-        sliceHandle = MethodHandles.collectArguments(sliceHandle, 1, offsetHandle()); // (MS, long, ...) -> MS
+        sliceHandle = MethodHandlesFixes.collectArguments(sliceHandle, 1, offsetHandle()); // (MS, long, ...) -> MS
 
         if (enclosing != null) {
             // insert align check for the root layout on the initial MS + offset
             MethodType oldType = sliceHandle.type();
             MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
-            sliceHandle = MethodHandles.collectArguments(sliceHandle, 0, alignCheck); // (MS, long, MS, long) -> MS
+            sliceHandle = MethodHandlesFixes.collectArguments(sliceHandle, 0, alignCheck); // (MS, long, MS, long) -> MS
             int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, oldType.parameterCount())).toArray();
-            sliceHandle = MethodHandles.permuteArguments(sliceHandle, oldType, reorder); // (MS, long, ...) -> MS
+            sliceHandle = MethodHandlesFixes.permuteArguments(sliceHandle, oldType, reorder); // (MS, long, ...) -> MS
         }
 
         return sliceHandle;
