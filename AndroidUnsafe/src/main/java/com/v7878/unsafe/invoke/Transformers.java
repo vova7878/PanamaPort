@@ -21,7 +21,9 @@ import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
+import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import androidx.annotation.Keep;
@@ -39,7 +41,6 @@ import com.v7878.unsafe.ClassUtils.ClassStatus;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -51,6 +52,11 @@ public class Transformers {
 
     public static final Class<?> INVOKE_TRANSFORMER = nothrows_run(
             () -> Class.forName("java.lang.invoke.Transformers$Transformer"));
+
+    private static final MethodHandle isConvertibleTo = nothrows_run(() -> unreflect(
+            getDeclaredMethod(MethodType.class, "isConvertibleTo", MethodType.class)));
+    private static final MethodHandle explicitCastEquivalentToAsType = nothrows_run(() -> unreflect(
+            getDeclaredMethod(MethodType.class, "explicitCastEquivalentToAsType", MethodType.class)));
 
     private static final MethodHandle directAsVarargsCollector = nothrows_run(() -> unreflectDirect(
             getDeclaredMethod(MethodHandle.class, "asVarargsCollector", Class.class)));
@@ -501,10 +507,6 @@ public class Transformers {
         abstract String toString(MethodHandle thiz);
     }
 
-    private static WrongMethodTypeException newWrongMethodTypeException(MethodType from, MethodType to) {
-        return new WrongMethodTypeException("Cannot convert " + from + " to " + to);
-    }
-
     public static void invokeExactWithFrameNoChecks(
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
         if (INVOKE_TRANSFORMER.isInstance(target)) {
@@ -527,5 +529,13 @@ public class Transformers {
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
         MethodHandle adaptedTarget = target.asType(stackFrame.type());
         invokeExactWithFrameNoChecks(adaptedTarget, stackFrame);
+    }
+
+    public static boolean isConvertibleTo(MethodType from, MethodType to) {
+        return nothrows_run(() -> (boolean) isConvertibleTo.invokeExact(from, to));
+    }
+
+    public static boolean explicitCastEquivalentToAsType(MethodType from, MethodType to) {
+        return nothrows_run(() -> (boolean) explicitCastEquivalentToAsType.invokeExact(from, to));
     }
 }
