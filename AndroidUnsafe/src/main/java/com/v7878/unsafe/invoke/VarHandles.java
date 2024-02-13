@@ -109,9 +109,8 @@ public final class VarHandles {
         for (Object value : values) {
             Class<?> pt = newCoordinates.get(pos);
             if (pt.isPrimitive()) {
-                //TODO!: fix check
-                //Wrapper w = Wrapper.forPrimitiveType(pt);
-                //w.convert(value, pt);
+                Wrapper w = Wrapper.forPrimitiveType(pt);
+                w.convert(value, pt);
             } else {
                 pt.cast(value);
             }
