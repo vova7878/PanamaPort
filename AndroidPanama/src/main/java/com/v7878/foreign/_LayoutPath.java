@@ -39,6 +39,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
@@ -211,15 +212,14 @@ class _LayoutPath {
         // we only have to check the alignment of the root layout for the first dereference we do,
         // as each dereference checks the alignment of the target address when constructing its segment
         // (see _Utils::longToAddress)
-        //TODO!!!
-        //if (derefAdapters.length == 0 && enclosing != null) {
-        //    // insert align check for the root layout on the initial MS + offset
-        //    List<Class<?>> coordinateTypes = handle.coordinateTypes();
-        //    MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
-        //    handle = VarHandles.collectCoordinates(handle, 0, alignCheck);
-        //    int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, coordinateTypes.size())).toArray();
-        //    handle = VarHandles.permuteCoordinates(handle, coordinateTypes, reorder);
-        //}
+        if (derefAdapters.length == 0 && enclosing != null) {
+            // insert align check for the root layout on the initial MS + offset
+            List<Class<?>> coordinateTypes = handle.coordinateTypes();
+            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
+            handle = VarHandles.collectCoordinates(handle, 0, alignCheck);
+            int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, coordinateTypes.size())).toArray();
+            handle = VarHandles.permuteCoordinates(handle, coordinateTypes, reorder);
+        }
 
         if (adapt) {
             if (derefAdapters.length > 0) {
