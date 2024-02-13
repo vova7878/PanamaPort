@@ -250,7 +250,7 @@ public abstract class AbstractVarHandle extends VarHandle {
 
     private MethodHandle getInvokerHandleUncached(AccessType accessType) {
         MethodType type = accessModeType(accessType);
-        MethodHandle invoker = MethodHandles.invoker(type);
+        MethodHandle invoker = MethodHandles.exactInvoker(type);
         invoker = MethodHandlesFixes.asTypeAdapter(invoker,
                 type.generic().insertParameterTypes(0, MethodHandle.class));
         return invoker.asSpreader(Object[].class, type.parameterCount());
