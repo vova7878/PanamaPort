@@ -9,7 +9,14 @@ import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Stack.getStackClass1;
+import static com.v7878.unsafe.Utils.badCast;
+import static com.v7878.unsafe.Utils.boxedTypeAsPrimitiveChar;
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
+import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
+import static com.v7878.unsafe.Utils.primitiveCharAsBoxedType;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.Utils.unexpectedType;
+import static com.v7878.unsafe.invoke.Transformers.INVOKE_TRANSFORMER;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrame;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
@@ -289,14 +296,6 @@ public class MethodHandlesFixes {
             }
         }
 
-        private static RuntimeException unexpectedType(Class<?> unexpectedType) {
-            throw new InternalError("Unexpected type: " + unexpectedType);
-        }
-
-        private static RuntimeException badCast(Class<?> from, Class<?> to) {
-            throw new ClassCastException("Cannot cast " + from.getName() + " to " + to.getName());
-        }
-
         private static boolean toBoolean(byte value) {
             return (value & 1) == 1;
         }
@@ -399,9 +398,8 @@ public class MethodHandlesFixes {
             };
         }
 
-        private static void explicitCastPrimitives(
-                StackFrameAccessor reader, Class<?> from,
-                StackFrameAccessor writer, Class<?> to) {
+        private static void explicitCastPrimitives(StackFrameAccessor reader, Class<?> from,
+                                                   StackFrameAccessor writer, Class<?> to) {
             switch (TypeId.of(to).getShorty()) {
                 case 'B' -> writer.putNextByte(readPrimitiveAsByte(reader, from));
                 case 'C' -> writer.putNextChar(readPrimitiveAsChar(reader, from));
@@ -429,31 +427,9 @@ public class MethodHandlesFixes {
             }
         }
 
-        private static char asPrimitiveChar(Class<?> boxed) {
-            if (boxed == Boolean.class) {
-                return 'Z';
-            } else if (boxed == Byte.class) {
-                return 'B';
-            } else if (boxed == Short.class) {
-                return 'S';
-            } else if (boxed == Character.class) {
-                return 'C';
-            } else if (boxed == Integer.class) {
-                return 'I';
-            } else if (boxed == Float.class) {
-                return 'F';
-            } else if (boxed == Long.class) {
-                return 'J';
-            } else if (boxed == Double.class) {
-                return 'D';
-            }
-            throw unexpectedType(boxed);
-        }
-
-        private static void unboxNonNull(
-                Object ref, StackFrameAccessor writer, Class<?> to) {
+        private static void unboxNonNull(Object ref, StackFrameAccessor writer, Class<?> to) {
             Class<?> from = ref.getClass();
-            char unboxed_char = asPrimitiveChar(from);
+            char unboxed_char = boxedTypeAsPrimitiveChar(from);
             char to_char = TypeId.of(to).getShorty();
             switch (unboxed_char) {
                 case 'Z' -> {
@@ -572,8 +548,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private static void unbox(
-                Object ref, StackFrameAccessor writer, Class<?> to) {
+        private static void unbox(Object ref, StackFrameAccessor writer, Class<?> to) {
             if (ref == null) {
                 unboxNull(writer, to);
             } else {
@@ -581,27 +556,24 @@ public class MethodHandlesFixes {
             }
         }
 
-        private static void box(
-                StackFrameAccessor reader, Class<?> from,
-                StackFrameAccessor writer, Class<?> to) {
-            Object boxed;
-            switch (TypeId.of(from).getShorty()) {
-                case 'Z' -> boxed = reader.nextBoolean();
-                case 'B' -> boxed = reader.nextByte();
-                case 'C' -> boxed = reader.nextChar();
-                case 'S' -> boxed = reader.nextShort();
-                case 'I' -> boxed = reader.nextInt();
-                case 'J' -> boxed = reader.nextLong();
-                case 'F' -> boxed = reader.nextFloat();
-                case 'D' -> boxed = reader.nextDouble();
+        private static void box(StackFrameAccessor reader, Class<?> from,
+                                StackFrameAccessor writer, Class<?> to) {
+            Object boxed = switch (TypeId.of(from).getShorty()) {
+                case 'Z' -> reader.nextBoolean();
+                case 'B' -> reader.nextByte();
+                case 'C' -> reader.nextChar();
+                case 'S' -> reader.nextShort();
+                case 'I' -> reader.nextInt();
+                case 'J' -> reader.nextLong();
+                case 'F' -> reader.nextFloat();
+                case 'D' -> reader.nextDouble();
                 default -> throw unexpectedType(from);
-            }
+            };
             writer.putNextReference(to.cast(boxed), to);
         }
 
-        private static void explicitCast(
-                StackFrameAccessor reader, Class<?> from,
-                StackFrameAccessor writer, Class<?> to) {
+        private static void explicitCast(StackFrameAccessor reader, Class<?> from,
+                                         StackFrameAccessor writer, Class<?> to) {
             if (from.equals(to)) {
                 EmulatedStackFrame.copyNext(reader, writer, from);
                 return;
@@ -632,28 +604,25 @@ public class MethodHandlesFixes {
         }
     }
 
-    private static void explicitCastArgumentsChecks(MethodHandle target, MethodType newType) {
-        if (target.type().parameterCount() != newType.parameterCount()) {
-            throw new WrongMethodTypeException("cannot explicitly cast " + target +
-                    " to " + newType);
+    private static void explicitCastArgumentsChecks(MethodType oldType, MethodType newType) {
+        if (oldType.parameterCount() != newType.parameterCount()) {
+            throw new WrongMethodTypeException(
+                    "cannot explicitly cast " + oldType + " to " + newType);
         }
     }
 
     // fix for PLATFORM-BUG! (Again... Android's MethodHandle API is cursed)
     public static MethodHandle explicitCastArguments(MethodHandle target, MethodType newType) {
         target = target.asFixedArity();
-        explicitCastArgumentsChecks(target, newType);
-        // use the asTypeCache when possible:
         MethodType oldType = target.type();
+        explicitCastArgumentsChecks(oldType, newType);
         if (oldType.equals(newType)) return target;
-        //TODO!: check fast path
-        //if (oldType.explicitCastEquivalentToAsType(newType) &&
-        //        !INVOKE_TRANSFORMER.isInstance(target)) {
-        //    return target.asType(newType);
-        //}
+        if (Transformers.explicitCastEquivalentToAsType(oldType, newType) &&
+                !INVOKE_TRANSFORMER.isInstance(target)) {
+            return target.asType(newType);
+        }
         return Transformers.makeTransformer(newType, new ExplicitCastArguments(target, newType));
     }
-
 
     static class PermuteArguments implements TransformerI {
         private final MethodHandle target;
@@ -670,8 +639,7 @@ public class MethodHandlesFixes {
             EmulatedStackFrame calleeFrame = EmulatedStackFrame.create(target.type());
             StackFrameAccessor writer = calleeFrame.createAccessor();
             Class<?>[] ptypes = ptypes(emulatedStackFrame.type());
-            for (int i = 0; i < reorder.length; ++i) {
-                final int readerIndex = reorder[i];
+            for (int readerIndex : reorder) {
                 reader.moveTo(readerIndex);
                 EmulatedStackFrame.copyNext(reader, writer, ptypes[readerIndex]);
             }
@@ -709,5 +677,225 @@ public class MethodHandlesFixes {
         MethodType oldType = target.type();
         permuteArgumentChecks(reorder, newType, oldType);
         return Transformers.makeTransformer(newType, new PermuteArguments(target, reorder));
+    }
+
+
+    static class AsTypeAdapter implements TransformerI {
+        private final MethodHandle target;
+        private final MethodType type;
+
+        AsTypeAdapter(MethodHandle target, MethodType type) {
+            this.target = target;
+            this.type = type;
+        }
+
+        @Override
+        public void transform(EmulatedStackFrame callerFrame) throws Throwable {
+            EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
+
+            StackFrameAccessor callerAccessor = callerFrame.createAccessor();
+            StackFrameAccessor targetAccessor = targetFrame.createAccessor();
+
+            adaptArguments(callerAccessor, targetAccessor);
+
+            invokeExactWithFrameNoChecks(target, targetFrame);
+
+            adaptReturnValue(targetAccessor.moveToReturn(), callerAccessor.moveToReturn());
+        }
+
+        private void adaptArguments(StackFrameAccessor reader, StackFrameAccessor writer) {
+            Class<?>[] fromTypes = ptypes(type);
+            Class<?>[] toTypes = ptypes(target.type());
+            for (int i = 0; i < fromTypes.length; ++i) {
+                adaptArgument(reader, fromTypes[i], writer, toTypes[i]);
+            }
+        }
+
+        private void adaptReturnValue(StackFrameAccessor reader, StackFrameAccessor writer) {
+            Class<?> fromType = rtype(target.type());
+            Class<?> toType = rtype(type);
+            adaptArgument(reader, fromType, writer, toType);
+        }
+
+        private RuntimeException wrongType() {
+            throw newWrongMethodTypeException(type, target.type());
+        }
+
+        private void writePrimitiveByteAs(StackFrameAccessor writer, char baseType, byte value) {
+            switch (baseType) {
+                case 'B' -> writer.putNextByte(value);
+                case 'S' -> writer.putNextShort(value);
+                case 'I' -> writer.putNextInt(value);
+                case 'J' -> writer.putNextLong(value);
+                case 'F' -> writer.putNextFloat(value);
+                case 'D' -> writer.putNextDouble(value);
+                default -> throw wrongType();
+            }
+        }
+
+        private void writePrimitiveShortAs(StackFrameAccessor writer, char baseType, short value) {
+            switch (baseType) {
+                case 'S' -> writer.putNextShort(value);
+                case 'I' -> writer.putNextInt(value);
+                case 'J' -> writer.putNextLong(value);
+                case 'F' -> writer.putNextFloat(value);
+                case 'D' -> writer.putNextDouble(value);
+                default -> throw wrongType();
+            }
+        }
+
+        private void writePrimitiveCharAs(StackFrameAccessor writer, char baseType, char value) {
+            switch (baseType) {
+                case 'C' -> writer.putNextChar(value);
+                case 'I' -> writer.putNextInt(value);
+                case 'J' -> writer.putNextLong(value);
+                case 'F' -> writer.putNextFloat(value);
+                case 'D' -> writer.putNextDouble(value);
+                default -> throw wrongType();
+            }
+        }
+
+        private void writePrimitiveIntAs(StackFrameAccessor writer, char baseType, int value) {
+            switch (baseType) {
+                case 'I' -> writer.putNextInt(value);
+                case 'J' -> writer.putNextLong(value);
+                case 'F' -> writer.putNextFloat(value);
+                case 'D' -> writer.putNextDouble(value);
+                default -> throw wrongType();
+            }
+        }
+
+        private void writePrimitiveLongAs(StackFrameAccessor writer, char baseType, long value) {
+            switch (baseType) {
+                case 'J' -> writer.putNextLong(value);
+                case 'F' -> writer.putNextFloat(value);
+                case 'D' -> writer.putNextDouble(value);
+                default -> throw wrongType();
+            }
+        }
+
+        private void writePrimitiveFloatAs(StackFrameAccessor writer, char baseType, float value) {
+            switch (baseType) {
+                case 'F' -> writer.putNextFloat(value);
+                case 'D' -> writer.putNextDouble(value);
+                default -> throw wrongType();
+            }
+        }
+
+        private void writePrimitiveDoubleAs(StackFrameAccessor writer, char baseType, double value) {
+            if (baseType == 'D') {
+                writer.putNextDouble(value);
+            } else {
+                throw wrongType();
+            }
+        }
+
+        private void writePrimitiveVoidAs(StackFrameAccessor writer, char baseType) {
+            switch (baseType) {
+                case 'Z' -> writer.putNextBoolean(false);
+                case 'B' -> writer.putNextByte((byte) 0);
+                case 'S' -> writer.putNextShort((short) 0);
+                case 'C' -> writer.putNextChar((char) 0);
+                case 'I' -> writer.putNextInt(0);
+                case 'J' -> writer.putNextLong(0L);
+                case 'F' -> writer.putNextFloat(0.0f);
+                case 'D' -> writer.putNextDouble(0.0);
+                default -> throw wrongType();
+            }
+        }
+
+        private void adaptArgument(StackFrameAccessor reader, Class<?> from,
+                                   StackFrameAccessor writer, Class<?> to) {
+            if (from.equals(to)) {
+                EmulatedStackFrame.copyNext(reader, writer, from);
+                return;
+            }
+            if (to.isPrimitive()) {
+                char toBaseType = TypeId.of(to).getShorty();
+                if (from.isPrimitive()) {
+                    char fromBaseType = TypeId.of(from).getShorty();
+                    switch (fromBaseType) {
+                        case 'B' -> writePrimitiveByteAs(writer, toBaseType, reader.nextByte());
+                        case 'S' -> writePrimitiveShortAs(writer, toBaseType, reader.nextShort());
+                        case 'C' -> writePrimitiveCharAs(writer, toBaseType, reader.nextChar());
+                        case 'I' -> writePrimitiveIntAs(writer, toBaseType, reader.nextInt());
+                        case 'J' -> writePrimitiveLongAs(writer, toBaseType, reader.nextLong());
+                        case 'F' -> writePrimitiveFloatAs(writer, toBaseType, reader.nextFloat());
+                        case 'V' -> writePrimitiveVoidAs(writer, toBaseType);
+                        default -> throw wrongType(); // 'Z', 'D'
+                    }
+                } else {
+                    if (to == void.class) {
+                        return;
+                    }
+                    Object value = reader.nextReference(Object.class);
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    from = value.getClass();
+
+                    if (!Wrapper.isWrapperType(from)) {
+                        throw badCast(value.getClass(), to);
+                    }
+                    final Wrapper fromWrapper = Wrapper.forWrapperType(from);
+                    final Wrapper toWrapper = Wrapper.forPrimitiveType(to);
+                    if (!toWrapper.isConvertibleFrom(fromWrapper)) {
+                        throw badCast(from, to);
+                    }
+
+                    switch (fromWrapper.basicTypeChar()) {
+                        case 'Z' -> writer.putNextBoolean((Boolean) value);
+                        case 'B' -> writePrimitiveByteAs(writer, toBaseType, (Byte) value);
+                        case 'S' -> writePrimitiveShortAs(writer, toBaseType, (Short) value);
+                        case 'C' -> writePrimitiveCharAs(writer, toBaseType, (Character) value);
+                        case 'I' -> writePrimitiveIntAs(writer, toBaseType, (Integer) value);
+                        case 'J' -> writePrimitiveLongAs(writer, toBaseType, (Long) value);
+                        case 'F' -> writePrimitiveFloatAs(writer, toBaseType, (Float) value);
+                        case 'D' -> writePrimitiveDoubleAs(writer, toBaseType, (Double) value);
+                        default -> throw shouldNotReachHere();
+                    }
+                }
+            } else {
+                if (from.isPrimitive()) {
+                    // Boxing conversion
+                    char fromBaseType = TypeId.of(from).getShorty();
+                    Class<?> fromBoxed = primitiveCharAsBoxedType(fromBaseType);
+                    // 'to' maybe a super class of the boxed `from` type, e.g. Number.
+                    if (!to.isAssignableFrom(fromBoxed)) {
+                        throw wrongType();
+                    }
+                    Object boxed = switch (fromBaseType) {
+                        case 'Z' -> reader.nextBoolean();
+                        case 'B' -> reader.nextByte();
+                        case 'S' -> reader.nextShort();
+                        case 'C' -> reader.nextChar();
+                        case 'I' -> reader.nextInt();
+                        case 'J' -> reader.nextLong();
+                        case 'F' -> reader.nextFloat();
+                        case 'D' -> reader.nextDouble();
+                        case 'V' -> null;
+                        default -> shouldNotReachHere();
+                    };
+                    writer.putNextReference(boxed, to);
+                } else {
+                    // Cast
+                    Object value = reader.nextReference(Object.class);
+                    if (value != null && !to.isAssignableFrom(value.getClass())) {
+                        throw badCast(value.getClass(), to);
+                    }
+                    writer.putNextReference(value, to);
+                }
+            }
+        }
+    }
+
+    // fix for PLATFORM-BUG! (Again... Android's MethodHandle API is cursed x3)
+    public static MethodHandle asTypeAdapter(MethodHandle target, MethodType newType) {
+        MethodType oldType = target.type();
+        if (newType.equals(oldType)) return target;
+        if (!Transformers.isConvertibleTo(target.type(), newType)) {
+            throw new WrongMethodTypeException("cannot convert " + target + " to " + newType);
+        }
+        return Transformers.makeTransformer(newType, new AsTypeAdapter(target, newType));
     }
 }
