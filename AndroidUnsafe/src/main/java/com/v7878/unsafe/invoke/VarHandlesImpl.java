@@ -191,6 +191,24 @@ public final class VarHandlesImpl {
                         reorderArrayFor(accessType(mode), newCoordinates, reorder)));
     }
 
+    public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(valueTypes);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        if (pos < 0 || pos > targetCoordinates.size()) {
+            throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
+        }
+
+        if (valueTypes.length == 0) return target;
+
+        List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
+        newCoordinates.addAll(pos, List.of(valueTypes));
+
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) -> MethodHandles.dropArguments(modeHandle, pos, valueTypes));
+    }
+
     private static class IndirectVarHandle extends AbstractVarHandle {
         private final VarHandle target;
         private final BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory;

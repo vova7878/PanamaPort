@@ -29,4 +29,8 @@ public final class VarHandles {
     public static VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder) {
         return VarHandlesImpl.permuteCoordinates(target, newCoordinates, reorder);
     }
+
+    public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {
+        return VarHandlesImpl.dropCoordinates(target, pos, valueTypes);
+    }
 }
