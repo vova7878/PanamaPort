@@ -27,6 +27,7 @@
 
 package com.v7878.foreign;
 
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.invoke.MethodType;
@@ -129,7 +130,7 @@ final class _FunctionDescriptorImpl implements FunctionDescriptor {
             return MemorySegment.class;
         } else {
             // Note: we should not worry about padding layouts, as they cannot be present in a function descriptor
-            throw new AssertionError("Cannot get here");
+            throw shouldNotReachHere();
         }
     }
 

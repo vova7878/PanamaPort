@@ -30,6 +30,7 @@ package com.v7878.foreign;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.unsafe.ExtraMemoryAccess.LOG2_ARRAY_BYTE_INDEX_SCALE;
 import static com.v7878.unsafe.Utils.assert_;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import android.annotation.SuppressLint;
 
@@ -565,7 +566,7 @@ abstract sealed class _AbstractMemorySegmentImpl
             } else if (base instanceof double[]) {
                 return new _HeapMemorySegmentImpl.OfDouble(off, base, len, readOnly, bufferScope);
             }
-            throw new AssertionError("Cannot get here");
+            throw shouldNotReachHere();
         }
         if (unmapper == null) {
             return new _NativeMemorySegmentImpl(off, len, readOnly, bufferScope);
@@ -594,7 +595,7 @@ abstract sealed class _AbstractMemorySegmentImpl
         } else if (buffer instanceof LongBuffer || buffer instanceof DoubleBuffer) {
             return 3;
         } else {
-            throw new AssertionError("Cannot get here");
+            throw shouldNotReachHere();
         }
     }
 

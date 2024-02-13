@@ -1,5 +1,6 @@
 package com.v7878.foreign;
 
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.invoke.VarHandleImpl.isReadOnly;
 
 import com.v7878.invoke.VarHandle;
@@ -113,7 +114,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                                 offsetPlain(ms, offset)));
                 case SET -> _ScopedMemoryAccess.putByte(ms.sessionImpl(), ms.unsafeGetBase(),
                         offsetPlain(ms, offset), accessor.nextByte());
-                default -> throw new AssertionError("Cannot get here");
+                default -> throw shouldNotReachHere();
             }
         }
     }
@@ -138,7 +139,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case SET -> _ScopedMemoryAccess.putCharUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         offsetPlain(ms, offset), accessor.nextChar(), swap);
-                default -> throw new AssertionError("Cannot get here");
+                default -> throw shouldNotReachHere();
             }
         }
     }
@@ -163,7 +164,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case SET -> _ScopedMemoryAccess.putShortUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         offsetPlain(ms, offset), accessor.nextShort(), swap);
-                default -> throw new AssertionError("Cannot get here");
+                default -> throw shouldNotReachHere();
             }
         }
     }
@@ -188,7 +189,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case SET -> _ScopedMemoryAccess.putIntUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         offsetPlain(ms, offset), accessor.nextInt(), swap);
-                default -> throw new AssertionError("Cannot get here");
+                default -> throw shouldNotReachHere();
             }
         }
     }
@@ -213,7 +214,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case SET -> _ScopedMemoryAccess.putFloatUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         offsetPlain(ms, offset), accessor.nextFloat(), swap);
-                default -> throw new AssertionError("Cannot get here");
+                default -> throw shouldNotReachHere();
             }
         }
     }
@@ -238,7 +239,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case SET -> _ScopedMemoryAccess.putLongUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         offsetPlain(ms, offset), accessor.nextLong(), swap);
-                default -> throw new AssertionError("Cannot get here");
+                default -> throw shouldNotReachHere();
             }
         }
     }
@@ -263,7 +264,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case SET -> _ScopedMemoryAccess.putDoubleUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         offsetPlain(ms, offset), accessor.nextDouble(), swap);
-                default -> throw new AssertionError("Cannot get here");
+                default -> throw shouldNotReachHere();
             }
         }
     }

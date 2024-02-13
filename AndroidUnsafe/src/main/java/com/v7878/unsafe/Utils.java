@@ -176,7 +176,7 @@ public class Utils {
         private static final Object sinkUser = new Object() {
             protected void finalize() {
                 if (sink == null && finalized) {
-                    throw new AssertionError("Can't get here");
+                    throw shouldNotReachHere();
                 }
                 finalized = true;
             }

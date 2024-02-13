@@ -6,6 +6,7 @@ import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import androidx.annotation.Keep;
 
@@ -153,7 +154,7 @@ public class EmulatedStackFrame {
             case 'J' -> writer.putNextLong(reader.nextLong());
             case 'F' -> writer.putNextFloat(reader.nextFloat());
             case 'D' -> writer.putNextDouble(reader.nextDouble());
-            default -> throw new AssertionError("Cannot get here");
+            default -> throw shouldNotReachHere();
         }
     }
 
@@ -307,37 +308,18 @@ public class EmulatedStackFrame {
             char shorty = TypeId.of(getCurrentArgumentType()).getShorty();
             argumentIdx++;
             switch (shorty) {
-                case 'V':
-                    break;
-                case 'L':
-                    frame.references()[referencesOffset++] = value;
-                    break;
-                case 'Z':
-                    frameBuf.putInt((boolean) value ? 1 : 0);
-                    break;
-                case 'B':
-                    frameBuf.putInt((byte) value);
-                    break;
-                case 'C':
-                    frameBuf.putInt((char) value);
-                    break;
-                case 'S':
-                    frameBuf.putInt((short) value);
-                    break;
-                case 'I':
-                    frameBuf.putInt((int) value);
-                    break;
-                case 'F':
-                    frameBuf.putFloat((float) value);
-                    break;
-                case 'J':
-                    frameBuf.putLong((long) value);
-                    break;
-                case 'D':
-                    frameBuf.putDouble((double) value);
-                    break;
-                default:
-                    throw new AssertionError("Cannot get here");
+                case 'V' -> {
+                }
+                case 'L' -> frame.references()[referencesOffset++] = value;
+                case 'Z' -> frameBuf.putInt((boolean) value ? 1 : 0);
+                case 'B' -> frameBuf.putInt((byte) value);
+                case 'C' -> frameBuf.putInt((char) value);
+                case 'S' -> frameBuf.putInt((short) value);
+                case 'I' -> frameBuf.putInt((int) value);
+                case 'F' -> frameBuf.putFloat((float) value);
+                case 'J' -> frameBuf.putLong((long) value);
+                case 'D' -> frameBuf.putDouble((double) value);
+                default -> throw shouldNotReachHere();
             }
         }
 
@@ -410,7 +392,7 @@ public class EmulatedStackFrame {
                 case 'J' -> frameBuf.getLong();
                 case 'D' -> frameBuf.getDouble();
                 /* 'V' */
-                default -> throw new AssertionError("Cannot get here");
+                default -> throw shouldNotReachHere();
             };
         }
     }

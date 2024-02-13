@@ -32,6 +32,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
 import static com.v7878.unsafe.ExtraMemoryAccess.SOFT_MAX_ARRAY_LENGTH;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_16;
@@ -57,7 +58,7 @@ final class _StringSupport {
             case SINGLE_BYTE -> readByte(segment, offset, charset);
             case DOUBLE_BYTE -> readShort(segment, offset, charset);
             case QUAD_BYTE -> readInt(segment, offset, charset);
-            default -> throw new AssertionError("Cannot get here");
+            default -> throw shouldNotReachHere();
         };
     }
 
@@ -66,7 +67,7 @@ final class _StringSupport {
             case SINGLE_BYTE -> writeByte(segment, offset, charset, string);
             case DOUBLE_BYTE -> writeShort(segment, offset, charset, string);
             case QUAD_BYTE -> writeInt(segment, offset, charset, string);
-            default -> throw new AssertionError("Cannot get here");
+            default -> throw shouldNotReachHere();
         }
     }
 

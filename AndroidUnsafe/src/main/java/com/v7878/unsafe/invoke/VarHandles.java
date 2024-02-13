@@ -1,6 +1,7 @@
 package com.v7878.unsafe.invoke;
 
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import com.v7878.invoke.VarHandle;
 
@@ -183,7 +184,7 @@ public final class VarHandles {
                         return MethodHandles.filterArguments(adapter, lastParameterPos, filterToTarget);
                     }
                 }
-                throw new AssertionError("Cannot get here");
+                throw shouldNotReachHere();
             });
         }
 
