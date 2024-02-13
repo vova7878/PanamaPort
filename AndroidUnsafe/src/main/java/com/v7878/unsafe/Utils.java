@@ -8,6 +8,8 @@ import android.annotation.SuppressLint;
 
 import androidx.annotation.Keep;
 
+import java.lang.invoke.MethodType;
+import java.lang.invoke.WrongMethodTypeException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
@@ -16,6 +18,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -270,8 +273,111 @@ public class Utils {
         return new IllegalArgumentException(message + ": " + obj);
     }
 
-    public static RuntimeException newIllegalArgumentException(String message, Object obj1, Object obj2) {
-        return new IllegalArgumentException(message + ": " + obj1 + ", " + obj2);
+    public static RuntimeException newIllegalArgumentException(String message, Object... objs) {
+        return new IllegalArgumentException(message + Arrays.stream(objs).map(Objects::toString)
+                .collect(Collectors.joining(", ", ": ", "")));
+    }
+
+    public static WrongMethodTypeException newWrongMethodTypeException(MethodType from, MethodType to) {
+        return new WrongMethodTypeException("Cannot convert " + from + " to " + to);
+    }
+
+
+    public static AssertionError shouldNotReachHere() {
+        throw new AssertionError("Should not reach here");
+    }
+
+    public static RuntimeException unexpectedType(Class<?> unexpectedType) {
+        throw new InternalError("Unexpected type: " + unexpectedType);
+    }
+
+    public static RuntimeException badCast(Class<?> from, Class<?> to) {
+        throw new ClassCastException("Cannot cast from " + from + " to " + to);
+    }
+
+    public static Class<?> boxedTypeAsPrimitiveType(Class<?> boxed) {
+        if (boxed == Boolean.class) {
+            return boolean.class;
+        } else if (boxed == Byte.class) {
+            return byte.class;
+        } else if (boxed == Short.class) {
+            return short.class;
+        } else if (boxed == Character.class) {
+            return char.class;
+        } else if (boxed == Integer.class) {
+            return int.class;
+        } else if (boxed == Float.class) {
+            return float.class;
+        } else if (boxed == Long.class) {
+            return long.class;
+        } else if (boxed == Double.class) {
+            return double.class;
+        } else if (boxed == Void.class) {
+            return void.class;
+        }
+        throw unexpectedType(boxed);
+    }
+
+    public static char boxedTypeAsPrimitiveChar(Class<?> boxed) {
+        if (boxed == Boolean.class) {
+            return 'Z';
+        } else if (boxed == Byte.class) {
+            return 'B';
+        } else if (boxed == Short.class) {
+            return 'S';
+        } else if (boxed == Character.class) {
+            return 'C';
+        } else if (boxed == Integer.class) {
+            return 'I';
+        } else if (boxed == Float.class) {
+            return 'F';
+        } else if (boxed == Long.class) {
+            return 'J';
+        } else if (boxed == Double.class) {
+            return 'D';
+        } else if (boxed == Void.class) {
+            return 'V';
+        }
+        throw unexpectedType(boxed);
+    }
+
+    public static Class<?> primitiveTypeAsBoxedType(Class<?> prim) {
+        if (prim == boolean.class) {
+            return Boolean.class;
+        } else if (prim == byte.class) {
+            return Byte.class;
+        } else if (prim == short.class) {
+            return Short.class;
+        } else if (prim == char.class) {
+            return Character.class;
+        } else if (prim == int.class) {
+            return Integer.class;
+        } else if (prim == float.class) {
+            return Float.class;
+        } else if (prim == long.class) {
+            return Long.class;
+        } else if (prim == double.class) {
+            return Double.class;
+        } else if (prim == void.class) {
+            return Void.class;
+        }
+        throw unexpectedType(prim);
+    }
+
+    public static Class<?> primitiveCharAsBoxedType(char prim) {
+        return switch (prim) {
+            case 'Z' -> Boolean.class;
+            case 'B' -> Byte.class;
+            case 'S' -> Short.class;
+            case 'C' -> Character.class;
+            case 'I' -> Integer.class;
+            case 'J' -> Long.class;
+            case 'F' -> Float.class;
+            case 'D' -> Double.class;
+            case 'V' -> Void.class;
+            default -> throw new InternalError(
+                    "Unexpected type char: " + prim);
+        };
     }
 
     @Keep
