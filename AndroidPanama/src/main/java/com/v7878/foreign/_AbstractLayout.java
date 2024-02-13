@@ -33,7 +33,7 @@ import android.annotation.SuppressLint;
 import com.v7878.foreign.MemoryLayout.PathElement;
 import com.v7878.foreign._LayoutPath.PathElementImpl.PathKind;
 import com.v7878.invoke.VarHandle;
-import com.v7878.unsafe.invoke.VarHandles;
+import com.v7878.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;

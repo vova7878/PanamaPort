@@ -32,8 +32,8 @@ import static com.v7878.misc.Math.ceilDiv;
 import static java.util.stream.Collectors.joining;
 
 import com.v7878.invoke.VarHandle;
+import com.v7878.invoke.VarHandles;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
-import com.v7878.unsafe.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;

@@ -2,6 +2,7 @@ package com.v7878.unsafe.invoke;
 
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.invoke.AbstractVarHandle.accessType;
 
 import com.v7878.invoke.VarHandle;
 
@@ -13,8 +14,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-public final class VarHandles {
-    private VarHandles() {
+public final class VarHandlesImpl {
+    private VarHandlesImpl() {
     }
 
     private static Class<?> lastParameterType(MethodType type) {
@@ -40,7 +41,30 @@ public final class VarHandles {
         } else if (target.varType() != filterToTarget.type().returnType()) {
             throw newIllegalArgumentException("filterFromTarget filter type does not match target var handle type", filterToTarget.type(), target.varType());
         }
-        return IndirectVarHandle.filterValue(target, filterToTarget, filterFromTarget);
+        return new IndirectVarHandle(target, filterFromTarget.type().returnType(),
+                target.coordinateTypes().toArray(new Class[0]), (mode, modeHandle) -> {
+            int lastParameterPos = modeHandle.type().parameterCount() - 1;
+            switch (accessType(mode)) {
+                case GET -> {
+                    return MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                }
+                case SET -> {
+                    return MethodHandles.filterArguments(modeHandle, lastParameterPos, filterToTarget);
+                }
+                case COMPARE_AND_SET -> {
+                    return MethodHandles.filterArguments(modeHandle, lastParameterPos - 1, filterToTarget, filterToTarget);
+                }
+                case COMPARE_AND_EXCHANGE -> {
+                    MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                    return MethodHandles.filterArguments(adapter, lastParameterPos - 1, filterToTarget, filterToTarget);
+                }
+                case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC -> {
+                    MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                    return MethodHandles.filterArguments(adapter, lastParameterPos, filterToTarget);
+                }
+            }
+            throw shouldNotReachHere();
+        });
     }
 
     public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
@@ -122,6 +146,35 @@ public final class VarHandles {
                 (mode, modeHandle) -> MethodHandles.insertArguments(modeHandle, pos, values));
     }
 
+    private static int numTrailingArgs(AbstractVarHandle.AccessType at) {
+        return switch (at) {
+            case GET -> 0;
+            case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC, SET -> 1;
+            case COMPARE_AND_SET, COMPARE_AND_EXCHANGE -> 2;
+        };
+    }
+
+    private static int[] reorderArrayFor(AbstractVarHandle.AccessType at, List<Class<?>> newCoordinates, int[] reorder) {
+        int numTrailingArgs = numTrailingArgs(at);
+        int[] adjustedReorder = new int[reorder.length + numTrailingArgs];
+        System.arraycopy(reorder, 0, adjustedReorder, 0, reorder.length);
+        for (int i = 0; i < numTrailingArgs; i++) {
+            adjustedReorder[reorder.length + i] = newCoordinates.size() + i;
+        }
+        return adjustedReorder;
+    }
+
+    private static MethodType methodTypeFor(AbstractVarHandle.AccessType at, MethodType oldType,
+                                            List<Class<?>> oldCoordinates, List<Class<?>> newCoordinates) {
+        int numTrailingArgs = numTrailingArgs(at);
+        MethodType adjustedType = MethodType.methodType(oldType.returnType(), newCoordinates);
+        for (int i = 0; i < numTrailingArgs; i++) {
+            adjustedType = adjustedType.appendParameterTypes(
+                    oldType.parameterType(oldCoordinates.size() + i));
+        }
+        return adjustedType;
+    }
+
     public static VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(newCoordinates);
@@ -132,7 +185,10 @@ public final class VarHandles {
                 MethodType.methodType(void.class, newCoordinates),
                 MethodType.methodType(void.class, targetCoordinates));
 
-        return IndirectVarHandle.permuteCoordinates(target, targetCoordinates, newCoordinates, reorder);
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) -> MethodHandlesFixes.permuteArguments(modeHandle,
+                        methodTypeFor(accessType(mode), modeHandle.type(), targetCoordinates, newCoordinates),
+                        reorderArrayFor(accessType(mode), newCoordinates, reorder)));
     }
 
     private static class IndirectVarHandle extends AbstractVarHandle {
@@ -159,71 +215,6 @@ public final class VarHandles {
         @Override
         public boolean isAccessModeSupported(AccessMode accessMode) {
             return target.isAccessModeSupported(accessMode);
-        }
-
-        public static IndirectVarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
-            return new IndirectVarHandle(target, filterFromTarget.type().returnType(),
-                    target.coordinateTypes().toArray(new Class[0]), (mode, modeHandle) -> {
-                int lastParameterPos = modeHandle.type().parameterCount() - 1;
-                switch (accessType(mode)) {
-                    case GET -> {
-                        return MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                    }
-                    case SET -> {
-                        return MethodHandles.filterArguments(modeHandle, lastParameterPos, filterToTarget);
-                    }
-                    case COMPARE_AND_SET -> {
-                        return MethodHandles.filterArguments(modeHandle, lastParameterPos - 1, filterToTarget, filterToTarget);
-                    }
-                    case COMPARE_AND_EXCHANGE -> {
-                        MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                        return MethodHandles.filterArguments(adapter, lastParameterPos - 1, filterToTarget, filterToTarget);
-                    }
-                    case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC -> {
-                        MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                        return MethodHandles.filterArguments(adapter, lastParameterPos, filterToTarget);
-                    }
-                }
-                throw shouldNotReachHere();
-            });
-        }
-
-        private static int numTrailingArgs(AccessType at) {
-            return switch (at) {
-                case GET -> 0;
-                case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC, SET -> 1;
-                case COMPARE_AND_SET, COMPARE_AND_EXCHANGE -> 2;
-            };
-        }
-
-        private static int[] reorderArrayFor(AccessType at, List<Class<?>> newCoordinates, int[] reorder) {
-            int numTrailingArgs = numTrailingArgs(at);
-            int[] adjustedReorder = new int[reorder.length + numTrailingArgs];
-            System.arraycopy(reorder, 0, adjustedReorder, 0, reorder.length);
-            for (int i = 0; i < numTrailingArgs; i++) {
-                adjustedReorder[reorder.length + i] = newCoordinates.size() + i;
-            }
-            return adjustedReorder;
-        }
-
-        private static MethodType methodTypeFor(AccessType at, MethodType oldType,
-                                                List<Class<?>> oldCoordinates, List<Class<?>> newCoordinates) {
-            int numTrailingArgs = numTrailingArgs(at);
-            MethodType adjustedType = MethodType.methodType(oldType.returnType(), newCoordinates);
-            for (int i = 0; i < numTrailingArgs; i++) {
-                adjustedType = adjustedType.appendParameterTypes(
-                        oldType.parameterType(oldCoordinates.size() + i));
-            }
-            return adjustedType;
-        }
-
-        public static IndirectVarHandle permuteCoordinates(
-                VarHandle target, List<Class<?>> targetCoordinates,
-                List<Class<?>> newCoordinates, int... reorder) {
-            return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                    (mode, modeHandle) -> MethodHandlesFixes.permuteArguments(modeHandle,
-                            methodTypeFor(accessType(mode), modeHandle.type(), targetCoordinates, newCoordinates),
-                            reorderArrayFor(accessType(mode), newCoordinates, reorder)));
         }
     }
 }

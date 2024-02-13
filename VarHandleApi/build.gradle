@@ -26,6 +26,9 @@ android {
 }
 
 dependencies {
+    compileOnly project(':fake_invoke')
+
+    runtimeOnly project(':AndroidUnsafe')
 }
 
 publishing {

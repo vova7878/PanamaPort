@@ -22,6 +22,8 @@
 
 package com.v7878.invoke;
 
+import com.v7878.unsafe.invoke.AbstractVarHandle.AccessType;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
@@ -104,67 +106,6 @@ public abstract class VarHandle {
     public abstract Object getAndBitwiseXorAcquire(Object... args);
 
     public abstract Object getAndBitwiseXorRelease(Object... args);
-
-    protected enum AccessType {
-        GET,
-        SET,
-        COMPARE_AND_SET,
-        COMPARE_AND_EXCHANGE,
-        GET_AND_UPDATE,
-
-        GET_AND_UPDATE_BITWISE,
-        GET_AND_UPDATE_NUMERIC;
-
-        public MethodType accessModeType(Class<?> value, Class<?>... coordinates) {
-            Class<?>[] ps;
-            int i;
-            switch (this) {
-                case GET -> {
-                    ps = allocateParameters(0, coordinates);
-                    fillParameters(ps, coordinates);
-                    return MethodType.methodType(value, ps);
-                }
-                case SET -> {
-                    ps = allocateParameters(1, coordinates);
-                    i = fillParameters(ps, coordinates);
-                    ps[i] = value;
-                    return MethodType.methodType(void.class, ps);
-                }
-                case COMPARE_AND_SET -> {
-                    ps = allocateParameters(2, coordinates);
-                    i = fillParameters(ps, coordinates);
-                    ps[i++] = value;
-                    ps[i] = value;
-                    return MethodType.methodType(boolean.class, ps);
-                }
-                case COMPARE_AND_EXCHANGE -> {
-                    ps = allocateParameters(2, coordinates);
-                    i = fillParameters(ps, coordinates);
-                    ps[i++] = value;
-                    ps[i] = value;
-                    return MethodType.methodType(value, ps);
-                }
-                case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC -> {
-                    ps = allocateParameters(1, coordinates);
-                    i = fillParameters(ps, coordinates);
-                    ps[i] = value;
-                    return MethodType.methodType(value, ps);
-                }
-                default -> throw new InternalError("Unknown AccessType");
-            }
-        }
-
-        private static Class<?>[] allocateParameters(int values, Class<?>... coordinates) {
-            int size = coordinates.length + values;
-            return new Class<?>[size];
-        }
-
-        private static int fillParameters(Class<?>[] ps, Class<?>... coordinates) {
-            int i = 0;
-            for (Class<?> arg : coordinates) ps[i++] = arg;
-            return i;
-        }
-    }
 
     public enum AccessMode {
         GET("get", AccessType.GET),

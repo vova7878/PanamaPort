@@ -282,7 +282,6 @@ public class Utils {
         return new WrongMethodTypeException("Cannot convert " + from + " to " + to);
     }
 
-
     public static AssertionError shouldNotReachHere() {
         throw new AssertionError("Should not reach here");
     }

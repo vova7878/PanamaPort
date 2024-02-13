@@ -47,8 +47,8 @@ import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import androidx.annotation.Keep;
 
 import com.v7878.invoke.VarHandle;
+import com.v7878.invoke.VarHandles;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
-import com.v7878.unsafe.invoke.VarHandles;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
