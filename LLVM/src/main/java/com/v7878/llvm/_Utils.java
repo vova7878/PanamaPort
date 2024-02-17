@@ -53,6 +53,8 @@ final class _Utils {
     public static final Class<?> SIZE_T = WORD;
     public static final Class<?> UINT64_T = long.class;
     public static final Class<?> UNSIGNED_INT = int.class;
+    public static final Class<?> LONG_LONG = long.class;
+    public static final Class<?> UNSIGNED_LONG_LONG = long.class;
 
     public static final Class<?> ENUM = int.class;
 
