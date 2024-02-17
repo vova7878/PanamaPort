@@ -128,6 +128,7 @@ final class _Utils {
             Method method = searchMethod(methods, info.name, info.stub_type.parameterArray());
             setExecutableData(method, info.native_symbol);
             MethodHandle raw_handle = unreflect(method);
+            //TODO: check scope in handle
             MethodHandle handle = MethodHandlesFixes.explicitCastArguments(raw_handle, info.handle_type);
 
             info.symbol.setSymbol(info.native_symbol);
