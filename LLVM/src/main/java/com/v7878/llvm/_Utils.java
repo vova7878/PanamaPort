@@ -51,7 +51,13 @@ final class _Utils {
     public static final Class<?> CONST_CHAR_PTR = const_ptr(byte.class);
 
     public static final Class<?> SIZE_T = WORD;
+
+    public static final Class<?> DOUBLE = double.class;
+    public static final Class<?> UINT8_T = byte.class;
+    public static final Class<?> UINT16_T = short.class;
+    public static final Class<?> UINT32_T = int.class;
     public static final Class<?> UINT64_T = long.class;
+    public static final Class<?> INT = int.class;
     public static final Class<?> UNSIGNED_INT = int.class;
     public static final Class<?> LONG_LONG = long.class;
     public static final Class<?> UNSIGNED_LONG_LONG = long.class;
