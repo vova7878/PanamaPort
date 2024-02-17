@@ -118,11 +118,14 @@ public class ArtMethodUtils {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setExecutableData(long art_method, long data) {
+        //TODO
+        //Utils.ensureClassInitialized();
         putWordN(art_method + DATA_OFFSET, data);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setExecutableData(Executable ex, long data) {
+        Utils.ensureClassInitialized(ex.getDeclaringClass());
         setExecutableData(getArtMethod(ex), data);
     }
 
