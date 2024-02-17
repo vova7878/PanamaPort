@@ -38,21 +38,31 @@ final class _Utils {
     private static class WORD {
     }
 
-    public static final Class<?> WORD = WORD.class;
-
-
     private static class BOOL_AS_INT {
     }
+
+    public static final Class<?> WORD = WORD.class;
 
     public static final Class<?> BOOL_AS_INT = BOOL_AS_INT.class;
 
     public static final Class<?> VOID_PTR = WORD;
-    public static final Class<?> CONTS_CHAR_PTR = WORD;
-    public static final Class<?> CHAR_PTR = WORD;
+
+    public static final Class<?> CHAR_PTR = ptr(byte.class);
+    public static final Class<?> CONST_CHAR_PTR = const_ptr(byte.class);
+
     public static final Class<?> SIZE_T = WORD;
+    public static final Class<?> UINT64_T = long.class;
+    public static final Class<?> UNSIGNED_INT = int.class;
 
     public static final Class<?> ENUM = int.class;
-    public static final Class<?> UNSIGNED_INT = int.class;
+
+    public static Class<?> ptr(Class<?> ignored) {
+        return VOID_PTR;
+    }
+
+    public static Class<?> const_ptr(Class<?> ignored) {
+        return VOID_PTR;
+    }
 
     public interface Symbol {
         String name();
