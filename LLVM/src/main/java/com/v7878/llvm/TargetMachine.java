@@ -7,7 +7,6 @@ import static com.v7878.llvm.Types.LLVMBool;
 import static com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassManagerRef;
-import static com.v7878.llvm._Utils.BOOL_AS_INT;
 import static com.v7878.llvm._Utils.CHAR_PTR;
 import static com.v7878.llvm._Utils.CONST_CHAR_PTR;
 import static com.v7878.llvm._Utils.ENUM;
@@ -29,7 +28,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public class TargetMachine {
-    static final Class<?> LLVMTargetMachineRef = BOOL_AS_INT;
+    static final Class<?> LLVMTargetMachineRef = VOID_PTR;
     static final Class<?> LLVMTargetRef = VOID_PTR;
 
     public static final class LLVMTargetMachineRef extends AddressValue {
