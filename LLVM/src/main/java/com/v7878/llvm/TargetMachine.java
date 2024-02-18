@@ -3,6 +3,7 @@ package com.v7878.llvm;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.llvm.LibLLVM.LLVM;
 import static com.v7878.llvm.LibLLVM.LLVM_SCOPE;
+import static com.v7878.llvm.Target.LLVMTargetDataRef;
 import static com.v7878.llvm.Types.LLVMBool;
 import static com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import static com.v7878.llvm.Types.LLVMModuleRef;
@@ -152,8 +153,7 @@ public class TargetMachine {
         LLVMGetTargetMachineTriple(CHAR_PTR, LLVMTargetMachineRef),
         LLVMGetTargetMachineCPU(CHAR_PTR, LLVMTargetMachineRef),
         LLVMGetTargetMachineFeatureString(CHAR_PTR, LLVMTargetMachineRef),
-        //TODO
-        //LLVMCreateTargetDataLayout(LLVMTargetDataRef, LLVMTargetMachineRef),
+        LLVMCreateTargetDataLayout(LLVMTargetDataRef, LLVMTargetMachineRef),
         LLVMSetTargetMachineAsmVerbosity(void.class, LLVMTargetMachineRef, LLVMBool),
         LLVMTargetMachineEmitToFile(LLVMBool, LLVMTargetMachineRef, LLVMModuleRef, CHAR_PTR, LLVMCodeGenFileType, ptr(CHAR_PTR)),
         LLVMTargetMachineEmitToMemoryBuffer(LLVMBool, LLVMTargetMachineRef, LLVMModuleRef, LLVMCodeGenFileType, ptr(CHAR_PTR), ptr(LLVMMemoryBufferRef)),
@@ -347,8 +347,9 @@ public class TargetMachine {
     /**
      * Create a DataLayout based on the targetMachine.
      */
-    //TODO
-    //public static LLVMTargetDataRef LLVMCreateTargetDataLayout(LLVMTargetMachineRef T);
+    public static LLVMTargetDataRef LLVMCreateTargetDataLayout(LLVMTargetMachineRef T) {
+        return nothrows_run(() -> new LLVMTargetDataRef((long) Function.LLVMCreateTargetDataLayout.handle().invoke(T.value())));
+    }
 
     /**
      * Set the target machine's ASM verbosity.
