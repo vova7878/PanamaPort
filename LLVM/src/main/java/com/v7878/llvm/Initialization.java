@@ -3,6 +3,7 @@ package com.v7878.llvm;
 import static com.v7878.llvm.LibLLVM.LLVM;
 import static com.v7878.llvm.LibLLVM.LLVM_SCOPE;
 import static com.v7878.llvm.Types.LLVMPassRegistryRef;
+import static com.v7878.llvm.Types.cLLVMPassRegistryRef;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.llvm._Utils.Symbol;
@@ -13,18 +14,18 @@ import java.util.Objects;
 
 public class Initialization {
     private enum Function implements Symbol {
-        LLVMInitializeCore(void.class, LLVMPassRegistryRef),
-        LLVMInitializeTransformUtils(void.class, LLVMPassRegistryRef),
-        LLVMInitializeScalarOpts(void.class, LLVMPassRegistryRef),
-        LLVMInitializeObjCARCOpts(void.class, LLVMPassRegistryRef),
-        LLVMInitializeVectorization(void.class, LLVMPassRegistryRef),
-        LLVMInitializeInstCombine(void.class, LLVMPassRegistryRef),
-        LLVMInitializeIPO(void.class, LLVMPassRegistryRef),
-        LLVMInitializeInstrumentation(void.class, LLVMPassRegistryRef),
-        LLVMInitializeAnalysis(void.class, LLVMPassRegistryRef),
-        LLVMInitializeIPA(void.class, LLVMPassRegistryRef),
-        LLVMInitializeCodeGen(void.class, LLVMPassRegistryRef),
-        LLVMInitializeTarget(void.class, LLVMPassRegistryRef);
+        LLVMInitializeCore(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeTransformUtils(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeScalarOpts(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeObjCARCOpts(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeVectorization(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeInstCombine(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeIPO(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeInstrumentation(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeAnalysis(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeIPA(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeCodeGen(void.class, cLLVMPassRegistryRef),
+        LLVMInitializeTarget(void.class, cLLVMPassRegistryRef);
 
         static {
             _Utils.processSymbols(LLVM, LLVM_SCOPE, Function.values());
@@ -66,6 +67,13 @@ public class Initialization {
                     ", handle=" + handle + '}';
         }
     }
+
+    /*
+     * @defgroup LLVMCInitialization Initialization Routines
+     * @ingroup LLVMC
+     *
+     * This module contains routines used to initialize the LLVM system.
+     */
 
     public static void LLVMInitializeCore(LLVMPassRegistryRef R) {
         nothrows_run(() -> Function.LLVMInitializeCore.handle().invoke(R.value()));

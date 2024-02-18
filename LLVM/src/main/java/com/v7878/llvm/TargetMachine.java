@@ -3,11 +3,13 @@ package com.v7878.llvm;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.llvm.LibLLVM.LLVM;
 import static com.v7878.llvm.LibLLVM.LLVM_SCOPE;
-import static com.v7878.llvm.Target.LLVMTargetDataRef;
+import static com.v7878.llvm.Target.cLLVMTargetDataRef;
 import static com.v7878.llvm.Types.LLVMBool;
-import static com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassManagerRef;
+import static com.v7878.llvm.Types.cLLVMMemoryBufferRef;
+import static com.v7878.llvm.Types.cLLVMModuleRef;
+import static com.v7878.llvm.Types.cLLVMPassManagerRef;
 import static com.v7878.llvm._Utils.CHAR_PTR;
 import static com.v7878.llvm._Utils.CONST_CHAR_PTR;
 import static com.v7878.llvm._Utils.ENUM;
@@ -19,7 +21,9 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.llvm.Target.LLVMTargetDataRef;
 import com.v7878.llvm.Types.AddressValue;
+import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMString;
 import com.v7878.llvm._Utils.Symbol;
 
@@ -29,8 +33,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public class TargetMachine {
-    static final Class<?> LLVMTargetMachineRef = VOID_PTR;
-    static final Class<?> LLVMTargetRef = VOID_PTR;
+    static final Class<?> cLLVMTargetMachineRef = VOID_PTR;
+    static final Class<?> cLLVMTargetRef = VOID_PTR;
 
     public static final class LLVMTargetMachineRef extends AddressValue {
 
@@ -45,7 +49,7 @@ public class TargetMachine {
         }
     }
 
-    static final Class<?> LLVMCodeGenOptLevel = ENUM;
+    static final Class<?> cLLVMCodeGenOptLevel = ENUM;
 
     public enum LLVMCodeGenOptLevel {
 
@@ -68,7 +72,7 @@ public class TargetMachine {
         }
     }
 
-    static final Class<?> LLVMRelocMode = ENUM;
+    static final Class<?> cLLVMRelocMode = ENUM;
 
     public enum LLVMRelocMode {
 
@@ -91,7 +95,7 @@ public class TargetMachine {
         }
     }
 
-    static final Class<?> LLVMCodeModel = ENUM;
+    static final Class<?> cLLVMCodeModel = ENUM;
 
     public enum LLVMCodeModel {
 
@@ -116,7 +120,7 @@ public class TargetMachine {
         }
     }
 
-    static final Class<?> LLVMCodeGenFileType = ENUM;
+    static final Class<?> cLLVMCodeGenFileType = ENUM;
 
     public enum LLVMCodeGenFileType {
 
@@ -138,27 +142,27 @@ public class TargetMachine {
     }
 
     private enum Function implements Symbol {
-        LLVMGetFirstTarget(LLVMTargetRef),
-        LLVMGetNextTarget(LLVMTargetRef, LLVMTargetRef),
-        LLVMGetTargetFromName(LLVMTargetRef, CONST_CHAR_PTR),
-        LLVMGetTargetFromTriple(LLVMBool, CONST_CHAR_PTR, ptr(LLVMTargetRef), ptr(CHAR_PTR)),
-        LLVMGetTargetName(CONST_CHAR_PTR, LLVMTargetRef),
-        LLVMGetTargetDescription(CONST_CHAR_PTR, LLVMTargetRef),
-        LLVMTargetHasJIT(LLVMBool, LLVMTargetRef),
-        LLVMTargetHasTargetMachine(LLVMBool, LLVMTargetRef),
-        LLVMTargetHasAsmBackend(LLVMBool, LLVMTargetRef),
-        LLVMCreateTargetMachine(LLVMTargetMachineRef, LLVMTargetRef, CONST_CHAR_PTR, CONST_CHAR_PTR, CONST_CHAR_PTR, LLVMCodeGenOptLevel, LLVMRelocMode, LLVMCodeModel),
-        LLVMDisposeTargetMachine(void.class, LLVMTargetMachineRef),
-        LLVMGetTargetMachineTarget(LLVMTargetRef, LLVMTargetMachineRef),
-        LLVMGetTargetMachineTriple(CHAR_PTR, LLVMTargetMachineRef),
-        LLVMGetTargetMachineCPU(CHAR_PTR, LLVMTargetMachineRef),
-        LLVMGetTargetMachineFeatureString(CHAR_PTR, LLVMTargetMachineRef),
-        LLVMCreateTargetDataLayout(LLVMTargetDataRef, LLVMTargetMachineRef),
-        LLVMSetTargetMachineAsmVerbosity(void.class, LLVMTargetMachineRef, LLVMBool),
-        LLVMTargetMachineEmitToFile(LLVMBool, LLVMTargetMachineRef, LLVMModuleRef, CHAR_PTR, LLVMCodeGenFileType, ptr(CHAR_PTR)),
-        LLVMTargetMachineEmitToMemoryBuffer(LLVMBool, LLVMTargetMachineRef, LLVMModuleRef, LLVMCodeGenFileType, ptr(CHAR_PTR), ptr(LLVMMemoryBufferRef)),
+        LLVMGetFirstTarget(cLLVMTargetRef),
+        LLVMGetNextTarget(cLLVMTargetRef, cLLVMTargetRef),
+        LLVMGetTargetFromName(cLLVMTargetRef, CONST_CHAR_PTR),
+        LLVMGetTargetFromTriple(LLVMBool, CONST_CHAR_PTR, ptr(cLLVMTargetRef), ptr(CHAR_PTR)),
+        LLVMGetTargetName(CONST_CHAR_PTR, cLLVMTargetRef),
+        LLVMGetTargetDescription(CONST_CHAR_PTR, cLLVMTargetRef),
+        LLVMTargetHasJIT(LLVMBool, cLLVMTargetRef),
+        LLVMTargetHasTargetMachine(LLVMBool, cLLVMTargetRef),
+        LLVMTargetHasAsmBackend(LLVMBool, cLLVMTargetRef),
+        LLVMCreateTargetMachine(cLLVMTargetMachineRef, cLLVMTargetRef, CONST_CHAR_PTR, CONST_CHAR_PTR, CONST_CHAR_PTR, cLLVMCodeGenOptLevel, cLLVMRelocMode, cLLVMCodeModel),
+        LLVMDisposeTargetMachine(void.class, cLLVMTargetMachineRef),
+        LLVMGetTargetMachineTarget(cLLVMTargetRef, cLLVMTargetMachineRef),
+        LLVMGetTargetMachineTriple(CHAR_PTR, cLLVMTargetMachineRef),
+        LLVMGetTargetMachineCPU(CHAR_PTR, cLLVMTargetMachineRef),
+        LLVMGetTargetMachineFeatureString(CHAR_PTR, cLLVMTargetMachineRef),
+        LLVMCreateTargetDataLayout(cLLVMTargetDataRef, cLLVMTargetMachineRef),
+        LLVMSetTargetMachineAsmVerbosity(void.class, cLLVMTargetMachineRef, LLVMBool),
+        LLVMTargetMachineEmitToFile(LLVMBool, cLLVMTargetMachineRef, cLLVMModuleRef, CHAR_PTR, cLLVMCodeGenFileType, ptr(CHAR_PTR)),
+        LLVMTargetMachineEmitToMemoryBuffer(LLVMBool, cLLVMTargetMachineRef, cLLVMModuleRef, cLLVMCodeGenFileType, ptr(CHAR_PTR), ptr(cLLVMMemoryBufferRef)),
         LLVMGetDefaultTargetTriple(CHAR_PTR),
-        LLVMAddAnalysisPasses(void.class, LLVMTargetMachineRef, LLVMPassManagerRef);
+        LLVMAddAnalysisPasses(void.class, cLLVMTargetMachineRef, cLLVMPassManagerRef);
 
         static {
             _Utils.processSymbols(LLVM, LLVM_SCOPE, Function.values());

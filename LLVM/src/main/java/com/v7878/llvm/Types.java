@@ -29,19 +29,19 @@ public final class Types {
     }
 
     static final Class<?> LLVMBool = BOOL_AS_INT;
-    static final Class<?> LLVMMemoryBufferRef = VOID_PTR;
-    static final Class<?> LLVMContextRef = VOID_PTR;
-    static final Class<?> LLVMModuleRef = VOID_PTR;
-    static final Class<?> LLVMTypeRef = VOID_PTR;
-    static final Class<?> LLVMValueRef = VOID_PTR;
-    static final Class<?> LLVMBasicBlockRef = VOID_PTR;
-    static final Class<?> LLVMBuilderRef = VOID_PTR;
-    static final Class<?> LLVMModuleProviderRef = VOID_PTR;
-    static final Class<?> LLVMPassManagerRef = VOID_PTR;
-    static final Class<?> LLVMPassRegistryRef = VOID_PTR;
-    static final Class<?> LLVMUseRef = VOID_PTR;
-    static final Class<?> LLVMAttributeRef = VOID_PTR;
-    static final Class<?> LLVMDiagnosticInfoRef = VOID_PTR;
+    static final Class<?> cLLVMMemoryBufferRef = VOID_PTR;
+    static final Class<?> cLLVMContextRef = VOID_PTR;
+    static final Class<?> cLLVMModuleRef = VOID_PTR;
+    static final Class<?> cLLVMTypeRef = VOID_PTR;
+    static final Class<?> cLLVMValueRef = VOID_PTR;
+    static final Class<?> cLLVMBasicBlockRef = VOID_PTR;
+    static final Class<?> cLLVMBuilderRef = VOID_PTR;
+    static final Class<?> cLLVMModuleProviderRef = VOID_PTR;
+    static final Class<?> cLLVMPassManagerRef = VOID_PTR;
+    static final Class<?> cLLVMPassRegistryRef = VOID_PTR;
+    static final Class<?> cLLVMUseRef = VOID_PTR;
+    static final Class<?> cLLVMAttributeRef = VOID_PTR;
+    static final Class<?> cLLVMDiagnosticInfoRef = VOID_PTR;
 
     public static final class LLVMMemoryBufferRef extends AddressValue {
 

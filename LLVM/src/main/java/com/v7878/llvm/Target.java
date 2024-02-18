@@ -7,6 +7,11 @@ import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassManagerRef;
 import static com.v7878.llvm.Types.LLVMTypeRef;
 import static com.v7878.llvm.Types.LLVMValueRef;
+import static com.v7878.llvm.Types.cLLVMContextRef;
+import static com.v7878.llvm.Types.cLLVMModuleRef;
+import static com.v7878.llvm.Types.cLLVMPassManagerRef;
+import static com.v7878.llvm.Types.cLLVMTypeRef;
+import static com.v7878.llvm.Types.cLLVMValueRef;
 import static com.v7878.llvm._Utils.CHAR_PTR;
 import static com.v7878.llvm._Utils.CONST_CHAR_PTR;
 import static com.v7878.llvm._Utils.ENUM;
@@ -32,8 +37,8 @@ public class Target {
      * @defgroup LLVMCTarget Target information
      */
 
-    static final Class<?> LLVMTargetDataRef = VOID_PTR;
-    static final Class<?> LLVMTargetLibraryInfoRef = VOID_PTR;
+    static final Class<?> cLLVMTargetDataRef = VOID_PTR;
+    static final Class<?> cLLVMTargetLibraryInfoRef = VOID_PTR;
 
     public static final class LLVMTargetDataRef extends Types.AddressValue {
 
@@ -48,7 +53,7 @@ public class Target {
         }
     }
 
-    static final Class<?> LLVMByteOrdering = ENUM;
+    static final Class<?> cLLVMByteOrdering = ENUM;
 
     public enum LLVMByteOrdering {
 
@@ -95,28 +100,28 @@ public class Target {
         LLVMInitializeAArch64AsmPrinter(void.class),
 
         // common
-        LLVMGetModuleDataLayout(LLVMTargetDataRef, LLVMModuleRef),
-        LLVMSetModuleDataLayout(void.class, LLVMModuleRef, LLVMTargetDataRef),
-        LLVMCreateTargetData(LLVMTargetDataRef, CONST_CHAR_PTR),
-        LLVMDisposeTargetData(void.class, LLVMTargetDataRef),
-        LLVMAddTargetLibraryInfo(void.class, LLVMTargetLibraryInfoRef, LLVMPassManagerRef),
-        LLVMCopyStringRepOfTargetData(CHAR_PTR, LLVMTargetDataRef),
-        LLVMByteOrder(LLVMByteOrdering, LLVMTargetDataRef),
-        LLVMPointerSize(UNSIGNED_INT, LLVMTargetDataRef),
-        LLVMPointerSizeForAS(UNSIGNED_INT, LLVMTargetDataRef, UNSIGNED_INT),
-        LLVMIntPtrType(LLVMTypeRef, LLVMTargetDataRef),
-        LLVMIntPtrTypeForAS(LLVMTypeRef, LLVMTargetDataRef, UNSIGNED_INT),
-        LLVMIntPtrTypeInContext(LLVMTypeRef, LLVMContextRef, LLVMTargetDataRef),
-        LLVMIntPtrTypeForASInContext(LLVMTypeRef, LLVMContextRef, LLVMTargetDataRef, UNSIGNED_INT),
-        LLVMSizeOfTypeInBits(UNSIGNED_LONG_LONG, LLVMTargetDataRef, LLVMTypeRef),
-        LLVMStoreSizeOfType(UNSIGNED_LONG_LONG, LLVMTargetDataRef, LLVMTypeRef),
-        LLVMABISizeOfType(UNSIGNED_LONG_LONG, LLVMTargetDataRef, LLVMTypeRef),
-        LLVMABIAlignmentOfType(UNSIGNED_INT, LLVMTargetDataRef, LLVMTypeRef),
-        LLVMCallFrameAlignmentOfType(UNSIGNED_INT, LLVMTargetDataRef, LLVMTypeRef),
-        LLVMPreferredAlignmentOfType(UNSIGNED_INT, LLVMTargetDataRef, LLVMTypeRef),
-        LLVMPreferredAlignmentOfGlobal(UNSIGNED_INT, LLVMTargetDataRef, LLVMValueRef),
-        LLVMElementAtOffset(UNSIGNED_INT, LLVMTargetDataRef, LLVMTypeRef, UNSIGNED_LONG_LONG),
-        LLVMOffsetOfElement(UNSIGNED_LONG_LONG, LLVMTargetDataRef, LLVMTypeRef, UNSIGNED_INT);
+        LLVMGetModuleDataLayout(cLLVMTargetDataRef, cLLVMModuleRef),
+        LLVMSetModuleDataLayout(void.class, cLLVMModuleRef, cLLVMTargetDataRef),
+        LLVMCreateTargetData(cLLVMTargetDataRef, CONST_CHAR_PTR),
+        LLVMDisposeTargetData(void.class, cLLVMTargetDataRef),
+        LLVMAddTargetLibraryInfo(void.class, cLLVMTargetLibraryInfoRef, cLLVMPassManagerRef),
+        LLVMCopyStringRepOfTargetData(CHAR_PTR, cLLVMTargetDataRef),
+        LLVMByteOrder(cLLVMByteOrdering, cLLVMTargetDataRef),
+        LLVMPointerSize(UNSIGNED_INT, cLLVMTargetDataRef),
+        LLVMPointerSizeForAS(UNSIGNED_INT, cLLVMTargetDataRef, UNSIGNED_INT),
+        LLVMIntPtrType(cLLVMTypeRef, cLLVMTargetDataRef),
+        LLVMIntPtrTypeForAS(cLLVMTypeRef, cLLVMTargetDataRef, UNSIGNED_INT),
+        LLVMIntPtrTypeInContext(cLLVMTypeRef, cLLVMContextRef, cLLVMTargetDataRef),
+        LLVMIntPtrTypeForASInContext(cLLVMTypeRef, cLLVMContextRef, cLLVMTargetDataRef, UNSIGNED_INT),
+        LLVMSizeOfTypeInBits(UNSIGNED_LONG_LONG, cLLVMTargetDataRef, cLLVMTypeRef),
+        LLVMStoreSizeOfType(UNSIGNED_LONG_LONG, cLLVMTargetDataRef, cLLVMTypeRef),
+        LLVMABISizeOfType(UNSIGNED_LONG_LONG, cLLVMTargetDataRef, cLLVMTypeRef),
+        LLVMABIAlignmentOfType(UNSIGNED_INT, cLLVMTargetDataRef, cLLVMTypeRef),
+        LLVMCallFrameAlignmentOfType(UNSIGNED_INT, cLLVMTargetDataRef, cLLVMTypeRef),
+        LLVMPreferredAlignmentOfType(UNSIGNED_INT, cLLVMTargetDataRef, cLLVMTypeRef),
+        LLVMPreferredAlignmentOfGlobal(UNSIGNED_INT, cLLVMTargetDataRef, cLLVMValueRef),
+        LLVMElementAtOffset(UNSIGNED_INT, cLLVMTargetDataRef, cLLVMTypeRef, UNSIGNED_LONG_LONG),
+        LLVMOffsetOfElement(UNSIGNED_LONG_LONG, cLLVMTargetDataRef, cLLVMTypeRef, UNSIGNED_INT);
 
         static {
             _Utils.processSymbols(LLVM, LLVM_SCOPE, Function.values());
@@ -285,10 +290,9 @@ public class Target {
      * Returns the byte order of a target, either LLVMBigEndian or
      * LLVMLittleEndian.
      */
-    //TODO
-    //public static LLVMByteOrdering LLVMByteOrder(LLVMTargetDataRef TD) {
-    //    return nothrows_run(() -> LLVMByteOrdering.of((int) Function.LLVMByteOrder.handle().invoke(TD.value())));
-    //}
+    public static LLVMByteOrdering LLVMByteOrder(LLVMTargetDataRef TD) {
+        return nothrows_run(() -> LLVMByteOrdering.of((int) Function.LLVMByteOrder.handle().invoke(TD.value())));
+    }
 
     /**
      * Returns the pointer size in bytes for a target.
