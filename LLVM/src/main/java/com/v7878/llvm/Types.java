@@ -3,6 +3,8 @@ package com.v7878.llvm;
 import static com.v7878.llvm._Utils.BOOL_AS_INT;
 import static com.v7878.llvm._Utils.VOID_PTR;
 
+import com.v7878.foreign.MemorySegment;
+
 public final class Types {
     private Types() {
     }
@@ -118,6 +120,18 @@ public final class Types {
 
         LLVMDiagnosticInfoRef(long value) {
             super(value);
+        }
+    }
+
+    // Port-added
+    public static final class LLVMString extends AddressValue {
+
+        LLVMString(long value) {
+            super(value);
+        }
+
+        public String getValue() {
+            return MemorySegment.ofAddress(value()).reinterpret(Long.MAX_VALUE).getString(0);
         }
     }
 }
