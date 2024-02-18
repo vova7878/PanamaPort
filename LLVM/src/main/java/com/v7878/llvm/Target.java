@@ -14,8 +14,13 @@ import static com.v7878.llvm._Utils.Symbol;
 import static com.v7878.llvm._Utils.UNSIGNED_INT;
 import static com.v7878.llvm._Utils.UNSIGNED_LONG_LONG;
 import static com.v7878.llvm._Utils.VOID_PTR;
+import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.unsafe.NativeCodeBlob.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Utils.nothrows_run;
+
+import com.v7878.foreign.Arena;
+import com.v7878.foreign.MemorySegment;
+import com.v7878.llvm.Types.LLVMString;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -229,163 +234,167 @@ public class Target {
 
     /*===-- Target Data -------------------------------------------------------===*/
 
-    ///**
-    // * Obtain the data layout for a module.
-    // */
-    //public static LLVMTargetDataRef LLVMGetModuleDataLayout(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMGetModuleDataLayout.handle().invoke());
-    //}
-//
-    ///**
-    // * Set the data layout for a module.
-    // */
-    //public static void LLVMSetModuleDataLayout(LLVMModuleRef M, LLVMTargetDataRef DL) {
-    //    return nothrows_run(() -> Function.LLVMSetModuleDataLayout.handle().invoke());
-    //}
-//
-    ///**
-    // * Creates target data from a target layout string.
-    // */
-    //public static LLVMTargetDataRef LLVMCreateTargetData(String StringRep) {
-    //    return nothrows_run(() -> Function.LLVMCreateTargetData.handle().invoke());
-    //}
-//
-    ///**
-    // * Deallocates a TargetData.
-    // */
-    //public static void LLVMDisposeTargetData(LLVMTargetDataRef TD) {
-    //    return nothrows_run(() -> Function.LLVMDisposeTargetData.handle().invoke());
-    //}
-//
-    ///**
-    // * Adds target library information to a pass manager. This does not take
-    // * ownership of the target library info.
-    // */
-    //public static void LLVMAddTargetLibraryInfo(LLVMTargetLibraryInfoRef TLI, LLVMPassManagerRef PM) {
-    //    return nothrows_run(() -> Function.LLVMAddTargetLibraryInfo.handle().invoke());
-    //}
-//
-    ///**
-    // * Converts target data to a target layout string. The string must be disposed
-    // * with LLVMDisposeMessage.
-    // */
-    //public static LLVMString LLVMCopyStringRepOfTargetData(LLVMTargetDataRef TD) {
-    //    return nothrows_run(() -> Function.LLVMCopyStringRepOfTargetData.handle().invoke());
-    //}
-//
-    ///**
-    // * Returns the byte order of a target, either LLVMBigEndian or
-    // * LLVMLittleEndian.
-    // */
+    /**
+     * Obtain the data layout for a module.
+     */
+    public static LLVMTargetDataRef LLVMGetModuleDataLayout(LLVMModuleRef M) {
+        return nothrows_run(() -> new LLVMTargetDataRef((long) Function.LLVMGetModuleDataLayout.handle().invoke(M.value())));
+    }
+
+    /**
+     * Set the data layout for a module.
+     */
+    public static void LLVMSetModuleDataLayout(LLVMModuleRef M, LLVMTargetDataRef DL) {
+        nothrows_run(() -> Function.LLVMSetModuleDataLayout.handle().invoke(M.value(), DL.value()));
+    }
+
+    /**
+     * Creates target data from a target layout string.
+     */
+    public static LLVMTargetDataRef LLVMCreateTargetData(String StringRep) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_StringRep = allocString(arena, StringRep);
+            return nothrows_run(() -> new LLVMTargetDataRef((long) Function.LLVMCreateTargetData.handle().invoke(c_StringRep.address())));
+        }
+    }
+
+    /**
+     * Deallocates a TargetData.
+     */
+    public static void LLVMDisposeTargetData(LLVMTargetDataRef TD) {
+        nothrows_run(() -> Function.LLVMDisposeTargetData.handle().invoke(TD.value()));
+    }
+
+    /**
+     * Adds target library information to a pass manager. This does not take
+     * ownership of the target library info.
+     */
+    public static void LLVMAddTargetLibraryInfo(LLVMTargetLibraryInfoRef TLI, LLVMPassManagerRef PM) {
+        nothrows_run(() -> Function.LLVMAddTargetLibraryInfo.handle().invoke(TLI.value(), PM.value()));
+    }
+
+    /**
+     * Converts target data to a target layout string. The string must be disposed
+     * with LLVMDisposeMessage.
+     */
+    public static LLVMString LLVMCopyStringRepOfTargetData(LLVMTargetDataRef TD) {
+        return nothrows_run(() -> new LLVMString((long) Function.LLVMCopyStringRepOfTargetData.handle().invoke(TD.value())));
+    }
+
+    /**
+     * Returns the byte order of a target, either LLVMBigEndian or
+     * LLVMLittleEndian.
+     */
+    //TODO
     //public static LLVMByteOrdering LLVMByteOrder(LLVMTargetDataRef TD) {
-    //    return nothrows_run(() -> Function.LLVMByteOrder.handle().invoke());
+    //    return nothrows_run(() -> LLVMByteOrdering.of((int) Function.LLVMByteOrder.handle().invoke(TD.value())));
     //}
-//
-    ///**
-    // * Returns the pointer size in bytes for a target.
-    // */
-    //public static int /* unsigned */ LLVMPointerSize(LLVMTargetDataRef TD) {
-    //    return nothrows_run(() -> Function.LLVMPointerSize.handle().invoke());
-    //}
-//
-    ///**
-    // * Returns the pointer size in bytes for a target for a specified
-    // * address space.
-    // */
-    //public static int /* unsigned */ LLVMPointerSizeForAS(LLVMTargetDataRef TD, int /* unsigned */ AS) {
-    //    return nothrows_run(() -> Function.LLVMPointerSizeForAS.handle().invoke());
-    //}
-//
-    ///**
-    // * Returns the integer type that is the same size as a pointer on a target.
-    // */
-    //public static LLVMTypeRef LLVMIntPtrType(LLVMTargetDataRef TD) {
-    //    return nothrows_run(() -> Function.LLVMIntPtrType.handle().invoke());
-    //}
-//
-    ///**
-    // * Returns the integer type that is the same size as a pointer on a target.
-    // * This version allows the address space to be specified.
-    // */
-    //public static LLVMTypeRef LLVMIntPtrTypeForAS(LLVMTargetDataRef TD, int /* unsigned */ AS) {
-    //    return nothrows_run(() -> Function.LLVMIntPtrTypeForAS.handle().invoke());
-    //}
-//
-    ///**
-    // * Returns the integer type that is the same size as a pointer on a target.
-    // */
-    //public static LLVMTypeRef LLVMIntPtrTypeInContext(LLVMContextRef C, LLVMTargetDataRef TD) {
-    //    return nothrows_run(() -> Function.LLVMIntPtrTypeInContext.handle().invoke());
-    //}
-//
-    ///**
-    // * Returns the integer type that is the same size as a pointer on a target.
-    // * This version allows the address space to be specified.
-    // */
-    //public static LLVMTypeRef LLVMIntPtrTypeForASInContext(LLVMContextRef C, LLVMTargetDataRef TD, int /* unsigned */ AS) {
-    //    return nothrows_run(() -> Function.LLVMIntPtrTypeForASInContext.handle().invoke());
-    //}
-//
-    ///**
-    // * Computes the size of a type in bytes for a target.
-    // */
-    //public static long /* unsigned long long */ LLVMSizeOfTypeInBits(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMSizeOfTypeInBits.handle().invoke());
-    //}
-//
-    ///**
-    // * Computes the storage size of a type in bytes for a target.
-    // */
-    //public static long /* unsigned long long */ LLVMStoreSizeOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMStoreSizeOfType.handle().invoke());
-    //}
-//
-    ///**
-    // * Computes the ABI size of a type in bytes for a target.
-    // */
-    //public static long /* unsigned long long */ LLVMABISizeOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMABISizeOfType.handle().invoke());
-    //}
-//
-    ///**
-    // * Computes the ABI alignment of a type in bytes for a target.
-    // */
-    //public static int /* unsigned */ LLVMABIAlignmentOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMABIAlignmentOfType.handle().invoke());
-    //}
-//
-    ///**
-    // * Computes the call frame alignment of a type in bytes for a target.
-    // */
-    //public static int /* unsigned */ LLVMCallFrameAlignmentOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMCallFrameAlignmentOfType.handle().invoke());
-    //}
-//
-    ///**
-    // * Computes the preferred alignment of a type in bytes for a target.
-    // */
-    //public static int /* unsigned */ LLVMPreferredAlignmentOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMPreferredAlignmentOfType.handle().invoke());
-    //}
-//
-    ///**
-    // * Computes the preferred alignment of a global variable in bytes for a target.
-    // */
-    //public static int /* unsigned */ LLVMPreferredAlignmentOfGlobal(LLVMTargetDataRef TD, LLVMValueRef GlobalVar) {
-    //    return nothrows_run(() -> Function.LLVMPreferredAlignmentOfGlobal.handle().invoke());
-    //}
-//
-    ///**
-    // * Computes the structure element that contains the byte offset for a target.
-    // */
-    //public static int /* unsigned */ LLVMElementAtOffset(LLVMTargetDataRef TD, LLVMTypeRef StructTy, long /* unsigned long long */ Offset) {
-    //    return nothrows_run(() -> Function.LLVMElementAtOffset.handle().invoke());
-    //}
-//
-    ///**
-    // * Computes the byte offset of the indexed struct element for a target.
-    // */
-    //public static long /* unsigned long long */ LLVMOffsetOfElement(LLVMTargetDataRef TD, LLVMTypeRef StructTy, int /* unsigned */ Element) {
-    //    return nothrows_run(() -> Function.LLVMOffsetOfElement.handle().invoke());
-    //}
+
+    /**
+     * Returns the pointer size in bytes for a target.
+     */
+    public static int /* unsigned */ LLVMPointerSize(LLVMTargetDataRef TD) {
+        return nothrows_run(() -> (int) Function.LLVMPointerSize.handle().invoke(TD.value()));
+    }
+
+    /**
+     * Returns the pointer size in bytes for a target for a specified
+     * address space.
+     */
+    public static int /* unsigned */ LLVMPointerSizeForAS(LLVMTargetDataRef TD, int /* unsigned */ AS) {
+        return nothrows_run(() -> (int) Function.LLVMPointerSizeForAS.handle().invoke(TD.value(), AS));
+    }
+
+    /**
+     * Returns the integer type that is the same size as a pointer on a target.
+     */
+    public static LLVMTypeRef LLVMIntPtrType(LLVMTargetDataRef TD) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntPtrType.handle().invoke(TD.value())));
+    }
+
+    /**
+     * Returns the integer type that is the same size as a pointer on a target.
+     * This version allows the address space to be specified.
+     */
+    public static LLVMTypeRef LLVMIntPtrTypeForAS(LLVMTargetDataRef TD, int /* unsigned */ AS) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntPtrTypeForAS.handle().invoke(TD.value(), AS)));
+    }
+
+    /**
+     * Returns the integer type that is the same size as a pointer on a target.
+     */
+    public static LLVMTypeRef LLVMIntPtrTypeInContext(LLVMContextRef C, LLVMTargetDataRef TD) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntPtrTypeInContext.handle().invoke(C.value(), TD.value())));
+    }
+
+    /**
+     * Returns the integer type that is the same size as a pointer on a target.
+     * This version allows the address space to be specified.
+     */
+    public static LLVMTypeRef LLVMIntPtrTypeForASInContext(LLVMContextRef C, LLVMTargetDataRef TD, int /* unsigned */ AS) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntPtrTypeForASInContext.handle().invoke(C.value(), TD.value(), AS)));
+    }
+
+    /**
+     * Computes the size of a type in bytes for a target.
+     */
+    public static long /* unsigned long long */ LLVMSizeOfTypeInBits(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
+        return nothrows_run(() -> (long) Function.LLVMSizeOfTypeInBits.handle().invoke(TD.value(), Ty.value()));
+    }
+
+    /**
+     * Computes the storage size of a type in bytes for a target.
+     */
+    public static long /* unsigned long long */ LLVMStoreSizeOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
+        return nothrows_run(() -> (long) Function.LLVMStoreSizeOfType.handle().invoke(TD.value(), Ty.value()));
+    }
+
+    /**
+     * Computes the ABI size of a type in bytes for a target.
+     */
+    public static long /* unsigned long long */ LLVMABISizeOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
+        return nothrows_run(() -> (long) Function.LLVMABISizeOfType.handle().invoke(TD.value(), Ty.value()));
+    }
+
+    /**
+     * Computes the ABI alignment of a type in bytes for a target.
+     */
+    public static int /* unsigned */ LLVMABIAlignmentOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
+        return nothrows_run(() -> (int) Function.LLVMABIAlignmentOfType.handle().invoke(TD.value(), Ty.value()));
+    }
+
+    /**
+     * Computes the call frame alignment of a type in bytes for a target.
+     */
+    public static int /* unsigned */ LLVMCallFrameAlignmentOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
+        return nothrows_run(() -> (int) Function.LLVMCallFrameAlignmentOfType.handle().invoke(TD.value(), Ty.value()));
+    }
+
+    /**
+     * Computes the preferred alignment of a type in bytes for a target.
+     */
+    public static int /* unsigned */ LLVMPreferredAlignmentOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
+        return nothrows_run(() -> (int) Function.LLVMPreferredAlignmentOfType.handle().invoke(TD.value(), Ty.value()));
+    }
+
+    /**
+     * Computes the preferred alignment of a global variable in bytes for a target.
+     */
+    public static int /* unsigned */ LLVMPreferredAlignmentOfGlobal(LLVMTargetDataRef TD, LLVMValueRef GlobalVar) {
+        return nothrows_run(() -> (int) Function.LLVMPreferredAlignmentOfGlobal.handle().invoke(TD.value(), GlobalVar.value()));
+    }
+
+    /**
+     * Computes the structure element that contains the byte offset for a target.
+     */
+    public static int /* unsigned */ LLVMElementAtOffset(LLVMTargetDataRef TD, LLVMTypeRef StructTy, long /* unsigned long long */ Offset) {
+        return nothrows_run(() -> (int) Function.LLVMElementAtOffset.handle().invoke(TD.value(), StructTy.value(), Offset));
+    }
+
+    /**
+     * Computes the byte offset of the indexed struct element for a target.
+     */
+    public static long /* unsigned long long */ LLVMOffsetOfElement(LLVMTargetDataRef TD, LLVMTypeRef StructTy, int /* unsigned */ Element) {
+        return nothrows_run(() -> (long) Function.LLVMOffsetOfElement.handle().invoke(TD.value(), StructTy.value(), Element));
+    }
 }
