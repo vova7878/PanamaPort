@@ -4297,6 +4297,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildRetVoid(LLVMBuilderRef B) {
         return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildRetVoid.handle().invoke(B.value())));
     }
+
     //LLVMValueRef LLVMBuildRet(LLVMBuilderRef, LLVMValueRef V) {
     //    return nothrows_run(() -> Function.LLVMBuildRet.handle().invoke());
     //}
@@ -4652,14 +4653,11 @@ public class Core {
     //void LLVMDisposeModuleProvider(LLVMModuleProviderRef M) {
     //    return nothrows_run(() -> Function.LLVMDisposeModuleProvider.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreMemoryBuffers Memory Buffers
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreMemoryBuffers Memory Buffers
+     */
+
     //boolean LLVMCreateMemoryBufferWithContentsOfFile(String Path, LLVMMemoryBufferRef *OutMemBuf, LLVMString *OutMessage) {
     //    return nothrows_run(() -> Function.LLVMCreateMemoryBufferWithContentsOfFile.handle().invoke());
     //}
@@ -4672,15 +4670,26 @@ public class Core {
     //LLVMMemoryBufferRef LLVMCreateMemoryBufferWithMemoryRangeCopy(String InputData, long /* size_t */ InputDataLength, String BufferName) {
     //    return nothrows_run(() -> Function.LLVMCreateMemoryBufferWithMemoryRangeCopy.handle().invoke());
     //}
-    //String LLVMGetBufferStart(LLVMMemoryBufferRef MemBuf) {
-    //    return nothrows_run(() -> Function.LLVMGetBufferStart.handle().invoke());
-    //}
-    //long /* size_t */ LLVMGetBufferSize(LLVMMemoryBufferRef MemBuf) {
-    //    return nothrows_run(() -> Function.LLVMGetBufferSize.handle().invoke());
-    //}
-    //void LLVMDisposeMemoryBuffer(LLVMMemoryBufferRef MemBuf) {
-    //    return nothrows_run(() -> Function.LLVMDisposeMemoryBuffer.handle().invoke());
-    //}
+
+    public static String LLVMGetBufferStart(LLVMMemoryBufferRef MemBuf) {
+        return nothrows_run(() -> addressToString((long) Function.LLVMGetBufferStart.handle().invoke(MemBuf.value())));
+    }
+
+    public static long /* size_t */ LLVMGetBufferSize(LLVMMemoryBufferRef MemBuf) {
+        return nothrows_run(() -> (long) Function.LLVMGetBufferSize.handle().invoke(MemBuf.value()));
+    }
+
+    // Port-added
+    public static MemorySegment LLVMGetBufferData(LLVMMemoryBufferRef MemBuf) {
+        long address = nothrows_run(() -> (long) Function.LLVMGetBufferStart.handle().invoke(MemBuf.value()));
+        long size = LLVMGetBufferSize(MemBuf);
+        return MemorySegment.ofAddress(address).reinterpret(size).asReadOnly();
+    }
+
+    public static void LLVMDisposeMemoryBuffer(LLVMMemoryBufferRef MemBuf) {
+        nothrows_run(() -> Function.LLVMDisposeMemoryBuffer.handle().invoke(MemBuf.value()));
+    }
+
     ///**
     // * @}
     // */
