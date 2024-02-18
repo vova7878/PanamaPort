@@ -4,6 +4,7 @@ import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -22,6 +23,8 @@ import com.v7878.dex.TypeId;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
+import com.v7878.foreign.ValueLayout;
+import com.v7878.llvm.Types.AddressValue;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
 
@@ -202,5 +205,50 @@ final class _Utils {
         return MethodType.methodType(handleClass(raw_type.returnType()),
                 raw_type.parameterList().stream()
                         .map(_Utils::handleClass).toArray(Class<?>[]::new));
+    }
+
+    public static String addressToString(long address) {
+        if (address == 0) {
+            return null;
+        }
+        return MemorySegment.ofAddress(address).reinterpret(Long.MAX_VALUE).getString(0);
+    }
+
+    public static String addressToString(long address, long length) {
+        if (address == 0) {
+            if (length != 0) {
+                throw new IllegalArgumentException("null string with non-zero length");
+            }
+            return null;
+        }
+        MemorySegment tmp = MemorySegment.ofAddress(address).reinterpret(length);
+        return new String(tmp.toArray(ValueLayout.JAVA_BYTE));
+    }
+
+    public static MemorySegment allocString(Arena scope, String value) {
+        return value == null ? MemorySegment.NULL : scope.allocateFrom(value);
+    }
+
+    public static MemorySegment allocArray(Arena scope, AddressValue... values) {
+        if (values == null || values.length == 0) {
+            return MemorySegment.NULL;
+        }
+        if (IS64BIT) {
+            long[] tmp = new long[values.length];
+            for (int i = 0; i < values.length; i++) {
+                tmp[i] = values[i].value();
+            }
+            return scope.allocateFrom(ValueLayout.JAVA_LONG, tmp);
+        } else {
+            int[] tmp = new int[values.length];
+            for (int i = 0; i < values.length; i++) {
+                tmp[i] = (int) values[i].value();
+            }
+            return scope.allocateFrom(ValueLayout.JAVA_INT, tmp);
+        }
+    }
+
+    public static int arrayLength(AddressValue... values) {
+        return values == null ? 0 : values.length;
     }
 }

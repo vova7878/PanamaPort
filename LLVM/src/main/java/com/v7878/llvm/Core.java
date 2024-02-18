@@ -28,6 +28,10 @@ import static com.v7878.llvm._Utils.UINT8_T;
 import static com.v7878.llvm._Utils.UNSIGNED_INT;
 import static com.v7878.llvm._Utils.UNSIGNED_LONG_LONG;
 import static com.v7878.llvm._Utils.VOID_PTR;
+import static com.v7878.llvm._Utils.addressToString;
+import static com.v7878.llvm._Utils.allocArray;
+import static com.v7878.llvm._Utils.allocString;
+import static com.v7878.llvm._Utils.arrayLength;
 import static com.v7878.llvm._Utils.const_ptr;
 import static com.v7878.llvm._Utils.ptr;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -1521,9 +1525,6 @@ public class Core {
 
     /**
      * Deallocate and destroy all ManagedStatic variables.
-     *
-     * @see llvm::llvm_shutdown
-     * @see ManagedStatic
      */
     public static void LLVMShutdown() {
         nothrows_run(() -> Function.LLVMShutdown.handle().invoke());
@@ -1532,7 +1533,7 @@ public class Core {
     /*===-- Error handling ----------------------------------------------------===*/
     public static LLVMString LLVMCreateMessage(String Message) {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment c_Message = arena.allocateFrom(Message);
+            MemorySegment c_Message = allocString(arena, Message);
             return nothrows_run(() -> new LLVMString((long) Function.LLVMCreateMessage.handle().invoke(c_Message.address())));
         }
     }
@@ -1541,7 +1542,7 @@ public class Core {
         nothrows_run(() -> Function.LLVMDisposeMessage.handle().invoke(Message.value()));
     }
 
-    /**
+    /*
      * @defgroup LLVMCCoreContext Contexts
      *
      * Contexts are execution states for the core LLVM IR system.
@@ -1549,13 +1550,7 @@ public class Core {
      * Most types are tied to a context instance. Multiple contexts can
      * exist simultaneously. A single context is not thread safe. However,
      * different contexts can execute on different threads simultaneously.
-     *
-     * @{
      */
-
-    //TODO
-    //typedef void (*LLVMDiagnosticHandler)(LLVMDiagnosticInfoRef, void *);
-    //typedef void (*LLVMYieldCallback)(LLVMContextRef, void *);
 
     /**
      * Create a new context.
@@ -1607,8 +1602,6 @@ public class Core {
     /**
      * Return a string representation of the DiagnosticInfo. Use
      * LLVMDisposeMessage to free the string.
-     *
-     * @see DiagnosticInfo::print()
      */
     public static LLVMString LLVMGetDiagInfoDescription(LLVMDiagnosticInfoRef DI) {
         return nothrows_run(() -> new LLVMString((long) Function.LLVMGetDiagInfoDescription.handle().invoke(DI.value())));
@@ -1617,64 +1610,87 @@ public class Core {
     //TODO
     ///**
     // * Return an enum LLVMDiagnosticSeverity.
-    // *
-    // * @see DiagnosticInfo::getSeverity()
     // */
     //public static LLVMDiagnosticSeverity LLVMGetDiagInfoSeverity(LLVMDiagnosticInfoRef DI) {
     //    return nothrows_run(() -> LLVMDiagnosticSeverity.of((int) Function.LLVMGetDiagInfoSeverity.handle().invoke()));
     //}
 
-    public static int /* unsigned */ LLVMGetMDKindIDInContext(LLVMContextRef C, String Name, int /* unsigned */ SLen) {
-        return nothrows_run(() -> (int) Function.LLVMGetMDKindIDInContext.handle().invoke());
+    public static int /* unsigned */ LLVMGetMDKindIDInContext(LLVMContextRef C, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            int /* unsigned */ SLen = Math.toIntExact(c_Name.byteSize());
+            return nothrows_run(() -> (int) Function.LLVMGetMDKindIDInContext.handle().invoke(C.value(), c_Name.address(), SLen));
+        }
     }
 
-    public static int /* unsigned */ LLVMGetMDKindID(String Name, int /* unsigned */ SLen) {
-        return nothrows_run(() -> (int) Function.LLVMGetMDKindID.handle().invoke());
+    public static int /* unsigned */ LLVMGetMDKindID(String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            int /* unsigned */ SLen = Math.toIntExact(c_Name.byteSize());
+            return nothrows_run(() -> (int) Function.LLVMGetMDKindID.handle().invoke(c_Name.address(), SLen));
+        }
     }
 
+    /**
+     * Return an unique id given the name of a enum attribute,
+     * or 0 if no attribute by that name exists.
+     * <p>
+     * See <a href="http://llvm.org/docs/LangRef.html#parameter-attributes">parameter-attributes</a>
+     * and <a href="http://llvm.org/docs/LangRef.html#function-attributes">function-attributes</a>
+     * for the list of available attributes.
+     * <p>
+     * NB: Attribute names and/or id are subject to change without
+     * going through the C API deprecation cycle.
+     */
+    public static int /* unsigned */ LLVMGetEnumAttributeKindForName(String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            long /* size_t */ SLen = c_Name.byteSize();
+            return nothrows_run(() -> (int) Function.LLVMGetEnumAttributeKindForName.handle().invoke(c_Name.address(), SLen));
+        }
+    }
 
-    ///**
-    // * Return an unique id given the name of a enum attribute,
-    // * or 0 if no attribute by that name exists.
-    // *
-    // * See http://llvm.org/docs/LangRef.html#parameter-attributes
-    // * and http://llvm.org/docs/LangRef.html#function-attributes
-    // * for the list of available attributes.
-    // *
-    // * NB: Attribute names and/or id are subject to change without
-    // * going through the C API deprecation cycle.
-    // */
-    //int /* unsigned */ LLVMGetEnumAttributeKindForName(String Name, long /* size_t */ SLen) {
-    //    return nothrows_run(() -> Function.LLVMGetEnumAttributeKindForName.handle().invoke());
-    //}
-    //int /* unsigned */ LLVMGetLastEnumAttributeKind() {
-    //    return nothrows_run(() -> Function.LLVMGetLastEnumAttributeKind.handle().invoke());
-    //}
-    ///**
-    // * Create an enum attribute.
-    // */
-    //LLVMAttributeRef LLVMCreateEnumAttribute(LLVMContextRef C, int /* unsigned */ KindID, long /* uint64_t */ Val) {
-    //    return nothrows_run(() -> Function.LLVMCreateEnumAttribute.handle().invoke());
-    //}
-    ///**
-    // * Get the unique id corresponding to the enum attribute
-    // * passed as argument.
-    // */
-    //int /* unsigned */ LLVMGetEnumAttributeKind(LLVMAttributeRef A) {
-    //    return nothrows_run(() -> Function.LLVMGetEnumAttributeKind.handle().invoke());
-    //}
-    ///**
-    // * Get the enum attribute's value. 0 is returned if none exists.
-    // */
-    //long /* uint64_t */ LLVMGetEnumAttributeValue(LLVMAttributeRef A) {
-    //    return nothrows_run(() -> Function.LLVMGetEnumAttributeValue.handle().invoke());
-    //}
-    ///**
-    // * Create a string attribute.
-    // */
-    //LLVMAttributeRef LLVMCreateStringAttribute(LLVMContextRef C, String K, int /* unsigned */ KLength, String V, int /* unsigned */ VLength) {
-    //    return nothrows_run(() -> Function.LLVMCreateStringAttribute.handle().invoke());
-    //}
+    public static int /* unsigned */ LLVMGetLastEnumAttributeKind() {
+        return nothrows_run(() -> (int) Function.LLVMGetLastEnumAttributeKind.handle().invoke());
+    }
+
+    /**
+     * Create an enum attribute.
+     */
+    public static LLVMAttributeRef LLVMCreateEnumAttribute(LLVMContextRef C, int /* unsigned */ KindID, long /* uint64_t */ Val) {
+        return nothrows_run(() -> new LLVMAttributeRef((long) Function.LLVMCreateEnumAttribute.handle().invoke(C.value(), KindID, Val)));
+    }
+
+    /**
+     * Get the unique id corresponding to the enum attribute
+     * passed as argument.
+     */
+    public static int /* unsigned */ LLVMGetEnumAttributeKind(LLVMAttributeRef A) {
+        return nothrows_run(() -> (int) Function.LLVMGetEnumAttributeKind.handle().invoke(A.value()));
+    }
+
+    /**
+     * Get the enum attribute's value. 0 is returned if none exists.
+     */
+    public static long /* uint64_t */ LLVMGetEnumAttributeValue(LLVMAttributeRef A) {
+        return nothrows_run(() -> (int) Function.LLVMGetEnumAttributeValue.handle().invoke(A.value()));
+    }
+
+    /**
+     * Create a string attribute.
+     */
+    public static LLVMAttributeRef LLVMCreateStringAttribute(LLVMContextRef C, String K, String V) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_K = allocString(arena, K);
+            int /* unsigned */ KLength = Math.toIntExact(c_K.byteSize());
+            MemorySegment c_V = allocString(arena, V);
+            int /* unsigned */ VLength = Math.toIntExact(c_V.byteSize());
+            return nothrows_run(() -> new LLVMAttributeRef((long) Function.LLVMCreateStringAttribute.handle()
+                    .invoke(C.value(), c_K.address(), KLength, c_V.address(), VLength)));
+        }
+    }
+
+    //TODO
     ///**
     // * Get the string attribute's kind.
     // */
@@ -1687,63 +1703,73 @@ public class Core {
     //String LLVMGetStringAttributeValue(LLVMAttributeRef A, int /* unsigned */ *Length) {
     //    return nothrows_run(() -> Function.LLVMGetStringAttributeValue.handle().invoke());
     //}
-    ///**
-    // * Check for the different types of attributes.
-    // */
-    //boolean LLVMIsEnumAttribute(LLVMAttributeRef A) {
-    //    return nothrows_run(() -> Function.LLVMIsEnumAttribute.handle().invoke());
-    //}
-    //boolean LLVMIsStringAttribute(LLVMAttributeRef A) {
-    //    return nothrows_run(() -> Function.LLVMIsStringAttribute.handle().invoke());
-    //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreModule Modules
-    // *
-    // * Modules represent the top-level structure in an LLVM program. An LLVM
-    // * module is effectively a translation unit or a collection of
-    // * translation units merged together.
-    // *
-    // * @{
-    // */
-    ///**
-    // * Create a new, empty module in the global context.
-    // *
-    // * This is equivalent to calling LLVMModuleCreateWithNameInContext with
-    // * LLVMGetGlobalContext() as the context parameter.
-    // *
-    // * Every invocation should be paired with LLVMDisposeModule() or memory
-    // * will be leaked.
-    // */
-    //LLVMModuleRef LLVMModuleCreateWithName(String ModuleID) {
-    //    return nothrows_run(() -> Function.LLVMModuleCreateWithName.handle().invoke());
-    //}
-    ///**
-    // * Create a new, empty module in a specific context.
-    // *
-    // * Every invocation should be paired with LLVMDisposeModule() or memory
-    // * will be leaked.
-    // */
-    //LLVMModuleRef LLVMModuleCreateWithNameInContext(String ModuleID, LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMModuleCreateWithNameInContext.handle().invoke());
-    //}
-    ///**
-    // * Return an exact copy of the specified module.
-    // */
-    //LLVMModuleRef LLVMCloneModule(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMCloneModule.handle().invoke());
-    //}
-    ///**
-    // * Destroy a module instance.
-    // *
-    // * This must be called for every created module or memory will be
-    // * leaked.
-    // */
-    //void LLVMDisposeModule(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMDisposeModule.handle().invoke());
-    //}
+
+    /**
+     * Check for the different types of attributes.
+     */
+    public static boolean LLVMIsEnumAttribute(LLVMAttributeRef A) {
+        return nothrows_run(() -> (boolean) Function.LLVMIsEnumAttribute.handle().invoke(A.value()));
+    }
+
+    public static boolean LLVMIsStringAttribute(LLVMAttributeRef A) {
+        return nothrows_run(() -> (boolean) Function.LLVMIsStringAttribute.handle().invoke(A.value()));
+    }
+
+    /*
+     * @defgroup LLVMCCoreModule Modules
+     *
+     * Modules represent the top-level structure in an LLVM program. An LLVM
+     * module is effectively a translation unit or a collection of
+     * translation units merged together.
+     */
+
+    /**
+     * Create a new, empty module in the global context.
+     * <p>
+     * This is equivalent to calling LLVMModuleCreateWithNameInContext with
+     * LLVMGetGlobalContext() as the context parameter.
+     * <p>
+     * Every invocation should be paired with LLVMDisposeModule() or memory
+     * will be leaked.
+     */
+    public static LLVMModuleRef LLVMModuleCreateWithName(String ModuleID) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ModuleID = allocString(arena, ModuleID);
+            return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMModuleCreateWithName.handle().invoke(c_ModuleID.address())));
+        }
+    }
+
+    /**
+     * Create a new, empty module in a specific context.
+     * <p>
+     * Every invocation should be paired with LLVMDisposeModule() or memory
+     * will be leaked.
+     */
+    public static LLVMModuleRef LLVMModuleCreateWithNameInContext(String ModuleID, LLVMContextRef C) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ModuleID = allocString(arena, ModuleID);
+            return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMModuleCreateWithNameInContext.handle().invoke(c_ModuleID.address(), C.value())));
+        }
+    }
+
+    /**
+     * Return an exact copy of the specified module.
+     */
+    public static LLVMModuleRef LLVMCloneModule(LLVMModuleRef M) {
+        return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMCloneModule.handle().invoke(M.value())));
+    }
+
+    /**
+     * Destroy a module instance.
+     * <p>
+     * This must be called for every created module or memory will be
+     * leaked.
+     */
+    public static void LLVMDisposeModule(LLVMModuleRef M) {
+        nothrows_run(() -> Function.LLVMDisposeModule.handle().invoke(M.value()));
+    }
+
+    //TODO
     ///**
     // * Obtain the identifier of a module.
     // *
@@ -1755,82 +1781,90 @@ public class Core {
     //String LLVMGetModuleIdentifier(LLVMModuleRef M, long /* size_t */ *Len) {
     //    return nothrows_run(() -> Function.LLVMGetModuleIdentifier.handle().invoke());
     //}
-    ///**
-    // * Set the identifier of a module to a string Ident with length Len.
-    // *
-    // * @param M The module to set identifier
-    // * @param Ident The string to set M's identifier to
-    // * @param Len Length of Ident
-    // * @see Module::setModuleIdentifier()
-    // */
-    //void LLVMSetModuleIdentifier(LLVMModuleRef M, String Ident, long /* size_t */ Len) {
-    //    return nothrows_run(() -> Function.LLVMSetModuleIdentifier.handle().invoke());
-    //}
-    ///**
-    // * Obtain the data layout for a module.
-    // *
-    // * @see Module::getDataLayoutStr()
-    // *
-    // * LLVMGetDataLayout is DEPRECATED, as the name is not only incorrect,
-    // * but match the name of another method on the module. Prefer the use
-    // * of LLVMGetDataLayoutStr, which is not ambiguous.
-    // */
-    //String LLVMGetDataLayoutStr(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMGetDataLayoutStr.handle().invoke());
-    //}
-    //String LLVMGetDataLayout(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMGetDataLayout.handle().invoke());
-    //}
-    ///**
-    // * Set the data layout for a module.
-    // *
-    // * @see Module::setDataLayout()
-    // */
-    //void LLVMSetDataLayout(LLVMModuleRef M, String DataLayoutStr) {
-    //    return nothrows_run(() -> Function.LLVMSetDataLayout.handle().invoke());
-    //}
-    ///**
-    // * Obtain the target triple for a module.
-    // *
-    // * @see Module::getTargetTriple()
-    // */
-    //String LLVMGetTarget(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMGetTarget.handle().invoke());
-    //}
-    ///**
-    // * Set the target triple for a module.
-    // *
-    // * @see Module::setTargetTriple()
-    // */
-    //void LLVMSetTarget(LLVMModuleRef M, String Triple) {
-    //    return nothrows_run(() -> Function.LLVMSetTarget.handle().invoke());
-    //}
-    ///**
-    // * Dump a representation of a module to stderr.
-    // *
-    // * @see Module::dump()
-    // */
-    //void LLVMDumpModule(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMDumpModule.handle().invoke());
-    //}
+
+    /**
+     * Set the identifier of a module to a string Ident.
+     *
+     * @param M     The module to set identifier
+     * @param Ident The string to set M's identifier to
+     */
+    public static void LLVMSetModuleIdentifier(LLVMModuleRef M, String Ident) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Ident = allocString(arena, Ident);
+            long /* size_t */ Len = c_Ident.byteSize();
+            nothrows_run(() -> Function.LLVMSetModuleIdentifier.handle().invoke(c_Ident.address(), Len));
+        }
+    }
+
+    /**
+     * Obtain the data layout for a module.
+     */
+    public static String LLVMGetDataLayoutStr(LLVMModuleRef M) {
+        return nothrows_run(() -> addressToString((long) Function.LLVMGetDataLayoutStr.handle().invoke(M.value())));
+    }
+
+    /**
+     * Obtain the data layout for a module.
+     * <p>
+     * LLVMGetDataLayout is DEPRECATED, as the name is not only incorrect,
+     * but match the name of another method on the module. Prefer the use
+     * of LLVMGetDataLayoutStr, which is not ambiguous.
+     */
+    public static String LLVMGetDataLayout(LLVMModuleRef M) {
+        return nothrows_run(() -> addressToString((long) Function.LLVMGetDataLayout.handle().invoke(M.value())));
+    }
+
+    /**
+     * Set the data layout for a module.
+     */
+    public static void LLVMSetDataLayout(LLVMModuleRef M, String DataLayoutStr) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_DataLayoutStr = allocString(arena, DataLayoutStr);
+            nothrows_run(() -> Function.LLVMSetDataLayout.handle().invoke(M.value(), c_DataLayoutStr.address()));
+        }
+    }
+
+    /**
+     * Obtain the target triple for a module.
+     */
+    public static String LLVMGetTarget(LLVMModuleRef M) {
+        return nothrows_run(() -> addressToString((long) Function.LLVMGetTarget.handle().invoke(M.value())));
+    }
+
+    /**
+     * Set the target triple for a module.
+     */
+    public static void LLVMSetTarget(LLVMModuleRef M, String Triple) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Triple = allocString(arena, Triple);
+            nothrows_run(() -> Function.LLVMSetTarget.handle().invoke(M.value(), c_Triple.address()));
+        }
+    }
+
+    /**
+     * Dump a representation of a module to stderr.
+     */
+    public static void LLVMDumpModule(LLVMModuleRef M) {
+        nothrows_run(() -> Function.LLVMDumpModule.handle().invoke(M.value()));
+    }
+
+    //TODO
     ///**
     // * Print a representation of a module to a file. The ErrorMessage needs to be
     // * disposed with LLVMDisposeMessage. Returns 0 on success, 1 otherwise.
-    // *
-    // * @see Module::print()
     // */
     //boolean LLVMPrintModuleToFile(LLVMModuleRef M, String Filename, LLVMString *ErrorMessage) {
     //    return nothrows_run(() -> Function.LLVMPrintModuleToFile.handle().invoke());
     //}
-    ///**
-    // * Return a string representation of the module. Use
-    // * LLVMDisposeMessage to free the string.
-    // *
-    // * @see Module::print()
-    // */
-    //LLVMString LLVMPrintModuleToString(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMPrintModuleToString.handle().invoke());
-    //}
+
+    /**
+     * Return a string representation of the module. Use
+     * LLVMDisposeMessage to free the string.
+     */
+    public static LLVMString LLVMPrintModuleToString(LLVMModuleRef M) {
+        return nothrows_run(() -> new LLVMString((long) Function.LLVMPrintModuleToString.handle().invoke(M.value())));
+    }
+
     ///**
     // * Set inline assembly for a module.
     // *
@@ -1884,14 +1918,18 @@ public class Core {
     //void LLVMAddNamedMetadataOperand(LLVMModuleRef M, String Name, LLVMValueRef Val) {
     //    return nothrows_run(() -> Function.LLVMAddNamedMetadataOperand.handle().invoke());
     //}
-    ///**
-    // * Add a function to a module under a specified name.
-    // *
-    // * @see llvm::Function::Create()
-    // */
-    //LLVMValueRef LLVMAddFunction(LLVMModuleRef M, String Name, LLVMTypeRef FunctionTy) {
-    //    return nothrows_run(() -> Function.LLVMAddFunction.handle().invoke());
-    //}
+
+    /**
+     * Add a function to a module under a specified name.
+     */
+    public static LLVMValueRef LLVMAddFunction(LLVMModuleRef M, String Name, LLVMTypeRef FunctionTy) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMAddFunction.handle()
+                    .invoke(M.value(), c_Name.address(), FunctionTy.value())));
+        }
+    }
+
     ///**
     // * Obtain a Function value from a Module by its name.
     // *
@@ -1936,37 +1974,34 @@ public class Core {
     //LLVMValueRef LLVMGetPreviousFunction(LLVMValueRef Fn) {
     //    return nothrows_run(() -> Function.LLVMGetPreviousFunction.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreType Types
-    // *
-    // * Types represent the type of a value.
-    // *
-    // * Types are associated with a context instance. The context internally
-    // * deduplicates types so there is only 1 instance of a specific type
-    // * alive at a time. In other words, a unique type is shared among all
-    // * consumers within a context.
-    // *
-    // * A Type in the C API corresponds to llvm::Type.
-    // *
-    // * Types have the following hierarchy:
-    // *
-    // *   types:
-    // *     integer type
-    // *     real type
-    // *     function type
-    // *     sequence types:
-    // *       array type
-    // *       pointer type
-    // *       vector type
-    // *     void type
-    // *     label type
-    // *     opaque type
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreType Types
+     *
+     * Types represent the type of a value.
+     *
+     * Types are associated with a context instance. The context internally
+     * deduplicates types so there is only 1 instance of a specific type
+     * alive at a time. In other words, a unique type is shared among all
+     * consumers within a context.
+     *
+     * A Type in the C API corresponds to llvm::Type.
+     *
+     * Types have the following hierarchy:
+     *
+     *   types:
+     *     integer type
+     *     real type
+     *     function type
+     *     sequence types:
+     *       array type
+     *       pointer type
+     *       vector type
+     *     void type
+     *     label type
+     *     opaque type
+     */
+
     ///**
     // * Obtain the enumerated type of a Type instance.
     // *
@@ -1993,30 +2028,28 @@ public class Core {
     //LLVMContextRef LLVMGetTypeContext(LLVMTypeRef Ty) {
     //    return nothrows_run(() -> Function.LLVMGetTypeContext.handle().invoke());
     //}
-    ///**
-    // * Dump a representation of a type to stderr.
-    // *
-    // * @see llvm::Type::dump()
-    // */
-    //void LLVMDumpType(LLVMTypeRef Val) {
-    //    return nothrows_run(() -> Function.LLVMDumpType.handle().invoke());
-    //}
-    ///**
-    // * Return a string representation of the type. Use
-    // * LLVMDisposeMessage to free the string.
-    // *
-    // * @see llvm::Type::print()
-    // */
-    //LLVMString LLVMPrintTypeToString(LLVMTypeRef Val) {
-    //    return nothrows_run(() -> Function.LLVMPrintTypeToString.handle().invoke());
-    //}
-    ///**
-    // * @defgroup LLVMCCoreTypeInt Integer Types
-    // *
-    // * Functions in this section operate on integer types.
-    // *
-    // * @{
-    // */
+
+    /**
+     * Dump a representation of a type to stderr.
+     */
+    public static void LLVMDumpType(LLVMTypeRef Val) {
+        nothrows_run(() -> Function.LLVMDumpType.handle().invoke(Val.value()));
+    }
+
+    /**
+     * Return a string representation of the type. Use
+     * LLVMDisposeMessage to free the string.
+     */
+    public static LLVMString LLVMPrintTypeToString(LLVMTypeRef Val) {
+        return nothrows_run(() -> new LLVMString((long) Function.LLVMPrintTypeToString.handle().invoke(Val.value())));
+    }
+
+    /*
+     * @defgroup LLVMCCoreTypeInt Integer Types
+     *
+     * Functions in this section operate on integer types.
+     */
+
     ///**
     // * Obtain an integer type from a context with specified bit width.
     // */
@@ -2063,20 +2096,17 @@ public class Core {
     //LLVMTypeRef LLVMInt128Type() {
     //    return nothrows_run(() -> Function.LLVMInt128Type.handle().invoke());
     //}
-    //LLVMTypeRef LLVMIntType(int /* unsigned */ NumBits) {
-    //    return nothrows_run(() -> Function.LLVMIntType.handle().invoke());
-    //}
+    public static LLVMTypeRef LLVMIntType(int /* unsigned */ NumBits) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntType.handle().invoke(NumBits)));
+    }
     //int /* unsigned */ LLVMGetIntTypeWidth(LLVMTypeRef IntegerTy) {
     //    return nothrows_run(() -> Function.LLVMGetIntTypeWidth.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreTypeFloat Floating Point Types
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreTypeFloat Floating Point Types
+     */
+
     ///**
     // * Obtain a 16-bit floating point type from a context.
     // */
@@ -2137,23 +2167,25 @@ public class Core {
     //LLVMTypeRef LLVMPPCFP128Type() {
     //    return nothrows_run(() -> Function.LLVMPPCFP128Type.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreTypeFunction Function Types
-    // *
-    // * @{
-    // */
-    ///**
-    // * Obtain a function type consisting of a specified signature.
-    // *
-    // * The function is defined as a tuple of a return Type, a list of
-    // * parameter types, and whether the function is variadic.
-    // */
-    //LLVMTypeRef LLVMFunctionType(LLVMTypeRef ReturnType, LLVMTypeRef *ParamTypes, int /* unsigned */ ParamCount, boolean IsVarArg) {
-    //    return nothrows_run(() -> Function.LLVMFunctionType.handle().invoke());
-    //}
+
+    /*
+     * @defgroup LLVMCCoreTypeFunction Function Types
+     */
+
+    /**
+     * Obtain a function type consisting of a specified signature.
+     * <p>
+     * The function is defined as a tuple of a return Type, a list of
+     * parameter types, and whether the function is variadic.
+     */
+    public static LLVMTypeRef LLVMFunctionType(LLVMTypeRef ReturnType, LLVMTypeRef[] ParamTypes, boolean IsVarArg) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ParamTypes = allocArray(arena, ParamTypes);
+            int /* unsigned */ ParamCount = arrayLength(ParamTypes);
+            return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFunctionType.handle()
+                    .invoke(ReturnType.value(), c_ParamTypes.address(), ParamCount, IsVarArg)));
+        }
+    }
     ///**
     // * Returns whether a function type is variadic.
     // */
@@ -2186,18 +2218,13 @@ public class Core {
     //void LLVMGetParamTypes(LLVMTypeRef FunctionTy, LLVMTypeRef *Dest) {
     //    return nothrows_run(() -> Function.LLVMGetParamTypes.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreTypeStruct Structure Types
-    // *
-    // * These functions relate to LLVMTypeRef instances.
-    // *
-    // * @see llvm::StructType
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreTypeStruct Structure Types
+     *
+     * These functions relate to LLVMTypeRef instances.
+     */
+
     ///**
     // * Create a new structure type in a context.
     // *
@@ -2286,17 +2313,14 @@ public class Core {
     //boolean LLVMIsOpaqueStruct(LLVMTypeRef StructTy) {
     //    return nothrows_run(() -> Function.LLVMIsOpaqueStruct.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreTypeSequential Sequential Types
-    // *
-    // * Sequential types represents "arrays" of types. This is a super class
-    // * for array, vector, and pointer types.
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreTypeSequential Sequential Types
+     *
+     * Sequential types represents "arrays" of types. This is a super class
+     * for array, vector, and pointer types.
+     */
+
     ///**
     // * Obtain the type of elements within a sequential type.
     // *
@@ -2371,14 +2395,11 @@ public class Core {
     //int /* unsigned */ LLVMGetVectorSize(LLVMTypeRef VectorTy) {
     //    return nothrows_run(() -> Function.LLVMGetVectorSize.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreTypeOther Other Types
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreTypeOther Other Types
+     */
+
     ///**
     // * Create a void type in a context.
     // */
@@ -2401,18 +2422,16 @@ public class Core {
     // * These are similar to the above functions except they operate on the
     // * global context.
     // */
-    //LLVMTypeRef LLVMVoidType() {
-    //    return nothrows_run(() -> Function.LLVMVoidType.handle().invoke());
-    //}
+    public static LLVMTypeRef LLVMVoidType() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMVoidType.handle().invoke()));
+    }
     //LLVMTypeRef LLVMLabelType() {
     //    return nothrows_run(() -> Function.LLVMLabelType.handle().invoke());
     //}
     //LLVMTypeRef LLVMX86MMXType() {
     //    return nothrows_run(() -> Function.LLVMX86MMXType.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
+
     ///**
     // * @}
     // */
@@ -3669,23 +3688,28 @@ public class Core {
     //LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
     //    return nothrows_run(() -> Function.LLVMGetEntryBasicBlock.handle().invoke());
     //}
-    ///**
-    // * Append a basic block to the end of a function.
-    // *
-    // * @see llvm::BasicBlock::Create()
-    // */
-    //LLVMBasicBlockRef LLVMAppendBasicBlockInContext(LLVMContextRef C, LLVMValueRef Fn, String Name) {
-    //    return nothrows_run(() -> Function.LLVMAppendBasicBlockInContext.handle().invoke());
-    //}
-    ///**
-    // * Append a basic block to the end of a function using the global
-    // * context.
-    // *
-    // * @see llvm::BasicBlock::Create()
-    // */
-    //LLVMBasicBlockRef LLVMAppendBasicBlock(LLVMValueRef Fn, String Name) {
-    //    return nothrows_run(() -> Function.LLVMAppendBasicBlock.handle().invoke());
-    //}
+
+    /**
+     * Append a basic block to the end of a function.
+     */
+    public static LLVMBasicBlockRef LLVMAppendBasicBlockInContext(LLVMContextRef C, LLVMValueRef Fn, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMAppendBasicBlockInContext.handle()
+                    .invoke(C.value(), Fn.value(), c_Name.address())));
+        }
+    }
+
+    /**
+     * Append a basic block to the end of a function using the global
+     * context.
+     */
+    public static LLVMBasicBlockRef LLVMAppendBasicBlock(LLVMValueRef Fn, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMAppendBasicBlock.handle().invoke(Fn.value(), c_Name.address())));
+        }
+    }
     ///**
     // * Insert a basic block in a function before another basic block.
     // *
@@ -4212,32 +4236,37 @@ public class Core {
     ///**
     // * @}
     // */
-    ///**
-    // * @defgroup LLVMCCoreInstructionBuilder Instruction Builders
-    // *
-    // * An instruction builder represents a point within a basic block and is
-    // * the exclusive means of building instructions using the C interface.
-    // *
-    // * @{
-    // */
-    //LLVMBuilderRef LLVMCreateBuilderInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMCreateBuilderInContext.handle().invoke());
-    //}
-    //LLVMBuilderRef LLVMCreateBuilder() {
-    //    return nothrows_run(() -> Function.LLVMCreateBuilder.handle().invoke());
-    //}
+
+    /*
+     * @defgroup LLVMCCoreInstructionBuilder Instruction Builders
+     *
+     * An instruction builder represents a point within a basic block and is
+     * the exclusive means of building instructions using the C interface.
+     */
+
+    public static LLVMBuilderRef LLVMCreateBuilderInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMBuilderRef((long) Function.LLVMCreateBuilderInContext.handle().invoke(C.value())));
+    }
+
+    public static LLVMBuilderRef LLVMCreateBuilder() {
+        return nothrows_run(() -> new LLVMBuilderRef((long) Function.LLVMCreateBuilder.handle().invoke()));
+    }
+
     //void LLVMPositionBuilder(LLVMBuilderRef Builder, LLVMBasicBlockRef Block, LLVMValueRef Instr) {
     //    return nothrows_run(() -> Function.LLVMPositionBuilder.handle().invoke());
     //}
     //void LLVMPositionBuilderBefore(LLVMBuilderRef Builder, LLVMValueRef Instr) {
     //    return nothrows_run(() -> Function.LLVMPositionBuilderBefore.handle().invoke());
     //}
-    //void LLVMPositionBuilderAtEnd(LLVMBuilderRef Builder, LLVMBasicBlockRef Block) {
-    //    return nothrows_run(() -> Function.LLVMPositionBuilderAtEnd.handle().invoke());
-    //}
-    //LLVMBasicBlockRef LLVMGetInsertBlock(LLVMBuilderRef Builder) {
-    //    return nothrows_run(() -> Function.LLVMGetInsertBlock.handle().invoke());
-    //}
+
+    public static void LLVMPositionBuilderAtEnd(LLVMBuilderRef Builder, LLVMBasicBlockRef Block) {
+        nothrows_run(() -> Function.LLVMPositionBuilderAtEnd.handle().invoke(Builder.value(), Block.value()));
+    }
+
+    public static LLVMBasicBlockRef LLVMGetInsertBlock(LLVMBuilderRef Builder) {
+        return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMGetInsertBlock.handle().invoke(Builder.value())));
+    }
+
     //void LLVMClearInsertionPosition(LLVMBuilderRef Builder) {
     //    return nothrows_run(() -> Function.LLVMClearInsertionPosition.handle().invoke());
     //}
@@ -4247,9 +4276,11 @@ public class Core {
     //void LLVMInsertIntoBuilderWithName(LLVMBuilderRef Builder, LLVMValueRef Instr, String Name) {
     //    return nothrows_run(() -> Function.LLVMInsertIntoBuilderWithName.handle().invoke());
     //}
-    //void LLVMDisposeBuilder(LLVMBuilderRef Builder) {
-    //    return nothrows_run(() -> Function.LLVMDisposeBuilder.handle().invoke());
-    //}
+
+    public static void LLVMDisposeBuilder(LLVMBuilderRef Builder) {
+        nothrows_run(() -> Function.LLVMDisposeBuilder.handle().invoke(Builder.value()));
+    }
+
     ///* Metadata */
     //void LLVMSetCurrentDebugLocation(LLVMBuilderRef Builder, LLVMValueRef L) {
     //    return nothrows_run(() -> Function.LLVMSetCurrentDebugLocation.handle().invoke());
@@ -4260,10 +4291,12 @@ public class Core {
     //void LLVMSetInstDebugLocation(LLVMBuilderRef Builder, LLVMValueRef Inst) {
     //    return nothrows_run(() -> Function.LLVMSetInstDebugLocation.handle().invoke());
     //}
+
     ///* Terminators */
-    //LLVMValueRef LLVMBuildRetVoid(LLVMBuilderRef) {
-    //    return nothrows_run(() -> Function.LLVMBuildRetVoid.handle().invoke());
-    //}
+
+    public static LLVMValueRef LLVMBuildRetVoid(LLVMBuilderRef B) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildRetVoid.handle().invoke(B.value())));
+    }
     //LLVMValueRef LLVMBuildRet(LLVMBuilderRef, LLVMValueRef V) {
     //    return nothrows_run(() -> Function.LLVMBuildRet.handle().invoke());
     //}
