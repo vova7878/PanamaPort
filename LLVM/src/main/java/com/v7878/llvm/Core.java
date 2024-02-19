@@ -47,6 +47,7 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
 import com.v7878.llvm.Types.LLVMString;
 import com.v7878.llvm._Utils.Symbol;
 
@@ -1612,17 +1613,16 @@ public class Core {
      * Return a string representation of the DiagnosticInfo. Use
      * LLVMDisposeMessage to free the string.
      */
-    public static LLVMString LLVMGetDiagInfoDescription(Types.LLVMDiagnosticInfoRef DI) {
+    public static LLVMString LLVMGetDiagInfoDescription(LLVMDiagnosticInfoRef DI) {
         return nothrows_run(() -> new LLVMString((long) Function.LLVMGetDiagInfoDescription.handle().invoke(DI.value())));
     }
 
-    //TODO
-    ///**
-    // * Return an enum LLVMDiagnosticSeverity.
-    // */
-    //public static LLVMDiagnosticSeverity LLVMGetDiagInfoSeverity(LLVMDiagnosticInfoRef DI) {
-    //    return nothrows_run(() -> LLVMDiagnosticSeverity.of((int) Function.LLVMGetDiagInfoSeverity.handle().invoke()));
-    //}
+    /**
+     * Return an enum LLVMDiagnosticSeverity.
+     */
+    public static LLVMDiagnosticSeverity LLVMGetDiagInfoSeverity(LLVMDiagnosticInfoRef DI) {
+        return nothrows_run(() -> LLVMDiagnosticSeverity.of((int) Function.LLVMGetDiagInfoSeverity.handle().invoke(DI.value())));
+    }
 
     public static int /* unsigned */ LLVMGetMDKindIDInContext(LLVMContextRef C, String Name) {
         try (Arena arena = Arena.ofConfined()) {
@@ -2059,58 +2059,72 @@ public class Core {
      * Functions in this section operate on integer types.
      */
 
-    ///**
-    // * Obtain an integer type from a context with specified bit width.
-    // */
-    //LLVMTypeRef LLVMInt1TypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMInt1TypeInContext.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt8TypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMInt8TypeInContext.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt16TypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMInt16TypeInContext.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt32TypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMInt32TypeInContext.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt64TypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMInt64TypeInContext.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt128TypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMInt128TypeInContext.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMIntTypeInContext(LLVMContextRef C, int /* unsigned */ NumBits) {
-    //    return nothrows_run(() -> Function.LLVMIntTypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Obtain an integer type from the global context with a specified bit
-    // * width.
-    // */
-    //LLVMTypeRef LLVMInt1Type() {
-    //    return nothrows_run(() -> Function.LLVMInt1Type.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt8Type() {
-    //    return nothrows_run(() -> Function.LLVMInt8Type.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt16Type() {
-    //    return nothrows_run(() -> Function.LLVMInt16Type.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt32Type() {
-    //    return nothrows_run(() -> Function.LLVMInt32Type.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt64Type() {
-    //    return nothrows_run(() -> Function.LLVMInt64Type.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMInt128Type() {
-    //    return nothrows_run(() -> Function.LLVMInt128Type.handle().invoke());
-    //}
+    /**
+     * Obtain an integer type from a context with specified bit width.
+     */
+    public static LLVMTypeRef LLVMInt1TypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt1TypeInContext.handle().invoke(C.value())));
+    }
+
+    public static LLVMTypeRef LLVMInt8TypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt8TypeInContext.handle().invoke(C.value())));
+    }
+
+    public static LLVMTypeRef LLVMInt16TypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt16TypeInContext.handle().invoke(C.value())));
+    }
+
+    public static LLVMTypeRef LLVMInt32TypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt32TypeInContext.handle().invoke(C.value())));
+    }
+
+    public static LLVMTypeRef LLVMInt64TypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt64TypeInContext.handle().invoke(C.value())));
+    }
+
+    public static LLVMTypeRef LLVMInt128TypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt128TypeInContext.handle().invoke(C.value())));
+    }
+
+    public static LLVMTypeRef LLVMIntTypeInContext(LLVMContextRef C, int /* unsigned */ NumBits) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntTypeInContext.handle().invoke(C.value(), NumBits)));
+    }
+
+    /**
+     * Obtain an integer type from the global context with a specified bit
+     * width.
+     */
+    public static LLVMTypeRef LLVMInt1Type() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt1Type.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMInt8Type() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt8Type.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMInt16Type() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt16Type.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMInt32Type() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt32Type.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMInt64Type() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt64Type.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMInt128Type() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt128Type.handle().invoke()));
+    }
+
     public static LLVMTypeRef LLVMIntType(int /* unsigned */ NumBits) {
         return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntType.handle().invoke(NumBits)));
     }
-    //int /* unsigned */ LLVMGetIntTypeWidth(LLVMTypeRef IntegerTy) {
-    //    return nothrows_run(() -> Function.LLVMGetIntTypeWidth.handle().invoke());
-    //}
+
+    public static int /* unsigned */ LLVMGetIntTypeWidth(LLVMTypeRef IntegerTy) {
+        return nothrows_run(() -> (int) Function.LLVMGetIntTypeWidth.handle().invoke(IntegerTy.value()));
+    }
 
     /*
      * @defgroup LLVMCCoreTypeFloat Floating Point Types
