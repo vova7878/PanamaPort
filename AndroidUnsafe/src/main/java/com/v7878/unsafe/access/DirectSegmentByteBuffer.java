@@ -34,42 +34,42 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
 
     @Override
     public final DirectByteBuffer slice() {
-        if (!memoryRef.isAccessible) {
+        if (!attachment().isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
         }
         int pos = position();
         int lim = Math.max(limit(), pos);
         int rem = lim - pos;
         int off = pos + offset;
-        return new DirectSegmentByteBuffer((SegmentMemoryRef) memoryRef,
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(),
                 -1, 0, rem, rem, off, isReadOnly, scope);
     }
 
     @Override
     public final DirectByteBuffer slice(int index, int length) {
-        if (!memoryRef.isAccessible) {
+        if (!attachment().isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
         }
         Checks.checkFromIndexSize(index, length, limit());
-        return new DirectSegmentByteBuffer((SegmentMemoryRef) memoryRef,
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(),
                 -1, 0, length, length, index, isReadOnly, scope);
     }
 
     @Override
     public final DirectByteBuffer duplicate() {
-        if (memoryRef.isFreed) {
+        if (attachment().isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
-        return new DirectSegmentByteBuffer((SegmentMemoryRef) memoryRef, markValue(),
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), markValue(),
                 position(), limit(), capacity(), offset, isReadOnly, scope);
     }
 
     @Override
     public final ByteBuffer asReadOnlyBuffer() {
-        if (memoryRef.isFreed) {
+        if (attachment().isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
-        return new DirectSegmentByteBuffer((SegmentMemoryRef) memoryRef, markValue(),
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), markValue(),
                 position(), limit(), capacity(), offset, true, scope);
     }
 

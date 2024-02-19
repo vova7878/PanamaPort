@@ -32,7 +32,6 @@ public abstract class DirectByteBuffer extends CommonByteBuffer {
     public final FileDescriptor fd;
 
     public final Cleaner cleaner;
-    public final MemoryRef memoryRef;
 
     public DirectByteBuffer(MemoryRef memoryRef,
                             int mark, int pos, int lim, int cap,
@@ -40,7 +39,7 @@ public abstract class DirectByteBuffer extends CommonByteBuffer {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public Object attachment() {
+    public MemoryRef attachment() {
         throw new UnsupportedOperationException("Stub!");
     }
 

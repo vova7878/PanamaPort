@@ -4,6 +4,7 @@ import static com.v7878.dex.DexConstants.ACC_CONSTRUCTOR;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
+import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.SUPER;
 import static com.v7878.dex.bytecode.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
@@ -35,6 +36,7 @@ import com.v7878.dex.EncodedField;
 import com.v7878.dex.EncodedMethod;
 import com.v7878.dex.FieldId;
 import com.v7878.dex.MethodId;
+import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
@@ -110,12 +112,92 @@ public class JavaNioAccess {
     private static final MethodHandle attachment;
 
     static {
+        Method m_attachment;
+
         String nio_direct_buf_name = "java.nio.DirectByteBuffer";
         TypeId nio_direct_buf_id = TypeId.of(nio_direct_buf_name);
         String nio_mem_ref_name = "java.nio.DirectByteBuffer$MemoryRef";
         TypeId nio_mem_ref_id = TypeId.of(nio_mem_ref_name);
         String nio_heap_buf_name = "java.nio.HeapByteBuffer";
         TypeId nio_heap_buf_id = TypeId.of(nio_heap_buf_name);
+
+        Class<?> nio_mem_ref_class = nothrows_run(() -> Class.forName(nio_mem_ref_name));
+        {
+            makeClassPublicNonFinal(nio_mem_ref_class);
+
+            Constructor<?>[] constructors = getDeclaredConstructors(nio_mem_ref_class);
+            for (Constructor<?> constructor : constructors) {
+                makeExecutablePublicNonFinal(constructor);
+            }
+
+            Field[] fields = getDeclaredFields0(nio_mem_ref_class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
+        }
+
+        Class<?> nio_direct_buf_class = nothrows_run(() -> Class.forName(nio_direct_buf_name));
+        {
+            Method[] methods = getDeclaredMethods(nio_direct_buf_class);
+            for (Method method : methods) {
+                if (!Modifier.isPrivate(method.getModifiers())) {
+                    makeExecutablePublicNonFinal(method);
+                }
+            }
+
+            m_attachment = searchMethod(methods, "attachment");
+            attachment = unreflect(m_attachment);
+
+            Constructor<?>[] constructors = getDeclaredConstructors(nio_direct_buf_class);
+            for (Constructor<?> constructor : constructors) {
+                makeExecutablePublicNonFinal(constructor);
+            }
+
+            Field[] fields = getDeclaredFields0(nio_direct_buf_class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
+        }
+
+        Class<?> nio_heap_buf_class = nothrows_run(() -> Class.forName(nio_heap_buf_name));
+        {
+            makeClassPublicNonFinal(nio_heap_buf_class);
+
+            Method[] methods = getDeclaredMethods(nio_heap_buf_class);
+            for (Method method : methods) {
+                if (!Modifier.isPrivate(method.getModifiers())) {
+                    makeExecutablePublicNonFinal(method);
+                }
+            }
+
+            Constructor<?>[] constructors = getDeclaredConstructors(nio_heap_buf_class);
+            for (Constructor<?> constructor : constructors) {
+                makeExecutablePublicNonFinal(constructor);
+            }
+        }
+
+        {
+            Field[] fields = getDeclaredFields0(MappedByteBuffer.class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
+        }
+
+        {
+            Field[] fields = getDeclaredFields0(ByteBuffer.class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
+        }
+
+        {
+            Field[] fields = getDeclaredFields0(Buffer.class, false);
+            for (Field field : fields) {
+                makeFieldPublic(field);
+            }
+
+            makeExecutablePublicNonFinal(getDeclaredMethod(Buffer.class, "markValue"));
+        }
 
         String direct_buf_name = "com.v7878.unsafe.DirectByteBuffer";
         TypeId direct_buf_id = TypeId.of(direct_buf_name);
@@ -173,6 +255,18 @@ public class JavaNioAccess {
                 .return_void()
         ));
 
+        //public MemoryRef attachment() {
+        //    return (MemoryRef) super.attachment();
+        //}
+        direct_buf_def.getClassData().getVirtualMethods().add(new EncodedMethod(
+                new MethodId(direct_buf_id, new ProtoId(mem_ref_id), "attachment"),
+                ACC_PUBLIC).withCode(1, b -> b
+                .invoke(SUPER, MethodId.of(m_attachment), b.this_())
+                .move_result_object(b.l(0))
+                .check_cast(b.l(0), mem_ref_id)
+                .return_object(b.l(0))
+        ));
+
         ClassDef heap_buf_def = new ClassDef(heap_buf_id);
         heap_buf_def.setSuperClass(nio_heap_buf_id);
         heap_buf_def.setAccessFlags(ACC_PUBLIC);
@@ -189,83 +283,6 @@ public class JavaNioAccess {
                         8, b.this_())
                 .return_void()
         ));
-
-        Class<?> nio_mem_ref_class = nothrows_run(() -> Class.forName(nio_mem_ref_name));
-        {
-            makeClassPublicNonFinal(nio_mem_ref_class);
-
-            Constructor<?>[] constructors = getDeclaredConstructors(nio_mem_ref_class);
-            for (Constructor<?> constructor : constructors) {
-                makeExecutablePublicNonFinal(constructor);
-            }
-
-            Field[] fields = getDeclaredFields0(nio_mem_ref_class, false);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-            }
-        }
-
-        Class<?> nio_direct_buf_class = nothrows_run(() -> Class.forName(nio_direct_buf_name));
-        {
-            Method[] methods = getDeclaredMethods(nio_direct_buf_class);
-            for (Method method : methods) {
-                if (!Modifier.isPrivate(method.getModifiers())) {
-                    makeExecutablePublicNonFinal(method);
-                }
-            }
-
-            attachment = unreflect(searchMethod(methods, "attachment"));
-
-            Constructor<?>[] constructors = getDeclaredConstructors(nio_direct_buf_class);
-            for (Constructor<?> constructor : constructors) {
-                makeExecutablePublicNonFinal(constructor);
-            }
-
-            Field[] fields = getDeclaredFields0(nio_direct_buf_class, false);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-            }
-        }
-
-        Class<?> nio_heap_buf_class = nothrows_run(() -> Class.forName(nio_heap_buf_name));
-        {
-            makeClassPublicNonFinal(nio_heap_buf_class);
-
-            Method[] methods = getDeclaredMethods(nio_heap_buf_class);
-            for (Method method : methods) {
-                if (!Modifier.isPrivate(method.getModifiers())) {
-                    makeExecutablePublicNonFinal(method);
-                }
-            }
-
-            Constructor<?>[] constructors = getDeclaredConstructors(nio_heap_buf_class);
-            for (Constructor<?> constructor : constructors) {
-                makeExecutablePublicNonFinal(constructor);
-            }
-        }
-
-        {
-            Field[] fields = getDeclaredFields0(MappedByteBuffer.class, false);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-            }
-        }
-
-        {
-            Field[] fields = getDeclaredFields0(ByteBuffer.class, false);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-            }
-        }
-
-        {
-            Field[] fields = getDeclaredFields0(Buffer.class, false);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-            }
-
-            makeExecutablePublicNonFinal(getDeclaredMethod(Buffer.class, "markValue"));
-        }
 
         DexFile dex = openDexFile(new Dex(mem_def, direct_buf_def, heap_buf_def).compile());
         setTrusted(dex);
