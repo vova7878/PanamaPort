@@ -23,6 +23,7 @@ import dalvik.system.InMemoryDexClassLoader;
 
 public class AndroidUnsafe {
 
+    //TODO: generate with jasmin gradle plugin?
     public static abstract class Thrower {
         public static final Thrower INSTANCE;
 
