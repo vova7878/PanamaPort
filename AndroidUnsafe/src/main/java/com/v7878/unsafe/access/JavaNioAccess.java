@@ -13,6 +13,7 @@ import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicNonFinal;
 import static com.v7878.unsafe.ClassUtils.makeClassPublicNonFinal;
+import static com.v7878.unsafe.DexFileUtils.getDexFile;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
@@ -63,6 +64,11 @@ import dalvik.system.DexFile;
 
 // SegmentByteBuffers should not appear in JavaNioAccess as it breaks class loading order
 class SegmentBufferAccess {
+    static {
+        setTrusted(getDexFile(DirectSegmentByteBuffer.class));
+        setTrusted(getDexFile(HeapSegmentByteBuffer.class));
+    }
+
     public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
         return new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
                 -1, 0, cap, cap, 0, false, scope);
