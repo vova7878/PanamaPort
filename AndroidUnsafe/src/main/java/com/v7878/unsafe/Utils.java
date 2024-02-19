@@ -2,7 +2,6 @@ package com.v7878.unsafe;
 
 
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
 import android.annotation.SuppressLint;
@@ -26,8 +25,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class Utils {
-
-    public static final Class<?> WORD_CLASS = IS64BIT ? long.class : int.class;
 
     public interface FineClosable extends AutoCloseable {
         void close();
