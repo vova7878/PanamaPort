@@ -6,8 +6,10 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
 
+//TODO: can we avoid using MappedByteBuffer here?
 //TODO: generate with jasmin gradle plugin?
 
 /* FakeByteBuffer is
@@ -43,18 +45,18 @@ public abstract class CommonByteBuffer extends FakeByteBuffer {
     }
 
     @Override
-    public abstract CommonByteBuffer slice();
+    public abstract MappedByteBuffer slice();
 
-    public abstract CommonByteBuffer slice(int index, int length);
+    public abstract MappedByteBuffer slice(int index, int length);
 
     @Override
-    public abstract CommonByteBuffer duplicate();
+    public abstract MappedByteBuffer duplicate();
 
     @Override
     public abstract ByteBuffer asReadOnlyBuffer();
 
     @Override
-    public CommonByteBuffer compact() {
+    public MappedByteBuffer compact() {
         throw new UnsupportedOperationException("Stub!");
     }
 
