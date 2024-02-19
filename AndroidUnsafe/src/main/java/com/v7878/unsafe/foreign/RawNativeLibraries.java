@@ -75,6 +75,7 @@ public class RawNativeLibraries {
             }
             return false;
         });
+        //TODO: maybe search in RTLD_DEFAULT if it fails?
         return out[0];
     }
 
