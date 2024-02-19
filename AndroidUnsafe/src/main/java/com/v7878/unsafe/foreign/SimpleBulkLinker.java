@@ -183,7 +183,7 @@ public class SimpleBulkLinker {
     private static Class<?> stubClass(Class<?> raw_class) {
         checkSupported(raw_class);
         if (raw_class == WORD_CLASS) {
-            return Utils.WORD_CLASS;
+            return ExtraLayouts.WORD.carrier();
         }
         if (raw_class == BOOL_AS_INT_CLASS) {
             return int.class;
