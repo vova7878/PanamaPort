@@ -1,7 +1,7 @@
 package com.v7878.llvm;
 
-import static com.v7878.llvm._Utils.BOOL_AS_INT;
 import static com.v7878.llvm._Utils.VOID_PTR;
+import static com.v7878.unsafe.foreign.SimpleBulkLinker.BOOL_AS_INT_CLASS;
 
 import com.v7878.foreign.MemorySegment;
 
@@ -28,7 +28,7 @@ public final class Types {
         }
     }
 
-    static final Class<?> LLVMBool = BOOL_AS_INT;
+    static final Class<?> LLVMBool = BOOL_AS_INT_CLASS;
     static final Class<?> cLLVMMemoryBufferRef = VOID_PTR;
     static final Class<?> cLLVMContextRef = VOID_PTR;
     static final Class<?> cLLVMModuleRef = VOID_PTR;
