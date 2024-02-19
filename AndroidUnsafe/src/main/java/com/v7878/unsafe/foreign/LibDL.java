@@ -1,58 +1,42 @@
 package com.v7878.unsafe.foreign;
 
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
-import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.foreign.SimpleBulkLinker.WORD_CLASS;
 
-import androidx.annotation.Keep;
-
+import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.unsafe.foreign.ELF.SymTab;
 import com.v7878.unsafe.foreign.MMap.MMapEntry;
+import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
-
-import dalvik.annotation.optimization.CriticalNative;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 public class LibDL {
 
-    // TODO: void android_get_LD_LIBRARY_PATH(char* buffer, size_t buffer_size)
-    // TODO: void android_update_LD_LIBRARY_PATH(const char* ld_library_path)
-    // TODO: void* android_dlopen_ext(const char* filename, int flag, const android_dlextinfo* extinfo)
-    // TODO: bool android_init_anonymous_namespace(const char* shared_libs_sonames,
-    //                                      const char* library_search_path)
-    // TODO: android_namespace_t* android_create_namespace(const char* name,
-    //                                                     const char* ld_library_path,
-    //                                                     const char* default_library_path,
-    //                                                     uint64_t type,
-    //                                                     const char* permitted_when_isolated_path,
-    //                                                     struct android_namespace_t* parent)
-    // TODO: bool android_link_namespaces(struct android_namespace_t* namespace_from,
-    //                             struct android_namespace_t* namespace_to,
-    //                             const char* shared_libs_sonames)
-    // TODO: android_namespace_t* android_get_exported_namespace(const char* name)
-
-    public static final MemorySegment dladdr;
-    public static final MemorySegment dlclose;
-    public static final MemorySegment dlerror;
-    public static final MemorySegment dlopen;
-    public static final MemorySegment dlvsym;
-    public static final MemorySegment dlsym;
+    private static final MemorySegment s_dladdr;
+    private static final MemorySegment s_dlclose;
+    private static final MemorySegment s_dlerror;
+    private static final MemorySegment s_dlopen;
+    private static final MemorySegment s_dlvsym;
+    private static final MemorySegment s_dlsym;
 
     static {
         MMapEntry libdl = findLibDLEntry();
         SymTab symbols = getSymTab(libdl);
-        dladdr = symbols.findFunction("dladdr", libdl.start);
-        dlclose = symbols.findFunction("dlclose", libdl.start);
-        dlerror = symbols.findFunction("dlerror", libdl.start);
-        dlopen = symbols.findFunction("dlopen", libdl.start);
-        dlvsym = symbols.findFunction("dlvsym", libdl.start);
-        dlsym = symbols.findFunction("dlsym", libdl.start);
+        s_dladdr = symbols.findFunction("dladdr", libdl.start);
+        s_dlclose = symbols.findFunction("dlclose", libdl.start);
+        s_dlerror = symbols.findFunction("dlerror", libdl.start);
+        s_dlopen = symbols.findFunction("dlopen", libdl.start);
+        s_dlvsym = symbols.findFunction("dlvsym", libdl.start);
+        s_dlsym = symbols.findFunction("dlsym", libdl.start);
     }
 
     private static MMapEntry findLibDLEntry() {
@@ -69,72 +53,76 @@ public class LibDL {
         return ELF.readSymTab(ByteBuffer.wrap(tmp).order(ByteOrder.nativeOrder()), true);
     }
 
-    static {
-        String suffix = IS64BIT ? "64" : "32";
-        Class<?> word = IS64BIT ? long.class : int.class;
+    private enum Function implements SymbolHolder {
+        dladdr(s_dladdr, int.class, WORD_CLASS, WORD_CLASS),
+        dlclose(s_dlclose, int.class, WORD_CLASS),
+        dlerror(s_dlerror, WORD_CLASS),
+        dlopen(s_dlopen, WORD_CLASS, WORD_CLASS, int.class),
+        dlsym(s_dlsym, WORD_CLASS, WORD_CLASS, WORD_CLASS),
+        dlvsym(s_dlvsym, WORD_CLASS, WORD_CLASS, WORD_CLASS, WORD_CLASS);
 
-        //TODO: noinline, nocompile
-        Method symbol = getDeclaredMethod(LibDL.class, "dlopen" + suffix, word, int.class);
-        setExecutableData(symbol, dlopen.address());
+        static {
+            SimpleBulkLinker.processSymbols(Arena.global(), Function.values());
+        }
 
-        symbol = getDeclaredMethod(LibDL.class, "dlerror" + suffix);
-        setExecutableData(symbol, dlerror.address());
+        private final MemorySegment symbol;
+        private final MethodType type;
 
-        //TODO: noinline, nocompile
-        symbol = getDeclaredMethod(LibDL.class, "dlsym" + suffix, word, word);
-        setExecutableData(symbol, dlsym.address());
+        private Supplier<MethodHandle> handle;
 
-        symbol = getDeclaredMethod(LibDL.class, "dlclose" + suffix, word);
-        setExecutableData(symbol, dlclose.address());
+        Function(MemorySegment symbol, Class<?> rtype, Class<?>... atypes) {
+            this.symbol = symbol;
+            this.type = MethodType.methodType(rtype, atypes);
+        }
 
-        //TODO: dladdr, dlvsym
+        @Override
+        public MethodType type() {
+            return type;
+        }
+
+        @Override
+        public void setHandle(Supplier<MethodHandle> handle) {
+            this.handle = handle;
+        }
+
+        public long symbol() {
+            return symbol.address();
+        }
+
+        public MethodHandle handle() {
+            return Objects.requireNonNull(handle.get());
+        }
+
+        @Override
+        public String toString() {
+            return name() + "{" +
+                    "type=" + type +
+                    ", symbol=" + symbol() +
+                    ", handle=" + handle() + '}';
+        }
     }
-
-    @Keep
-    @CriticalNative
-    private static native long dlopen64(long filename, int flags);
-
-    @Keep
-    @CriticalNative
-    private static native int dlopen32(int filename, int flags);
 
     public static long dlopen(long filename, int flags) {
-        return IS64BIT ? dlopen64(filename, flags) : dlopen32((int) filename, flags) & 0xffffffffL;
+        return nothrows_run(() -> (long) Function.dlopen.handle().invokeExact(filename, flags));
     }
-
-    @Keep
-    @CriticalNative
-    private static native long dlerror64();
-
-    @Keep
-    @CriticalNative
-    private static native int dlerror32();
-
-    public static long dlerror() {
-        return IS64BIT ? dlerror64() : dlerror32() & 0xffffffffL;
-    }
-
-    @Keep
-    @CriticalNative
-    private static native long dlsym64(long handle, long symbol);
-
-    @Keep
-    @CriticalNative
-    private static native int dlsym32(int handle, int symbol);
-
-    public static long dlsym(long handle, long symbol) {
-        return IS64BIT ? dlsym64(handle, symbol) : dlsym32((int) handle, (int) symbol) & 0xffffffffL;
-    }
-
-    @Keep
-    @CriticalNative
-    private static native int dlclose64(long handle);
-
-    @Keep
-    @CriticalNative
-    private static native int dlclose32(int handle);
 
     public static int dlclose(long handle) {
-        return IS64BIT ? dlclose64(handle) : dlclose32((int) handle);
+        return nothrows_run(() -> (int) Function.dlclose.handle().invokeExact(handle));
+    }
+
+    public static long dlerror() {
+        return nothrows_run(() -> (long) Function.dlerror.handle().invokeExact());
+    }
+
+    public static long dlsym(long handle, long symbol) {
+        return nothrows_run(() -> (long) Function.dlsym.handle().invokeExact(handle, symbol));
+    }
+
+    public static long dlvsym(long handle, long symbol, long version) {
+        return nothrows_run(() -> (long) Function.dlvsym.handle().invokeExact(handle, symbol, version));
+    }
+
+    public static int dladdr(long addr, long info) {
+        return nothrows_run(() -> (int) Function.dladdr.handle().invokeExact(addr, info));
     }
 }
