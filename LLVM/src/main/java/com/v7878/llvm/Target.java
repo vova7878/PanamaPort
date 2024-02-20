@@ -20,6 +20,10 @@ import static com.v7878.llvm._Utils.UNSIGNED_LONG_LONG;
 import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.unsafe.NativeCodeBlob.CURRENT_INSTRUCTION_SET;
+import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.ARM;
+import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.ARM64;
+import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86;
+import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86_64;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.foreign.Arena;
@@ -30,6 +34,7 @@ import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
@@ -79,28 +84,28 @@ public class Target {
 
     private enum Function implements SymbolHolder2 {
         // x86 and x86_64
-        LLVMInitializeX86TargetInfo(void.class),
-        LLVMInitializeX86TargetMC(void.class),
-        LLVMInitializeX86Target(void.class),
-        LLVMInitializeX86Disassembler(void.class),
-        LLVMInitializeX86AsmParser(void.class),
-        LLVMInitializeX86AsmPrinter(void.class),
+        LLVMInitializeX86TargetInfo(CURRENT_INSTRUCTION_SET == X86 || CURRENT_INSTRUCTION_SET == X86_64, void.class),
+        LLVMInitializeX86TargetMC(CURRENT_INSTRUCTION_SET == X86 || CURRENT_INSTRUCTION_SET == X86_64, void.class),
+        LLVMInitializeX86Target(CURRENT_INSTRUCTION_SET == X86 || CURRENT_INSTRUCTION_SET == X86_64, void.class),
+        LLVMInitializeX86Disassembler(CURRENT_INSTRUCTION_SET == X86 || CURRENT_INSTRUCTION_SET == X86_64, void.class),
+        LLVMInitializeX86AsmParser(CURRENT_INSTRUCTION_SET == X86 || CURRENT_INSTRUCTION_SET == X86_64, void.class),
+        LLVMInitializeX86AsmPrinter(CURRENT_INSTRUCTION_SET == X86 || CURRENT_INSTRUCTION_SET == X86_64, void.class),
 
         // arm
-        LLVMInitializeARMTargetInfo(void.class),
-        LLVMInitializeARMTargetMC(void.class),
-        LLVMInitializeARMTarget(void.class),
-        LLVMInitializeARMDisassembler(void.class),
-        LLVMInitializeARMAsmParser(void.class),
-        LLVMInitializeARMAsmPrinter(void.class),
+        LLVMInitializeARMTargetInfo(CURRENT_INSTRUCTION_SET == ARM, void.class),
+        LLVMInitializeARMTargetMC(CURRENT_INSTRUCTION_SET == ARM, void.class),
+        LLVMInitializeARMTarget(CURRENT_INSTRUCTION_SET == ARM, void.class),
+        LLVMInitializeARMDisassembler(CURRENT_INSTRUCTION_SET == ARM, void.class),
+        LLVMInitializeARMAsmParser(CURRENT_INSTRUCTION_SET == ARM, void.class),
+        LLVMInitializeARMAsmPrinter(CURRENT_INSTRUCTION_SET == ARM, void.class),
 
         // aarch64
-        LLVMInitializeAArch64TargetInfo(void.class),
-        LLVMInitializeAArch64TargetMC(void.class),
-        LLVMInitializeAArch64Target(void.class),
-        LLVMInitializeAArch64Disassembler(void.class),
-        LLVMInitializeAArch64AsmParser(void.class),
-        LLVMInitializeAArch64AsmPrinter(void.class),
+        LLVMInitializeAArch64TargetInfo(CURRENT_INSTRUCTION_SET == ARM64, void.class),
+        LLVMInitializeAArch64TargetMC(CURRENT_INSTRUCTION_SET == ARM64, void.class),
+        LLVMInitializeAArch64Target(CURRENT_INSTRUCTION_SET == ARM64, void.class),
+        LLVMInitializeAArch64Disassembler(CURRENT_INSTRUCTION_SET == ARM64, void.class),
+        LLVMInitializeAArch64AsmParser(CURRENT_INSTRUCTION_SET == ARM64, void.class),
+        LLVMInitializeAArch64AsmPrinter(CURRENT_INSTRUCTION_SET == ARM64, void.class),
 
         // common
         LLVMGetModuleDataLayout(cLLVMTargetDataRef, cLLVMModuleRef),
@@ -127,16 +132,24 @@ public class Target {
         LLVMOffsetOfElement(UNSIGNED_LONG_LONG, cLLVMTargetDataRef, cLLVMTypeRef, UNSIGNED_INT);
 
         static {
-            SimpleBulkLinker.processSymbols(LLVM, LLVM_SCOPE, Function.values());
+            SimpleBulkLinker.processSymbols(LLVM, LLVM_SCOPE, Arrays.stream(Function.values())
+                    .filter(f -> f.is_supperted).toArray(Function[]::new));
         }
 
+        private final boolean is_supperted;
         private final MethodType type;
 
         private LongSupplier symbol;
         private Supplier<MethodHandle> handle;
 
+        Function(boolean is_supperted, Class<?> rtype, Class<?>... atypes) {
+            this.type = MethodType.methodType(rtype, atypes);
+            this.is_supperted = is_supperted;
+        }
+
         Function(Class<?> rtype, Class<?>... atypes) {
             this.type = MethodType.methodType(rtype, atypes);
+            this.is_supperted = true;
         }
 
         @Override
