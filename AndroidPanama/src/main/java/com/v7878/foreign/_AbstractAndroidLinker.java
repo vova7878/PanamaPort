@@ -11,11 +11,11 @@ import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 
+import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
-import java.util.Optional;
 
 sealed abstract class _AbstractAndroidLinker implements Linker {
     static final class Impl extends _AbstractAndroidLinker {
@@ -44,10 +44,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker {
 
     @Override
     public SymbolLookup defaultLookup() {
-        return name -> {
-            long tmp = RawNativeLibraries.dlsym(RawNativeLibraries.RTLD_DEFAULT, name);
-            return Optional.ofNullable(tmp == 0 ? null : MemorySegment.ofAddress(tmp));
-        };
+        return JavaForeignAccess.libraryLookup(RawNativeLibraries.DEFAULT, Arena.global());
     }
 
     @Override

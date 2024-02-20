@@ -1,82 +1,53 @@
 package com.v7878.unsafe.foreign;
 
-import static com.v7878.foreign.MemorySegment.NULL;
-import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.foreign.LibDL.RTLD_DEFAULT;
+import static com.v7878.unsafe.foreign.LibDL.dlclose;
+import static com.v7878.unsafe.foreign.LibDL.dlerror;
+import static com.v7878.unsafe.foreign.LibDL.dlopen;
+import static com.v7878.unsafe.foreign.LibDL.dlsym;
+import static com.v7878.unsafe.foreign.LibDL.dlsym_nochecks;
 
-import com.v7878.foreign.Arena;
-import com.v7878.foreign.MemoryLayout;
-import com.v7878.foreign.MemorySegment;
 import com.v7878.unsafe.Utils;
 
 import java.nio.file.Path;
 import java.util.Objects;
 
 public class RawNativeLibraries {
-    public static final int RTLD_LOCAL = 0;
-    public static final int RTLD_LAZY = 0x1;
-    public static final int RTLD_NOW = IS64BIT ? 0x2 : 0x0;
-    public static final int RTLD_GLOBAL = IS64BIT ? 0x100 : 0x2;
-    public static final int RTLD_NOLOAD = 0x00004;
-    public static final int RTLD_NODELETE = 0x01000;
 
-    public static final long RTLD_DEFAULT = IS64BIT ? 0L : -1L;
-    public static final long RTLD_NEXT = IS64BIT ? -1L : -2L;
-
-    public static long dlopen(String path, int flags) {
-        Objects.requireNonNull(path);
-        if (Utils.containsNullChars(path)) return 0;
-
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment c_path = arena.allocateFrom(path);
-            return LibDL.dlopen(c_path.address(), flags);
-        }
-    }
-
-    public static long dlopen(String path) {
-        return dlopen(path, RTLD_NOW);
-    }
-
-    private static long dlsym_nochecks(long handle, String name) {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment c_name = arena.allocateFrom(name);
-            return LibDL.dlsym(handle, c_name.address());
-        }
-    }
-
-    public static long dlsym(long handle, String name) {
-        Objects.requireNonNull(name);
-        if (Utils.containsNullChars(name)) return 0;
-        return dlsym_nochecks(handle, name);
-    }
-
-    public static void dlclose(long handle) {
-        //TODO: check result?
-        int ignore = LibDL.dlclose(handle);
-    }
-
-    public static String dlerror() {
-        MemorySegment msg = MemorySegment.ofAddress(LibDL.dlerror())
-                .reinterpret(MemoryLayout.sequenceLayout(JAVA_BYTE).byteSize());
-        return NULL.equals(msg) ? null : msg.getString(0);
-    }
+    public static final NativeLibrary DEFAULT = load(RTLD_DEFAULT);
 
     public static long findNative(ClassLoader loader, String name) {
-        Objects.requireNonNull(loader);
         Objects.requireNonNull(name);
         if (Utils.containsNullChars(name)) return 0;
 
         long[] out = new long[1];
-        JniLibraries.forEachHandlesInClassLoader(loader, library -> {
-            long res = dlsym_nochecks(library.address(), name);
-            if (res != 0) {
-                out[0] = res;
-                return true;
-            }
-            return false;
-        });
-        //TODO: maybe search in RTLD_DEFAULT if it fails?
-        return out[0];
+        if (loader != null) {
+            JniLibraries.forEachHandlesInClassLoader(loader, library -> {
+                long res = dlsym_nochecks(library.address(), name);
+                if (res != 0) {
+                    out[0] = res;
+                    return true;
+                }
+                return false;
+            });
+        }
+        if (out[0] != 0) {
+            return out[0];
+        }
+        return dlsym_nochecks(RTLD_DEFAULT, name);
+    }
+
+    private static String format_dlerror(String msg) {
+        StringBuilder out = new StringBuilder();
+        out.append(msg);
+        String err = LibDL.dlerror();
+        if (err == null) {
+            out.append("; no dlerror message");
+        } else {
+            out.append("; ");
+            out.append(err);
+        }
+        return out.toString();
     }
 
     public static NativeLibrary load(Path path) {
@@ -84,10 +55,23 @@ public class RawNativeLibraries {
     }
 
     public static NativeLibrary load(String pathname) {
+        if (Utils.containsNullChars(pathname)) {
+            throw new IllegalArgumentException("Cannot open library: " + pathname);
+        }
+
+        dlerror(); // clear dlerror state before loading
+
         long handle = dlopen(pathname);
-        //TODO: check dlerror
-        if (handle == 0) return null;
+
+        if (handle == 0) {
+            throw new IllegalArgumentException(format_dlerror("Cannot open library: " + pathname));
+        }
+
         return new RawNativeLibraryImpl(handle, pathname);
+    }
+
+    public static NativeLibrary load(long handle) {
+        return new RawNativeLibraryImpl(handle, "(generic)");
     }
 
     public static void unload(NativeLibrary lib) {
@@ -95,7 +79,6 @@ public class RawNativeLibraries {
         RawNativeLibraryImpl nl = (RawNativeLibraryImpl) lib;
         nl.unload();
     }
-
 
     private static class RawNativeLibraryImpl extends NativeLibrary {
         private final String name;
@@ -120,6 +103,8 @@ public class RawNativeLibraries {
 
         @Override
         public long find(String symbol_name) {
+            Objects.requireNonNull(symbol_name);
+            if (Utils.containsNullChars(symbol_name)) return 0;
             synchronized (this) {
                 return dlsym(handle(), symbol_name);
             }

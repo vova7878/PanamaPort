@@ -27,9 +27,9 @@
 
 package com.v7878.foreign;
 
-import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import com.v7878.unsafe.Stack;
 import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.NativeLibrary;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
 
@@ -207,10 +207,12 @@ public interface SymbolLookup {
      */
     static SymbolLookup loaderLookup() {
         Class<?> caller = Stack.getStackClass1();
+
         // If there's no caller class, fallback to system loader
         ClassLoader loader = caller != null ?
                 caller.getClassLoader() :
                 ClassLoader.getSystemClassLoader();
+
         Arena loaderArena;// builtin loaders never go away
         if (loader == null || loader == Object.class.getClassLoader()) {
             loaderArena = Arena.global();
@@ -218,8 +220,9 @@ public interface SymbolLookup {
             _MemorySessionImpl session = _MemorySessionImpl.createHeap(loader);
             loaderArena = session.asArena();
         }
+
         return name -> {
-            // note: ClassLoader::findNative supports a null loader
+            // note: RawNativeLibraries::findNative supports a null loader
             long addr = RawNativeLibraries.findNative(loader, name);
             return addr == 0L ?
                     Optional.empty() :
@@ -283,42 +286,13 @@ public interface SymbolLookup {
         return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
-    // Port-added: check dlerror
-    private static String format_dlerror(String msg) {
-        StringBuilder out = new StringBuilder();
-        out.append(msg);
-        String err = RawNativeLibraries.dlerror();
-        if (err == null) {
-            out.append("; no dlerror message");
-        } else {
-            out.append("; dlerror: ");
-            out.append(err);
-        }
-        return out.toString();
-    }
-
     private static <Z> SymbolLookup libraryLookup(Z libDesc, Function<Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
         Objects.requireNonNull(libDesc);
         Objects.requireNonNull(libArena);
 
         // attempt to load native library from path or name
         NativeLibrary library = loadLibraryFunc.apply(libDesc);
-        if (library == null) {
-            // Port-added: use format_dlerror
-            throw new IllegalArgumentException(format_dlerror("Cannot open library: " + libDesc));
-        }
-        // register hook to unload library when 'libScope' becomes not alive
-        _MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new ResourceCleanup() {
-            @Override
-            public void cleanup() {
-                RawNativeLibraries.unload(library);
-            }
-        });
-        return name -> {
-            long addr = library.find(name);
-            return addr == 0L ? Optional.empty() :
-                    Optional.of(MemorySegment.ofAddress(addr)
-                            .reinterpret(libArena, null));
-        };
+
+        return JavaForeignAccess.libraryLookup(library, libArena);
     }
 }
