@@ -82,11 +82,13 @@ public class RawNativeLibraries {
 
     private static class RawNativeLibraryImpl extends NativeLibrary {
         private final String name;
-        private long handle;
+        private final long handle;
+        private boolean closed;
 
         RawNativeLibraryImpl(long handle, String name) {
             this.handle = handle;
             this.name = name;
+            this.closed = false;
         }
 
         @Override
@@ -95,7 +97,7 @@ public class RawNativeLibraries {
         }
 
         private long handle() {
-            if (handle == 0) {
+            if (closed) {
                 throw new IllegalStateException("library is closed");
             }
             return handle;
@@ -113,7 +115,7 @@ public class RawNativeLibraries {
         public void unload() {
             synchronized (this) {
                 dlclose(handle());
-                handle = 0;
+                closed = true;
             }
         }
     }
