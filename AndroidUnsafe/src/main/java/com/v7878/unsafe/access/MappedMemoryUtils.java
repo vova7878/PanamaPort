@@ -3,7 +3,7 @@ package com.v7878.unsafe.access;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.throwException;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
-import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.searchMethod;
 
@@ -129,15 +129,15 @@ class MappedMemoryUtils {
     static {
         Method[] tm = getDeclaredMethods(MappedMemoryUtils.class);
         Method[] mm = getDeclaredMethods(MappedByteBuffer.class);
-        setExecutableData(searchMethod(tm, "isLoaded0", long.class, long.class, int.class),
+        registerNativeMethod(searchMethod(tm, "isLoaded0", long.class, long.class, int.class),
                 getExecutableData(searchMethod(mm, "isLoaded0", long.class, long.class, int.class)));
-        setExecutableData(searchMethod(tm, "force0", FileDescriptor.class, long.class, long.class),
+        registerNativeMethod(searchMethod(tm, "force0", FileDescriptor.class, long.class, long.class),
                 getExecutableData(searchMethod(mm, "force0", FileDescriptor.class, long.class, long.class)));
 
         Class<?> word = IS64BIT ? long.class : int.class;
         String suffix = IS64BIT ? "64" : "32";
 
-        setExecutableData(searchMethod(tm, "madvise" + suffix, word, word, int.class),
+        registerNativeMethod(searchMethod(tm, "madvise" + suffix, word, word, int.class),
                 Linker.nativeLinker().defaultLookup().find("madvise")
                         .orElseThrow(ExceptionInInitializerError::new).address());
     }

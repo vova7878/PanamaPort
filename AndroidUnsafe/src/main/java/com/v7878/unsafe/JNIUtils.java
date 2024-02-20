@@ -13,7 +13,7 @@ import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
-import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -420,7 +420,7 @@ public class JNIUtils {
             MemorySegment env = getCurrentEnvPtr();
             Method get_vm = getDeclaredMethod(this.getClass(),
                     name + suffix, word, word);
-            setExecutableData(get_vm, getJNINativeInterfaceFunction(name).address());
+            registerNativeMethod(get_vm, getJNINativeInterfaceFunction(name).address());
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment jvm = arena.allocate(ADDRESS);
                 int status = IS64BIT ? GetJavaVM64(env.address(), jvm.address()) :
@@ -510,30 +510,30 @@ public class JNIUtils {
             Method put = getDeclaredMethod(SunUnsafe.getUnsafeClass(), "putObject",
                     Object.class, long.class, Object.class);
             assert_(Modifier.isNative(put.getModifiers()), AssertionError::new);
-            setExecutableData(searchMethod(methods, "putRef" + suffix,
+            registerNativeMethod(searchMethod(methods, "putRef" + suffix,
                     Object.class, long.class, word), getExecutableData(put));
 
             Method ngr = searchMethod(methods, "NewGlobalRef" + suffix);
-            setExecutableData(ngr, getJNINativeInterfaceFunction("NewGlobalRef").address());
+            registerNativeMethod(ngr, getJNINativeInterfaceFunction("NewGlobalRef").address());
 
             newGlobalRef = unreflectDirect(ngr);
             setMethodType(newGlobalRef, MethodType.methodType(word, Object.class));
 
             Method dgr = searchMethod(methods, "DeleteGlobalRef" + suffix, word, word);
-            setExecutableData(dgr, getJNINativeInterfaceFunction("DeleteGlobalRef").address());
+            registerNativeMethod(dgr, getJNINativeInterfaceFunction("DeleteGlobalRef").address());
 
             MemorySegment nlr = ART.find("_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE").get();
-            setExecutableData(searchMethod(methods, "RawNewLocalRef" + suffix, word, word), nlr.address());
+            registerNativeMethod(searchMethod(methods, "RawNewLocalRef" + suffix, word, word), nlr.address());
 
             MemorySegment dlr = ART.find("_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject").get();
-            setExecutableData(searchMethod(methods, "DeleteLocalRef" + suffix, word, word), dlr.address());
+            registerNativeMethod(searchMethod(methods, "DeleteLocalRef" + suffix, word, word), dlr.address());
 
             // art.find("_ZN3art9JNIEnvExt9PushFrameEi").get();
             MemorySegment push = JNIUtils.getJNINativeInterfaceFunction("PushLocalFrame");
-            setExecutableData(searchMethod(methods, "PushLocalFrame" + suffix, word, int.class), push.address());
+            registerNativeMethod(searchMethod(methods, "PushLocalFrame" + suffix, word, int.class), push.address());
 
             MemorySegment pop = ART.find("_ZN3art9JNIEnvExt8PopFrameEv").get();
-            setExecutableData(searchMethod(methods, "PopLocalFrame" + suffix, word), pop.address());
+            registerNativeMethod(searchMethod(methods, "PopLocalFrame" + suffix, word), pop.address());
         }
 
         public static final RefUtils INSTANCE = nothrows_run(() -> {
@@ -694,13 +694,13 @@ public class JNIUtils {
             Method[] methods = getDeclaredMethods(IDUtils.class);
 
             Method frm = searchMethod(methods, "FromReflectedMethod" + suffix);
-            setExecutableData(frm, getJNINativeInterfaceFunction("FromReflectedMethod").address());
+            registerNativeMethod(frm, getJNINativeInterfaceFunction("FromReflectedMethod").address());
 
             fromReflectedMethod = unreflectDirect(frm);
             setMethodType(fromReflectedMethod, MethodType.methodType(word, Method.class));
 
             Method frf = searchMethod(methods, "FromReflectedField" + suffix);
-            setExecutableData(frf, getJNINativeInterfaceFunction("FromReflectedField").address());
+            registerNativeMethod(frf, getJNINativeInterfaceFunction("FromReflectedField").address());
 
             fromReflectedField = unreflectDirect(frf);
             setMethodType(fromReflectedField, MethodType.methodType(word, Field.class));

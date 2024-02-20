@@ -5,7 +5,7 @@ import static android.system.Os.munmap;
 import static com.v7878.misc.Math.roundUpL;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.copyMemory;
-import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -214,7 +214,7 @@ public class NativeCodeBlob {
         MemorySegment[] ptrs = makeCodeBlobInternal(Arena.global(), code);
 
         for (int i = 0; i < methods.length; i++) {
-            setExecutableData(methods[i], ptrs[i].address());
+            registerNativeMethod(methods[i], ptrs[i].address());
         }
     }
 }

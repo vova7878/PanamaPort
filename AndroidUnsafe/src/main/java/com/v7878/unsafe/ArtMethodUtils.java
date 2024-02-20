@@ -21,7 +21,9 @@ import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 
 public class ArtMethodUtils {
     private static final GroupLayout art_method_14_12_layout = paddedStructLayout(
@@ -118,15 +120,22 @@ public class ArtMethodUtils {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setExecutableData(long art_method, long data) {
-        //TODO
-        //Utils.ensureClassInitialized();
         putWordN(art_method + DATA_OFFSET, data);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setExecutableData(Executable ex, long data) {
-        Utils.ensureClassInitialized(ex.getDeclaringClass());
         setExecutableData(getArtMethod(ex), data);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void registerNativeMethod(Method m, long data) {
+        Objects.requireNonNull(m);
+        if (!Modifier.isNative(m.getModifiers())) {
+            throw new IllegalArgumentException("only native methods allowed");
+        }
+        Utils.ensureClassInitialized(m.getDeclaringClass());
+        setExecutableData(m, data);
     }
 
     private static final long ACCESS_FLAGS_OFFSET = ARTMETHOD_LAYOUT

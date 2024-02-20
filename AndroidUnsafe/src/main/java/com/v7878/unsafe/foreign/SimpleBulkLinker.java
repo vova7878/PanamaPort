@@ -4,7 +4,7 @@ import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
-import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
@@ -158,7 +158,7 @@ public class SimpleBulkLinker {
 
         for (SymbolInfo info : infos) {
             Method method = searchMethod(methods, info.name, info.stub_type.parameterArray());
-            setExecutableData(method, info.symbol);
+            registerNativeMethod(method, info.symbol);
             MethodHandle raw_handle = unreflect(method);
             //TODO: check scope in handle
             MethodHandle handle = MethodHandlesFixes.explicitCastArguments(raw_handle, info.handle_type);

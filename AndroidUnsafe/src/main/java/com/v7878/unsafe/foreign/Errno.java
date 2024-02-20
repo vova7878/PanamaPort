@@ -3,7 +3,7 @@ package com.v7878.unsafe.foreign;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
-import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 
 import android.system.Os;
@@ -23,7 +23,7 @@ public class Errno {
         MemorySegment __errno = Linker.nativeLinker().defaultLookup()
                 .find("__errno").orElseThrow(ExceptionInInitializerError::new);
         Method __errno_m = getDeclaredMethod(Errno.class, IS64BIT ? "__errno64" : "__errno32");
-        setExecutableData(__errno_m, __errno.address());
+        registerNativeMethod(__errno_m, __errno.address());
     }
 
     @Keep

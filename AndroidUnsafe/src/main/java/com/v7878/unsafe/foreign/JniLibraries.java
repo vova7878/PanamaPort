@@ -9,7 +9,7 @@ import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
-import static com.v7878.unsafe.ArtMethodUtils.setExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.instanceFieldOffset;
@@ -191,12 +191,12 @@ public class JniLibraries {
 
         Method symbol = getDeclaredMethod(JniLibraries.class,
                 "MutexLock" + suffix, word, word);
-        setExecutableData(symbol, ART.find(
+        registerNativeMethod(symbol, ART.find(
                 "_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE").get().address());
 
         symbol = getDeclaredMethod(JniLibraries.class,
                 "MutexUnlock" + suffix, word, word);
-        setExecutableData(symbol, ART.find(
+        registerNativeMethod(symbol, ART.find(
                 "_ZN3art5Mutex15ExclusiveUnlockEPNS_6ThreadE").get().address());
     }
 
