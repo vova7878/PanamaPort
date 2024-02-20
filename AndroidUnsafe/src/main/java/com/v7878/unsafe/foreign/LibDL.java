@@ -28,15 +28,22 @@ public class LibDL {
     private static final MemorySegment s_dlvsym;
     private static final MemorySegment s_dlsym;
 
+    // for LibDLExt
+    private static final MemorySegment s_android_dlopen_ext;
+
     static {
         MMapEntry libdl = findLibDLEntry();
         SymTab symbols = getSymTab(libdl);
+
         s_dladdr = symbols.findFunction("dladdr", libdl.start);
         s_dlclose = symbols.findFunction("dlclose", libdl.start);
         s_dlerror = symbols.findFunction("dlerror", libdl.start);
         s_dlopen = symbols.findFunction("dlopen", libdl.start);
         s_dlvsym = symbols.findFunction("dlvsym", libdl.start);
         s_dlsym = symbols.findFunction("dlsym", libdl.start);
+
+        // for LibDLExt
+        s_android_dlopen_ext = symbols.findFunction("android_dlopen_ext", libdl.start);
     }
 
     private static MMapEntry findLibDLEntry() {
@@ -53,13 +60,16 @@ public class LibDL {
         return ELF.readSymTab(ByteBuffer.wrap(tmp).order(ByteOrder.nativeOrder()), true);
     }
 
-    private enum Function implements SymbolHolder {
+    enum Function implements SymbolHolder {
         dladdr(s_dladdr, int.class, WORD_CLASS, WORD_CLASS),
         dlclose(s_dlclose, int.class, WORD_CLASS),
         dlerror(s_dlerror, WORD_CLASS),
         dlopen(s_dlopen, WORD_CLASS, WORD_CLASS, int.class),
         dlsym(s_dlsym, WORD_CLASS, WORD_CLASS, WORD_CLASS),
-        dlvsym(s_dlvsym, WORD_CLASS, WORD_CLASS, WORD_CLASS, WORD_CLASS);
+        dlvsym(s_dlvsym, WORD_CLASS, WORD_CLASS, WORD_CLASS, WORD_CLASS),
+
+        // for LibDLExt
+        android_dlopen_ext(s_android_dlopen_ext, WORD_CLASS, WORD_CLASS, int.class, WORD_CLASS);
 
         static {
             SimpleBulkLinker.processSymbols(Arena.global(), Function.values());
