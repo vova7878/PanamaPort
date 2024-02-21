@@ -14,6 +14,7 @@ import static com.v7878.llvm._Utils.CHAR_PTR;
 import static com.v7878.llvm._Utils.CONST_CHAR_PTR;
 import static com.v7878.llvm._Utils.ENUM;
 import static com.v7878.llvm._Utils.VOID_PTR;
+import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.llvm._Utils.ptr;
@@ -24,7 +25,6 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Target.LLVMTargetDataRef;
 import com.v7878.llvm.Types.AddressValue;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
-import com.v7878.llvm.Types.LLVMString;
 import com.v7878.unsafe.foreign.SimpleBulkLinker;
 import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
 
@@ -242,9 +242,8 @@ public class TargetMachine {
     /**
      * Finds the target corresponding to the given triple and stores it in \p T.
      * Returns 0 on success. Optionally returns any error in ErrorMessage.
-     * Use LLVMDisposeMessage to dispose the message.
      */
-    public static boolean LLVMGetTargetFromTriple(String Triple, Consumer<LLVMTargetRef> T, Consumer<LLVMString> ErrorMessage) {
+    public static boolean LLVMGetTargetFromTriple(String Triple, Consumer<LLVMTargetRef> T, Consumer<String> ErrorMessage) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Triple = allocString(arena, Triple);
             MemorySegment c_T = arena.allocate(ADDRESS);
@@ -254,7 +253,7 @@ public class TargetMachine {
             if (!err) {
                 T.accept(new LLVMTargetRef(c_T.get(ADDRESS, 0).address()));
             } else {
-                ErrorMessage.accept(new LLVMString(c_ErrorMessage.get(ADDRESS, 0).address()));
+                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).address()));
             }
             return err;
         }
@@ -333,8 +332,8 @@ public class TargetMachine {
      * llvm::TargetMachine::getTriple. The result needs to be disposed with
      * LLVMDisposeMessage.
      */
-    public static LLVMString LLVMGetTargetMachineTriple(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> new LLVMString((long) Function.LLVMGetTargetMachineTriple.handle().invoke(T.value())));
+    public static String LLVMGetTargetMachineTriple(LLVMTargetMachineRef T) {
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetTargetMachineTriple.handle().invoke(T.value())));
     }
 
     /**
@@ -342,8 +341,8 @@ public class TargetMachine {
      * llvm::TargetMachine::getCPU. The result needs to be disposed with
      * LLVMDisposeMessage.
      */
-    public static LLVMString LLVMGetTargetMachineCPU(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> new LLVMString((long) Function.LLVMGetTargetMachineCPU.handle().invoke(T.value())));
+    public static String LLVMGetTargetMachineCPU(LLVMTargetMachineRef T) {
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetTargetMachineCPU.handle().invoke(T.value())));
     }
 
     /**
@@ -351,8 +350,8 @@ public class TargetMachine {
      * llvm::TargetMachine::getFeatureString. The result needs to be disposed with
      * LLVMDisposeMessage.
      */
-    public static LLVMString LLVMGetTargetMachineFeatureString(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> new LLVMString((long) Function.LLVMGetTargetMachineFeatureString.handle().invoke(T.value())));
+    public static String LLVMGetTargetMachineFeatureString(LLVMTargetMachineRef T) {
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetTargetMachineFeatureString.handle().invoke(T.value())));
     }
 
     /**
@@ -375,14 +374,15 @@ public class TargetMachine {
      * error in ErrorMessage. Use LLVMDisposeMessage to dispose the message.
      */
     public static boolean LLVMTargetMachineEmitToFile(
-            LLVMTargetMachineRef T, LLVMModuleRef M, LLVMString Filename,
-            LLVMCodeGenFileType codegen, Consumer<LLVMString> ErrorMessage) {
+            LLVMTargetMachineRef T, LLVMModuleRef M, String Filename,
+            LLVMCodeGenFileType codegen, Consumer<String> ErrorMessage) {
         try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Filename = allocString(arena, Filename);
             MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
             boolean err = nothrows_run(() -> (boolean) Function.LLVMTargetMachineEmitToFile.handle()
-                    .invoke(T.value(), M.value(), Filename.value(), codegen.value(), c_ErrorMessage.address()));
+                    .invoke(T.value(), M.value(), c_Filename.address(), codegen.value(), c_ErrorMessage.address()));
             if (err) {
-                ErrorMessage.accept(new LLVMString(c_ErrorMessage.get(ADDRESS, 0).address()));
+                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).address()));
             }
             return err;
         }
@@ -393,7 +393,7 @@ public class TargetMachine {
      */
     public static boolean LLVMTargetMachineEmitToMemoryBuffer(
             LLVMTargetMachineRef T, LLVMModuleRef M, LLVMCodeGenFileType codegen,
-            Consumer<LLVMString> ErrorMessage, Consumer<LLVMMemoryBufferRef> OutMemBuf) {
+            Consumer<String> ErrorMessage, Consumer<LLVMMemoryBufferRef> OutMemBuf) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
             MemorySegment c_OutMemBuf = arena.allocate(ADDRESS);
@@ -402,7 +402,7 @@ public class TargetMachine {
             if (!err) {
                 OutMemBuf.accept(new LLVMMemoryBufferRef(c_OutMemBuf.get(ADDRESS, 0).address()));
             } else {
-                ErrorMessage.accept(new LLVMString(c_ErrorMessage.get(ADDRESS, 0).address()));
+                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).address()));
             }
             return err;
         }
@@ -414,8 +414,8 @@ public class TargetMachine {
      * Get a triple for the host machine as a string. The result needs to be
      * disposed with LLVMDisposeMessage.
      */
-    public static LLVMString LLVMGetDefaultTargetTriple() {
-        return nothrows_run(() -> new LLVMString((long) Function.LLVMGetDefaultTargetTriple.handle().invoke()));
+    public static String LLVMGetDefaultTargetTriple() {
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetDefaultTargetTriple.handle().invoke()));
     }
 
     /**

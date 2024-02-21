@@ -37,6 +37,7 @@ import static com.v7878.llvm._Utils.UINT8_T;
 import static com.v7878.llvm._Utils.UNSIGNED_INT;
 import static com.v7878.llvm._Utils.UNSIGNED_LONG_LONG;
 import static com.v7878.llvm._Utils.VOID_PTR;
+import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.llvm._Utils.allocArray;
 import static com.v7878.llvm._Utils.allocString;
@@ -48,7 +49,6 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
-import com.v7878.llvm.Types.LLVMString;
 import com.v7878.unsafe.foreign.SimpleBulkLinker;
 import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
 
@@ -1548,15 +1548,18 @@ public class Core {
     }
 
     /*===-- Error handling ----------------------------------------------------===*/
-    public static LLVMString LLVMCreateMessage(String Message) {
+
+    /* package-private */
+    static long LLVMCreateMessage(String Message) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Message = allocString(arena, Message);
-            return nothrows_run(() -> new LLVMString((long) Function.LLVMCreateMessage.handle().invoke(c_Message.address())));
+            return nothrows_run(() -> (long) Function.LLVMCreateMessage.handle().invoke(c_Message.address()));
         }
     }
 
-    public static void LLVMDisposeMessage(LLVMString Message) {
-        nothrows_run(() -> Function.LLVMDisposeMessage.handle().invoke(Message.value()));
+    /* package-private */
+    static void LLVMDisposeMessage(long Message) {
+        nothrows_run(() -> Function.LLVMDisposeMessage.handle().invoke(Message));
     }
 
     /*
@@ -1620,8 +1623,8 @@ public class Core {
      * Return a string representation of the DiagnosticInfo. Use
      * LLVMDisposeMessage to free the string.
      */
-    public static LLVMString LLVMGetDiagInfoDescription(LLVMDiagnosticInfoRef DI) {
-        return nothrows_run(() -> new LLVMString((long) Function.LLVMGetDiagInfoDescription.handle().invoke(DI.value())));
+    public static String LLVMGetDiagInfoDescription(LLVMDiagnosticInfoRef DI) {
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetDiagInfoDescription.handle().invoke(DI.value())));
     }
 
     /**
@@ -1877,8 +1880,8 @@ public class Core {
      * Return a string representation of the module. Use
      * LLVMDisposeMessage to free the string.
      */
-    public static LLVMString LLVMPrintModuleToString(LLVMModuleRef M) {
-        return nothrows_run(() -> new LLVMString((long) Function.LLVMPrintModuleToString.handle().invoke(M.value())));
+    public static String LLVMPrintModuleToString(LLVMModuleRef M) {
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMPrintModuleToString.handle().invoke(M.value())));
     }
 
     ///**
@@ -2056,8 +2059,8 @@ public class Core {
      * Return a string representation of the type. Use
      * LLVMDisposeMessage to free the string.
      */
-    public static LLVMString LLVMPrintTypeToString(LLVMTypeRef Val) {
-        return nothrows_run(() -> new LLVMString((long) Function.LLVMPrintTypeToString.handle().invoke(Val.value())));
+    public static String LLVMPrintTypeToString(LLVMTypeRef Val) {
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMPrintTypeToString.handle().invoke(Val.value())));
     }
 
     /*

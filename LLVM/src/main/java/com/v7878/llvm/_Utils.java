@@ -1,6 +1,8 @@
 package com.v7878.llvm;
 
+import static com.v7878.llvm.Core.LLVMDisposeMessage;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.SimpleBulkLinker.WORD_CLASS;
 
 import com.v7878.foreign.Arena;
@@ -38,10 +40,15 @@ final class _Utils {
     }
 
     public static String addressToString(long address) {
-        if (address == 0) {
-            return null;
-        }
+        if (address == 0) return null;
         return MemorySegment.ofAddress(address).reinterpret(Long.MAX_VALUE).getString(0);
+    }
+
+    public static String addressToLLVMString(long address) {
+        if (address == 0) throw shouldNotReachHere();
+        String out = addressToString(address);
+        LLVMDisposeMessage(address);
+        return out;
     }
 
     public static String addressToString(long address, long length) {

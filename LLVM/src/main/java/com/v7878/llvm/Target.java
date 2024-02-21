@@ -18,6 +18,7 @@ import static com.v7878.llvm._Utils.ENUM;
 import static com.v7878.llvm._Utils.UNSIGNED_INT;
 import static com.v7878.llvm._Utils.UNSIGNED_LONG_LONG;
 import static com.v7878.llvm._Utils.VOID_PTR;
+import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.unsafe.NativeCodeBlob.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.ARM;
@@ -28,7 +29,6 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.llvm.Types.LLVMString;
 import com.v7878.unsafe.foreign.SimpleBulkLinker;
 import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
 
@@ -299,11 +299,10 @@ public class Target {
     }
 
     /**
-     * Converts target data to a target layout string. The string must be disposed
-     * with LLVMDisposeMessage.
+     * Converts target data to a target layout string.
      */
-    public static LLVMString LLVMCopyStringRepOfTargetData(LLVMTargetDataRef TD) {
-        return nothrows_run(() -> new LLVMString((long) Function.LLVMCopyStringRepOfTargetData.handle().invoke(TD.value())));
+    public static String LLVMCopyStringRepOfTargetData(LLVMTargetDataRef TD) {
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMCopyStringRepOfTargetData.handle().invoke(TD.value())));
     }
 
     /**
