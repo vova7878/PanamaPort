@@ -4,8 +4,12 @@ import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
+import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.SimpleBulkLinker.WORD_CLASS;
+
+import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
@@ -19,11 +23,14 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.util.Objects;
 import java.util.function.Supplier;
+
+import dalvik.annotation.optimization.CriticalNative;
 
 public class LibDL {
     public static final int RTLD_LOCAL = 0;
@@ -122,7 +129,8 @@ public class LibDL {
         dlopen(s_dlopen, WORD_CLASS, WORD_CLASS, int.class),
         dlclose(s_dlclose, int.class, WORD_CLASS),
         dlerror(s_dlerror, WORD_CLASS),
-        dlsym(s_dlsym, WORD_CLASS, WORD_CLASS, WORD_CLASS),
+        //FIXME!!! (SIGSEGV on api levels [26, 28])
+        //dlsym(s_dlsym, WORD_CLASS, WORD_CLASS, WORD_CLASS),
         dlvsym(s_dlvsym, WORD_CLASS, WORD_CLASS, WORD_CLASS, WORD_CLASS),
         dladdr(s_dladdr, int.class, WORD_CLASS, WORD_CLASS),
 
@@ -182,8 +190,29 @@ public class LibDL {
         return nothrows_run(() -> (long) Function.dlerror.handle().invokeExact());
     }
 
-    private static long raw_dlsym(long handle, long symbol) {
-        return nothrows_run(() -> (long) Function.dlsym.handle().invokeExact(handle, symbol));
+    //FIXME!!! (SIGSEGV on api levels [26, 28])
+    //private static long raw_dlsym(long handle, long symbol) {
+    //    return nothrows_run(() -> (long) Function.dlsym.handle().invokeExact(handle, symbol));
+    //}
+
+    static {
+        String suffix = IS64BIT ? "64" : "32";
+        Class<?> word = IS64BIT ? long.class : int.class;
+
+        Method symbol = getDeclaredMethod(LibDL.class, "raw_dlsym" + suffix, word, word);
+        registerNativeMethod(symbol, s_dlsym.address());
+    }
+
+    @Keep
+    @CriticalNative
+    private static native long raw_dlsym64(long handle, long symbol);
+
+    @Keep
+    @CriticalNative
+    private static native int raw_dlsym32(int handle, int symbol);
+
+    public static long raw_dlsym(long handle, long symbol) {
+        return IS64BIT ? raw_dlsym64(handle, symbol) : raw_dlsym32((int) handle, (int) symbol) & 0xffffffffL;
     }
 
     private static long raw_dlvsym(long handle, long symbol, long version) {
