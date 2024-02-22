@@ -88,4 +88,15 @@ final class _Utils {
     public static int arrayLength(AddressValue... values) {
         return values == null ? 0 : values.length;
     }
+
+    public static MemorySegment allocArray(Arena scope, long... values) {
+        if (values == null || values.length == 0) {
+            return MemorySegment.NULL;
+        }
+        return scope.allocateFrom(ValueLayout.JAVA_LONG, values);
+    }
+
+    public static int arrayLength(long... values) {
+        return values == null ? 0 : values.length;
+    }
 }

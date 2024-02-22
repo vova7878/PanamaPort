@@ -2258,25 +2258,33 @@ public class Core {
      * These functions relate to LLVMTypeRef instances.
      */
 
-    ///**
-    // * Create a new structure type in a context.
-    // *
-    // * A structure is specified by a list of inner elements/types and
-    // * whether these can be packed together.
-    // *
-    // * @see llvm::StructType::create()
-    // */
-    //LLVMTypeRef LLVMStructTypeInContext(LLVMContextRef C, LLVMTypeRef *ElementTypes, int /* unsigned */ ElementCount, boolean Packed) {
-    //    return nothrows_run(() -> Function.LLVMStructTypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Create a new structure type in the global context.
-    // *
-    // * @see llvm::StructType::create()
-    // */
-    //LLVMTypeRef LLVMStructType(LLVMTypeRef *ElementTypes, int /* unsigned */ ElementCount, boolean Packed) {
-    //    return nothrows_run(() -> Function.LLVMStructType.handle().invoke());
-    //}
+    /**
+     * Create a new structure type in a context.
+     * <p>
+     * A structure is specified by a list of inner elements/types and
+     * whether these can be packed together.
+     */
+    public static LLVMTypeRef LLVMStructTypeInContext(LLVMContextRef C, LLVMTypeRef[] ElementTypes, boolean Packed) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
+            int /* unsigned */ ElementCount = arrayLength(ElementTypes);
+            return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMStructTypeInContext.handle()
+                    .invoke(C.value(), c_ElementTypes.address(), ElementCount, Packed)));
+        }
+    }
+
+    /**
+     * Create a new structure type in the global context.
+     */
+    public static LLVMTypeRef LLVMStructType(LLVMTypeRef[] ElementTypes, boolean Packed) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
+            int /* unsigned */ ElementCount = arrayLength(ElementTypes);
+            return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMStructType.handle()
+                    .invoke(c_ElementTypes.address(), ElementCount, Packed)));
+        }
+    }
+
     ///**
     // * Create an empty structure in a context having a specified name.
     // *
@@ -2330,22 +2338,20 @@ public class Core {
     //LLVMTypeRef LLVMStructGetTypeAtIndex(LLVMTypeRef StructTy, int /* unsigned */ i) {
     //    return nothrows_run(() -> Function.LLVMStructGetTypeAtIndex.handle().invoke());
     //}
-    ///**
-    // * Determine whether a structure is packed.
-    // *
-    // * @see llvm::StructType::isPacked()
-    // */
-    //boolean LLVMIsPackedStruct(LLVMTypeRef StructTy) {
-    //    return nothrows_run(() -> Function.LLVMIsPackedStruct.handle().invoke());
-    //}
-    ///**
-    // * Determine whether a structure is opaque.
-    // *
-    // * @see llvm::StructType::isOpaque()
-    // */
-    //boolean LLVMIsOpaqueStruct(LLVMTypeRef StructTy) {
-    //    return nothrows_run(() -> Function.LLVMIsOpaqueStruct.handle().invoke());
-    //}
+
+    /**
+     * Determine whether a structure is packed.
+     */
+    public static boolean LLVMIsPackedStruct(LLVMTypeRef StructTy) {
+        return nothrows_run(() -> (boolean) Function.LLVMIsPackedStruct.handle().invoke(StructTy.value()));
+    }
+
+    /**
+     * Determine whether a structure is opaque.
+     */
+    public static boolean LLVMIsOpaqueStruct(LLVMTypeRef StructTy) {
+        return nothrows_run(() -> (boolean) Function.LLVMIsOpaqueStruct.handle().invoke(StructTy.value()));
+    }
 
     /*
      * @defgroup LLVMCCoreTypeSequential Sequential Types
@@ -2433,50 +2439,56 @@ public class Core {
      * @defgroup LLVMCCoreTypeOther Other Types
      */
 
-    ///**
-    // * Create a void type in a context.
-    // */
-    //LLVMTypeRef LLVMVoidTypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMVoidTypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Create a label type in a context.
-    // */
-    //LLVMTypeRef LLVMLabelTypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMLabelTypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Create a X86 MMX type in a context.
-    // */
-    //LLVMTypeRef LLVMX86MMXTypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMX86MMXTypeInContext.handle().invoke());
-    //}
-    ///**
-    // * These are similar to the above functions except they operate on the
-    // * global context.
-    // */
+    /**
+     * Create a void type in a context.
+     */
+    public static LLVMTypeRef LLVMVoidTypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMVoidTypeInContext.handle().invoke(C.value())));
+    }
+
+    /**
+     * Create a label type in a context.
+     */
+    public static LLVMTypeRef LLVMLabelTypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMLabelTypeInContext.handle().invoke(C.value())));
+    }
+
+    /**
+     * Create a X86 MMX type in a context.
+     */
+    public static LLVMTypeRef LLVMX86MMXTypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMX86MMXTypeInContext.handle().invoke(C.value())));
+    }
+
+    /**
+     * Create a void type in the global context.
+     */
     public static LLVMTypeRef LLVMVoidType() {
         return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMVoidType.handle().invoke()));
     }
-    //LLVMTypeRef LLVMLabelType() {
-    //    return nothrows_run(() -> Function.LLVMLabelType.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMX86MMXType() {
-    //    return nothrows_run(() -> Function.LLVMX86MMXType.handle().invoke());
-    //}
 
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueGeneral General APIs
-    // *
-    // * Functions in this section work on all LLVMValueRef instances,
-    // * regardless of their sub-type. They correspond to functions available
-    // * on llvm::Value.
-    // *
-    // * @{
-    // */
+    /**
+     * Create a label type in the global context.
+     */
+    public static LLVMTypeRef LLVMLabelType() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMLabelType.handle().invoke()));
+    }
+
+    /**
+     * Create a X86 MMX type in the global context.
+     */
+    public static LLVMTypeRef LLVMX86MMXType() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMX86MMXType.handle().invoke()));
+    }
+
+    /*
+     * @defgroup LLVMCCoreValueGeneral General APIs
+     *
+     * Functions in this section work on all LLVMValueRef instances,
+     * regardless of their sub-type. They correspond to functions available
+     * on llvm::Value.
+     */
+
     ///**
     // * Obtain the type of a value.
     // *
@@ -2546,21 +2558,18 @@ public class Core {
     //boolean LLVMIsUndef(LLVMValueRef Val) {
     //    return nothrows_run(() -> Function.LLVMIsUndef.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueUses Usage
-    // *
-    // * This module defines functions that allow you to inspect the uses of a
-    // * LLVMValueRef.
-    // *
-    // * It is possible to obtain an LLVMUseRef for any LLVMValueRef instance.
-    // * Each LLVMUseRef (which corresponds to a llvm::Use instance) holds a
-    // * llvm::User and llvm::Value.
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreValueUses Usage
+     *
+     * This module defines functions that allow you to inspect the uses of a
+     * LLVMValueRef.
+     *
+     * It is possible to obtain an LLVMUseRef for any LLVMValueRef instance.
+     * Each LLVMUseRef (which corresponds to a llvm::Use instance) holds a
+     * llvm::User and llvm::Value.
+     */
+
     ///**
     // * Obtain the first use of a value.
     // *
@@ -2601,18 +2610,15 @@ public class Core {
     //LLVMValueRef LLVMGetUsedValue(LLVMUseRef U) {
     //    return nothrows_run(() -> Function.LLVMGetUsedValue.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueUser User value
-    // *
-    // * Function in this group pertain to LLVMValueRef instances that descent
-    // * from llvm::User. This includes constants, instructions, and
-    // * operators.
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreValueUser User value
+     *
+     * Function in this group pertain to LLVMValueRef instances that descent
+     * from llvm::User. This includes constants, instructions, and
+     * operators.
+     */
+
     ///**
     // * Obtain an operand at a specific index in a llvm::User value.
     // *
@@ -2645,47 +2651,41 @@ public class Core {
     //int LLVMGetNumOperands(LLVMValueRef Val) {
     //    return nothrows_run(() -> Function.LLVMGetNumOperands.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueConstant Constants
-    // *
-    // * This section contains APIs for interacting with LLVMValueRef that
-    // * correspond to llvm::Constant instances.
-    // *
-    // * These functions will work for any LLVMValueRef in the llvm::Constant
-    // * class hierarchy.
-    // *
-    // * @{
-    // */
-    ///**
-    // * Obtain a constant value referring to the null instance of a type.
-    // *
-    // * @see llvm::Constant::getNullValue()
-    // */
-    //LLVMValueRef LLVMConstNull(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMConstNull.handle().invoke());
-    //} /* all zeroes */
-    ///**
-    // * Obtain a constant value referring to the instance of a type
-    // * consisting of all ones.
-    // *
-    // * This is only valid for integer types.
-    // *
-    // * @see llvm::Constant::getAllOnesValue()
-    // */
-    //LLVMValueRef LLVMConstAllOnes(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMConstAllOnes.handle().invoke());
-    //}
-    ///**
-    // * Obtain a constant value referring to an undefined value of a type.
-    // *
-    // * @see llvm::UndefValue::get()
-    // */
-    //LLVMValueRef LLVMGetUndef(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMGetUndef.handle().invoke());
-    //}
+
+    /*
+     * @defgroup LLVMCCoreValueConstant Constants
+     *
+     * This section contains APIs for interacting with LLVMValueRef that
+     * correspond to llvm::Constant instances.
+     *
+     * These functions will work for any LLVMValueRef in the llvm::Constant
+     * class hierarchy.
+     */
+
+    /**
+     * Obtain a constant value referring to the null instance of a type.
+     */
+    public static LLVMValueRef LLVMConstNull(LLVMTypeRef Ty) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstNull.handle().invoke(Ty.value())));
+    }
+
+    /**
+     * Obtain a constant value referring to the instance of a type
+     * consisting of all ones.
+     * <p>
+     * This is only valid for integer types.
+     */
+    public static LLVMValueRef LLVMConstAllOnes(LLVMTypeRef Ty) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstAllOnes.handle().invoke(Ty.value())));
+    }
+
+    /**
+     * Obtain a constant value referring to an undefined value of a type.
+     */
+    public static LLVMValueRef LLVMGetUndef(LLVMTypeRef Ty) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetUndef.handle().invoke(Ty.value())));
+    }
+
     ///**
     // * Determine whether a value instance is null.
     // *
@@ -2701,43 +2701,46 @@ public class Core {
     //LLVMValueRef LLVMConstPointerNull(LLVMTypeRef Ty) {
     //    return nothrows_run(() -> Function.LLVMConstPointerNull.handle().invoke());
     //}
-    ///**
-    // * @defgroup LLVMCCoreValueConstantScalar Scalar constants
-    // *
-    // * Functions in this group model LLVMValueRef instances that correspond
-    // * to constants referring to scalar types.
-    // *
-    // * For integer types, the LLVMTypeRef parameter should correspond to a
-    // * llvm::IntegerType instance and the returned LLVMValueRef will
-    // * correspond to a llvm::ConstantInt.
-    // *
-    // * For floating point types, the LLVMTypeRef returned corresponds to a
-    // * llvm::ConstantFP.
-    // *
-    // * @{
-    // */
-    ///**
-    // * Obtain a constant value for an integer type.
-    // *
-    // * The returned value corresponds to a llvm::ConstantInt.
-    // *
-    // * @see llvm::ConstantInt::get()
-    // *
-    // * @param IntTy Integer type to obtain value of.
-    // * @param N The value the returned instance should refer to.
-    // * @param SignExtend Whether to sign extend the produced value.
-    // */
-    //LLVMValueRef LLVMConstInt(LLVMTypeRef IntTy, long /* unsigned long long */ N, boolean SignExtend) {
-    //    return nothrows_run(() -> Function.LLVMConstInt.handle().invoke());
-    //}
-    ///**
-    // * Obtain a constant value for an integer of arbitrary precision.
-    // *
-    // * @see llvm::ConstantInt::get()
-    // */
-    //LLVMValueRef LLVMConstIntOfArbitraryPrecision(LLVMTypeRef IntTy, int /* unsigned */ NumWords, const long /* uint64_t */ Words[]) {
-    //    return nothrows_run(() -> Function.LLVMConstIntOfArbitraryPrecision.handle().invoke());
-    //}
+
+    /*
+     * @defgroup LLVMCCoreValueConstantScalar Scalar constants
+     *
+     * Functions in this group model LLVMValueRef instances that correspond
+     * to constants referring to scalar types.
+     *
+     * For integer types, the LLVMTypeRef parameter should correspond to a
+     * llvm::IntegerType instance and the returned LLVMValueRef will
+     * correspond to a llvm::ConstantInt.
+     *
+     * For floating point types, the LLVMTypeRef returned corresponds to a
+     * llvm::ConstantFP.
+     */
+
+    /**
+     * Obtain a constant value for an integer type.
+     * <p>
+     * The returned value corresponds to a llvm::ConstantInt.
+     *
+     * @param IntTy      Integer type to obtain value of.
+     * @param N          The value the returned instance should refer to.
+     * @param SignExtend Whether to sign extend the produced value.
+     */
+    public static LLVMValueRef LLVMConstInt(LLVMTypeRef IntTy, long /* unsigned long long */ N, boolean SignExtend) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstInt.handle().invoke(IntTy.value(), N, SignExtend)));
+    }
+
+    /**
+     * Obtain a constant value for an integer of arbitrary precision.
+     */
+    public static LLVMValueRef LLVMConstIntOfArbitraryPrecision(LLVMTypeRef IntTy, long... /* uint64_t */ Words) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Words = allocArray(arena, Words);
+            int /* unsigned */ NumWords = arrayLength(Words);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstIntOfArbitraryPrecision
+                    .handle().invoke(IntTy.value(), NumWords, c_Words.address())));
+        }
+    }
+
     ///**
     // * Obtain a constant value for an integer parsed from a string.
     // *
@@ -2805,36 +2808,42 @@ public class Core {
     //double LLVMConstRealGetDouble(LLVMValueRef ConstantVal, boolean *losesInfo) {
     //    return nothrows_run(() -> Function.LLVMConstRealGetDouble.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueConstantComposite Composite Constants
-    // *
-    // * Functions in this group operate on composite constants.
-    // *
-    // * @{
-    // */
-    ///**
-    // * Create a ConstantDataSequential and initialize it with a string.
-    // *
-    // * @see llvm::ConstantDataArray::getString()
-    // */
-    //LLVMValueRef LLVMConstStringInContext(LLVMContextRef C, String Str, int /* unsigned */ Length, boolean DontNullTerminate) {
-    //    return nothrows_run(() -> Function.LLVMConstStringInContext.handle().invoke());
-    //}
-    ///**
-    // * Create a ConstantDataSequential with string content in the global context.
-    // *
-    // * This is the same as LLVMConstStringInContext except it operates on the
-    // * global context.
-    // *
-    // * @see LLVMConstStringInContext()
-    // * @see llvm::ConstantDataArray::getString()
-    // */
-    //LLVMValueRef LLVMConstString(String Str, int /* unsigned */ Length, boolean DontNullTerminate) {
-    //    return nothrows_run(() -> Function.LLVMConstString.handle().invoke());
-    //}
+
+    /*
+     * @defgroup LLVMCCoreValueConstantComposite Composite Constants
+     *
+     * Functions in this group operate on composite constants.
+     */
+
+    /**
+     * Create a ConstantDataSequential and initialize it with a string.
+     */
+    public static LLVMValueRef LLVMConstStringInContext(LLVMContextRef C, String Str, boolean DontNullTerminate) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Str = allocString(arena, Str);
+            int /* unsigned */ Length = Math.toIntExact(c_Str.byteSize());
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstStringInContext.handle()
+                    .invoke(C.value(), c_Str.address(), Length, DontNullTerminate)));
+        }
+    }
+
+    /**
+     * Create a ConstantDataSequential with string content in the global context.
+     * <p>
+     * This is the same as LLVMConstStringInContext except it operates on the
+     * global context.
+     *
+     * @see Core::LLVMConstStringInContext()
+     */
+    public static LLVMValueRef LLVMConstString(String Str, boolean DontNullTerminate) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Str = allocString(arena, Str);
+            int /* unsigned */ Length = Math.toIntExact(c_Str.byteSize());
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstString.handle()
+                    .invoke(c_Str.address(), Length, DontNullTerminate)));
+        }
+    }
+
     ///**
     // * Returns true if the specified constant is an array of i8.
     // *
