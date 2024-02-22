@@ -49,6 +49,7 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
+import com.v7878.llvm.Types.LLVMModuleProviderRef;
 import com.v7878.unsafe.foreign.SimpleBulkLinker;
 import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
 
@@ -2021,32 +2022,28 @@ public class Core {
      *     opaque type
      */
 
-    ///**
-    // * Obtain the enumerated type of a Type instance.
-    // *
-    // * @see llvm::Type:getTypeID()
-    // */
-    //LLVMTypeKind LLVMGetTypeKind(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMGetTypeKind.handle().invoke());
-    //}
-    ///**
-    // * Whether the type has a known size.
-    // *
-    // * Things that don't have a size are abstract types, labels, and void.a
-    // *
-    // * @see llvm::Type::isSized()
-    // */
-    //boolean LLVMTypeIsSized(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMTypeIsSized.handle().invoke());
-    //}
-    ///**
-    // * Obtain the context to which this type instance is associated.
-    // *
-    // * @see llvm::Type::getContext()
-    // */
-    //LLVMContextRef LLVMGetTypeContext(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMGetTypeContext.handle().invoke());
-    //}
+    /**
+     * Obtain the enumerated type of a Type instance.
+     */
+    public static LLVMTypeKind LLVMGetTypeKind(LLVMTypeRef Ty) {
+        return nothrows_run(() -> LLVMTypeKind.of((int) Function.LLVMGetTypeKind.handle().invoke(Ty.value())));
+    }
+
+    /**
+     * Whether the type has a known size.
+     * <p>
+     * Things that don't have a size are abstract types, labels, and void.a
+     */
+    public static boolean LLVMTypeIsSized(LLVMTypeRef Ty) {
+        return nothrows_run(() -> (boolean) Function.LLVMTypeIsSized.handle().invoke(Ty.value()));
+    }
+
+    /**
+     * Obtain the context to which this type instance is associated.
+     */
+    public static LLVMContextRef LLVMGetTypeContext(LLVMTypeRef Ty) {
+        return nothrows_run(() -> new LLVMContextRef((long) Function.LLVMGetTypeContext.handle().invoke(Ty.value())));
+    }
 
     /**
      * Dump a representation of a type to stderr.
@@ -2360,80 +2357,72 @@ public class Core {
      * for array, vector, and pointer types.
      */
 
-    ///**
-    // * Obtain the type of elements within a sequential type.
-    // *
-    // * This works on array, vector, and pointer types.
-    // *
-    // * @see llvm::SequentialType::getElementType()
-    // */
-    //LLVMTypeRef LLVMGetElementType(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMGetElementType.handle().invoke());
-    //}
-    ///**
-    // * Create a fixed size array type that refers to a specific type.
-    // *
-    // * The created type will exist in the context that its element type
-    // * exists in.
-    // *
-    // * @see llvm::ArrayType::get()
-    // */
-    //LLVMTypeRef LLVMArrayType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
-    //    return nothrows_run(() -> Function.LLVMArrayType.handle().invoke());
-    //}
-    ///**
-    // * Obtain the length of an array type.
-    // *
-    // * This only works on types that represent arrays.
-    // *
-    // * @see llvm::ArrayType::getNumElements()
-    // */
-    //int /* unsigned */ LLVMGetArrayLength(LLVMTypeRef ArrayTy) {
-    //    return nothrows_run(() -> Function.LLVMGetArrayLength.handle().invoke());
-    //}
-    ///**
-    // * Create a pointer type that points to a defined type.
-    // *
-    // * The created type will exist in the context that its pointee type
-    // * exists in.
-    // *
-    // * @see llvm::PointerType::get()
-    // */
-    //LLVMTypeRef LLVMPointerType(LLVMTypeRef ElementType, int /* unsigned */ AddressSpace) {
-    //    return nothrows_run(() -> Function.LLVMPointerType.handle().invoke());
-    //}
-    ///**
-    // * Obtain the address space of a pointer type.
-    // *
-    // * This only works on types that represent pointers.
-    // *
-    // * @see llvm::PointerType::getAddressSpace()
-    // */
-    //int /* unsigned */ LLVMGetPointerAddressSpace(LLVMTypeRef PointerTy) {
-    //    return nothrows_run(() -> Function.LLVMGetPointerAddressSpace.handle().invoke());
-    //}
-    ///**
-    // * Create a vector type that contains a defined type and has a specific
-    // * number of elements.
-    // *
-    // * The created type will exist in the context thats its element type
-    // * exists in.
-    // *
-    // * @see llvm::VectorType::get()
-    // */
-    //LLVMTypeRef LLVMVectorType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
-    //    return nothrows_run(() -> Function.LLVMVectorType.handle().invoke());
-    //}
-    ///**
-    // * Obtain the number of elements in a vector type.
-    // *
-    // * This only works on types that represent vectors.
-    // *
-    // * @see llvm::VectorType::getNumElements()
-    // */
-    //int /* unsigned */ LLVMGetVectorSize(LLVMTypeRef VectorTy) {
-    //    return nothrows_run(() -> Function.LLVMGetVectorSize.handle().invoke());
-    //}
+    /**
+     * Obtain the type of elements within a sequential type.
+     * <p>
+     * This works on array, vector, and pointer types.
+     */
+    public static LLVMTypeRef LLVMGetElementType(LLVMTypeRef Ty) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMGetElementType.handle().invoke(Ty.value())));
+    }
+
+    /**
+     * Create a fixed size array type that refers to a specific type.
+     * <p>
+     * The created type will exist in the context that its element type
+     * exists in.
+     */
+    public static LLVMTypeRef LLVMArrayType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMArrayType.handle().invoke(ElementType.value(), ElementCount)));
+    }
+
+    /**
+     * Obtain the length of an array type.
+     * <p>
+     * This only works on types that represent arrays.
+     */
+    public static int /* unsigned */ LLVMGetArrayLength(LLVMTypeRef ArrayTy) {
+        return nothrows_run(() -> (int) Function.LLVMGetArrayLength.handle().invoke(ArrayTy.value()));
+    }
+
+    /**
+     * Create a pointer type that points to a defined type.
+     * <p>
+     * The created type will exist in the context that its pointee type
+     * exists in.
+     */
+    public static LLVMTypeRef LLVMPointerType(LLVMTypeRef ElementType, int /* unsigned */ AddressSpace) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMPointerType.handle().invoke(ElementType.value(), AddressSpace)));
+    }
+
+    /**
+     * Obtain the address space of a pointer type.
+     * <p>
+     * This only works on types that represent pointers.
+     */
+    public static int /* unsigned */ LLVMGetPointerAddressSpace(LLVMTypeRef PointerTy) {
+        return nothrows_run(() -> (int) Function.LLVMGetPointerAddressSpace.handle().invoke(PointerTy.value()));
+    }
+
+    /**
+     * Create a vector type that contains a defined type and has a specific
+     * number of elements.
+     * <p>
+     * The created type will exist in the context thats its element type
+     * exists in.
+     */
+    public static LLVMTypeRef LLVMVectorType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMVectorType.handle().invoke(ElementType.value(), ElementCount)));
+    }
+
+    /**
+     * Obtain the number of elements in a vector type.
+     * <p>
+     * This only works on types that represent vectors.
+     */
+    public static int /* unsigned */ LLVMGetVectorSize(LLVMTypeRef VectorTy) {
+        return nothrows_run(() -> (int) Function.LLVMGetVectorSize.handle().invoke(VectorTy.value()));
+    }
 
     /*
      * @defgroup LLVMCCoreTypeOther Other Types
@@ -4323,18 +4312,21 @@ public class Core {
         nothrows_run(() -> Function.LLVMDisposeBuilder.handle().invoke(Builder.value()));
     }
 
-    ///* Metadata */
-    //void LLVMSetCurrentDebugLocation(LLVMBuilderRef Builder, LLVMValueRef L) {
-    //    return nothrows_run(() -> Function.LLVMSetCurrentDebugLocation.handle().invoke());
-    //}
-    //LLVMValueRef LLVMGetCurrentDebugLocation(LLVMBuilderRef Builder) {
-    //    return nothrows_run(() -> Function.LLVMGetCurrentDebugLocation.handle().invoke());
-    //}
-    //void LLVMSetInstDebugLocation(LLVMBuilderRef Builder, LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMSetInstDebugLocation.handle().invoke());
-    //}
+    /* Metadata */
 
-    ///* Terminators */
+    public static void LLVMSetCurrentDebugLocation(LLVMBuilderRef Builder, LLVMValueRef L) {
+        nothrows_run(() -> Function.LLVMSetCurrentDebugLocation.handle().invoke(Builder.value(), L.value()));
+    }
+
+    public static LLVMValueRef LLVMGetCurrentDebugLocation(LLVMBuilderRef Builder) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetCurrentDebugLocation.handle().invoke(Builder.value())));
+    }
+
+    public static void LLVMSetInstDebugLocation(LLVMBuilderRef Builder, LLVMValueRef Inst) {
+        nothrows_run(() -> Function.LLVMSetInstDebugLocation.handle().invoke(Builder.value(), Inst.value()));
+    }
+
+    /* Terminators */
 
     public static LLVMValueRef LLVMBuildRetVoid(LLVMBuilderRef Builder) {
         return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildRetVoid.handle().invoke(Builder.value())));
@@ -4674,27 +4666,25 @@ public class Core {
     //void LLVMSetCmpXchgFailureOrdering(LLVMValueRef CmpXchgInst, LLVMAtomicOrdering Ordering) {
     //    return nothrows_run(() -> Function.LLVMSetCmpXchgFailureOrdering.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreModuleProvider Module Providers
-    // *
-    // * @{
-    // */
-    ///**
-    // * Changes the type of M so it can be passed to FunctionPassManagers and the
-    // * JIT.  They take ModuleProviders for historical reasons.
-    // */
-    //LLVMModuleProviderRef LLVMCreateModuleProviderForExistingModule(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMCreateModuleProviderForExistingModule.handle().invoke());
-    //}
-    ///**
-    // * Destroys the module M.
-    // */
-    //void LLVMDisposeModuleProvider(LLVMModuleProviderRef M) {
-    //    return nothrows_run(() -> Function.LLVMDisposeModuleProvider.handle().invoke());
-    //}
+
+    /*
+     * @defgroup LLVMCCoreModuleProvider Module Providers
+     */
+
+    /**
+     * Changes the type of M so it can be passed to FunctionPassManagers and the
+     * JIT. They take ModuleProviders for historical reasons.
+     */
+    public static LLVMModuleProviderRef LLVMCreateModuleProviderForExistingModule(LLVMModuleRef M) {
+        return nothrows_run(() -> new LLVMModuleProviderRef((long) Function.LLVMCreateModuleProviderForExistingModule.handle().invoke(M.value())));
+    }
+
+    /**
+     * Destroys the module M.
+     */
+    public static void LLVMDisposeModuleProvider(LLVMModuleProviderRef M) {
+        nothrows_run(() -> Function.LLVMDisposeModuleProvider.handle().invoke(M.value()));
+    }
 
     /*
      * @defgroup LLVMCCoreMemoryBuffers Memory Buffers
@@ -4761,24 +4751,21 @@ public class Core {
         nothrows_run(() -> Function.LLVMDisposeMemoryBuffer.handle().invoke(MemBuf.value()));
     }
 
-    ///**
-    // * @defgroup LLVMCCorePassRegistry Pass Registry
-    // *
-    // * @{
-    // */
-    ///** Return the global pass registry, for use with initialization functions.
-    //    @see llvm::PassRegistry::getPassRegistry */
-    //LLVMPassRegistryRef LLVMGetGlobalPassRegistry() {
-    //    return nothrows_run(() -> Function.LLVMGetGlobalPassRegistry.handle().invoke());
-    //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCorePassManagers Pass Managers
-    // *
-    // * @{
-    // */
+    /*
+     * @defgroup LLVMCCorePassRegistry Pass Registry
+     */
+
+    /**
+     * Return the global pass registry, for use with initialization functions.
+     */
+    public static LLVMPassRegistryRef LLVMGetGlobalPassRegistry() {
+        return nothrows_run(() -> new LLVMPassRegistryRef((long) Function.LLVMGetGlobalPassRegistry.handle().invoke()));
+    }
+
+    /*
+     * @defgroup LLVMCCorePassManagers Pass Managers
+     */
+
     ///** Constructs a new whole-module pass pipeline. This type of pipeline is
     //    suitable for link-time optimization and whole-module transformations.
     //    @see llvm::PassManager::PassManager */
