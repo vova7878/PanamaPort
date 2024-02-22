@@ -7,9 +7,9 @@ import static com.v7878.dex.DexConstants.ACC_STATIC;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
-import static com.v7878.unsafe.Reflection.getDeclaredMethods;
+import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.Utils.runOnce;
 
 import com.v7878.dex.AnnotationItem;
 import com.v7878.dex.ClassDef;
@@ -70,10 +70,10 @@ public class SimpleBulkLinker {
         public final String name;
         public final MethodType stub_type;
         public final MethodType handle_type;
-        public final long symbol;
+        public final LongSupplier symbol;
 
         public SymbolInfo(SymbolHolder holder, String name, MethodType stub_type,
-                          MethodType handle_type, long symbol) {
+                          MethodType handle_type, LongSupplier symbol) {
             this.holder = holder;
             this.name = name;
             this.stub_type = stub_type;
@@ -99,12 +99,14 @@ public class SimpleBulkLinker {
             MethodType raw_type = holder.type();
             MethodType stub_type = stubType(raw_type);
             MethodType handle_type = handleType(raw_type);
-            Optional<MemorySegment> tmp = lookup.find(name);
-            if (!tmp.isPresent()) {
-                throw new IllegalArgumentException("Cannot find symbol: \"" + name + "\"");
-            }
-            long symbol = tmp.get().nativeAddress();
-            holder.setSymbol(() -> symbol);
+            LongSupplier symbol = runOnce(() -> {
+                Optional<MemorySegment> tmp = lookup.find(name);
+                if (!tmp.isPresent()) {
+                    throw new IllegalArgumentException("Cannot find symbol: \"" + name + "\"");
+                }
+                return tmp.get().nativeAddress();
+            });
+            holder.setSymbol(symbol);
             infos[i] = new SymbolInfo(holder, name, stub_type, handle_type, symbol);
         }
 
@@ -127,7 +129,7 @@ public class SimpleBulkLinker {
             MethodType raw_type = holder.type();
             MethodType stub_type = stubType(raw_type);
             MethodType handle_type = handleType(raw_type);
-            long symbol = holder.symbol();
+            LongSupplier symbol = holder::symbol;
             infos[i] = new SymbolInfo(holder, name, stub_type, handle_type, symbol);
         }
 
@@ -135,34 +137,34 @@ public class SimpleBulkLinker {
     }
 
     private static void processSymbols(Arena scope, SymbolInfo[] infos) {
-        String stub_name = SimpleBulkLinker.class.getName() + "$Stub";
-        TypeId stub_id = TypeId.of(stub_name);
-
-        ClassDef stub_def = new ClassDef(stub_id);
-        stub_def.setSuperClass(TypeId.of(Object.class));
-        stub_def.setAccessFlags(ACC_PUBLIC | ACC_FINAL);
-
-        for (SymbolInfo symbolInfo : infos) {
-            EncodedMethod method = new EncodedMethod(new MethodId(stub_id,
-                    ProtoId.of(symbolInfo.stub_type), symbolInfo.name),
-                    ACC_PUBLIC | ACC_STATIC | ACC_NATIVE);
-            method.getAnnotations().add(AnnotationItem.CriticalNative());
-            stub_def.getClassData().getDirectMethods().add(method);
-        }
-
-        DexFile dex = openDexFile(new Dex(stub_def).compile());
-        ClassLoader loader = Utils.newEmptyClassLoader();
-
-        Class<?> stub_class = loadClass(dex, stub_name, loader);
-        Method[] methods = getDeclaredMethods(stub_class);
-
         for (SymbolInfo info : infos) {
-            Method method = searchMethod(methods, info.name, info.stub_type.parameterArray());
-            registerNativeMethod(method, info.symbol);
-            MethodHandle raw_handle = unreflect(method);
-            //TODO: check scope in handle
-            MethodHandle handle = MethodHandlesFixes.explicitCastArguments(raw_handle, info.handle_type);
-            info.holder.setHandle(() -> handle);
+            info.holder.setHandle(runOnce(() -> {
+                long symbol = info.symbol.getAsLong();
+
+                String stub_name = SimpleBulkLinker.class.getName() + "$Stub$" + info.name;
+                TypeId stub_id = TypeId.of(stub_name);
+
+                ClassDef stub_def = new ClassDef(stub_id);
+                stub_def.setSuperClass(TypeId.of(Object.class));
+                stub_def.setAccessFlags(ACC_PUBLIC | ACC_FINAL);
+
+                EncodedMethod e_method = new EncodedMethod(new MethodId(stub_id,
+                        ProtoId.of(info.stub_type), info.name),
+                        ACC_PUBLIC | ACC_STATIC | ACC_NATIVE);
+                e_method.getAnnotations().add(AnnotationItem.CriticalNative());
+                stub_def.getClassData().getDirectMethods().add(e_method);
+
+                DexFile dex = openDexFile(new Dex(stub_def).compile());
+                ClassLoader loader = Utils.newEmptyClassLoader();
+
+                Class<?> stub_class = loadClass(dex, stub_name, loader);
+
+                Method method = getDeclaredMethod(stub_class, info.name, info.stub_type.parameterArray());
+                registerNativeMethod(method, symbol);
+                MethodHandle raw_handle = unreflect(method);
+                //TODO: check scope in handle
+                return MethodHandlesFixes.explicitCastArguments(raw_handle, info.handle_type);
+            }));
         }
     }
 
