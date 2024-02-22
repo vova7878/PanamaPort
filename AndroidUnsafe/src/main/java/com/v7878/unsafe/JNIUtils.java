@@ -538,7 +538,7 @@ public class JNIUtils {
 
         public static final RefUtils INSTANCE = nothrows_run(() -> {
             //make sure kPoisonReferences is initialized
-            boolean kPoisonReferences = VM.kPoisonReferences.get();
+            boolean kPoisonReferences = VM.isPoisonReferences();
 
             Class<?> word = IS64BIT ? long.class : int.class;
             TypeId word_id = TypeId.of(word);

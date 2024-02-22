@@ -34,6 +34,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public class VM {
@@ -252,7 +253,7 @@ public class VM {
         return rawIntToObject(getIntN(address));
     }
 
-    protected static final Supplier<Boolean> kPoisonReferences = runOnce(() -> {
+    private static final BooleanSupplier kPoisonReferences = runOnce(() -> {
         Object test = newNonMovableArray(int.class, 0);
         long address = addressOfNonMovableArray(test);
         assert_(isSigned32Bit(address), AssertionError::new);
@@ -268,10 +269,14 @@ public class VM {
         }
     });
 
+    public static boolean isPoisonReferences() {
+        return kPoisonReferences.getAsBoolean();
+    }
+
     @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
     public static int objectToInt(Object obj) {
         int out = rawObjectToInt(obj);
-        return kPoisonReferences.get() ? -out : out;
+        return kPoisonReferences.getAsBoolean() ? -out : out;
     }
 
     @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
@@ -281,6 +286,6 @@ public class VM {
 
     @DangerLevel(DangerLevel.GC_COLLISION_MOVABLE_OBJECTS)
     public static Object intToObject(int obj) {
-        return rawIntToObject(kPoisonReferences.get() ? -obj : obj);
+        return rawIntToObject(kPoisonReferences.getAsBoolean() ? -obj : obj);
     }
 }

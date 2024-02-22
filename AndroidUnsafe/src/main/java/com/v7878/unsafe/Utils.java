@@ -20,7 +20,11 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 import java.util.function.Function;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -144,6 +148,78 @@ public class Utils {
                     synchronized (this) {
                         if (value == null) {
                             value = task.get();
+                        }
+                    }
+                }
+                return value;
+            }
+        };
+    }
+
+    public static BooleanSupplier runOnce(BooleanSupplier task) {
+        return new BooleanSupplier() {
+            volatile Boolean value;
+
+            @Override
+            public boolean getAsBoolean() {
+                if (value == null) {
+                    synchronized (this) {
+                        if (value == null) {
+                            value = task.getAsBoolean();
+                        }
+                    }
+                }
+                return value;
+            }
+        };
+    }
+
+    public static IntSupplier runOnce(IntSupplier task) {
+        return new IntSupplier() {
+            volatile Integer value;
+
+            @Override
+            public int getAsInt() {
+                if (value == null) {
+                    synchronized (this) {
+                        if (value == null) {
+                            value = task.getAsInt();
+                        }
+                    }
+                }
+                return value;
+            }
+        };
+    }
+
+    public static LongSupplier runOnce(LongSupplier task) {
+        return new LongSupplier() {
+            volatile Long value;
+
+            @Override
+            public long getAsLong() {
+                if (value == null) {
+                    synchronized (this) {
+                        if (value == null) {
+                            value = task.getAsLong();
+                        }
+                    }
+                }
+                return value;
+            }
+        };
+    }
+
+    public static DoubleSupplier runOnce(DoubleSupplier task) {
+        return new DoubleSupplier() {
+            volatile Double value;
+
+            @Override
+            public double getAsDouble() {
+                if (value == null) {
+                    synchronized (this) {
+                        if (value == null) {
+                            value = task.getAsDouble();
                         }
                     }
                 }

@@ -24,7 +24,6 @@ import static com.v7878.unsafe.NativeCodeBlob.processASM;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.ensureClassInitialized;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.VM.kPoisonReferences;
 
 import androidx.annotation.Keep;
 
@@ -395,7 +394,7 @@ public class ExtraMemoryAccess {
             Class<?> word = IS64BIT ? long.class : int.class;
             TypeId word_id = TypeId.of(word);
             String suffix = IS64BIT ? "64" : "32";
-            String suffix2 = suffix + (kPoisonReferences.get() ? "p" : "n");
+            String suffix2 = suffix + (VM.isPoisonReferences() ? "p" : "n");
 
             String impl_name = CopyInvoker.class.getName() + "$Impl";
             TypeId impl_id = TypeId.of(impl_name);
