@@ -55,14 +55,12 @@ public class SimpleBulkLinker {
 
         long symbol();
 
-        default void setHandle(Supplier<MethodHandle> handle) {
-        }
+        void setHandle(Supplier<MethodHandle> handle);
     }
 
     public interface SymbolHolder2 extends SymbolHolder {
 
-        default void setSymbol(LongSupplier symbol) {
-        }
+        void setSymbol(LongSupplier symbol);
     }
 
     private static class SymbolInfo {
