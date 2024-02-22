@@ -4336,13 +4336,14 @@ public class Core {
 
     ///* Terminators */
 
-    public static LLVMValueRef LLVMBuildRetVoid(LLVMBuilderRef B) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildRetVoid.handle().invoke(B.value())));
+    public static LLVMValueRef LLVMBuildRetVoid(LLVMBuilderRef Builder) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildRetVoid.handle().invoke(Builder.value())));
     }
 
-    //LLVMValueRef LLVMBuildRet(LLVMBuilderRef, LLVMValueRef V) {
-    //    return nothrows_run(() -> Function.LLVMBuildRet.handle().invoke());
-    //}
+    public static LLVMValueRef LLVMBuildRet(LLVMBuilderRef Builder, LLVMValueRef V) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildRet.handle().invoke(Builder.value(), V.value())));
+    }
+
     //LLVMValueRef LLVMBuildAggregateRet(LLVMBuilderRef, LLVMValueRef *RetVals, int /* unsigned */ N) {
     //    return nothrows_run(() -> Function.LLVMBuildAggregateRet.handle().invoke());
     //}
@@ -4685,8 +4686,7 @@ public class Core {
     // * Changes the type of M so it can be passed to FunctionPassManagers and the
     // * JIT.  They take ModuleProviders for historical reasons.
     // */
-    //LLVMModuleProviderRef
-    //LLVMCreateModuleProviderForExistingModule(LLVMModuleRef M) {
+    //LLVMModuleProviderRef LLVMCreateModuleProviderForExistingModule(LLVMModuleRef M) {
     //    return nothrows_run(() -> Function.LLVMCreateModuleProviderForExistingModule.handle().invoke());
     //}
     ///**
@@ -4706,15 +4706,44 @@ public class Core {
     //boolean LLVMCreateMemoryBufferWithSTDIN(LLVMMemoryBufferRef *OutMemBuf, LLVMString *OutMessage) {
     //    return nothrows_run(() -> Function.LLVMCreateMemoryBufferWithSTDIN.handle().invoke());
     //}
-    //LLVMMemoryBufferRef LLVMCreateMemoryBufferWithMemoryRange(String InputData, long /* size_t */ InputDataLength, String BufferName, boolean RequiresNullTerminator) {
-    //    return nothrows_run(() -> Function.LLVMCreateMemoryBufferWithMemoryRange.handle().invoke());
-    //}
-    //LLVMMemoryBufferRef LLVMCreateMemoryBufferWithMemoryRangeCopy(String InputData, long /* size_t */ InputDataLength, String BufferName) {
-    //    return nothrows_run(() -> Function.LLVMCreateMemoryBufferWithMemoryRangeCopy.handle().invoke());
-    //}
 
-    public static String LLVMGetBufferStart(LLVMMemoryBufferRef MemBuf) {
-        return nothrows_run(() -> addressToString((long) Function.LLVMGetBufferStart.handle().invoke(MemBuf.value())));
+    /* package-private */
+    static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithMemoryRange(
+            long InputData, long /* size_t */ InputDataLength,
+            String BufferName, boolean RequiresNullTerminator) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_BufferName = allocString(arena, BufferName);
+            return nothrows_run(() -> new LLVMMemoryBufferRef((long) Function.LLVMCreateMemoryBufferWithMemoryRange
+                    .handle().invoke(InputData, InputDataLength, c_BufferName.address(), RequiresNullTerminator)));
+        }
+    }
+
+    public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSegment(
+            MemorySegment InputData, String BufferName, boolean RequiresNullTerminator) {
+        return LLVMCreateMemoryBufferWithMemoryRange(InputData.address(),
+                InputData.byteSize(), BufferName, RequiresNullTerminator);
+    }
+
+    /* package-private */
+    static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithMemoryRangeCopy(
+            long InputData, long /* size_t */ InputDataLength, String BufferName) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_BufferName = allocString(arena, BufferName);
+            return nothrows_run(() -> new LLVMMemoryBufferRef(
+                    (long) Function.LLVMCreateMemoryBufferWithMemoryRangeCopy.handle()
+                            .invoke(InputData, InputDataLength, c_BufferName.address())));
+        }
+    }
+
+    public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSegmentCopy(
+            MemorySegment InputData, String BufferName) {
+        return LLVMCreateMemoryBufferWithMemoryRangeCopy(
+                InputData.address(), InputData.byteSize(), BufferName);
+    }
+
+    /* package-private */
+    static long LLVMGetBufferStart(LLVMMemoryBufferRef MemBuf) {
+        return nothrows_run(() -> (long) Function.LLVMGetBufferStart.handle().invoke(MemBuf.value()));
     }
 
     public static long /* size_t */ LLVMGetBufferSize(LLVMMemoryBufferRef MemBuf) {
@@ -4722,8 +4751,8 @@ public class Core {
     }
 
     // Port-added
-    public static MemorySegment LLVMGetBufferData(LLVMMemoryBufferRef MemBuf) {
-        long address = nothrows_run(() -> (long) Function.LLVMGetBufferStart.handle().invoke(MemBuf.value()));
+    public static MemorySegment LLVMGetBufferSegment(LLVMMemoryBufferRef MemBuf) {
+        long address = LLVMGetBufferStart(MemBuf);
         long size = LLVMGetBufferSize(MemBuf);
         return MemorySegment.ofAddress(address).reinterpret(size).asReadOnly();
     }
@@ -4732,9 +4761,6 @@ public class Core {
         nothrows_run(() -> Function.LLVMDisposeMemoryBuffer.handle().invoke(MemBuf.value()));
     }
 
-    ///**
-    // * @}
-    // */
     ///**
     // * @defgroup LLVMCCorePassRegistry Pass Registry
     // *
