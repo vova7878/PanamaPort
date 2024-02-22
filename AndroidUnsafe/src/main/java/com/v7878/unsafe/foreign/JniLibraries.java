@@ -192,17 +192,17 @@ public class JniLibraries {
         Method symbol = getDeclaredMethod(JniLibraries.class,
                 "MutexLock" + suffix, word, word);
         registerNativeMethod(symbol, ART.find(
-                "_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE").get().address());
+                "_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE").get().nativeAddress());
 
         symbol = getDeclaredMethod(JniLibraries.class,
                 "MutexUnlock" + suffix, word, word);
         registerNativeMethod(symbol, ART.find(
-                "_ZN3art5Mutex15ExclusiveUnlockEPNS_6ThreadE").get().address());
+                "_ZN3art5Mutex15ExclusiveUnlockEPNS_6ThreadE").get().nativeAddress());
     }
 
     private static final long LIBRARIES_LOCK =
             ART.find("_ZN3art5Locks19jni_libraries_lock_E")
-                    .get().reinterpret(ADDRESS_SIZE).get(ADDRESS, 0).address();
+                    .get().reinterpret(ADDRESS_SIZE).get(ADDRESS, 0).nativeAddress();
 
     public static void forEachLibraries(Function<MemorySegment, Boolean> consumer) {
         Objects.requireNonNull(consumer);
@@ -242,7 +242,7 @@ public class JniLibraries {
         forEachLibraries(library -> {
             library = library.reinterpret(SHARED_LIBRARY.byteSize());
             if (!library.get(JAVA_BOOLEAN, NNB_OFFSET) &&
-                    library.get(ADDRESS, CLA_OFFSET).address() == allocator) {
+                    library.get(ADDRESS, CLA_OFFSET).nativeAddress() == allocator) {
                 return consumer.apply(library.get(ADDRESS, HANDLE_OFFSET));
             }
             // skip

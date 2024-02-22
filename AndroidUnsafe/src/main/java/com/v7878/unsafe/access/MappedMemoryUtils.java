@@ -139,6 +139,6 @@ class MappedMemoryUtils {
 
         registerNativeMethod(searchMethod(tm, "madvise" + suffix, word, word, int.class),
                 Linker.nativeLinker().defaultLookup().find("madvise")
-                        .orElseThrow(ExceptionInInitializerError::new).address());
+                        .orElseThrow(ExceptionInInitializerError::new).nativeAddress());
     }
 }

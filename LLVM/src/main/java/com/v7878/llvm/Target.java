@@ -279,7 +279,7 @@ public class Target {
     public static LLVMTargetDataRef LLVMCreateTargetData(String StringRep) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_StringRep = allocString(arena, StringRep);
-            return nothrows_run(() -> new LLVMTargetDataRef((long) Function.LLVMCreateTargetData.handle().invoke(c_StringRep.address())));
+            return nothrows_run(() -> new LLVMTargetDataRef((long) Function.LLVMCreateTargetData.handle().invoke(c_StringRep.nativeAddress())));
         }
     }
 

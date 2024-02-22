@@ -162,7 +162,7 @@ public class LibDL {
         }
 
         public long symbol() {
-            return symbol.address();
+            return symbol.nativeAddress();
         }
 
         public MethodHandle handle() {
@@ -200,7 +200,7 @@ public class LibDL {
         Class<?> word = IS64BIT ? long.class : int.class;
 
         Method symbol = getDeclaredMethod(LibDL.class, "raw_dlsym" + suffix, word, word);
-        registerNativeMethod(symbol, s_dlsym.address());
+        registerNativeMethod(symbol, s_dlsym.nativeAddress());
     }
 
     @Keep
@@ -227,7 +227,7 @@ public class LibDL {
         Objects.requireNonNull(filename);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_filename = arena.allocateFrom(filename);
-            return raw_dlopen(c_filename.address(), flags);
+            return raw_dlopen(c_filename.nativeAddress(), flags);
         }
     }
 
@@ -249,7 +249,7 @@ public class LibDL {
     static long dlsym_nochecks(long handle, String symbol) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_symbol = arena.allocateFrom(symbol);
-            return raw_dlsym(handle, c_symbol.address());
+            return raw_dlsym(handle, c_symbol.nativeAddress());
         }
     }
 
@@ -264,7 +264,7 @@ public class LibDL {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_symbol = arena.allocateFrom(symbol);
             MemorySegment c_version = arena.allocateFrom(version);
-            return raw_dlvsym(handle, c_symbol.address(), c_version.address());
+            return raw_dlvsym(handle, c_symbol.nativeAddress(), c_version.nativeAddress());
         }
     }
 
@@ -283,12 +283,12 @@ public class LibDL {
             MemorySegment info = arena.allocate(dlinfo_layout);
 
             //TODO: check result?
-            int ignore = raw_dladdr(addr, info.address());
+            int ignore = raw_dladdr(addr, info.nativeAddress());
 
             return new DLInfo(segmentToString((MemorySegment) fname_handle.get(info, 0)),
-                    ((MemorySegment) fbase_handle.get(info, 0)).address(),
+                    ((MemorySegment) fbase_handle.get(info, 0)).nativeAddress(),
                     segmentToString((MemorySegment) sname_handle.get(info, 0)),
-                    ((MemorySegment) saddr_handle.get(info, 0)).address());
+                    ((MemorySegment) saddr_handle.get(info, 0)).nativeAddress());
         }
     }
 }

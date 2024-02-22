@@ -23,7 +23,7 @@ public class RawNativeLibraries {
         long[] out = new long[1];
         if (loader != null) {
             JniLibraries.forEachHandlesInClassLoader(loader, library -> {
-                long res = dlsym_nochecks(library.address(), name);
+                long res = dlsym_nochecks(library.nativeAddress(), name);
                 if (res != 0) {
                     out[0] = res;
                     return true;

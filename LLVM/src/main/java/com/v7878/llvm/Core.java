@@ -1553,7 +1553,7 @@ public class Core {
     static long LLVMCreateMessage(String Message) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Message = allocString(arena, Message);
-            return nothrows_run(() -> (long) Function.LLVMCreateMessage.handle().invoke(c_Message.address()));
+            return nothrows_run(() -> (long) Function.LLVMCreateMessage.handle().invoke(c_Message.nativeAddress()));
         }
     }
 
@@ -1638,7 +1638,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             int /* unsigned */ SLen = Math.toIntExact(c_Name.byteSize());
-            return nothrows_run(() -> (int) Function.LLVMGetMDKindIDInContext.handle().invoke(C.value(), c_Name.address(), SLen));
+            return nothrows_run(() -> (int) Function.LLVMGetMDKindIDInContext.handle().invoke(C.value(), c_Name.nativeAddress(), SLen));
         }
     }
 
@@ -1646,7 +1646,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             int /* unsigned */ SLen = Math.toIntExact(c_Name.byteSize());
-            return nothrows_run(() -> (int) Function.LLVMGetMDKindID.handle().invoke(c_Name.address(), SLen));
+            return nothrows_run(() -> (int) Function.LLVMGetMDKindID.handle().invoke(c_Name.nativeAddress(), SLen));
         }
     }
 
@@ -1665,7 +1665,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             long /* size_t */ SLen = c_Name.byteSize();
-            return nothrows_run(() -> (int) Function.LLVMGetEnumAttributeKindForName.handle().invoke(c_Name.address(), SLen));
+            return nothrows_run(() -> (int) Function.LLVMGetEnumAttributeKindForName.handle().invoke(c_Name.nativeAddress(), SLen));
         }
     }
 
@@ -1705,7 +1705,7 @@ public class Core {
             MemorySegment c_V = allocString(arena, V);
             int /* unsigned */ VLength = Math.toIntExact(c_V.byteSize());
             return nothrows_run(() -> new LLVMAttributeRef((long) Function.LLVMCreateStringAttribute.handle()
-                    .invoke(C.value(), c_K.address(), KLength, c_V.address(), VLength)));
+                    .invoke(C.value(), c_K.nativeAddress(), KLength, c_V.nativeAddress(), VLength)));
         }
     }
 
@@ -1754,7 +1754,7 @@ public class Core {
     public static LLVMModuleRef LLVMModuleCreateWithName(String ModuleID) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ModuleID = allocString(arena, ModuleID);
-            return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMModuleCreateWithName.handle().invoke(c_ModuleID.address())));
+            return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMModuleCreateWithName.handle().invoke(c_ModuleID.nativeAddress())));
         }
     }
 
@@ -1767,7 +1767,7 @@ public class Core {
     public static LLVMModuleRef LLVMModuleCreateWithNameInContext(String ModuleID, LLVMContextRef C) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ModuleID = allocString(arena, ModuleID);
-            return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMModuleCreateWithNameInContext.handle().invoke(c_ModuleID.address(), C.value())));
+            return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMModuleCreateWithNameInContext.handle().invoke(c_ModuleID.nativeAddress(), C.value())));
         }
     }
 
@@ -1811,7 +1811,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Ident = allocString(arena, Ident);
             long /* size_t */ Len = c_Ident.byteSize();
-            nothrows_run(() -> Function.LLVMSetModuleIdentifier.handle().invoke(c_Ident.address(), Len));
+            nothrows_run(() -> Function.LLVMSetModuleIdentifier.handle().invoke(c_Ident.nativeAddress(), Len));
         }
     }
 
@@ -1839,7 +1839,7 @@ public class Core {
     public static void LLVMSetDataLayout(LLVMModuleRef M, String DataLayoutStr) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_DataLayoutStr = allocString(arena, DataLayoutStr);
-            nothrows_run(() -> Function.LLVMSetDataLayout.handle().invoke(M.value(), c_DataLayoutStr.address()));
+            nothrows_run(() -> Function.LLVMSetDataLayout.handle().invoke(M.value(), c_DataLayoutStr.nativeAddress()));
         }
     }
 
@@ -1856,7 +1856,7 @@ public class Core {
     public static void LLVMSetTarget(LLVMModuleRef M, String Triple) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Triple = allocString(arena, Triple);
-            nothrows_run(() -> Function.LLVMSetTarget.handle().invoke(M.value(), c_Triple.address()));
+            nothrows_run(() -> Function.LLVMSetTarget.handle().invoke(M.value(), c_Triple.nativeAddress()));
         }
     }
 
@@ -1945,7 +1945,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMAddFunction.handle()
-                    .invoke(M.value(), c_Name.address(), FunctionTy.value())));
+                    .invoke(M.value(), c_Name.nativeAddress(), FunctionTy.value())));
         }
     }
 
@@ -2216,7 +2216,7 @@ public class Core {
             MemorySegment c_ParamTypes = allocArray(arena, ParamTypes);
             int /* unsigned */ ParamCount = arrayLength(ParamTypes);
             return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFunctionType.handle()
-                    .invoke(ReturnType.value(), c_ParamTypes.address(), ParamCount, IsVarArg)));
+                    .invoke(ReturnType.value(), c_ParamTypes.nativeAddress(), ParamCount, IsVarArg)));
         }
     }
     ///**
@@ -2269,7 +2269,7 @@ public class Core {
             MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
             int /* unsigned */ ElementCount = arrayLength(ElementTypes);
             return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMStructTypeInContext.handle()
-                    .invoke(C.value(), c_ElementTypes.address(), ElementCount, Packed)));
+                    .invoke(C.value(), c_ElementTypes.nativeAddress(), ElementCount, Packed)));
         }
     }
 
@@ -2281,7 +2281,7 @@ public class Core {
             MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
             int /* unsigned */ ElementCount = arrayLength(ElementTypes);
             return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMStructType.handle()
-                    .invoke(c_ElementTypes.address(), ElementCount, Packed)));
+                    .invoke(c_ElementTypes.nativeAddress(), ElementCount, Packed)));
         }
     }
 
@@ -2737,7 +2737,7 @@ public class Core {
             MemorySegment c_Words = allocArray(arena, Words);
             int /* unsigned */ NumWords = arrayLength(Words);
             return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstIntOfArbitraryPrecision
-                    .handle().invoke(IntTy.value(), NumWords, c_Words.address())));
+                    .handle().invoke(IntTy.value(), NumWords, c_Words.nativeAddress())));
         }
     }
 
@@ -2823,7 +2823,7 @@ public class Core {
             MemorySegment c_Str = allocString(arena, Str);
             int /* unsigned */ Length = Math.toIntExact(c_Str.byteSize());
             return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstStringInContext.handle()
-                    .invoke(C.value(), c_Str.address(), Length, DontNullTerminate)));
+                    .invoke(C.value(), c_Str.nativeAddress(), Length, DontNullTerminate)));
         }
     }
 
@@ -2840,7 +2840,7 @@ public class Core {
             MemorySegment c_Str = allocString(arena, Str);
             int /* unsigned */ Length = Math.toIntExact(c_Str.byteSize());
             return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstString.handle()
-                    .invoke(c_Str.address(), Length, DontNullTerminate)));
+                    .invoke(c_Str.nativeAddress(), Length, DontNullTerminate)));
         }
     }
 
@@ -3738,7 +3738,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMAppendBasicBlockInContext.handle()
-                    .invoke(C.value(), Fn.value(), c_Name.address())));
+                    .invoke(C.value(), Fn.value(), c_Name.nativeAddress())));
         }
     }
 
@@ -3749,7 +3749,7 @@ public class Core {
     public static LLVMBasicBlockRef LLVMAppendBasicBlock(LLVMValueRef Fn, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMAppendBasicBlock.handle().invoke(Fn.value(), c_Name.address())));
+            return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMAppendBasicBlock.handle().invoke(Fn.value(), c_Name.nativeAddress())));
         }
     }
     ///**
@@ -4714,13 +4714,13 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BufferName = allocString(arena, BufferName);
             return nothrows_run(() -> new LLVMMemoryBufferRef((long) Function.LLVMCreateMemoryBufferWithMemoryRange
-                    .handle().invoke(InputData, InputDataLength, c_BufferName.address(), RequiresNullTerminator)));
+                    .handle().invoke(InputData, InputDataLength, c_BufferName.nativeAddress(), RequiresNullTerminator)));
         }
     }
 
     public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSegment(
             MemorySegment InputData, String BufferName, boolean RequiresNullTerminator) {
-        return LLVMCreateMemoryBufferWithMemoryRange(InputData.address(),
+        return LLVMCreateMemoryBufferWithMemoryRange(InputData.nativeAddress(),
                 InputData.byteSize(), BufferName, RequiresNullTerminator);
     }
 
@@ -4731,14 +4731,14 @@ public class Core {
             MemorySegment c_BufferName = allocString(arena, BufferName);
             return nothrows_run(() -> new LLVMMemoryBufferRef(
                     (long) Function.LLVMCreateMemoryBufferWithMemoryRangeCopy.handle()
-                            .invoke(InputData, InputDataLength, c_BufferName.address())));
+                            .invoke(InputData, InputDataLength, c_BufferName.nativeAddress())));
         }
     }
 
     public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSegmentCopy(
             MemorySegment InputData, String BufferName) {
         return LLVMCreateMemoryBufferWithMemoryRangeCopy(
-                InputData.address(), InputData.byteSize(), BufferName);
+                InputData.nativeAddress(), InputData.byteSize(), BufferName);
     }
 
     /* package-private */

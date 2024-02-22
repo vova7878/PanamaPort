@@ -23,7 +23,7 @@ public class Errno {
         MemorySegment __errno = Linker.nativeLinker().defaultLookup()
                 .find("__errno").orElseThrow(ExceptionInInitializerError::new);
         Method __errno_m = getDeclaredMethod(Errno.class, IS64BIT ? "__errno64" : "__errno32");
-        registerNativeMethod(__errno_m, __errno.address());
+        registerNativeMethod(__errno_m, __errno.nativeAddress());
     }
 
     @Keep

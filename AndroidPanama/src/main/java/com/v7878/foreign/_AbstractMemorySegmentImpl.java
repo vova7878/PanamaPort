@@ -90,6 +90,12 @@ abstract sealed class _AbstractMemorySegmentImpl
     abstract ByteBuffer makeByteBuffer();
 
     @Override
+    public final long nativeAddress() {
+        if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
+        return address();
+    }
+
+    @Override
     public _AbstractMemorySegmentImpl asReadOnly() {
         return dup(0, length, true, scope);
     }

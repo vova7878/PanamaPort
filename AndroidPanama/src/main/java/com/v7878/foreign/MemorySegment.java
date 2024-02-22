@@ -534,6 +534,16 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
     long address();
 
     /**
+     * {@return the address of this memory segment}
+     *
+     * @throws UnsupportedOperationException if this segment is not a
+     *                                       {@linkplain #isNative() native} segment
+     * @see #address()
+     */
+    // Port-added
+    long nativeAddress();
+
+    /**
      * Returns the Java object stored in the on-heap region of memory backing this memory
      * segment, if any. For instance, if this memory segment is a heap segment created
      * with the {@link #ofArray(byte[])} factory method, this method will return the

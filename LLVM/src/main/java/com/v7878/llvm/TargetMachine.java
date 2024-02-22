@@ -235,7 +235,7 @@ public class TargetMachine {
     public static LLVMTargetRef LLVMGetTargetFromName(String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMTargetRef((long) Function.LLVMGetTargetFromName.handle().invoke(c_Name.address())));
+            return nothrows_run(() -> new LLVMTargetRef((long) Function.LLVMGetTargetFromName.handle().invoke(c_Name.nativeAddress())));
         }
     }
 
@@ -249,11 +249,11 @@ public class TargetMachine {
             MemorySegment c_T = arena.allocate(ADDRESS);
             MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
             boolean err = nothrows_run(() -> (boolean) Function.LLVMGetTargetFromTriple.handle()
-                    .invoke(c_Triple.address(), c_T.address(), c_ErrorMessage.address()));
+                    .invoke(c_Triple.nativeAddress(), c_T.nativeAddress(), c_ErrorMessage.nativeAddress()));
             if (!err) {
-                T.accept(new LLVMTargetRef(c_T.get(ADDRESS, 0).address()));
+                T.accept(new LLVMTargetRef(c_T.get(ADDRESS, 0).nativeAddress()));
             } else {
-                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).address()));
+                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
             }
             return err;
         }
@@ -307,7 +307,7 @@ public class TargetMachine {
             MemorySegment c_CPU = allocString(arena, CPU);
             MemorySegment c_Features = allocString(arena, Features);
             return nothrows_run(() -> new LLVMTargetMachineRef((long) Function.LLVMCreateTargetMachine.handle()
-                    .invoke(T.value(), c_Triple.address(), c_CPU.address(), c_Features.address(),
+                    .invoke(T.value(), c_Triple.nativeAddress(), c_CPU.nativeAddress(), c_Features.nativeAddress(),
                             Level.value(), Reloc.value(), CodeModel.value())));
         }
     }
@@ -380,9 +380,9 @@ public class TargetMachine {
             MemorySegment c_Filename = allocString(arena, Filename);
             MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
             boolean err = nothrows_run(() -> (boolean) Function.LLVMTargetMachineEmitToFile.handle()
-                    .invoke(T.value(), M.value(), c_Filename.address(), codegen.value(), c_ErrorMessage.address()));
+                    .invoke(T.value(), M.value(), c_Filename.nativeAddress(), codegen.value(), c_ErrorMessage.nativeAddress()));
             if (err) {
-                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).address()));
+                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
             }
             return err;
         }
@@ -398,11 +398,11 @@ public class TargetMachine {
             MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
             MemorySegment c_OutMemBuf = arena.allocate(ADDRESS);
             boolean err = nothrows_run(() -> (boolean) Function.LLVMTargetMachineEmitToMemoryBuffer.handle()
-                    .invoke(T.value(), M.value(), codegen.value(), c_ErrorMessage.address(), c_OutMemBuf.address()));
+                    .invoke(T.value(), M.value(), codegen.value(), c_ErrorMessage.nativeAddress(), c_OutMemBuf.nativeAddress()));
             if (!err) {
-                OutMemBuf.accept(new LLVMMemoryBufferRef(c_OutMemBuf.get(ADDRESS, 0).address()));
+                OutMemBuf.accept(new LLVMMemoryBufferRef(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
             } else {
-                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).address()));
+                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
             }
             return err;
         }

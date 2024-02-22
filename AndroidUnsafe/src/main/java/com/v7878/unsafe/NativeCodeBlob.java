@@ -90,7 +90,7 @@ public class NativeCodeBlob {
         for (int i = 0; i < count; i++) {
             MemorySegment tmp = data.asSlice(offsets[i], code[i].length);
             copyMemory(code[i], ARRAY_BYTE_BASE_OFFSET,
-                    null, tmp.address(), code[i].length);
+                    null, tmp.nativeAddress(), code[i].length);
             out[i] = tmp;
         }
         return out;
@@ -214,7 +214,7 @@ public class NativeCodeBlob {
         MemorySegment[] ptrs = makeCodeBlobInternal(Arena.global(), code);
 
         for (int i = 0; i < methods.length; i++) {
-            registerNativeMethod(methods[i], ptrs[i].address());
+            registerNativeMethod(methods[i], ptrs[i].nativeAddress());
         }
     }
 }

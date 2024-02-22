@@ -43,6 +43,8 @@ public interface MemorySegment {
 
     long address();
 
+    long nativeAddress();
+
     Optional<Object> heapBase();
 
     Spliterator<MemorySegment> spliterator(MemoryLayout elementLayout);

@@ -420,11 +420,11 @@ public class JNIUtils {
             MemorySegment env = getCurrentEnvPtr();
             Method get_vm = getDeclaredMethod(this.getClass(),
                     name + suffix, word, word);
-            registerNativeMethod(get_vm, getJNINativeInterfaceFunction(name).address());
+            registerNativeMethod(get_vm, getJNINativeInterfaceFunction(name).nativeAddress());
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment jvm = arena.allocate(ADDRESS);
-                int status = IS64BIT ? GetJavaVM64(env.address(), jvm.address()) :
-                        GetJavaVM32((int) env.address(), (int) jvm.address());
+                int status = IS64BIT ? GetJavaVM64(env.nativeAddress(), jvm.nativeAddress()) :
+                        GetJavaVM32((int) env.nativeAddress(), (int) jvm.nativeAddress());
                 if (status != 0) {
                     throw new IllegalStateException("can`t get JavaVM: " + status);
                 }
@@ -514,26 +514,26 @@ public class JNIUtils {
                     Object.class, long.class, word), getExecutableData(put));
 
             Method ngr = searchMethod(methods, "NewGlobalRef" + suffix);
-            registerNativeMethod(ngr, getJNINativeInterfaceFunction("NewGlobalRef").address());
+            registerNativeMethod(ngr, getJNINativeInterfaceFunction("NewGlobalRef").nativeAddress());
 
             newGlobalRef = unreflectDirect(ngr);
             setMethodType(newGlobalRef, MethodType.methodType(word, Object.class));
 
             Method dgr = searchMethod(methods, "DeleteGlobalRef" + suffix, word, word);
-            registerNativeMethod(dgr, getJNINativeInterfaceFunction("DeleteGlobalRef").address());
+            registerNativeMethod(dgr, getJNINativeInterfaceFunction("DeleteGlobalRef").nativeAddress());
 
             MemorySegment nlr = ART.find("_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE").get();
-            registerNativeMethod(searchMethod(methods, "RawNewLocalRef" + suffix, word, word), nlr.address());
+            registerNativeMethod(searchMethod(methods, "RawNewLocalRef" + suffix, word, word), nlr.nativeAddress());
 
             MemorySegment dlr = ART.find("_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject").get();
-            registerNativeMethod(searchMethod(methods, "DeleteLocalRef" + suffix, word, word), dlr.address());
+            registerNativeMethod(searchMethod(methods, "DeleteLocalRef" + suffix, word, word), dlr.nativeAddress());
 
             // art.find("_ZN3art9JNIEnvExt9PushFrameEi").get();
             MemorySegment push = JNIUtils.getJNINativeInterfaceFunction("PushLocalFrame");
-            registerNativeMethod(searchMethod(methods, "PushLocalFrame" + suffix, word, int.class), push.address());
+            registerNativeMethod(searchMethod(methods, "PushLocalFrame" + suffix, word, int.class), push.nativeAddress());
 
             MemorySegment pop = ART.find("_ZN3art9JNIEnvExt8PopFrameEv").get();
-            registerNativeMethod(searchMethod(methods, "PopLocalFrame" + suffix, word), pop.address());
+            registerNativeMethod(searchMethod(methods, "PopLocalFrame" + suffix, word), pop.nativeAddress());
         }
 
         public static final RefUtils INSTANCE = nothrows_run(() -> {
@@ -593,7 +593,7 @@ public class JNIUtils {
 
     public static long NewLocalRef(Object obj) {
         RefUtils utils = RefUtils.INSTANCE;
-        long env = getCurrentEnvPtr().address();
+        long env = getCurrentEnvPtr().nativeAddress();
         if (IS64BIT) {
             return utils.NewLocalRef64(env, obj);
         } else {
@@ -602,7 +602,7 @@ public class JNIUtils {
     }
 
     public static void DeleteLocalRef(long ref) {
-        long env = getCurrentEnvPtr().address();
+        long env = getCurrentEnvPtr().nativeAddress();
         if (IS64BIT) {
             RefUtils.DeleteLocalRef64(env, ref);
         } else {
@@ -611,7 +611,7 @@ public class JNIUtils {
     }
 
     public static void PushLocalFrame(int capacity) {
-        long env = getCurrentEnvPtr().address();
+        long env = getCurrentEnvPtr().nativeAddress();
         if (IS64BIT) {
             RefUtils.PushLocalFrame64(env, capacity);
         } else {
@@ -620,7 +620,7 @@ public class JNIUtils {
     }
 
     public static void PopLocalFrame() {
-        long env = getCurrentEnvPtr().address();
+        long env = getCurrentEnvPtr().nativeAddress();
         if (IS64BIT) {
             RefUtils.PopLocalFrame64(env);
         } else {
@@ -640,7 +640,7 @@ public class JNIUtils {
     }
 
     public static void DeleteGlobalRef(long ref) {
-        long env = getCurrentEnvPtr().address();
+        long env = getCurrentEnvPtr().nativeAddress();
         if (IS64BIT) {
             RefUtils.DeleteGlobalRef64(env, ref);
         } else {
@@ -694,13 +694,13 @@ public class JNIUtils {
             Method[] methods = getDeclaredMethods(IDUtils.class);
 
             Method frm = searchMethod(methods, "FromReflectedMethod" + suffix);
-            registerNativeMethod(frm, getJNINativeInterfaceFunction("FromReflectedMethod").address());
+            registerNativeMethod(frm, getJNINativeInterfaceFunction("FromReflectedMethod").nativeAddress());
 
             fromReflectedMethod = unreflectDirect(frm);
             setMethodType(fromReflectedMethod, MethodType.methodType(word, Method.class));
 
             Method frf = searchMethod(methods, "FromReflectedField" + suffix);
-            registerNativeMethod(frf, getJNINativeInterfaceFunction("FromReflectedField").address());
+            registerNativeMethod(frf, getJNINativeInterfaceFunction("FromReflectedField").nativeAddress());
 
             fromReflectedField = unreflectDirect(frf);
             setMethodType(fromReflectedField, MethodType.methodType(word, Field.class));

@@ -281,7 +281,7 @@ public class LibDLExt {
         Objects.requireNonNull(ld_library_path);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ld_library_path = arena.allocateFrom(ld_library_path);
-            nothrows_run(() -> Function.android_update_LD_LIBRARY_PATH.handle().invoke(c_ld_library_path.address()));
+            nothrows_run(() -> Function.android_update_LD_LIBRARY_PATH.handle().invoke(c_ld_library_path.nativeAddress()));
         }
     }
 
@@ -301,7 +301,7 @@ public class LibDLExt {
             fd_offset_handle.set(c_extinfo, 0, extinfo.library_fd_offset);
             namespace_handle.set(c_extinfo, 0, MemorySegment.ofAddress(extinfo.library_namespace));
             return nothrows_run(() -> (long) LibDL.Function.android_dlopen_ext.handle()
-                    .invokeExact(c_filename.address(), flags, c_extinfo.address()));
+                    .invokeExact(c_filename.nativeAddress(), flags, c_extinfo.nativeAddress()));
         }
     }
 
@@ -345,7 +345,7 @@ public class LibDLExt {
             MemorySegment c_shared_libs_sonames = arena.allocateFrom(shared_libs_sonames);
             MemorySegment c_library_search_path = arena.allocateFrom(library_search_path);
             return nothrows_run(() -> (boolean) Function.android_init_anonymous_namespace.handle()
-                    .invoke(c_shared_libs_sonames.address(), c_library_search_path.address()));
+                    .invoke(c_shared_libs_sonames.nativeAddress(), c_library_search_path.nativeAddress()));
         }
     }
 
@@ -363,8 +363,8 @@ public class LibDLExt {
             MemorySegment c_default_library_path = arena.allocateFrom(default_library_path);
             MemorySegment c_permitted_when_isolated_path = arena.allocateFrom(permitted_when_isolated_path);
             return nothrows_run(() -> new AndroidNamespace((long) Function.android_create_namespace.handle()
-                    .invoke(c_name.address(), c_ld_library_path.address(), c_default_library_path.address(),
-                            type, c_permitted_when_isolated_path.address(), parent.value())));
+                    .invoke(c_name.nativeAddress(), c_ld_library_path.nativeAddress(), c_default_library_path.nativeAddress(),
+                            type, c_permitted_when_isolated_path.nativeAddress(), parent.value())));
         }
     }
 
@@ -375,7 +375,7 @@ public class LibDLExt {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_shared_libs_sonames = arena.allocateFrom(shared_libs_sonames);
             return nothrows_run(() -> (boolean) Function.android_link_namespaces.handle().invoke(
-                    namespace_from.value(), namespace_to.value(), c_shared_libs_sonames.address()));
+                    namespace_from.value(), namespace_to.value(), c_shared_libs_sonames.nativeAddress()));
         }
     }
 
@@ -384,7 +384,7 @@ public class LibDLExt {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_name = arena.allocateFrom(name);
             long value = nothrows_run(() -> (long) Function
-                    .android_get_exported_namespace.handle().invoke(c_name.address()));
+                    .android_get_exported_namespace.handle().invoke(c_name.nativeAddress()));
             return value == 0 ? null : new AndroidNamespace(value);
         }
     }

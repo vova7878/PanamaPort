@@ -103,7 +103,7 @@ public class SimpleBulkLinker {
             if (!tmp.isPresent()) {
                 throw new IllegalArgumentException("Cannot find symbol: \"" + name + "\"");
             }
-            long symbol = tmp.get().address();
+            long symbol = tmp.get().nativeAddress();
             holder.setSymbol(() -> symbol);
             infos[i] = new SymbolInfo(holder, name, stub_type, handle_type, symbol);
         }

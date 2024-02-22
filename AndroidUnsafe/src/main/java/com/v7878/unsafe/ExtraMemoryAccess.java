@@ -275,7 +275,7 @@ public class ExtraMemoryAccess {
     @Keep
     static abstract class CopyInvoker {
         private static final long MEMCPY = Linker.nativeLinker()
-                .defaultLookup().find("memcpy").get().address();
+                .defaultLookup().find("memcpy").get().nativeAddress();
         private static final long COPY_SWAP_SHORTS;
         private static final long COPY_SWAP_INTS;
         private static final long COPY_SWAP_LONGS;
