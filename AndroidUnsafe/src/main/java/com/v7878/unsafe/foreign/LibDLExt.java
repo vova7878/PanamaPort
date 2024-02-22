@@ -16,6 +16,7 @@ import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
 import com.v7878.invoke.VarHandle;
+import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
 
 import java.io.FileDescriptor;
@@ -27,8 +28,7 @@ import java.util.function.Supplier;
 
 public class LibDLExt {
 
-    //TODO: heap session
-    public static final Arena DLEXT_SCOPE = Arena.global();
+    public static final Arena DLEXT_SCOPE = JavaForeignAccess.createHeapArena(LibDLExt.class);
     public static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
             CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", DLEXT_SCOPE);
 

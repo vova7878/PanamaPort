@@ -46,6 +46,12 @@ public abstract class JavaForeignAccess {
         return INSTANCE._objectSegment(obj);
     }
 
+    protected abstract Arena _createHeapArena(Object ref);
+
+    public static Arena createHeapArena(Object ref) {
+        return INSTANCE._createHeapArena(ref);
+    }
+
 
     public static SymbolLookup libraryLookup(NativeLibrary library, Arena libArena) {
         Objects.requireNonNull(library);

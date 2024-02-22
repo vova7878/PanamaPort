@@ -2671,6 +2671,11 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             protected MemorySegment _objectSegment(Object obj) {
                 return _SegmentFactories.fromObject(obj);
             }
+
+            @Override
+            protected Arena _createHeapArena(Object ref) {
+                return _MemorySessionImpl.createHeap(ref).asArena();
+            }
         };
     }
 }
