@@ -2821,8 +2821,6 @@ public class Core {
      * <p>
      * This is the same as LLVMConstStringInContext except it operates on the
      * global context.
-     *
-     * @see Core::LLVMConstStringInContext()
      */
     public static LLVMValueRef LLVMConstString(String Str, boolean DontNullTerminate) {
         try (Arena arena = Arena.ofConfined()) {
