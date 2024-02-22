@@ -1,12 +1,16 @@
 package com.v7878.unsafe.io;
 
+import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
+import static com.v7878.unsafe.AndroidUnsafe.putIntO;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.runOnce;
+
+import com.v7878.unsafe.DangerLevel;
 
 import java.io.FileDescriptor;
 import java.lang.invoke.MethodHandle;
@@ -37,5 +41,17 @@ public class IOUtils {
     public static int getDescriptorValue(FileDescriptor fd) {
         Objects.requireNonNull(fd);
         return getIntO(fd, file_descriptor_offset);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setDescriptorValue(FileDescriptor fd, int value) {
+        Objects.requireNonNull(fd);
+        putIntO(fd, file_descriptor_offset, value);
+    }
+
+    public static FileDescriptor newFileDescriptor(int value) {
+        FileDescriptor out = allocateInstance(FileDescriptor.class);
+        setDescriptorValue(out, value);
+        return out;
     }
 }
