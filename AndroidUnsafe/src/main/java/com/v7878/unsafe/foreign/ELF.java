@@ -19,24 +19,24 @@ import java.util.Map;
 import java.util.Objects;
 
 // see elf.h
-class ELF {
-    public static final int EI_NIDENT = 16;
-    public static final byte[] ELFMAG = {0x7f, 'E', 'L', 'F'};
+public class ELF {
+    private static final int EI_NIDENT = 16;
+    private static final byte[] ELFMAG = {0x7f, 'E', 'L', 'F'};
 
-    public static final int STT_FUNC = 2;
+    private static final int STT_FUNC = 2;
 
-    public static final ValueLayout Elf32_Addr = JAVA_INT;
-    public static final ValueLayout Elf32_Half = JAVA_SHORT;
-    public static final ValueLayout Elf32_Off = JAVA_INT;
-    public static final ValueLayout Elf32_Word = JAVA_INT;
+    private static final ValueLayout Elf32_Addr = JAVA_INT;
+    private static final ValueLayout Elf32_Half = JAVA_SHORT;
+    private static final ValueLayout Elf32_Off = JAVA_INT;
+    private static final ValueLayout Elf32_Word = JAVA_INT;
 
-    public static final ValueLayout Elf64_Addr = JAVA_LONG;
-    public static final ValueLayout Elf64_Half = JAVA_SHORT;
-    public static final ValueLayout Elf64_Off = JAVA_LONG;
-    public static final ValueLayout Elf64_Word = JAVA_INT;
-    public static final ValueLayout Elf64_Xword = JAVA_LONG;
+    private static final ValueLayout Elf64_Addr = JAVA_LONG;
+    private static final ValueLayout Elf64_Half = JAVA_SHORT;
+    private static final ValueLayout Elf64_Off = JAVA_LONG;
+    private static final ValueLayout Elf64_Word = JAVA_INT;
+    private static final ValueLayout Elf64_Xword = JAVA_LONG;
 
-    public static final GroupLayout Elf32_Ehdr = structLayout(
+    private static final GroupLayout Elf32_Ehdr = structLayout(
             sequenceLayout(EI_NIDENT, JAVA_BYTE).withName("e_ident"),
             Elf32_Half.withName("e_type"),
             Elf32_Half.withName("e_machine"),
@@ -52,7 +52,7 @@ class ELF {
             Elf32_Half.withName("e_shnum"),
             Elf32_Half.withName("e_shstrndx")
     );
-    public static final GroupLayout Elf64_Ehdr = structLayout(
+    private static final GroupLayout Elf64_Ehdr = structLayout(
             sequenceLayout(EI_NIDENT, JAVA_BYTE).withName("e_ident"),
             Elf64_Half.withName("e_type"),
             Elf64_Half.withName("e_machine"),
@@ -68,9 +68,9 @@ class ELF {
             Elf64_Half.withName("e_shnum"),
             Elf64_Half.withName("e_shstrndx")
     );
-    public static final GroupLayout Elf_Ehdr = IS64BIT ? Elf64_Ehdr : Elf32_Ehdr;
+    private static final GroupLayout Elf_Ehdr = IS64BIT ? Elf64_Ehdr : Elf32_Ehdr;
 
-    public static final GroupLayout Elf32_Sym = structLayout(
+    private static final GroupLayout Elf32_Sym = structLayout(
             Elf32_Word.withName("st_name"),
             Elf32_Addr.withName("st_value"),
             Elf32_Word.withName("st_size"),
@@ -78,7 +78,7 @@ class ELF {
             JAVA_BYTE.withName("st_other"),
             Elf32_Half.withName("st_shndx")
     );
-    public static final GroupLayout Elf64_Sym = structLayout(
+    private static final GroupLayout Elf64_Sym = structLayout(
             Elf64_Word.withName("st_name"),
             JAVA_BYTE.withName("st_info"),
             JAVA_BYTE.withName("st_other"),
@@ -86,9 +86,9 @@ class ELF {
             Elf64_Addr.withName("st_value"),
             Elf64_Xword.withName("st_size")
     );
-    public static final GroupLayout Elf_Sym = IS64BIT ? Elf64_Sym : Elf32_Sym;
+    private static final GroupLayout Elf_Sym = IS64BIT ? Elf64_Sym : Elf32_Sym;
 
-    public static final GroupLayout Elf32_Shdr = structLayout(
+    private static final GroupLayout Elf32_Shdr = structLayout(
             Elf32_Word.withName("sh_name"),
             Elf32_Word.withName("sh_type"),
             Elf32_Word.withName("sh_flags"),
@@ -100,7 +100,7 @@ class ELF {
             Elf32_Word.withName("sh_addralign"),
             Elf32_Word.withName("sh_entsize")
     );
-    public static final GroupLayout Elf64_Shdr = structLayout(
+    private static final GroupLayout Elf64_Shdr = structLayout(
             Elf64_Word.withName("sh_name"),
             Elf64_Word.withName("sh_type"),
             Elf64_Xword.withName("sh_flags"),
@@ -112,7 +112,7 @@ class ELF {
             Elf64_Xword.withName("sh_addralign"),
             Elf64_Xword.withName("sh_entsize")
     );
-    public static final GroupLayout Elf_Shdr = IS64BIT ? Elf64_Shdr : Elf32_Shdr;
+    private static final GroupLayout Elf_Shdr = IS64BIT ? Elf64_Shdr : Elf32_Shdr;
 
     public static class Element {
 
@@ -122,6 +122,14 @@ class ELF {
         public Element(String name, ByteBuffer data) {
             this.name = name;
             this.data = data;
+        }
+
+        @Override
+        public String toString() {
+            return "Element{" +
+                    "name='" + name + '\'' +
+                    ", data=" + data +
+                    '}';
         }
     }
 
@@ -186,7 +194,7 @@ class ELF {
         return new String(data);
     }
 
-    public static ByteBuffer getRawSegmentData(ByteBuffer in, ByteBuffer segment) {
+    private static ByteBuffer getRawSegmentData(ByteBuffer in, ByteBuffer segment) {
         long off = getWord(segment, sh_offset);
         long size = getWord(segment, sh_size);
         return slice(in, (int) off, (int) size);
@@ -209,7 +217,7 @@ class ELF {
             return out;
         }
 
-        public MemorySegment findFunction(String name, long bias) {
+        MemorySegment findFunction(String name, long bias) {
             ByteBuffer symbol = find(name).data;
             int type = symbol.get(st_info) & 0xf;
             if (type != STT_FUNC) {
@@ -219,10 +227,18 @@ class ELF {
             long size = getWord(symbol, st_size);
             return MemorySegment.ofAddress(bias + value).reinterpret(size);
         }
+
+        @Override
+        public String toString() {
+            return "SymTab{" +
+                    "dyn=" + dyn +
+                    ", sym=" + sym +
+                    '}';
+        }
     }
 
-    public static void readSymbols(ByteBuffer in, ByteBuffer symtab, ByteBuffer strtab,
-                                   Map<String, Element> out) {
+    private static void readSymbols(ByteBuffer in, ByteBuffer symtab, ByteBuffer strtab,
+                                    Map<String, Element> out) {
 
         symtab = getRawSegmentData(in, symtab);
         strtab = getRawSegmentData(in, strtab);
@@ -240,7 +256,7 @@ class ELF {
         }
     }
 
-    public static Element[] readSegments(ByteBuffer in) {
+    private static Element[] readSegments(ByteBuffer in) {
         ByteBuffer ehdr = slice(in, 0, (int) Elf_Ehdr.byteSize());
         if (ehdr.get(0) != ELFMAG[0]
                 || ehdr.get(1) != ELFMAG[1]
@@ -266,6 +282,10 @@ class ELF {
             segments[i] = new Element(name, segment);
         }
         return segments;
+    }
+
+    public static SymTab readSymTab(ByteBuffer in) {
+        return readSymTab(in, false);
     }
 
     public static SymTab readSymTab(ByteBuffer in, boolean only_dyn) {
