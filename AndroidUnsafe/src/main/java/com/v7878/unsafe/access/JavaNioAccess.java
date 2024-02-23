@@ -105,8 +105,11 @@ class SegmentBufferAccess {
 public class JavaNioAccess {
 
     public interface UnmapperProxy {
+        long address();
 
         FileDescriptor fileDescriptor();
+
+        void unmap();
     }
 
     private static final MethodHandle attachment;
@@ -370,7 +373,23 @@ public class JavaNioAccess {
             return null;
         }
         FileDescriptor fd = (FileDescriptor) getObject(buffer, FD_OFFSET);
-        return fd == null ? null : () -> fd;
+        return fd == null ? null : new UnmapperProxy() {
+            @Override
+            public long address() {
+                return getBufferAddress(buffer);
+            }
+
+            @Override
+            public FileDescriptor fileDescriptor() {
+                return fd;
+            }
+
+            @Override
+            public void unmap() {
+                //TODO
+                throw new UnsupportedOperationException("Not supported yet!");
+            }
+        };
     }
 
     public static Object attachment(Buffer buffer) {

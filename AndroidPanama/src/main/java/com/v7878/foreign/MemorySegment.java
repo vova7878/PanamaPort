@@ -42,6 +42,7 @@ import com.v7878.foreign.ValueLayout.OfInt;
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.JavaForeignAccess;
+import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
 import java.io.UncheckedIOException;
 import java.nio.Buffer;
@@ -2675,6 +2676,27 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             @Override
             protected Arena _createHeapArena(Object ref) {
                 return _MemorySessionImpl.createHeap(ref).asArena();
+            }
+
+            @Override
+            protected MemorySegment _makeNativeSegmentUnchecked(
+                    long min, long byteSize, boolean readOnly, Arena scope, Runnable action) {
+                return _SegmentFactories.makeNativeSegmentUnchecked(min, byteSize,
+                        readOnly, _MemorySessionImpl.toMemorySession(scope), action);
+            }
+
+            @Override
+            protected MemorySegment _allocateSegment(
+                    long byteSize, long byteAlignment, Arena scope) {
+                return _SegmentFactories.allocateSegment(byteSize, byteAlignment,
+                        _MemorySessionImpl.toMemorySession(scope));
+            }
+
+            @Override
+            protected MemorySegment _mapSegment(
+                    UnmapperProxy unmapper, long size, boolean readOnly, Arena scope) {
+                return _SegmentFactories.mapSegment(unmapper, size, readOnly,
+                        _MemorySessionImpl.toMemorySession(scope));
             }
         };
     }

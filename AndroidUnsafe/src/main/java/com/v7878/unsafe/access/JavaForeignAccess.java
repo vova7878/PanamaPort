@@ -8,6 +8,7 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.foreign.SymbolLookup;
 import com.v7878.unsafe.Utils.FineClosable;
+import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 import com.v7878.unsafe.foreign.NativeLibrary;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
 
@@ -15,7 +16,6 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.Optional;
 
-//TODO: filechanel mmap segment
 public abstract class JavaForeignAccess {
     private static final JavaForeignAccess INSTANCE = (JavaForeignAccess) nothrows_run(() -> {
         Method init = getDeclaredMethod(MemorySegment.class, "initAccess");
@@ -52,6 +52,27 @@ public abstract class JavaForeignAccess {
         return INSTANCE._createHeapArena(ref);
     }
 
+    protected abstract MemorySegment _makeNativeSegmentUnchecked(
+            long min, long byteSize, boolean readOnly, Arena scope, Runnable action);
+
+    public static MemorySegment makeNativeSegment( long min, long byteSize, boolean readOnly,
+                                                   Arena scope, Runnable action) {
+        //TODO: minimal checks
+        return INSTANCE._makeNativeSegmentUnchecked(min, byteSize, readOnly, scope, action);
+    }
+
+    protected abstract MemorySegment _allocateSegment(long byteSize, long byteAlignment, Arena scope);
+
+    public static MemorySegment allocateSegment(long byteSize, long byteAlignment, Arena scope) {
+        //TODO: minimal checks
+        return INSTANCE._allocateSegment(byteSize, byteAlignment, scope);
+    }
+
+    protected abstract MemorySegment _mapSegment(UnmapperProxy unmapper, long size, boolean readOnly, Arena scope);
+
+    public static MemorySegment mapSegment(UnmapperProxy unmapper, long size, boolean readOnly, Arena scope) {
+        return INSTANCE._mapSegment(unmapper, size, readOnly, scope);
+    }
 
     public static SymbolLookup libraryLookup(NativeLibrary library, Arena libArena) {
         Objects.requireNonNull(library);
