@@ -3102,61 +3102,70 @@ public class Core {
     //LLVMValueRef LLVMBlockAddress(LLVMValueRef F, LLVMBasicBlockRef BB) {
     //    return nothrows_run(() -> Function.LLVMBlockAddress.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueConstantGlobals Global Values
-    // *
-    // * This group contains functions that operate on global values. Functions in
-    // * this group relate to functions in the llvm::GlobalValue class tree.
-    // *
-    // * @see llvm::GlobalValue
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreValueConstantGlobals Global Values
+     *
+     * This group contains functions that operate on global values. Functions in
+     * this group relate to functions in the llvm::GlobalValue class tree.
+     */
+
     //LLVMModuleRef LLVMGetGlobalParent(LLVMValueRef Global) {
     //    return nothrows_run(() -> Function.LLVMGetGlobalParent.handle().invoke());
     //}
     //boolean LLVMIsDeclaration(LLVMValueRef Global) {
     //    return nothrows_run(() -> Function.LLVMIsDeclaration.handle().invoke());
     //}
-    //LLVMLinkage LLVMGetLinkage(LLVMValueRef Global) {
-    //    return nothrows_run(() -> Function.LLVMGetLinkage.handle().invoke());
-    //}
-    //void LLVMSetLinkage(LLVMValueRef Global, LLVMLinkage Linkage) {
-    //    return nothrows_run(() -> Function.LLVMSetLinkage.handle().invoke());
-    //}
-    //String LLVMGetSection(LLVMValueRef Global) {
-    //    return nothrows_run(() -> Function.LLVMGetSection.handle().invoke());
-    //}
-    //void LLVMSetSection(LLVMValueRef Global, String Section) {
-    //    return nothrows_run(() -> Function.LLVMSetSection.handle().invoke());
-    //}
-    //LLVMVisibility LLVMGetVisibility(LLVMValueRef Global) {
-    //    return nothrows_run(() -> Function.LLVMGetVisibility.handle().invoke());
-    //}
-    //void LLVMSetVisibility(LLVMValueRef Global, LLVMVisibility Viz) {
-    //    return nothrows_run(() -> Function.LLVMSetVisibility.handle().invoke());
-    //}
-    //LLVMDLLStorageClass LLVMGetDLLStorageClass(LLVMValueRef Global) {
-    //    return nothrows_run(() -> Function.LLVMGetDLLStorageClass.handle().invoke());
-    //}
-    //void LLVMSetDLLStorageClass(LLVMValueRef Global, LLVMDLLStorageClass Class) {
-    //    return nothrows_run(() -> Function.LLVMSetDLLStorageClass.handle().invoke());
-    //}
+
+    public static LLVMLinkage LLVMGetLinkage(LLVMValueRef Global) {
+        return nothrows_run(() -> LLVMLinkage.of((int) Function.LLVMGetLinkage.handle().invoke(Global.value())));
+    }
+
+    public static void LLVMSetLinkage(LLVMValueRef Global, LLVMLinkage Linkage) {
+        nothrows_run(() -> Function.LLVMSetLinkage.handle().invoke(Global.value(), Linkage.value()));
+    }
+
+    public static String LLVMGetSection(LLVMValueRef Global) {
+        return nothrows_run(() -> addressToString((long) Function.LLVMGetSection.handle().invoke(Global.value())));
+    }
+
+    public static void LLVMSetSection(LLVMValueRef Global, String Section) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Section = allocString(arena, Section);
+            nothrows_run(() -> Function.LLVMSetSection.handle().invoke(Global.value(), c_Section.nativeAddress()));
+        }
+    }
+
+    public static LLVMVisibility LLVMGetVisibility(LLVMValueRef Global) {
+        return nothrows_run(() -> LLVMVisibility.of((int) Function.LLVMGetVisibility.handle().invoke(Global.value())));
+    }
+
+    public static void LLVMSetVisibility(LLVMValueRef Global, LLVMVisibility Viz) {
+        nothrows_run(() -> Function.LLVMSetVisibility.handle().invoke(Global.value(), Viz.value()));
+    }
+
+    public static LLVMDLLStorageClass LLVMGetDLLStorageClass(LLVMValueRef Global) {
+        return nothrows_run(() -> LLVMDLLStorageClass.of((int) Function.LLVMGetDLLStorageClass.handle().invoke(Global.value())));
+    }
+
+    public static void LLVMSetDLLStorageClass(LLVMValueRef Global, LLVMDLLStorageClass Class) {
+        nothrows_run(() -> Function.LLVMSetDLLStorageClass.handle().invoke(Global.value(), Class.value()));
+    }
+
     //boolean LLVMHasUnnamedAddr(LLVMValueRef Global) {
     //    return nothrows_run(() -> Function.LLVMHasUnnamedAddr.handle().invoke());
     //}
     //void LLVMSetUnnamedAddr(LLVMValueRef Global, boolean HasUnnamedAddr) {
     //    return nothrows_run(() -> Function.LLVMSetUnnamedAddr.handle().invoke());
     //}
-    ///**
-    // * @defgroup LLVMCCoreValueWithAlignment Values with alignment
-    // *
-    // * Functions in this group only apply to values with alignment, i.e.
-    // * global variables, load and store instructions.
-    // */
+
+    /*
+     * @defgroup LLVMCCoreValueWithAlignment Values with alignment
+     *
+     * Functions in this group only apply to values with alignment, i.e.
+     * global variables, load and store instructions.
+     */
+
     ///**
     // * Obtain the preferred alignment of the value.
     // * @see llvm::AllocaInst::getAlignment()
@@ -3177,18 +3186,13 @@ public class Core {
     //void LLVMSetAlignment(LLVMValueRef V, int /* unsigned */ Bytes) {
     //    return nothrows_run(() -> Function.LLVMSetAlignment.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCoreValueConstantGlobalVariable Global Variables
-    // *
-    // * This group contains functions that operate on global variable values.
-    // *
-    // * @see llvm::GlobalVariable
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCoreValueConstantGlobalVariable Global Variables
+     *
+     * This group contains functions that operate on global variable values.
+     */
+
     //LLVMValueRef LLVMAddGlobal(LLVMModuleRef M, LLVMTypeRef Ty, String Name) {
     //    return nothrows_run(() -> Function.LLVMAddGlobal.handle().invoke());
     //}
@@ -3243,18 +3247,13 @@ public class Core {
     //void LLVMSetExternallyInitialized(LLVMValueRef GlobalVar, boolean IsExtInit) {
     //    return nothrows_run(() -> Function.LLVMSetExternallyInitialized.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCoreValueConstantGlobalAlias Global Aliases
-    // *
-    // * This group contains function that operate on global alias values.
-    // *
-    // * @see llvm::GlobalAlias
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCoreValueConstantGlobalAlias Global Aliases
+     *
+     * This group contains function that operate on global alias values.
+     */
+
     //LLVMValueRef LLVMAddAlias(LLVMModuleRef M, LLVMTypeRef Ty, LLVMValueRef Aliasee, String Name) {
     //    return nothrows_run(() -> Function.LLVMAddAlias.handle().invoke());
     //}
