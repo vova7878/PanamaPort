@@ -126,10 +126,10 @@ public class LibDL {
     }
 
     enum Function implements SymbolHolder {
-        dlopen(s_dlopen, WORD_CLASS, WORD_CLASS, int.class),
-        dlclose(s_dlclose, int.class, WORD_CLASS),
-        dlerror(s_dlerror, WORD_CLASS),
         //FIXME!!! (SIGSEGV on api levels [26, 28])
+        //dlopen(s_dlopen, WORD_CLASS, WORD_CLASS, int.class),
+        //dlclose(s_dlclose, int.class, WORD_CLASS),
+        //dlerror(s_dlerror, WORD_CLASS),
         //dlsym(s_dlsym, WORD_CLASS, WORD_CLASS, WORD_CLASS),
         dlvsym(s_dlvsym, WORD_CLASS, WORD_CLASS, WORD_CLASS, WORD_CLASS),
         dladdr(s_dladdr, int.class, WORD_CLASS, WORD_CLASS),
@@ -178,19 +178,16 @@ public class LibDL {
         }
     }
 
-    private static long raw_dlopen(long filename, int flags) {
-        return nothrows_run(() -> (long) Function.dlopen.handle().invokeExact(filename, flags));
-    }
-
-    private static int raw_dlclose(long handle) {
-        return nothrows_run(() -> (int) Function.dlclose.handle().invokeExact(handle));
-    }
-
-    private static long raw_dlerror() {
-        return nothrows_run(() -> (long) Function.dlerror.handle().invokeExact());
-    }
-
     //FIXME!!! (SIGSEGV on api levels [26, 28])
+    //private static long raw_dlopen(long filename, int flags) {
+    //    return nothrows_run(() -> (long) Function.dlopen.handle().invoke(filename, flags));
+    //}
+    //private static int raw_dlclose(long handle) {
+    //    return nothrows_run(() -> (int) Function.dlclose.handle().invoke(handle));
+    //}
+    //private static long raw_dlerror() {
+    //    return nothrows_run(() -> (long) Function.dlerror.handle().invoke());
+    //}
     //private static long raw_dlsym(long handle, long symbol) {
     //    return nothrows_run(() -> (long) Function.dlsym.handle().invokeExact(handle, symbol));
     //}
@@ -199,8 +196,41 @@ public class LibDL {
         String suffix = IS64BIT ? "64" : "32";
         Class<?> word = IS64BIT ? long.class : int.class;
 
-        Method symbol = getDeclaredMethod(LibDL.class, "raw_dlsym" + suffix, word, word);
+        Method symbol = getDeclaredMethod(LibDL.class, "raw_dlopen" + suffix, word, int.class);
+        registerNativeMethod(symbol, s_dlopen.nativeAddress());
+
+        symbol = getDeclaredMethod(LibDL.class, "raw_dlerror" + suffix);
+        registerNativeMethod(symbol, s_dlerror.nativeAddress());
+
+        symbol = getDeclaredMethod(LibDL.class, "raw_dlsym" + suffix, word, word);
         registerNativeMethod(symbol, s_dlsym.nativeAddress());
+
+        symbol = getDeclaredMethod(LibDL.class, "raw_dlclose" + suffix, word);
+        registerNativeMethod(symbol, s_dlclose.nativeAddress());
+    }
+
+    @Keep
+    @CriticalNative
+    private static native long raw_dlopen64(long filename, int flags);
+
+    @Keep
+    @CriticalNative
+    private static native int raw_dlopen32(int filename, int flags);
+
+    public static long raw_dlopen(long filename, int flags) {
+        return IS64BIT ? raw_dlopen64(filename, flags) : raw_dlopen32((int) filename, flags) & 0xffffffffL;
+    }
+
+    @Keep
+    @CriticalNative
+    private static native long raw_dlerror64();
+
+    @Keep
+    @CriticalNative
+    private static native int raw_dlerror32();
+
+    public static long raw_dlerror() {
+        return IS64BIT ? raw_dlerror64() : raw_dlerror32() & 0xffffffffL;
     }
 
     @Keep
@@ -213,6 +243,18 @@ public class LibDL {
 
     public static long raw_dlsym(long handle, long symbol) {
         return IS64BIT ? raw_dlsym64(handle, symbol) : raw_dlsym32((int) handle, (int) symbol) & 0xffffffffL;
+    }
+
+    @Keep
+    @CriticalNative
+    private static native int raw_dlclose64(long handle);
+
+    @Keep
+    @CriticalNative
+    private static native int raw_dlclose32(int handle);
+
+    public static int raw_dlclose(long handle) {
+        return IS64BIT ? raw_dlclose64(handle) : raw_dlclose32((int) handle);
     }
 
     private static long raw_dlvsym(long handle, long symbol, long version) {
