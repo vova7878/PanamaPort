@@ -317,6 +317,7 @@ public abstract class AbstractVarHandle extends VarHandle {
 
     private MethodHandle getInvokerHandleUncached(AccessType accessType) {
         MethodType type = accessModeType(accessType);
+        //FIXME: SIGSEGV on api levels [26, 28] if used MethodHandlesFixes
         MethodHandle invoker = MethodHandles.exactInvoker(type);
         invoker = MethodHandlesFixes.asTypeAdapter(invoker,
                 type.generic().insertParameterTypes(0, MethodHandle.class));
