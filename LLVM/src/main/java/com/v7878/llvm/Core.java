@@ -4513,12 +4513,25 @@ public class Core {
     //LLVMValueRef LLVMBuildStructGEP(LLVMBuilderRef B, LLVMValueRef Pointer, int /* unsigned */ Idx, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildStructGEP.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildGlobalString(LLVMBuilderRef B, String Str, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildGlobalString.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildGlobalStringPtr(LLVMBuilderRef B, String Str, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildGlobalStringPtr.handle().invoke());
-    //}
+
+    public static LLVMValueRef LLVMBuildGlobalString(LLVMBuilderRef B, String Str, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Str = allocString(arena, Str);
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildGlobalString.handle()
+                    .invoke(B.value(), c_Str.nativeAddress(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildGlobalStringPtr(LLVMBuilderRef B, String Str, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Str = allocString(arena, Str);
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildGlobalStringPtr.handle()
+                    .invoke(B.value(), c_Str.nativeAddress(), c_Name.nativeAddress())));
+        }
+    }
+
     //boolean LLVMGetVolatile(LLVMValueRef MemoryAccessInst) {
     //    return nothrows_run(() -> Function.LLVMGetVolatile.handle().invoke());
     //}
@@ -4705,6 +4718,7 @@ public class Core {
         }
     }
 
+    // Port-added
     public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSegment(
             MemorySegment InputData, String BufferName, boolean RequiresNullTerminator) {
         return LLVMCreateMemoryBufferWithMemoryRange(InputData.nativeAddress(),
@@ -4722,6 +4736,7 @@ public class Core {
         }
     }
 
+    // Port-added
     public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSegmentCopy(
             MemorySegment InputData, String BufferName) {
         return LLVMCreateMemoryBufferWithMemoryRangeCopy(
