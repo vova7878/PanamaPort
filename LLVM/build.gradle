@@ -26,8 +26,9 @@ android {
 }
 
 dependencies {
+    api project(':AndroidPanama')
+
     implementation project(':AndroidUnsafe')
-    implementation project(':AndroidPanama')
 
     implementation 'com.github.vova7878:DexFile:v0.0.4'
     implementation 'com.github.vova7878:AndroidMisc:v0.0.2'
