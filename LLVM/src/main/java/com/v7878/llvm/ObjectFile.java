@@ -7,6 +7,7 @@ import static com.v7878.llvm.Types.cLLVMMemoryBufferRef;
 import static com.v7878.llvm._Utils.CONST_CHAR_PTR;
 import static com.v7878.llvm._Utils.UINT64_T;
 import static com.v7878.llvm._Utils.VOID_PTR;
+import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
@@ -185,21 +186,25 @@ public class ObjectFile {
 
     // SectionRef accessors
 
-    //const char *LLVMGetSectionName(LLVMSectionIteratorRef SI) {
-    //    return nothrows_run(() -> Function.*LLVMGetSectionName.handle().invoke());
-    //}
-    //uint64_t LLVMGetSectionSize(LLVMSectionIteratorRef SI) {
-    //    return nothrows_run(() -> Function.LLVMGetSectionSize.handle().invoke());
-    //}
-    //const char *LLVMGetSectionContents(LLVMSectionIteratorRef SI) {
-    //    return nothrows_run(() -> Function.*LLVMGetSectionContents.handle().invoke());
-    //}
-    //uint64_t LLVMGetSectionAddress(LLVMSectionIteratorRef SI) {
-    //    return nothrows_run(() -> Function.LLVMGetSectionAddress.handle().invoke());
-    //}
-    //LLVMBool LLVMGetSectionContainsSymbol(LLVMSectionIteratorRef SI, LLVMSymbolIteratorRef Sym) {
-    //    return nothrows_run(() -> Function.LLVMGetSectionContainsSymbol.handle().invoke());
-    //}
+    public static String LLVMGetSectionName(LLVMSectionIteratorRef SI) {
+        return nothrows_run(() -> addressToString((long) Function.LLVMGetSectionName.handle().invoke(SI.value())));
+    }
+
+    public static long /* uint64_t */ LLVMGetSectionSize(LLVMSectionIteratorRef SI) {
+        return nothrows_run(() -> (long) Function.LLVMGetSectionSize.handle().invoke(SI.value()));
+    }
+
+    public static String LLVMGetSectionContents(LLVMSectionIteratorRef SI) {
+        return nothrows_run(() -> addressToString((long) Function.LLVMGetSectionContents.handle().invoke(SI.value())));
+    }
+
+    public static long /* uint64_t */ LLVMGetSectionAddress(LLVMSectionIteratorRef SI) {
+        return nothrows_run(() -> (long) Function.LLVMGetSectionAddress.handle().invoke(SI.value()));
+    }
+
+    public static boolean LLVMGetSectionContainsSymbol(LLVMSectionIteratorRef SI, LLVMSymbolIteratorRef Sym) {
+        return nothrows_run(() -> (boolean) Function.LLVMGetSectionContainsSymbol.handle().invoke(SI.value(), Sym.value()));
+    }
 
     // Section Relocation iterators
 
@@ -235,23 +240,28 @@ public class ObjectFile {
 
     // RelocationRef accessors
 
-    //uint64_t LLVMGetRelocationOffset(LLVMRelocationIteratorRef RI) {
-    //    return nothrows_run(() -> Function.LLVMGetRelocationOffset.handle().invoke());
-    //}
-    //LLVMSymbolIteratorRef LLVMGetRelocationSymbol(LLVMRelocationIteratorRef RI) {
-    //    return nothrows_run(() -> Function.LLVMGetRelocationSymbol.handle().invoke());
-    //}
-    //uint64_t LLVMGetRelocationType(LLVMRelocationIteratorRef RI) {
-    //    return nothrows_run(() -> Function.LLVMGetRelocationType.handle().invoke());
-    //}
+    public static long /* uint64_t */ LLVMGetRelocationOffset(LLVMRelocationIteratorRef RI) {
+        return nothrows_run(() -> (long) Function.LLVMGetRelocationOffset.handle().invoke(RI.value()));
+    }
+
+    public static LLVMSymbolIteratorRef LLVMGetRelocationSymbol(LLVMRelocationIteratorRef RI) {
+        return nothrows_run(() -> new LLVMSymbolIteratorRef((long) Function.LLVMGetRelocationSymbol.handle().invoke(RI.value())));
+    }
+
+    public static long /* uint64_t */ LLVMGetRelocationType(LLVMRelocationIteratorRef RI) {
+        return nothrows_run(() -> (long) Function.LLVMGetRelocationType.handle().invoke(RI.value()));
+    }
 
     // NOTE: Caller takes ownership of returned string of the two
     // following functions.
 
-    //const char *LLVMGetRelocationTypeName(LLVMRelocationIteratorRef RI) {
-    //    return nothrows_run(() -> Function.LLVMGetRelocationTypeName.handle().invoke());
-    //}
-    //const char *LLVMGetRelocationValueString(LLVMRelocationIteratorRef RI) {
-    //    return nothrows_run(() -> Function.LLVMGetRelocationValueString.handle().invoke());
-    //}
+    public static String LLVMGetRelocationTypeName(LLVMRelocationIteratorRef RI) {
+        // NOTE: using addressToLLVMString is wrong, but it just frees the pointer, that's ok
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetRelocationTypeName.handle().invoke(RI.value())));
+    }
+
+    public static String LLVMGetRelocationValueString(LLVMRelocationIteratorRef RI) {
+        // NOTE: using addressToLLVMString is wrong, but it just frees the pointer, that's ok
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetRelocationValueString.handle().invoke(RI.value())));
+    }
 }
