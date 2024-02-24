@@ -107,6 +107,8 @@ public class Target {
         LLVMInitializeAArch64AsmParser(CURRENT_INSTRUCTION_SET == ARM64, void.class),
         LLVMInitializeAArch64AsmPrinter(CURRENT_INSTRUCTION_SET == ARM64, void.class),
 
+        //TODO: RISCV64
+
         // common
         LLVMGetModuleDataLayout(cLLVMTargetDataRef, cLLVMModuleRef),
         LLVMSetModuleDataLayout(void.class, cLLVMModuleRef, cLLVMTargetDataRef),
@@ -191,6 +193,7 @@ public class Target {
             case X86, X86_64 -> tmp = Function.LLVMInitializeX86TargetInfo.handle();
             case ARM64 -> tmp = Function.LLVMInitializeAArch64TargetInfo.handle();
             case ARM -> tmp = Function.LLVMInitializeARMTargetInfo.handle();
+            //TODO: RISCV64
             default -> throw new IllegalStateException(
                     "unsupported instruction set: " + CURRENT_INSTRUCTION_SET);
         }
@@ -203,6 +206,7 @@ public class Target {
             case X86, X86_64 -> tmp = Function.LLVMInitializeX86TargetMC.handle();
             case ARM64 -> tmp = Function.LLVMInitializeAArch64TargetMC.handle();
             case ARM -> tmp = Function.LLVMInitializeARMTargetMC.handle();
+            //TODO: RISCV64
             default -> throw new IllegalStateException(
                     "unsupported instruction set: " + CURRENT_INSTRUCTION_SET);
         }
@@ -215,6 +219,7 @@ public class Target {
             case X86, X86_64 -> tmp = Function.LLVMInitializeX86Target.handle();
             case ARM64 -> tmp = Function.LLVMInitializeAArch64Target.handle();
             case ARM -> tmp = Function.LLVMInitializeARMTarget.handle();
+            //TODO: RISCV64
             default -> throw new IllegalStateException(
                     "unsupported instruction set: " + CURRENT_INSTRUCTION_SET);
         }

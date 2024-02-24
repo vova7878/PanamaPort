@@ -451,6 +451,7 @@ public class TargetMachine {
     /**
      * Get a triple for the host machine as a string.
      */
+    @Deprecated // on Android it always returns "i386-unknown-linux"
     public static String LLVMGetDefaultTargetTriple() {
         return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetDefaultTargetTriple.handle().invoke()));
     }

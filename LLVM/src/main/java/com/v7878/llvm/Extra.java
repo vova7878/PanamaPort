@@ -1,5 +1,7 @@
 package com.v7878.llvm;
 
+import static com.v7878.unsafe.NativeCodeBlob.CURRENT_INSTRUCTION_SET;
+
 import android.system.ErrnoException;
 import android.system.Os;
 
@@ -30,5 +32,28 @@ public class Extra {
         } catch (ErrnoException e) {
             return 0;
         }
+    }
+
+    public static String LLVMGetHostTriple() {
+        // TODO
+        return LLVMGetHostCPUName() + "-unknown-linux-android";
+    }
+
+    public static String LLVMGetHostCPUName() {
+        // TODO _ZN4llvm3sys14getHostCPUNameEv
+        return switch (CURRENT_INSTRUCTION_SET) {
+            case X86 -> "i386";
+            case X86_64 -> "x86_64";
+            case ARM -> "arm";
+            case ARM64 -> "aarch64";
+            //TODO: RISCV64
+            default -> throw new IllegalStateException(
+                    "unsupported instruction set: " + CURRENT_INSTRUCTION_SET);
+        };
+    }
+
+    public static String LLVMGetHostCPUFeatures() {
+        // TODO _ZN4llvm3sys18getHostCPUFeaturesERNS_9StringMapIbNS_15MallocAllocatorEEE
+        return "";
     }
 }
