@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 
 // see elf.h
-public class ELF {
+class ELF {
     private static final int EI_NIDENT = 16;
     private static final byte[] ELFMAG = {0x7f, 'E', 'L', 'F'};
 
@@ -219,7 +219,7 @@ public class ELF {
         }
 
         @DangerLevel(DangerLevel.VERY_CAREFUL)
-        MemorySegment findFunction(String name, long bias) {
+        public MemorySegment findFunction(String name, long bias) {
             ByteBuffer symbol = find(name).data;
             int type = symbol.get(st_info) & 0xf;
             if (type != STT_FUNC) {
