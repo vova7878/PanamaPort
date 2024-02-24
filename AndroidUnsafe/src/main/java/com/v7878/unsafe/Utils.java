@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
@@ -461,5 +462,28 @@ public class Utils {
             Class.forName(clazz.getName(), true, clazz.getClassLoader());
         } catch (ClassNotFoundException ignored) {
         }
+    }
+
+    public static class Lock<T> implements FineClosable {
+        private final T value;
+        private final Consumer<T> action;
+
+        private Lock(T value, Consumer<T> action) {
+            this.value = value;
+            this.action = action;
+        }
+
+        public T value() {
+            return value;
+        }
+
+        @Override
+        public void close() {
+            action.accept(value);
+        }
+    }
+
+    public static <T> Lock<T> lock(T value, Consumer<T> action) {
+        return new Lock<>(value, action);
     }
 }
