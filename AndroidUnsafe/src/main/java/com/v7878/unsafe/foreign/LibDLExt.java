@@ -11,6 +11,9 @@ import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 import static com.v7878.unsafe.foreign.SimpleBulkLinker.WORD_CLASS;
 import static com.v7878.unsafe.io.IOUtils.getDescriptorValue;
 
+import android.system.ErrnoException;
+import android.system.Os;
+
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
@@ -18,6 +21,7 @@ import com.v7878.foreign.SymbolLookup;
 import com.v7878.invoke.VarHandle;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
+import com.v7878.unsafe.io.IOUtils;
 
 import java.io.FileDescriptor;
 import java.lang.invoke.MethodHandle;
@@ -386,6 +390,26 @@ public class LibDLExt {
             long value = nothrows_run(() -> (long) Function
                     .android_get_exported_namespace.handle().invoke(c_name.nativeAddress()));
             return value == 0 ? null : new AndroidNamespace(value);
+        }
+    }
+
+    public static long mem_dlopen(MemorySegment segment, int flags) {
+        long length = segment.byteSize();
+        try {
+            FileDescriptor fd = IOUtils.ashmem_create_region(
+                    "(mem_dlopen)", length);
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment target = IOUtils.map(fd, 0, length, arena);
+                target.copyFrom(segment);
+                target.force();
+                return android_dlopen_ext(fd, 0, flags);
+            } finally {
+                try {
+                    Os.close(fd);
+                } catch (ErrnoException e) { /* swallow exception */ }
+            }
+        } catch (ErrnoException e) {
+            return 0;
         }
     }
 
