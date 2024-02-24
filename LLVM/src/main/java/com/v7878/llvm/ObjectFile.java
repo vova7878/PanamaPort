@@ -11,6 +11,7 @@ import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
+import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.AddressValue;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.unsafe.foreign.SimpleBulkLinker;
@@ -194,8 +195,16 @@ public class ObjectFile {
         return nothrows_run(() -> (long) Function.LLVMGetSectionSize.handle().invoke(SI.value()));
     }
 
-    public static String LLVMGetSectionContents(LLVMSectionIteratorRef SI) {
-        return nothrows_run(() -> addressToString((long) Function.LLVMGetSectionContents.handle().invoke(SI.value())));
+    /* package-private */
+    static long LLVMGetSectionContents(LLVMSectionIteratorRef SI) {
+        return nothrows_run(() -> (long) Function.LLVMGetSectionContents.handle().invoke(SI.value()));
+    }
+
+    // Port-added
+    public static MemorySegment LLVMGetSectionSegment(LLVMSectionIteratorRef SI) {
+        long address = LLVMGetSectionContents(SI);
+        long size = LLVMGetSectionSize(SI);
+        return MemorySegment.ofAddress(address).reinterpret(size).asReadOnly();
     }
 
     public static long /* uint64_t */ LLVMGetSectionAddress(LLVMSectionIteratorRef SI) {
