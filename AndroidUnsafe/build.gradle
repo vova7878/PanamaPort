@@ -31,6 +31,7 @@ dependencies {
 
     compileOnly project(':fake_buffers')
     compileOnly project(':fake_panama')
+    compileOnly project(':fake_llvm')
 
     api 'com.github.vova7878:DexFile:v0.0.4'
 
@@ -39,6 +40,7 @@ dependencies {
 
     //TODO: runtimeOnlyApi?
     runtimeOnly project(':AndroidPanama')
+    runtimeOnly project(':LLVM')
 }
 
 publishing {
