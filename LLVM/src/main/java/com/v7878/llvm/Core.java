@@ -1621,8 +1621,7 @@ public class Core {
     }
 
     /**
-     * Return a string representation of the DiagnosticInfo. Use
-     * LLVMDisposeMessage to free the string.
+     * Return a string representation of the DiagnosticInfo.
      */
     public static String LLVMGetDiagInfoDescription(LLVMDiagnosticInfoRef DI) {
         return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetDiagInfoDescription.handle().invoke(DI.value())));
@@ -1878,8 +1877,7 @@ public class Core {
     //}
 
     /**
-     * Return a string representation of the module. Use
-     * LLVMDisposeMessage to free the string.
+     * Return a string representation of the module.
      */
     public static String LLVMPrintModuleToString(LLVMModuleRef M) {
         return nothrows_run(() -> addressToLLVMString((long) Function.LLVMPrintModuleToString.handle().invoke(M.value())));
@@ -2053,8 +2051,7 @@ public class Core {
     }
 
     /**
-     * Return a string representation of the type. Use
-     * LLVMDisposeMessage to free the string.
+     * Return a string representation of the type.
      */
     public static String LLVMPrintTypeToString(LLVMTypeRef Val) {
         return nothrows_run(() -> addressToLLVMString((long) Function.LLVMPrintTypeToString.handle().invoke(Val.value())));

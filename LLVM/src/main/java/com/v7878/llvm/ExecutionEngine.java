@@ -243,6 +243,16 @@ public class ExecutionEngine {
         }
     }
 
+    // Port-added
+    public static LLVMExecutionEngineRef LLVMCreateExecutionEngineForModule(LLVMModuleRef M) throws LLVMException {
+        String[] err = new String[1];
+        LLVMExecutionEngineRef[] out = new LLVMExecutionEngineRef[1];
+        if (LLVMCreateExecutionEngineForModule(O -> out[0] = O, M, E -> err[0] = E)) {
+            throw new LLVMException(err[0]);
+        }
+        return out[0];
+    }
+
     public static boolean LLVMCreateInterpreterForModule(Consumer<LLVMExecutionEngineRef> OutInterp, LLVMModuleRef M, Consumer<String> OutError) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutInterp = arena.allocate(ADDRESS);
@@ -258,6 +268,16 @@ public class ExecutionEngine {
         }
     }
 
+    // Port-added
+    public static LLVMExecutionEngineRef LLVMCreateInterpreterForModule(LLVMModuleRef M) throws LLVMException {
+        String[] err = new String[1];
+        LLVMExecutionEngineRef[] out = new LLVMExecutionEngineRef[1];
+        if (LLVMCreateInterpreterForModule(O -> out[0] = O, M, E -> err[0] = E)) {
+            throw new LLVMException(err[0]);
+        }
+        return out[0];
+    }
+
     public static boolean LLVMCreateJITCompilerForModule(Consumer<LLVMExecutionEngineRef> OutJIT, LLVMModuleRef M, int /* unsigned */ OptLevel, Consumer<String> OutError) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutJIT = arena.allocate(ADDRESS);
@@ -271,6 +291,16 @@ public class ExecutionEngine {
             }
             return err;
         }
+    }
+
+    // Port-added
+    public static LLVMExecutionEngineRef LLVMCreateJITCompilerForModule(LLVMModuleRef M, int /* unsigned */ OptLevel) throws LLVMException {
+        String[] err = new String[1];
+        LLVMExecutionEngineRef[] out = new LLVMExecutionEngineRef[1];
+        if (LLVMCreateJITCompilerForModule(O -> out[0] = O, M, OptLevel, E -> err[0] = E)) {
+            throw new LLVMException(err[0]);
+        }
+        return out[0];
     }
 
     //void LLVMInitializeMCJITCompilerOptions(struct LLVMMCJITCompilerOptions *Options, size_t SizeOfOptions) {

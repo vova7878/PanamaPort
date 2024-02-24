@@ -260,6 +260,19 @@ public class TargetMachine {
     }
 
     /**
+     * Finds the target corresponding to the given triple.
+     */
+    // Port-added
+    public static LLVMTargetRef LLVMGetTargetFromTriple(String Triple) throws LLVMException {
+        String[] err = new String[1];
+        LLVMTargetRef[] out = new LLVMTargetRef[1];
+        if (LLVMGetTargetFromTriple(Triple, O -> out[0] = O, E -> err[0] = E)) {
+            throw new LLVMException(err[0]);
+        }
+        return out[0];
+    }
+
+    /**
      * Returns the name of a target. See llvm::Target::getName
      */
     public static String LLVMGetTargetName(LLVMTargetRef T) {
@@ -329,8 +342,7 @@ public class TargetMachine {
 
     /**
      * Returns the triple used creating this target machine. See
-     * llvm::TargetMachine::getTriple. The result needs to be disposed with
-     * LLVMDisposeMessage.
+     * llvm::TargetMachine::getTriple.
      */
     public static String LLVMGetTargetMachineTriple(LLVMTargetMachineRef T) {
         return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetTargetMachineTriple.handle().invoke(T.value())));
@@ -338,8 +350,7 @@ public class TargetMachine {
 
     /**
      * Returns the cpu used creating this target machine. See
-     * llvm::TargetMachine::getCPU. The result needs to be disposed with
-     * LLVMDisposeMessage.
+     * llvm::TargetMachine::getCPU.
      */
     public static String LLVMGetTargetMachineCPU(LLVMTargetMachineRef T) {
         return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetTargetMachineCPU.handle().invoke(T.value())));
@@ -347,8 +358,7 @@ public class TargetMachine {
 
     /**
      * Returns the feature string used creating this target machine. See
-     * llvm::TargetMachine::getFeatureString. The result needs to be disposed with
-     * LLVMDisposeMessage.
+     * llvm::TargetMachine::getFeatureString.
      */
     public static String LLVMGetTargetMachineFeatureString(LLVMTargetMachineRef T) {
         return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetTargetMachineFeatureString.handle().invoke(T.value())));
@@ -371,7 +381,7 @@ public class TargetMachine {
     /**
      * Emits an asm or object file for the given module to the filename. This
      * wraps several c++ only classes (among them a file stream). Returns any
-     * error in ErrorMessage. Use LLVMDisposeMessage to dispose the message.
+     * error in ErrorMessage.
      */
     public static boolean LLVMTargetMachineEmitToFile(
             LLVMTargetMachineRef T, LLVMModuleRef M, String Filename,
@@ -385,6 +395,20 @@ public class TargetMachine {
                 ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
             }
             return err;
+        }
+    }
+
+    /**
+     * Emits an asm or object file for the given module to the filename. This
+     * wraps several c++ only classes (among them a file stream).
+     */
+    // Port-added
+    public static void LLVMTargetMachineEmitToFile(
+            LLVMTargetMachineRef T, LLVMModuleRef M, String Filename,
+            LLVMCodeGenFileType codegen) throws LLVMException {
+        String[] err = new String[1];
+        if (LLVMTargetMachineEmitToFile(T, M, Filename, codegen, E -> err[0] = E)) {
+            throw new LLVMException(err[0]);
         }
     }
 
@@ -408,11 +432,24 @@ public class TargetMachine {
         }
     }
 
+    /**
+     * Compile the LLVM IR stored in \p M
+     */
+    // Port-added
+    public static LLVMMemoryBufferRef LLVMTargetMachineEmitToMemoryBuffer(
+            LLVMTargetMachineRef T, LLVMModuleRef M, LLVMCodeGenFileType codegen) throws LLVMException {
+        String[] err = new String[1];
+        LLVMMemoryBufferRef[] out = new LLVMMemoryBufferRef[1];
+        if (LLVMTargetMachineEmitToMemoryBuffer(T, M, codegen, E -> err[0] = E, O -> out[0] = O)) {
+            throw new LLVMException(err[0]);
+        }
+        return out[0];
+    }
+
     /*===-- Triple ------------------------------------------------------------===*/
 
     /**
-     * Get a triple for the host machine as a string. The result needs to be
-     * disposed with LLVMDisposeMessage.
+     * Get a triple for the host machine as a string.
      */
     public static String LLVMGetDefaultTargetTriple() {
         return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetDefaultTargetTriple.handle().invoke()));
