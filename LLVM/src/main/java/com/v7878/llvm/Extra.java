@@ -12,41 +12,14 @@ import static com.v7878.llvm.ObjectFile.LLVMMoveToContainingSection;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToNextSymbol;
 import static com.v7878.unsafe.NativeCodeBlob.CURRENT_INSTRUCTION_SET;
 
-import android.system.ErrnoException;
-import android.system.Os;
-
-import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.unsafe.Utils;
-import com.v7878.unsafe.foreign.LibDLExt;
-import com.v7878.unsafe.io.IOUtils;
 
-import java.io.FileDescriptor;
 import java.util.List;
 import java.util.Objects;
 
 public class Extra {
-
-    public static long mem_dlopen(MemorySegment segment, int flags) {
-        long length = segment.byteSize();
-        try {
-            FileDescriptor fd = IOUtils.ashmem_create_region(
-                    "(generic dlopen)", length);
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment target = IOUtils.map(fd, 0, length, arena);
-                target.copyFrom(segment);
-                target.force();
-                return LibDLExt.android_dlopen_ext(fd, 0, flags);
-            } finally {
-                try {
-                    Os.close(fd);
-                } catch (ErrnoException e) { /* swallow exception */ }
-            }
-        } catch (ErrnoException e) {
-            return 0;
-        }
-    }
 
     public static String LLVMGetHostTriple() {
         // TODO
@@ -71,7 +44,7 @@ public class Extra {
         return "";
     }
 
-    public static MemorySegment[] copyFunctionsCode(LLVMMemoryBufferRef obj, String... names) {
+    public static MemorySegment[] getFunctionsCode(LLVMMemoryBufferRef obj, String... names) {
         Objects.requireNonNull(obj);
         Objects.requireNonNull(names);
         if (names.length == 0) {
@@ -102,7 +75,7 @@ public class Extra {
         return out;
     }
 
-    public static MemorySegment copyFunctionCode(LLVMMemoryBufferRef obj, String name) {
-        return copyFunctionsCode(obj, name)[0];
+    public static MemorySegment getFunctionCode(LLVMMemoryBufferRef obj, String name) {
+        return getFunctionsCode(obj, name)[0];
     }
 }

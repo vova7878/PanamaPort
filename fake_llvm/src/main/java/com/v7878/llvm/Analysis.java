@@ -7,18 +7,8 @@ import java.util.function.Consumer;
 
 public class Analysis {
     public enum LLVMVerifierFailureAction {
-
-        /**
-         * verifier will print to stderr and abort()
-         */
         LLVMAbortProcessAction,
-        /**
-         * verifier will print to stderr and return 1
-         */
         LLVMPrintMessageAction,
-        /**
-         * verifier will just return 1
-         */
         LLVMReturnStatusAction;
 
         public int value() {

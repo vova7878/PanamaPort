@@ -16,117 +16,104 @@ import com.v7878.llvm.Types.LLVMModuleProviderRef;
 
 public class Core {
 
+    private static int stub() {
+        throw new UnsupportedOperationException("Stub!");
+    }
 
     public static class LLVMAttribute {
-        public static final int LLVMZExtAttribute = 1;
-        public static final int LLVMSExtAttribute = 1 << 1;
-        public static final int LLVMNoReturnAttribute = 1 << 2;
-        public static final int LLVMInRegAttribute = 1 << 3;
-        public static final int LLVMStructRetAttribute = 1 << 4;
-        public static final int LLVMNoUnwindAttribute = 1 << 5;
-        public static final int LLVMNoAliasAttribute = 1 << 6;
-        public static final int LLVMByValAttribute = 1 << 7;
-        public static final int LLVMNestAttribute = 1 << 8;
-        public static final int LLVMReadNoneAttribute = 1 << 9;
-        public static final int LLVMReadOnlyAttribute = 1 << 10;
-        public static final int LLVMNoInlineAttribute = 1 << 11;
-        public static final int LLVMAlwaysInlineAttribute = 1 << 12;
-        public static final int LLVMOptimizeForSizeAttribute = 1 << 13;
-        public static final int LLVMStackProtectAttribute = 1 << 14;
-        public static final int LLVMStackProtectReqAttribute = 1 << 15;
-        public static final int LLVMAlignment = 31 << 16;
-        public static final int LLVMNoCaptureAttribute = 1 << 21;
-        public static final int LLVMNoRedZoneAttribute = 1 << 22;
-        public static final int LLVMNoImplicitFloatAttribute = 1 << 23;
-        public static final int LLVMNakedAttribute = 1 << 24;
-        public static final int LLVMInlineHintAttribute = 1 << 25;
-        public static final int LLVMStackAlignment = 7 << 26;
-        public static final int LLVMReturnsTwice = 1 << 29;
-        public static final int LLVMUWTable = 1 << 30;
-        public static final int LLVMNonLazyBind = 1 << 31;
-
-        // FIXME: These attributes are currently not included in the C API as
-        // a temporary measure until the API/ABI impact to the C API is understood
-        // and the path forward agreed upon.
-
-        // LLVMSanitizeAddressAttribute = 1ULL << 32,
-        // LLVMStackProtectStrongAttribute = 1ULL<<35,
-        // LLVMColdAttribute = 1ULL << 40,
-        // LLVMOptimizeNoneAttribute = 1ULL << 42,
-        // LLVMInAllocaAttribute = 1ULL << 43,
-        // LLVMNonNullAttribute = 1ULL << 44,
-        // LLVMJumpTableAttribute = 1ULL << 45,
-        // LLVMConvergentAttribute = 1ULL << 46,
-        // LLVMSafeStackAttribute = 1ULL << 47,
-        // LLVMSwiftSelfAttribute = 1ULL << 48,
-        // LLVMSwiftErrorAttribute = 1ULL << 49,
+        public static final int LLVMZExtAttribute = stub();
+        public static final int LLVMSExtAttribute = stub();
+        public static final int LLVMNoReturnAttribute = stub();
+        public static final int LLVMInRegAttribute = stub();
+        public static final int LLVMStructRetAttribute = stub();
+        public static final int LLVMNoUnwindAttribute = stub();
+        public static final int LLVMNoAliasAttribute = stub();
+        public static final int LLVMByValAttribute = stub();
+        public static final int LLVMNestAttribute = stub();
+        public static final int LLVMReadNoneAttribute = stub();
+        public static final int LLVMReadOnlyAttribute = stub();
+        public static final int LLVMNoInlineAttribute = stub();
+        public static final int LLVMAlwaysInlineAttribute = stub();
+        public static final int LLVMOptimizeForSizeAttribute = stub();
+        public static final int LLVMStackProtectAttribute = stub();
+        public static final int LLVMStackProtectReqAttribute = stub();
+        public static final int LLVMAlignment = stub();
+        public static final int LLVMNoCaptureAttribute = stub();
+        public static final int LLVMNoRedZoneAttribute = stub();
+        public static final int LLVMNoImplicitFloatAttribute = stub();
+        public static final int LLVMNakedAttribute = stub();
+        public static final int LLVMInlineHintAttribute = stub();
+        public static final int LLVMStackAlignment = stub();
+        public static final int LLVMReturnsTwice = stub();
+        public static final int LLVMUWTable = stub();
+        public static final int LLVMNonLazyBind = stub();
     }
 
     public enum LLVMOpcode {
-        LLVMRet(),
-        LLVMBr(),
-        LLVMSwitch(),
-        LLVMIndirectBr(),
-        LLVMInvoke(),
-        LLVMUnreachable(),
-        LLVMAdd(),
-        LLVMFAdd(),
-        LLVMSub(),
-        LLVMFSub(),
-        LLVMMul(),
-        LLVMFMul(),
-        LLVMUDiv(),
-        LLVMSDiv(),
-        LLVMFDiv(),
-        LLVMURem(),
-        LLVMSRem(),
-        LLVMFRem(),
-        LLVMShl(),
-        LLVMLShr(),
-        LLVMAShr(),
-        LLVMAnd(),
-        LLVMOr(),
-        LLVMXor(),
-        LLVMAlloca(),
-        LLVMLoad(),
-        LLVMStore(),
-        LLVMGetElementPtr(),
-        LLVMTrunc(),
-        LLVMZExt(),
-        LLVMSExt(),
-        LLVMFPToUI(),
-        LLVMFPToSI(),
-        LLVMUIToFP(),
-        LLVMSIToFP(),
-        LLVMFPTrunc(),
-        LLVMFPExt(),
-        LLVMPtrToInt(),
-        LLVMIntToPtr(),
-        LLVMBitCast(),
-        LLVMAddrSpaceCast(),
-        LLVMICmp(),
-        LLVMFCmp(),
-        LLVMPHI(),
-        LLVMCall(),
-        LLVMSelect(),
-        LLVMUserOp1(),
-        LLVMUserOp2(),
-        LLVMVAArg(),
-        LLVMExtractElement(),
-        LLVMInsertElement(),
-        LLVMShuffleVector(),
-        LLVMExtractValue(),
-        LLVMInsertValue(),
-        LLVMFence(),
-        LLVMAtomicCmpXchg(),
-        LLVMAtomicRMW(),
-        LLVMResume(),
-        LLVMLandingPad(),
-        LLVMCleanupRet(),
-        LLVMCatchRet(),
-        LLVMCatchPad(),
-        LLVMCleanupPad(),
-        LLVMCatchSwitch();
+        LLVMRet,
+        LLVMBr,
+        LLVMSwitch,
+        LLVMIndirectBr,
+        LLVMInvoke,
+        LLVMUnreachable,
+        LLVMAdd,
+        LLVMFAdd,
+        LLVMSub,
+        LLVMFSub,
+        LLVMMul,
+        LLVMFMul,
+        LLVMUDiv,
+        LLVMSDiv,
+        LLVMFDiv,
+        LLVMURem,
+        LLVMSRem,
+        LLVMFRem,
+        LLVMShl,
+        LLVMLShr,
+        LLVMAShr,
+        LLVMAnd,
+        LLVMOr,
+        LLVMXor,
+        LLVMAlloca,
+        LLVMLoad,
+        LLVMStore,
+        LLVMGetElementPtr,
+        LLVMTrunc,
+        LLVMZExt,
+        LLVMSExt,
+        LLVMFPToUI,
+        LLVMFPToSI,
+        LLVMUIToFP,
+        LLVMSIToFP,
+        LLVMFPTrunc,
+        LLVMFPExt,
+        LLVMPtrToInt,
+        LLVMIntToPtr,
+        LLVMBitCast,
+        LLVMAddrSpaceCast,
+        LLVMICmp,
+        LLVMFCmp,
+        LLVMPHI,
+        LLVMCall,
+        LLVMSelect,
+        LLVMUserOp1,
+        LLVMUserOp2,
+        LLVMVAArg,
+        LLVMExtractElement,
+        LLVMInsertElement,
+        LLVMShuffleVector,
+        LLVMExtractValue,
+        LLVMInsertValue,
+        LLVMFence,
+        LLVMAtomicCmpXchg,
+        LLVMAtomicRMW,
+        LLVMResume,
+        LLVMLandingPad,
+        LLVMCleanupRet,
+        LLVMCatchRet,
+        LLVMCatchPad,
+        LLVMCleanupPad,
+        LLVMCatchSwitch;
 
         public int value() {
             throw new UnsupportedOperationException("Stub!");
