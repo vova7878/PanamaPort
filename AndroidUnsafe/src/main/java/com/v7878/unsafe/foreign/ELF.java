@@ -12,6 +12,7 @@ import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.ValueLayout;
+import com.v7878.unsafe.DangerLevel;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -217,6 +218,7 @@ public class ELF {
             return out;
         }
 
+        @DangerLevel(DangerLevel.VERY_CAREFUL)
         MemorySegment findFunction(String name, long bias) {
             ByteBuffer symbol = find(name).data;
             int type = symbol.get(st_info) & 0xf;
@@ -246,7 +248,7 @@ public class ELF {
         if (symtab.capacity() % Elf_Sym.byteSize() != 0) {
             throw new IllegalArgumentException("elf error");
         }
-        int sym_size = (int) Elf_Sym.byteSize();
+        int sym_size = Math.toIntExact(Elf_Sym.byteSize());
         int num = symtab.capacity() / sym_size;
         for (int i = 0; i < num; i++) {
             ByteBuffer symbol = slice(symtab, i * sym_size, sym_size);
@@ -256,7 +258,7 @@ public class ELF {
         }
     }
 
-    private static Element[] readSegments(ByteBuffer in) {
+    private static Element[] readSections(ByteBuffer in) {
         ByteBuffer ehdr = slice(in, 0, (int) Elf_Ehdr.byteSize());
         if (ehdr.get(0) != ELFMAG[0]
                 || ehdr.get(1) != ELFMAG[1]
@@ -270,7 +272,7 @@ public class ELF {
                     + shentsize + ") != sizeof(Elf_Shdr)(=" + Elf_Shdr.byteSize() + ")");
         }
         int shnum = ehdr.getChar(e_shnum);
-        int shoff = (int) getWord(ehdr, e_shoff);
+        int shoff = Math.toIntExact(getWord(ehdr, e_shoff));
         ByteBuffer all_sh = slice(in, shoff, shnum * shentsize);
         int shstrndx = ehdr.getChar(e_shstrndx);
         ByteBuffer strings = getRawSegmentData(in, slice(all_sh, shstrndx * shentsize, shentsize));
@@ -289,22 +291,22 @@ public class ELF {
     }
 
     public static SymTab readSymTab(ByteBuffer in, boolean only_dyn) {
-        Element[] segments = readSegments(in);
+        Element[] sections = readSections(in);
 
         Element symtab = null;
         Element strtab = null;
         Element dynsym = null;
         Element dynstr = null;
 
-        for (Element segment : segments) {
-            switch (segment.name) {
+        for (Element section : sections) {
+            switch (section.name) {
                 case ".strtab" -> {
                     if (!only_dyn) {
                         if (strtab != null) {
                             throw new IllegalArgumentException(
                                     "too many string tables");
                         }
-                        strtab = segment;
+                        strtab = section;
                     }
                 }
                 case ".symtab" -> {
@@ -313,7 +315,7 @@ public class ELF {
                             throw new IllegalArgumentException(
                                     "too many symbol tables");
                         }
-                        symtab = segment;
+                        symtab = section;
                     }
                 }
                 case ".dynstr" -> {
@@ -321,14 +323,14 @@ public class ELF {
                         throw new IllegalArgumentException(
                                 "too many string tables");
                     }
-                    dynstr = segment;
+                    dynstr = section;
                 }
                 case ".dynsym" -> {
                     if (dynsym != null) {
                         throw new IllegalArgumentException(
                                 "too many symbol tables");
                     }
-                    dynsym = segment;
+                    dynsym = section;
                 }
             }
         }
