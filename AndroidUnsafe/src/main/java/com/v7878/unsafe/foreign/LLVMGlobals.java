@@ -1,6 +1,10 @@
 package com.v7878.unsafe.foreign;
 
 import static com.v7878.llvm.Core.LLVMContextCreate;
+import static com.v7878.llvm.Core.LLVMDoubleTypeInContext;
+import static com.v7878.llvm.Core.LLVMFP128TypeInContext;
+import static com.v7878.llvm.Core.LLVMFloatTypeInContext;
+import static com.v7878.llvm.Core.LLVMHalfTypeInContext;
 import static com.v7878.llvm.Core.LLVMInt128TypeInContext;
 import static com.v7878.llvm.Core.LLVMInt16TypeInContext;
 import static com.v7878.llvm.Core.LLVMInt1TypeInContext;
@@ -64,4 +68,9 @@ public class LLVMGlobals {
     public static final LLVMTypeRef INT64_T = LLVMInt64TypeInContext(DEFAULT_CONTEXT);
     public static final LLVMTypeRef INT128_T = LLVMInt128TypeInContext(DEFAULT_CONTEXT);
     public static final LLVMTypeRef INTPTR_T = IS64BIT ? INT64_T : INT32_T;
+
+    public static final LLVMTypeRef HALF_T = LLVMHalfTypeInContext(DEFAULT_CONTEXT);
+    public static final LLVMTypeRef FLOAT_T = LLVMFloatTypeInContext(DEFAULT_CONTEXT);
+    public static final LLVMTypeRef DOUBLE_T = LLVMDoubleTypeInContext(DEFAULT_CONTEXT);
+    public static final LLVMTypeRef FP128_T = LLVMFP128TypeInContext(DEFAULT_CONTEXT);
 }
