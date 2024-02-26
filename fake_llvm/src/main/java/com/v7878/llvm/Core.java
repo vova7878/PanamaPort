@@ -741,6 +741,14 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static int /* unsigned */ LLVMGetAlignment(LLVMValueRef V) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetAlignment(LLVMValueRef V, int /* unsigned */ Bytes) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
         throw new UnsupportedOperationException("Stub!");
     }

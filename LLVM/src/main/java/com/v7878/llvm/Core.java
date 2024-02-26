@@ -3163,26 +3163,19 @@ public class Core {
      * global variables, load and store instructions.
      */
 
-    ///**
-    // * Obtain the preferred alignment of the value.
-    // * @see llvm::AllocaInst::getAlignment()
-    // * @see llvm::LoadInst::getAlignment()
-    // * @see llvm::StoreInst::getAlignment()
-    // * @see llvm::GlobalValue::getAlignment()
-    // */
-    //int /* unsigned */ LLVMGetAlignment(LLVMValueRef V) {
-    //    return nothrows_run(() -> Function.LLVMGetAlignment.handle().invoke());
-    //}
-    ///**
-    // * Set the preferred alignment of the value.
-    // * @see llvm::AllocaInst::setAlignment()
-    // * @see llvm::LoadInst::setAlignment()
-    // * @see llvm::StoreInst::setAlignment()
-    // * @see llvm::GlobalValue::setAlignment()
-    // */
-    //void LLVMSetAlignment(LLVMValueRef V, int /* unsigned */ Bytes) {
-    //    return nothrows_run(() -> Function.LLVMSetAlignment.handle().invoke());
-    //}
+    /**
+     * Obtain the preferred alignment of the value.
+     */
+    public static int /* unsigned */ LLVMGetAlignment(LLVMValueRef V) {
+        return nothrows_run(() -> (int) Function.LLVMGetAlignment.handle().invoke(V.value()));
+    }
+
+    /**
+     * Set the preferred alignment of the value.
+     */
+    public static void LLVMSetAlignment(LLVMValueRef V, int /* unsigned */ Bytes) {
+        nothrows_run(() -> Function.LLVMSetAlignment.handle().invoke(V.value(), Bytes));
+    }
 
     /*
      * @defgroup LLVMCoreValueConstantGlobalVariable Global Variables
