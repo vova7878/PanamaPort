@@ -30,6 +30,8 @@ dependencies {
     compileOnly 'com.github.vova7878:OptimizationAnnotations:v0.0.2'
     compileOnly 'com.github.vova7878:SunCleanerStub:v0.0.1'
 
+    compileOnly project(':fake_llvm')
+
     api project(':VarHandleApi')
 
     implementation project(':AndroidUnsafe')
