@@ -72,6 +72,12 @@ public class Extra {
             }
         }
 
+        for (int i = 0; i < names.length; i++) {
+            if (out[i] == null) {
+                throw new IllegalArgumentException("Can`t find code for function: \"" + names[i] + "\"");
+            }
+        }
+
         return out;
     }
 
