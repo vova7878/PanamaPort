@@ -28,6 +28,7 @@
 
 package com.v7878.foreign;
 
+import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaNioAccess;
 
@@ -55,11 +56,17 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
     // note that the alignment of a long[]/double[] depends on the platform: it's 4-byte on x86, but 8 bytes on x64
     // (as specified by the JAVA_LONG layout constant).
 
+    // Port-changed: on Android array alignments are different from hotspot
+    //private static final long MAX_ALIGN_BYTE_ARRAY = ValueLayout.JAVA_BYTE.byteAlignment();
+    //private static final long MAX_ALIGN_SHORT_ARRAY = ValueLayout.JAVA_SHORT.byteAlignment();
+    //private static final long MAX_ALIGN_INT_ARRAY = ValueLayout.JAVA_INT.byteAlignment();
+    //private static final long MAX_ALIGN_LONG_ARRAY = ValueLayout.JAVA_LONG.byteAlignment();
+
     private static final long MAX_ALIGN_OBJECT = VM.OBJECT_ALIGNMENT;
-    private static final long MAX_ALIGN_BYTE_ARRAY = ValueLayout.JAVA_BYTE.byteAlignment();
-    private static final long MAX_ALIGN_SHORT_ARRAY = ValueLayout.JAVA_SHORT.byteAlignment();
-    private static final long MAX_ALIGN_INT_ARRAY = ValueLayout.JAVA_INT.byteAlignment();
-    private static final long MAX_ALIGN_LONG_ARRAY = ValueLayout.JAVA_LONG.byteAlignment();
+    private static final long MAX_ALIGN_BYTE_ARRAY = Integer.lowestOneBit(AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET);
+    private static final long MAX_ALIGN_SHORT_ARRAY = Integer.lowestOneBit(AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET);
+    private static final long MAX_ALIGN_INT_ARRAY = Integer.lowestOneBit(AndroidUnsafe.ARRAY_INT_BASE_OFFSET);
+    private static final long MAX_ALIGN_LONG_ARRAY = Integer.lowestOneBit(AndroidUnsafe.ARRAY_LONG_BASE_OFFSET);
 
     final long offset;
     final Object base;
