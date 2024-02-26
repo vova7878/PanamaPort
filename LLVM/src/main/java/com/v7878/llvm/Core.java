@@ -3703,7 +3703,7 @@ public class Core {
      * function.
      */
     public static LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
-        return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMGetEntryBasicBlock.handle().invoke(Fn.toString())));
+        return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMGetEntryBasicBlock.handle().invoke(Fn.value())));
     }
 
     /**
