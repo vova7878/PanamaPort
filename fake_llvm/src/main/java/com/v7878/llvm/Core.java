@@ -741,6 +741,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMBasicBlockRef LLVMAppendBasicBlockInContext(LLVMContextRef C, LLVMValueRef Fn, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }

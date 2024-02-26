@@ -3704,15 +3704,14 @@ public class Core {
     //LLVMBasicBlockRef LLVMGetPreviousBasicBlock(LLVMBasicBlockRef BB) {
     //    return nothrows_run(() -> Function.LLVMGetPreviousBasicBlock.handle().invoke());
     //}
-    ///**
-    // * Obtain the basic block that corresponds to the entry point of a
-    // * function.
-    // *
-    // * @see llvm::Function::getEntryBlock()
-    // */
-    //LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetEntryBasicBlock.handle().invoke());
-    //}
+
+    /**
+     * Obtain the basic block that corresponds to the entry point of a
+     * function.
+     */
+    public static LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
+        return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMGetEntryBasicBlock.handle().invoke(Fn.toString())));
+    }
 
     /**
      * Append a basic block to the end of a function.
