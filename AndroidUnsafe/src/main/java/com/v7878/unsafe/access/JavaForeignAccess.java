@@ -4,6 +4,7 @@ import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.foreign.Arena;
+import com.v7878.foreign.MemoryLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.foreign.SymbolLookup;
@@ -55,8 +56,8 @@ public abstract class JavaForeignAccess {
     protected abstract MemorySegment _makeNativeSegmentUnchecked(
             long min, long byteSize, boolean readOnly, Arena scope, Runnable action);
 
-    public static MemorySegment makeNativeSegment( long min, long byteSize, boolean readOnly,
-                                                   Arena scope, Runnable action) {
+    public static MemorySegment makeNativeSegment(long min, long byteSize, boolean readOnly,
+                                                  Arena scope, Runnable action) {
         //TODO: minimal checks
         return INSTANCE._makeNativeSegmentUnchecked(min, byteSize, readOnly, scope, action);
     }
@@ -86,5 +87,11 @@ public abstract class JavaForeignAccess {
             return addr == 0L ? Optional.empty() : Optional.of(
                     MemorySegment.ofAddress(addr).reinterpret(libArena, null));
         };
+    }
+
+    protected abstract boolean _hasNaturalAlignment(MemoryLayout layout);
+
+    public static boolean hasNaturalAlignment(MemoryLayout layout) {
+        return INSTANCE._hasNaturalAlignment(layout);
     }
 }

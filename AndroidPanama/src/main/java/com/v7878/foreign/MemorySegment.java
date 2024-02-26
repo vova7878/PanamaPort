@@ -2698,6 +2698,11 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
                 return _SegmentFactories.mapSegment(unmapper, size, readOnly,
                         _MemorySessionImpl.toMemorySession(scope));
             }
+
+            @Override
+            protected boolean _hasNaturalAlignment(MemoryLayout layout) {
+                return ((_AbstractLayout<?>) layout).hasNaturalAlignment();
+            }
         };
     }
 }
