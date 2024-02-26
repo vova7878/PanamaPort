@@ -4330,22 +4330,22 @@ public class Core {
         return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildRet.handle().invoke(Builder.value(), V.value())));
     }
 
-    //LLVMValueRef LLVMBuildAggregateRet(LLVMBuilderRef, LLVMValueRef *RetVals, int /* unsigned */ N) {
+    //LLVMValueRef LLVMBuildAggregateRet(LLVMBuilderRef B, LLVMValueRef *RetVals, int /* unsigned */ N) {
     //    return nothrows_run(() -> Function.LLVMBuildAggregateRet.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildBr(LLVMBuilderRef, LLVMBasicBlockRef Dest) {
+    //LLVMValueRef LLVMBuildBr(LLVMBuilderRef B, LLVMBasicBlockRef Dest) {
     //    return nothrows_run(() -> Function.LLVMBuildBr.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildCondBr(LLVMBuilderRef, LLVMValueRef If, LLVMBasicBlockRef Then, LLVMBasicBlockRef Else) {
+    //LLVMValueRef LLVMBuildCondBr(LLVMBuilderRef B, LLVMValueRef If, LLVMBasicBlockRef Then, LLVMBasicBlockRef Else) {
     //    return nothrows_run(() -> Function.LLVMBuildCondBr.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildSwitch(LLVMBuilderRef, LLVMValueRef V, LLVMBasicBlockRef Else, int /* unsigned */ NumCases) {
+    //LLVMValueRef LLVMBuildSwitch(LLVMBuilderRef B, LLVMValueRef V, LLVMBasicBlockRef Else, int /* unsigned */ NumCases) {
     //    return nothrows_run(() -> Function.LLVMBuildSwitch.handle().invoke());
     //}
     //LLVMValueRef LLVMBuildIndirectBr(LLVMBuilderRef B, LLVMValueRef Addr, int /* unsigned */ NumDests) {
     //    return nothrows_run(() -> Function.LLVMBuildIndirectBr.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildInvoke(LLVMBuilderRef, LLVMValueRef Fn, LLVMValueRef *Args, int /* unsigned */ NumArgs, LLVMBasicBlockRef Then, LLVMBasicBlockRef Catch, String Name) {
+    //LLVMValueRef LLVMBuildInvoke(LLVMBuilderRef B, LLVMValueRef Fn, LLVMValueRef *Args, int /* unsigned */ NumArgs, LLVMBasicBlockRef Then, LLVMBasicBlockRef Catch, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildInvoke.handle().invoke());
     //}
     //LLVMValueRef LLVMBuildLandingPad(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef PersFn, int /* unsigned */ NumClauses, String Name) {
@@ -4385,105 +4385,263 @@ public class Core {
     //void LLVMSetCleanup(LLVMValueRef LandingPad, boolean Val) {
     //    return nothrows_run(() -> Function.LLVMSetCleanup.handle().invoke());
     //}
-    ///* Arithmetic */
-    //LLVMValueRef LLVMBuildAdd(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildAdd.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNSWAdd(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNSWAdd.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNUWAdd(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNUWAdd.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildFAdd(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildFAdd.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildSub(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildSub.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNSWSub(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNSWSub.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNUWSub(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNUWSub.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildFSub(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildFSub.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildMul(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildMul.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNSWMul(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNSWMul.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNUWMul(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNUWMul.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildFMul(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildFMul.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildUDiv(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildUDiv.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildSDiv(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildSDiv.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildExactSDiv(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildExactSDiv.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildFDiv(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildFDiv.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildURem(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildURem.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildSRem(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildSRem.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildFRem(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildFRem.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildShl(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildShl.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildLShr(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildLShr.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildAShr(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildAShr.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildAnd(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildAnd.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildOr(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildOr.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildXor(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildXor.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildBinOp(LLVMBuilderRef B, LLVMOpcode Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildBinOp.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNeg(LLVMBuilderRef, LLVMValueRef V, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNeg.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNSWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNSWNeg.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNUWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNUWNeg.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildFNeg(LLVMBuilderRef, LLVMValueRef V, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildFNeg.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildNot(LLVMBuilderRef, LLVMValueRef V, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildNot.handle().invoke());
-    //}
-    ///* Memory */
-    //LLVMValueRef LLVMBuildMalloc(LLVMBuilderRef, LLVMTypeRef Ty, String Name) {
+
+    /* Arithmetic */
+
+    public static LLVMValueRef LLVMBuildAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildAdd.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNSWAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNSWAdd.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNUWAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNUWAdd.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildFAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFAdd.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildSub.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNSWSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNSWSub.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNUWSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNUWSub.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildFSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFSub.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildMul.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNSWMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNSWMul.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNUWMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNUWMul.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildFMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFMul.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildUDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildUDiv.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildSDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildSDiv.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildExactSDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildExactSDiv.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildFDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFDiv.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildURem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildURem.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildSRem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildSRem.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildFRem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFRem.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildShl(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildShl.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildLShr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildLShr.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildAShr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildAShr.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildAnd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildAnd.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildOr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildOr.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildXor(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildXor.handle()
+                    .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildBinOp(LLVMBuilderRef B, LLVMOpcode Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildBinOp.handle()
+                    .invoke(B.value(), Op.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNeg.handle()
+                    .invoke(B.value(), V.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNSWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNSWNeg.handle()
+                    .invoke(B.value(), V.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNUWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNUWNeg.handle()
+                    .invoke(B.value(), V.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildFNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFNeg.handle()
+                    .invoke(B.value(), V.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildNot(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNot.handle()
+                    .invoke(B.value(), V.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    /* Memory */
+
+    //LLVMValueRef LLVMBuildMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildMalloc.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildArrayMalloc(LLVMBuilderRef, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
+    //LLVMValueRef LLVMBuildArrayMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildArrayMalloc.handle().invoke());
     //}
 
@@ -4503,13 +4661,13 @@ public class Core {
         }
     }
 
-    //LLVMValueRef LLVMBuildFree(LLVMBuilderRef, LLVMValueRef PointerVal) {
+    //LLVMValueRef LLVMBuildFree(LLVMBuilderRef B, LLVMValueRef PointerVal) {
     //    return nothrows_run(() -> Function.LLVMBuildFree.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildLoad(LLVMBuilderRef, LLVMValueRef PointerVal, String Name) {
+    //LLVMValueRef LLVMBuildLoad(LLVMBuilderRef B, LLVMValueRef PointerVal, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildLoad.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildStore(LLVMBuilderRef, LLVMValueRef Val, LLVMValueRef Ptr) {
+    //LLVMValueRef LLVMBuildStore(LLVMBuilderRef B, LLVMValueRef Val, LLVMValueRef Ptr) {
     //    return nothrows_run(() -> Function.LLVMBuildStore.handle().invoke());
     //}
     //LLVMValueRef LLVMBuildGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef *Indices, int /* unsigned */ NumIndices, String Name) {
@@ -4720,16 +4878,16 @@ public class Core {
 
     /* Comparisons */
 
-    //LLVMValueRef LLVMBuildICmp(LLVMBuilderRef, LLVMIntPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+    //LLVMValueRef LLVMBuildICmp(LLVMBuilderRef B, LLVMIntPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildICmp.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildFCmp(LLVMBuilderRef, LLVMRealPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+    //LLVMValueRef LLVMBuildFCmp(LLVMBuilderRef B, LLVMRealPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildFCmp.handle().invoke());
     //}
 
     /* Miscellaneous instructions */
 
-    //LLVMValueRef LLVMBuildPhi(LLVMBuilderRef, LLVMTypeRef Ty, String Name) {
+    //LLVMValueRef LLVMBuildPhi(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildPhi.handle().invoke());
     //}
 
@@ -4743,19 +4901,19 @@ public class Core {
         }
     }
 
-    //LLVMValueRef LLVMBuildSelect(LLVMBuilderRef, LLVMValueRef If, LLVMValueRef Then, LLVMValueRef Else, String Name) {
+    //LLVMValueRef LLVMBuildSelect(LLVMBuilderRef B, LLVMValueRef If, LLVMValueRef Then, LLVMValueRef Else, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildSelect.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildVAArg(LLVMBuilderRef, LLVMValueRef List, LLVMTypeRef Ty, String Name) {
+    //LLVMValueRef LLVMBuildVAArg(LLVMBuilderRef B, LLVMValueRef List, LLVMTypeRef Ty, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildVAArg.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildExtractElement(LLVMBuilderRef, LLVMValueRef VecVal, LLVMValueRef Index, String Name) {
+    //LLVMValueRef LLVMBuildExtractElement(LLVMBuilderRef B, LLVMValueRef VecVal, LLVMValueRef Index, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildExtractElement.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildInsertElement(LLVMBuilderRef, LLVMValueRef VecVal, LLVMValueRef EltVal, LLVMValueRef Index, String Name) {
+    //LLVMValueRef LLVMBuildInsertElement(LLVMBuilderRef B, LLVMValueRef VecVal, LLVMValueRef EltVal, LLVMValueRef Index, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildInsertElement.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildShuffleVector(LLVMBuilderRef, LLVMValueRef V1, LLVMValueRef V2, LLVMValueRef Mask, String Name) {
+    //LLVMValueRef LLVMBuildShuffleVector(LLVMBuilderRef B, LLVMValueRef V1, LLVMValueRef V2, LLVMValueRef Mask, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildShuffleVector.handle().invoke());
     //}
 
@@ -4775,13 +4933,13 @@ public class Core {
         }
     }
 
-    //LLVMValueRef LLVMBuildIsNull(LLVMBuilderRef, LLVMValueRef Val, String Name) {
+    //LLVMValueRef LLVMBuildIsNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildIsNull.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildIsNotNull(LLVMBuilderRef, LLVMValueRef Val, String Name) {
+    //LLVMValueRef LLVMBuildIsNotNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildIsNotNull.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildPtrDiff(LLVMBuilderRef, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+    //LLVMValueRef LLVMBuildPtrDiff(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildPtrDiff.handle().invoke());
     //}
     //LLVMValueRef LLVMBuildFence(LLVMBuilderRef B, LLVMAtomicOrdering ordering, boolean singleThread, String Name) {

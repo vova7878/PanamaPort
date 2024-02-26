@@ -789,6 +789,130 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMBuildAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNSWAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNUWAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildFAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNSWSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNUWSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildFSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNSWMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNUWMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildFMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildUDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildSDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildExactSDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildFDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildURem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildSRem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildFRem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildShl(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildLShr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildAShr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildAnd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildOr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildXor(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildBinOp(LLVMBuilderRef B, LLVMOpcode Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNSWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNUWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildFNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildNot(LLVMBuilderRef B, LLVMValueRef V, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMBuildAlloca(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
