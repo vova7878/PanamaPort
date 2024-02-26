@@ -609,7 +609,63 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMTypeRef LLVMHalfTypeInContext(LLVMContextRef C) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMFloatTypeInContext(LLVMContextRef C) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMDoubleTypeInContext(LLVMContextRef C) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMX86FP80TypeInContext(LLVMContextRef C) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMFP128TypeInContext(LLVMContextRef C) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMPPCFP128TypeInContext(LLVMContextRef C) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMHalfType() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMFloatType() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMDoubleType() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMX86FP80Type() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMFP128Type() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMPPCFP128Type() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMTypeRef LLVMFunctionType(LLVMTypeRef ReturnType, LLVMTypeRef[] ParamTypes, boolean IsVarArg) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsFunctionVarArg(LLVMTypeRef FunctionTy) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMGetReturnType(LLVMTypeRef FunctionTy) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -618,6 +674,18 @@ public class Core {
     }
 
     public static LLVMTypeRef LLVMStructType(LLVMTypeRef[] ElementTypes, boolean Packed) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMStructCreateNamed(LLVMContextRef C, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static String LLVMGetStructName(LLVMTypeRef Ty) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMStructSetBody(LLVMTypeRef StructTy, LLVMTypeRef[] ElementTypes, boolean Packed) {
         throw new UnsupportedOperationException("Stub!");
     }
 

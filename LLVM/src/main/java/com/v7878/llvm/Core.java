@@ -2134,66 +2134,77 @@ public class Core {
      * @defgroup LLVMCCoreTypeFloat Floating Point Types
      */
 
-    ///**
-    // * Obtain a 16-bit floating point type from a context.
-    // */
-    //LLVMTypeRef LLVMHalfTypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMHalfTypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Obtain a 32-bit floating point type from a context.
-    // */
-    //LLVMTypeRef LLVMFloatTypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMFloatTypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Obtain a 64-bit floating point type from a context.
-    // */
-    //LLVMTypeRef LLVMDoubleTypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMDoubleTypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Obtain a 80-bit floating point type (X87) from a context.
-    // */
-    //LLVMTypeRef LLVMX86FP80TypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMX86FP80TypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Obtain a 128-bit floating point type (112-bit mantissa) from a
-    // * context.
-    // */
-    //LLVMTypeRef LLVMFP128TypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMFP128TypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Obtain a 128-bit floating point type (two 64-bits) from a context.
-    // */
-    //LLVMTypeRef LLVMPPCFP128TypeInContext(LLVMContextRef C) {
-    //    return nothrows_run(() -> Function.LLVMPPCFP128TypeInContext.handle().invoke());
-    //}
-    ///**
-    // * Obtain a floating point type from the global context.
-    // *
-    // * These map to the functions in this group of the same name.
-    // */
-    //LLVMTypeRef LLVMHalfType() {
-    //    return nothrows_run(() -> Function.LLVMHalfType.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMFloatType() {
-    //    return nothrows_run(() -> Function.LLVMFloatType.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMDoubleType() {
-    //    return nothrows_run(() -> Function.LLVMDoubleType.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMX86FP80Type() {
-    //    return nothrows_run(() -> Function.LLVMX86FP80Type.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMFP128Type() {
-    //    return nothrows_run(() -> Function.LLVMFP128Type.handle().invoke());
-    //}
-    //LLVMTypeRef LLVMPPCFP128Type() {
-    //    return nothrows_run(() -> Function.LLVMPPCFP128Type.handle().invoke());
-    //}
+    /**
+     * Obtain a 16-bit floating point type from a context.
+     */
+    public static LLVMTypeRef LLVMHalfTypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMHalfTypeInContext.handle().invoke(C.value())));
+    }
+
+    /**
+     * Obtain a 32-bit floating point type from a context.
+     */
+    public static LLVMTypeRef LLVMFloatTypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFloatTypeInContext.handle().invoke(C.value())));
+    }
+
+    /**
+     * Obtain a 64-bit floating point type from a context.
+     */
+    public static LLVMTypeRef LLVMDoubleTypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMDoubleTypeInContext.handle().invoke(C.value())));
+    }
+
+    /**
+     * Obtain a 80-bit floating point type (X87) from a context.
+     */
+    public static LLVMTypeRef LLVMX86FP80TypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMX86FP80TypeInContext.handle().invoke(C.value())));
+    }
+
+    /**
+     * Obtain a 128-bit floating point type (112-bit mantissa) from a
+     * context.
+     */
+    public static LLVMTypeRef LLVMFP128TypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFP128TypeInContext.handle().invoke(C.value())));
+    }
+
+    /**
+     * Obtain a 128-bit floating point type (two 64-bits) from a context.
+     */
+    public static LLVMTypeRef LLVMPPCFP128TypeInContext(LLVMContextRef C) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMPPCFP128TypeInContext.handle().invoke(C.value())));
+    }
+
+    /**
+     * Obtain a floating point type from the global context.
+     * <p>
+     * These map to the functions in this group of the same name.
+     */
+    public static LLVMTypeRef LLVMHalfType() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMHalfType.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMFloatType() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFloatType.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMDoubleType() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMDoubleType.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMX86FP80Type() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMX86FP80Type.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMFP128Type() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFP128Type.handle().invoke()));
+    }
+
+    public static LLVMTypeRef LLVMPPCFP128Type() {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMPPCFP128Type.handle().invoke()));
+    }
 
     /*
      * @defgroup LLVMCCoreTypeFunction Function Types
@@ -2213,18 +2224,21 @@ public class Core {
                     .invoke(ReturnType.value(), c_ParamTypes.nativeAddress(), ParamCount, IsVarArg)));
         }
     }
-    ///**
-    // * Returns whether a function type is variadic.
-    // */
-    //boolean LLVMIsFunctionVarArg(LLVMTypeRef FunctionTy) {
-    //    return nothrows_run(() -> Function.LLVMIsFunctionVarArg.handle().invoke());
-    //}
-    ///**
-    // * Obtain the Type this function Type returns.
-    // */
-    //LLVMTypeRef LLVMGetReturnType(LLVMTypeRef FunctionTy) {
-    //    return nothrows_run(() -> Function.LLVMGetReturnType.handle().invoke());
-    //}
+
+    /**
+     * Returns whether a function type is variadic.
+     */
+    public static boolean LLVMIsFunctionVarArg(LLVMTypeRef FunctionTy) {
+        return nothrows_run(() -> (boolean) Function.LLVMIsFunctionVarArg.handle().invoke(FunctionTy.value()));
+    }
+
+    /**
+     * Obtain the Type this function Type returns.
+     */
+    public static LLVMTypeRef LLVMGetReturnType(LLVMTypeRef FunctionTy) {
+        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMGetReturnType.handle().invoke(FunctionTy.value())));
+    }
+
     ///**
     // * Obtain the number of parameters this function accepts.
     // */
@@ -2279,30 +2293,36 @@ public class Core {
         }
     }
 
-    ///**
-    // * Create an empty structure in a context having a specified name.
-    // *
-    // * @see llvm::StructType::create()
-    // */
-    //LLVMTypeRef LLVMStructCreateNamed(LLVMContextRef C, String Name) {
-    //    return nothrows_run(() -> Function.LLVMStructCreateNamed.handle().invoke());
-    //}
-    ///**
-    // * Obtain the name of a structure.
-    // *
-    // * @see llvm::StructType::getName()
-    // */
-    //String LLVMGetStructName(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMGetStructName.handle().invoke());
-    //}
-    ///**
-    // * Set the contents of a structure type.
-    // *
-    // * @see llvm::StructType::setBody()
-    // */
-    //void LLVMStructSetBody(LLVMTypeRef StructTy, LLVMTypeRef *ElementTypes, int /* unsigned */ ElementCount, boolean Packed) {
-    //    return nothrows_run(() -> Function.LLVMStructSetBody.handle().invoke());
-    //}
+    /**
+     * Create an empty structure in a context having a specified name.
+     */
+    public static LLVMTypeRef LLVMStructCreateNamed(LLVMContextRef C, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMStructCreateNamed
+                    .handle().invoke(C.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    /**
+     * Obtain the name of a structure.
+     */
+    public static String LLVMGetStructName(LLVMTypeRef Ty) {
+        return nothrows_run(() -> addressToString((long) Function.LLVMGetStructName.handle().invoke(Ty.value())));
+    }
+
+    /**
+     * Set the contents of a structure type.
+     */
+    public static void LLVMStructSetBody(LLVMTypeRef StructTy, LLVMTypeRef[] ElementTypes, boolean Packed) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
+            int /* unsigned */ ElementCount = arrayLength(ElementTypes);
+            nothrows_run(() -> Function.LLVMStructSetBody.handle().invoke(
+                    StructTy.value(), c_ElementTypes.nativeAddress(), ElementCount, Packed));
+        }
+    }
+
     ///**
     // * Get the number of elements defined inside the structure.
     // *
