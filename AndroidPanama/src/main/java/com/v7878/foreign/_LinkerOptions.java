@@ -27,7 +27,11 @@
 
 package com.v7878.foreign;
 
+import com.v7878.foreign.Linker.Option;
+
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -43,19 +47,23 @@ class _LinkerOptions {
         this.optionsMap = optionsMap;
     }
 
-    public static _LinkerOptions forDowncall(FunctionDescriptor desc, Linker.Option... options) {
-        return forShared(LinkerOptionImpl::validateForDowncall, desc, options);
+    public static _LinkerOptions forDowncall(FunctionDescriptor desc, Option... options) {
+        List<Option> optionsList = Arrays.asList(options);
+        if (desc.returnLayout().isPresent() && desc.returnLayout().get() instanceof GroupLayout) {
+            optionsList.add(AllocatorParameter.INSTANCE);
+        }
+        return forShared(LinkerOptionImpl::validateForDowncall, desc, optionsList);
     }
 
-    public static _LinkerOptions forUpcall(FunctionDescriptor desc, Linker.Option[] options) {
-        return forShared(LinkerOptionImpl::validateForUpcall, desc, options);
+    public static _LinkerOptions forUpcall(FunctionDescriptor desc, Option[] options) {
+        return forShared(LinkerOptionImpl::validateForUpcall, desc, List.of(options));
     }
 
     private static _LinkerOptions forShared(BiConsumer<LinkerOptionImpl, FunctionDescriptor> validator,
-                                            FunctionDescriptor desc, Linker.Option... options) {
+                                            FunctionDescriptor desc, List<Option> options) {
         Map<Class<?>, LinkerOptionImpl> optionMap = new HashMap<>();
 
-        for (Linker.Option option : options) {
+        for (Option option : options) {
             if (optionMap.containsKey(option.getClass())) {
                 throw new IllegalArgumentException("Duplicate option: " + option);
             }
@@ -75,13 +83,17 @@ class _LinkerOptions {
         return EMPTY;
     }
 
-    private <T extends Linker.Option> T getOption(Class<T> type) {
+    private <T extends Option> T getOption(Class<T> type) {
         return type.cast(optionsMap.get(type));
     }
 
     public boolean isVarargsIndex(int argIndex) {
         FirstVariadicArg fva = getOption(FirstVariadicArg.class);
         return fva != null && argIndex >= fva.index();
+    }
+
+    public boolean hasAllocatorParameter() {
+        return getOption(AllocatorParameter.class) != null;
     }
 
     public boolean hasCapturedCallState() {
@@ -124,8 +136,8 @@ class _LinkerOptions {
         return Objects.hash(optionsMap);
     }
 
-    public sealed interface LinkerOptionImpl extends Linker.Option
-            permits CaptureCallState, FirstVariadicArg, Critical {
+    public sealed interface LinkerOptionImpl extends Option
+            permits CaptureCallState, Critical, FirstVariadicArg, AllocatorParameter {
         default void validateForDowncall(FunctionDescriptor descriptor) {
             throw new IllegalArgumentException("Not supported for downcall: " + this);
         }
@@ -154,6 +166,18 @@ class _LinkerOptions {
         }
     }
 
+    public static final class AllocatorParameter implements LinkerOptionImpl {
+        public static final AllocatorParameter INSTANCE = new AllocatorParameter();
+
+        private AllocatorParameter() {
+        }
+
+        @Override
+        public void validateForDowncall(FunctionDescriptor descriptor) {
+            // always allowed
+        }
+    }
+
     public static final class CaptureCallState implements LinkerOptionImpl {
         private final Set<_CapturableState> saved;
 
@@ -171,13 +195,13 @@ class _LinkerOptions {
         }
     }
 
-    public static final class Critical implements LinkerOptionImpl {
-        public static final Critical ALLOW_HEAP = new Critical(true);
-        public static final Critical DONT_ALLOW_HEAP = new Critical(false);
+    public enum Critical implements LinkerOptionImpl {
+        ALLOW_HEAP(true),
+        DONT_ALLOW_HEAP(false);
 
         private final boolean allowHeapAccess;
 
-        public Critical(boolean allowHeapAccess) {
+        Critical(boolean allowHeapAccess) {
             this.allowHeapAccess = allowHeapAccess;
         }
 
