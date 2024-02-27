@@ -78,6 +78,7 @@ public class NativeCodeBlob {
             size += code[i].length;
         }
 
+        //TODO: make IOUtils.mapSegment for it
         long finalSize = size;
         long address = nothrows_run(() -> mmap(0, finalSize,
                 CODE_PROT, CODE_FLAGS, null, 0));
