@@ -581,7 +581,7 @@ public sealed interface Linker permits _AbstractAndroidLinker {
      * and {@code libdl}.
      */
     static Linker nativeLinker() {
-        return _AbstractAndroidLinker.getSystemLinker();
+        return _AndroidLinkerImpl.INSTANCE;
     }
 
     /**

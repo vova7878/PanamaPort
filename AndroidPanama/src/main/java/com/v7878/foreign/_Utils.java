@@ -57,6 +57,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -73,6 +74,7 @@ final class _Utils {
     private static final MethodHandle BOOL_TO_BYTE;
     private static final MethodHandle ADDRESS_TO_LONG;
     private static final MethodHandle LONG_TO_ADDRESS;
+    private static final MethodHandle MH_CHECK_CAPTURE_SEGMENT;
 
     static {
         try {
@@ -85,6 +87,8 @@ final class _Utils {
                     MethodType.methodType(long.class, MemorySegment.class));
             LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
                     MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
+            MH_CHECK_CAPTURE_SEGMENT = lookup.findStatic(_Utils.class, "checkCaptureSegment",
+                    MethodType.methodType(MemorySegment.class, MemorySegment.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -161,6 +165,29 @@ final class _Utils {
     @Keep
     private static byte booleanToByte(boolean b) {
         return b ? (byte) 1 : (byte) 0;
+    }
+
+    public static void checkSymbol(MemorySegment symbol) {
+        Objects.requireNonNull(symbol);
+        if (symbol.equals(MemorySegment.NULL))
+            throw new IllegalArgumentException("Symbol is NULL: " + symbol);
+    }
+
+    @Keep
+    public static MemorySegment checkCaptureSegment(MemorySegment captureSegment) {
+        Objects.requireNonNull(captureSegment);
+        if (captureSegment.equals(MemorySegment.NULL)) {
+            throw new IllegalArgumentException("Capture segment is NULL: " + captureSegment);
+        }
+        return captureSegment.asSlice(0, _CapturableState.LAYOUT);
+    }
+
+    public static MethodHandle maybeCheckCaptureSegment(MethodHandle handle, _LinkerOptions options) {
+        if (options.hasCapturedCallState()) {
+            // (<target address>, SegmentAllocator, <capture segment>, ...) -> ...
+            handle = MethodHandles.filterArguments(handle, 2, MH_CHECK_CAPTURE_SEGMENT);
+        }
+        return handle;
     }
 
     public static void checkNative(MemorySegment segment) {
