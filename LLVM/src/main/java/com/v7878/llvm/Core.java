@@ -4673,15 +4673,21 @@ public class Core {
         }
     }
 
-    //LLVMValueRef LLVMBuildFree(LLVMBuilderRef B, LLVMValueRef PointerVal) {
-    //    return nothrows_run(() -> Function.LLVMBuildFree.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildLoad(LLVMBuilderRef B, LLVMValueRef PointerVal, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildLoad.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildStore(LLVMBuilderRef B, LLVMValueRef Val, LLVMValueRef Ptr) {
-    //    return nothrows_run(() -> Function.LLVMBuildStore.handle().invoke());
-    //}
+    public static LLVMValueRef LLVMBuildFree(LLVMBuilderRef B, LLVMValueRef Ptr) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFree.handle().invoke(B.value(), Ptr.value())));
+    }
+
+    public static LLVMValueRef LLVMBuildLoad(LLVMBuilderRef B, LLVMValueRef Ptr, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildLoad.handle().invoke(B.value(), Ptr.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildStore(LLVMBuilderRef B, LLVMValueRef Val, LLVMValueRef Ptr) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildStore.handle().invoke(B.value(), Val.value(), Ptr.value())));
+    }
+
     //LLVMValueRef LLVMBuildGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef *Indices, int /* unsigned */ NumIndices, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildGEP.handle().invoke());
     //}
