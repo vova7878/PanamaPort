@@ -27,7 +27,6 @@
 
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.invoke.MethodType;
@@ -62,6 +61,10 @@ final class _FunctionDescriptorImpl implements FunctionDescriptor {
      */
     public Optional<MemoryLayout> returnLayout() {
         return Optional.ofNullable(resLayout);
+    }
+
+    public MemoryLayout returnLayoutPlain() {
+        return resLayout;
     }
 
     /**
@@ -123,25 +126,9 @@ final class _FunctionDescriptorImpl implements FunctionDescriptor {
         return new _FunctionDescriptorImpl(null, argLayouts);
     }
 
-    private static Class<?> carrierTypeFor(MemoryLayout layout) {
-        if (layout instanceof ValueLayout valueLayout) {
-            return valueLayout.carrier();
-        } else if (layout instanceof GroupLayout || layout instanceof SequenceLayout) {
-            return MemorySegment.class;
-        } else {
-            // Note: we should not worry about padding layouts, as they cannot be present in a function descriptor
-            throw shouldNotReachHere();
-        }
-    }
-
     @Override
     public MethodType toMethodType() {
-        Class<?> returnValue = resLayout != null ? carrierTypeFor(resLayout) : void.class;
-        Class<?>[] argCarriers = new Class<?>[argLayouts.size()];
-        for (int i = 0; i < argCarriers.length; i++) {
-            argCarriers[i] = carrierTypeFor(argLayouts.get(i));
-        }
-        return MethodType.methodType(returnValue, argCarriers);
+        return _AndroidLinkerImpl.fdToHandleMethodType(this);
     }
 
     /**

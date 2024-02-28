@@ -88,14 +88,13 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
 
         return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), request -> {
             FunctionDescriptor fd = request.descriptor();
-            MethodType type = fd.toMethodType();
-            MethodHandle handle = arrangeDowncall(type, fd, request.options());
+            MethodHandle handle = arrangeDowncall(fd, request.options());
             handle = _Utils.maybeCheckCaptureSegment(handle, request.options());
             return handle;
         });
     }
 
-    protected abstract MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, _LinkerOptions options);
+    protected abstract MethodHandle arrangeDowncall(FunctionDescriptor function, _LinkerOptions options);
 
     @Override
     public final MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Option... options) {
