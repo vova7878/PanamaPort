@@ -2,8 +2,8 @@ package com.v7878.llvm;
 
 import com.v7878.foreign.MemoryLayout;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.llvm.ObjectFile.LLVMObjectFileRef;
 import com.v7878.llvm.Types.LLVMContextRef;
-import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 
 public class Extra {
@@ -20,11 +20,11 @@ public class Extra {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static MemorySegment[] getFunctionsCode(LLVMMemoryBufferRef obj, String... names) {
+    public static MemorySegment[] getFunctionsCode(LLVMObjectFileRef obj, String... names) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static MemorySegment getFunctionCode(LLVMMemoryBufferRef obj, String name) {
+    public static MemorySegment getFunctionCode(LLVMObjectFileRef obj, String name) {
         throw new UnsupportedOperationException("Stub!");
     }
 

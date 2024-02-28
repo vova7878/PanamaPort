@@ -5,7 +5,6 @@ import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.llvm.Core.LLVMArrayType;
 import static com.v7878.llvm.Core.LLVMPointerType;
 import static com.v7878.llvm.Core.LLVMStructTypeInContext;
-import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
 import static com.v7878.llvm.ObjectFile.LLVMGetSectionSegment;
 import static com.v7878.llvm.ObjectFile.LLVMGetSections;
 import static com.v7878.llvm.ObjectFile.LLVMGetSymbolAddress;
@@ -34,8 +33,8 @@ import com.v7878.foreign.SequenceLayout;
 import com.v7878.foreign.StructLayout;
 import com.v7878.foreign.UnionLayout;
 import com.v7878.foreign.ValueLayout;
+import com.v7878.llvm.ObjectFile.LLVMObjectFileRef;
 import com.v7878.llvm.Types.LLVMContextRef;
-import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.access.JavaForeignAccess;
@@ -68,7 +67,7 @@ public class Extra {
         return "";
     }
 
-    public static MemorySegment[] getFunctionsCode(LLVMMemoryBufferRef obj, String... names) {
+    public static MemorySegment[] getFunctionsCode(LLVMObjectFileRef obj, String... names) {
         Objects.requireNonNull(obj);
         Objects.requireNonNull(names);
         if (names.length == 0) {
@@ -79,10 +78,9 @@ public class Extra {
 
         MemorySegment[] out = new MemorySegment[names.length];
 
-        try (var of = Utils.lock(LLVMCreateObjectFile(obj), ObjectFile::LLVMDisposeObjectFile);
-             var sym = Utils.lock(LLVMGetSymbols(of.value()), ObjectFile::LLVMDisposeSymbolIterator);
-             var section = Utils.lock(LLVMGetSections(of.value()), ObjectFile::LLVMDisposeSectionIterator)) {
-            for (; !LLVMIsSymbolIteratorAtEnd(of.value(), sym.value());
+        try (var sym = Utils.lock(LLVMGetSymbols(obj), ObjectFile::LLVMDisposeSymbolIterator);
+             var section = Utils.lock(LLVMGetSections(obj), ObjectFile::LLVMDisposeSectionIterator)) {
+            for (; !LLVMIsSymbolIteratorAtEnd(obj, sym.value());
                  LLVMMoveToNextSymbol(sym.value())) {
                 String name = LLVMGetSymbolName(sym.value());
                 int index = l_names.indexOf(name);
@@ -105,7 +103,7 @@ public class Extra {
         return out;
     }
 
-    public static MemorySegment getFunctionCode(LLVMMemoryBufferRef obj, String name) {
+    public static MemorySegment getFunctionCode(LLVMObjectFileRef obj, String name) {
         return getFunctionsCode(obj, name)[0];
     }
 
