@@ -363,6 +363,10 @@ public class Utils {
         throw new AssertionError("Should not reach here");
     }
 
+    public static AssertionError shouldNotHappen(Throwable th) {
+        throw new AssertionError("Should not happen", th);
+    }
+
     public static RuntimeException unexpectedType(Class<?> unexpectedType) {
         throw new InternalError("Unexpected type: " + unexpectedType);
     }
