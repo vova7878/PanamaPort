@@ -1,6 +1,7 @@
 package com.v7878.llvm;
 
 import static com.v7878.llvm._Utils.VOID_PTR;
+import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.foreign.SimpleBulkLinker.BOOL_AS_INT_CLASS;
 
 public final class Types {
@@ -11,6 +12,8 @@ public final class Types {
         private final long value;
 
         AddressValue(long value) {
+            //TODO: make factories
+            assert_(value != 0, AssertionError::new);
             this.value = value;
         }
 
