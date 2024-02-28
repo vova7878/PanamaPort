@@ -1,5 +1,8 @@
 package com.v7878.llvm;
 
+import static com.v7878.foreign.ValueLayout.ADDRESS;
+import static com.v7878.foreign.ValueLayout.JAVA_INT;
+import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.llvm.Core.LLVMDisposeMessage;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
@@ -9,6 +12,9 @@ import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.ValueLayout;
 import com.v7878.llvm.Types.AddressValue;
+
+import java.lang.reflect.Array;
+import java.util.function.LongFunction;
 
 final class _Utils {
 
@@ -87,6 +93,31 @@ final class _Utils {
 
     public static int arrayLength(AddressValue... values) {
         return values == null ? 0 : values.length;
+    }
+
+    public static MemorySegment allocPointerArray(Arena scope, int size) {
+        return scope.allocate(ADDRESS, size);
+    }
+
+    public static <R extends AddressValue> R[] readPointerArray(
+            MemorySegment array, Class<R> clazz, LongFunction<R> generator) {
+        if (IS64BIT) {
+            long[] tmp = array.toArray(JAVA_LONG);
+            @SuppressWarnings("unchecked")
+            R[] out = (R[]) Array.newInstance(clazz, tmp.length);
+            for (int i = 0; i < tmp.length; i++) {
+                out[i] = generator.apply(tmp[i]);
+            }
+            return out;
+        } else {
+            int[] tmp = array.toArray(JAVA_INT);
+            @SuppressWarnings("unchecked")
+            R[] out = (R[]) Array.newInstance(clazz, tmp.length);
+            for (int i = 0; i < tmp.length; i++) {
+                out[i] = generator.apply(tmp[i]);
+            }
+            return out;
+        }
     }
 
     public static MemorySegment allocArray(Arena scope, long... values) {

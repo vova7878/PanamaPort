@@ -40,10 +40,12 @@ import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.llvm._Utils.allocArray;
+import static com.v7878.llvm._Utils.allocPointerArray;
 import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.llvm._Utils.arrayLength;
 import static com.v7878.llvm._Utils.const_ptr;
 import static com.v7878.llvm._Utils.ptr;
+import static com.v7878.llvm._Utils.readPointerArray;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.foreign.Arena;
@@ -3402,48 +3404,66 @@ public class Core {
     //void LLVMRemoveFunctionAttr(LLVMValueRef Fn, LLVMAttribute PA) {
     //    return nothrows_run(() -> Function.LLVMRemoveFunctionAttr.handle().invoke());
     //}
-    ///**
-    // * @defgroup LLVMCCoreValueFunctionParameters Function Parameters
-    // *
-    // * Functions in this group relate to arguments/parameters on functions.
-    // *
-    // * Functions in this group expect LLVMValueRef instances that correspond
-    // * to llvm::Function instances.
-    // *
-    // * @{
-    // */
-    ///**
-    // * Obtain the number of parameters in a function.
-    // *
-    // * @see llvm::Function::arg_size()
-    // */
-    //int /* unsigned */ LLVMCountParams(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMCountParams.handle().invoke());
-    //}
-    ///**
-    // * Obtain the parameters in a function.
-    // *
-    // * The takes a pointer to a pre-allocated array of LLVMValueRef that is
-    // * at least LLVMCountParams() long. This array will be filled with
-    // * LLVMValueRef instances which correspond to the parameters the
-    // * function receives. Each LLVMValueRef corresponds to a llvm::Argument
-    // * instance.
-    // *
-    // * @see llvm::Function::arg_begin()
-    // */
-    //void LLVMGetParams(LLVMValueRef Fn, LLVMValueRef *Params) {
-    //    return nothrows_run(() -> Function.LLVMGetParams.handle().invoke());
-    //}
-    ///**
-    // * Obtain the parameter at the specified index.
-    // *
-    // * Parameters are indexed from 0.
-    // *
-    // * @see llvm::Function::arg_begin()
-    // */
-    //LLVMValueRef LLVMGetParam(LLVMValueRef Fn, int /* unsigned */ Index) {
-    //    return nothrows_run(() -> Function.LLVMGetParam.handle().invoke());
-    //}
+
+    /*
+     * @defgroup LLVMCCoreValueFunctionParameters Function Parameters
+     *
+     * Functions in this group relate to arguments/parameters on functions.
+     *
+     * Functions in this group expect LLVMValueRef instances that correspond
+     * to llvm::Function instances.
+     */
+
+    /**
+     * Obtain the number of parameters in a function.
+     */
+    public static int /* unsigned */ LLVMCountParams(LLVMValueRef Fn) {
+        return nothrows_run(() -> (int) Function.LLVMCountParams.handle().invoke(Fn.value()));
+    }
+
+    /**
+     * Obtain the parameters in a function.
+     * <p>
+     * The takes a pointer to a pre-allocated array of LLVMValueRef that is
+     * at least LLVMCountParams() long. This array will be filled with
+     * LLVMValueRef instances which correspond to the parameters the
+     * function receives. Each LLVMValueRef corresponds to a llvm::Argument
+     * instance.
+     */
+    /* package-private */
+    static void LLVMGetParams(LLVMValueRef Fn, long Params) {
+        nothrows_run(() -> Function.LLVMGetParams.handle().invoke(Fn.value(), Params));
+    }
+
+    /**
+     * Obtain the parameters in a function.
+     * <p>
+     * Return array will be filled with LLVMValueRef instances which correspond
+     * to the parameters the function receives. Each LLVMValueRef corresponds
+     * to a llvm::Argument instance.
+     */
+    // Port-added
+    public static LLVMValueRef[] LLVMGetParams(LLVMValueRef Fn) {
+        int /* unsigned */ count = LLVMCountParams(Fn);
+        if (count == 0) {
+            return new LLVMValueRef[0];
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Params = allocPointerArray(arena, count);
+            LLVMGetParams(Fn, c_Params.nativeAddress());
+            return readPointerArray(c_Params, LLVMValueRef.class, LLVMValueRef::new);
+        }
+    }
+
+    /**
+     * Obtain the parameter at the specified index.
+     * <p>
+     * Parameters are indexed from 0.
+     */
+    public static LLVMValueRef LLVMGetParam(LLVMValueRef Fn, int /* unsigned */ Index) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetParam.handle().invoke(Fn.value(), Index)));
+    }
+
     ///**
     // * Obtain the function to which this argument belongs.
     // *
@@ -3512,32 +3532,18 @@ public class Core {
     //LLVMAttribute LLVMGetAttribute(LLVMValueRef Arg) {
     //    return nothrows_run(() -> Function.LLVMGetAttribute.handle().invoke());
     //}
-    ///**
-    // * Set the alignment for a function parameter.
-    // *
-    // * @see llvm::Argument::addAttr()
-    // * @see llvm::AttrBuilder::addAlignmentAttr()
-    // */
-    //void LLVMSetParamAlignment(LLVMValueRef Arg, int /* unsigned */ Align) {
-    //    return nothrows_run(() -> Function.LLVMSetParamAlignment.handle().invoke());
-    //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueMetadata Metadata
-    // *
-    // * @{
-    // */
+
+    /**
+     * Set the alignment for a function parameter.
+     */
+    public static void LLVMSetParamAlignment(LLVMValueRef Arg, int /* unsigned */ Align) {
+        nothrows_run(() -> Function.LLVMSetParamAlignment.handle().invoke(Arg.value(), Align));
+    }
+
+    /*
+     * @defgroup LLVMCCoreValueMetadata Metadata
+     */
+
     ///**
     // * Obtain a MDString value from a context.
     // *

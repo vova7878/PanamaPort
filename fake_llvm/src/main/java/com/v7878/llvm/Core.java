@@ -817,6 +817,22 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static int /* unsigned */ LLVMCountParams(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef[] LLVMGetParams(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetParam(LLVMValueRef Fn, int /* unsigned */ Index) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetParamAlignment(LLVMValueRef Arg, int /* unsigned */ Align) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
         throw new UnsupportedOperationException("Stub!");
     }
