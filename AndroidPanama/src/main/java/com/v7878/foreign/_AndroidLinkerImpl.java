@@ -317,14 +317,14 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             _FunctionDescriptorImpl stub_descriptor, _LinkerOptions options) {
         final String function_name = "stub";
         try (var builder = Utils.lock(LLVMCreateBuilderInContext(DEFAULT_CONTEXT), Core::LLVMDisposeBuilder);
-             var module = Utils.lock(LLVMModuleCreateWithNameInContext("c_module", DEFAULT_CONTEXT), Core::LLVMDisposeModule)) {
+             var module = Utils.lock(LLVMModuleCreateWithNameInContext("generic", DEFAULT_CONTEXT), Core::LLVMDisposeModule)) {
 
             LLVMTypeRef stub_type = fdToStubLLVMType(stub_descriptor, options.allowsHeapAccess(), options.isCritical());
             LLVMValueRef function = LLVMAddFunction(module.value(), function_name, stub_type);
 
             LLVMTypeRef target_type_ptr = LLVMPointerType(fdToTargetLLVMType(f_descriptor, options), 0);
 
-            LLVMPositionBuilderAtEnd(builder.value(), LLVMAppendBasicBlock(function, "code"));
+            LLVMPositionBuilderAtEnd(builder.value(), LLVMAppendBasicBlock(function, ""));
 
             LLVMValueRef[] args;
             if (options.allowsHeapAccess()) {
