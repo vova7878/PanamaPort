@@ -244,7 +244,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         MethodId fid = new MethodId(stub_id, stub_proto, method_name);
         stub_def.getClassData().getDirectMethods().add(new EncodedMethod(
                 fid, ACC_NATIVE | ACC_STATIC,
-                // TODO: FastNative for allowsHeapAccess?
                 options.isCritical() ? new AnnotationSet(AnnotationItem.CriticalNative()) : null,
                 null, null
         ));
