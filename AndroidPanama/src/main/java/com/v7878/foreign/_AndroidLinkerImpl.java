@@ -8,11 +8,15 @@ import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.llvm.Analysis.LLVMVerifyModule;
 import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
+import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildCall;
+import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
+import static com.v7878.llvm.Core.LLVMBuildNeg;
 import static com.v7878.llvm.Core.LLVMBuildPointerCast;
 import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
+import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMGetParams;
@@ -64,6 +68,7 @@ import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.unsafe.NativeCodeBlob;
 import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.VM;
 import com.v7878.unsafe.foreign.LLVMGlobals;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
@@ -260,6 +265,20 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return stub;
     }
 
+    private static LLVMTypeRef getPointerType(MemoryLayout layout) {
+        LLVMTypeRef target;
+        if (layout instanceof AddressLayout addressLayout) {
+            target = addressLayout.targetLayout()
+                    .map(l -> layoutToLLVMTypeInContext(DEFAULT_CONTEXT, l))
+                    .orElse(VOID_T);
+        } else if (layout instanceof GroupLayout) {
+            target = layoutToLLVMTypeInContext(DEFAULT_CONTEXT, layout);
+        } else {
+            throw shouldNotReachHere();
+        }
+        return LLVMPointerType(target, 0);
+    }
+
     public static LLVMTypeRef fdToStubLLVMType(_FunctionDescriptorImpl descriptor,
                                                boolean allowsHeapAccess, boolean isCritical) {
         MemoryLayout retLayout = descriptor.returnLayoutPlain();
@@ -273,16 +292,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     argTypes.add(INT32_T);
                     argTypes.add(INTPTR_T);
                 } else {
-                    LLVMTypeRef target;
-                    if (tmp instanceof AddressLayout addressLayout) {
-                        // TODO: maybe just VOID_T?
-                        MemoryLayout targetLayout = addressLayout.targetLayout().orElse(null);
-                        target = targetLayout == null ? VOID_T :
-                                layoutToLLVMTypeInContext(DEFAULT_CONTEXT, targetLayout);
-                    } else {
-                        target = layoutToLLVMTypeInContext(DEFAULT_CONTEXT, tmp);
-                    }
-                    argTypes.add(LLVMPointerType(target, 0));
+                    argTypes.add(getPointerType(tmp));
                 }
             } else if (tmp instanceof ValueLayout) {
                 argTypes.add(layoutToLLVMTypeInContext(DEFAULT_CONTEXT, tmp));
@@ -328,8 +338,26 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             LLVMValueRef[] args;
             if (options.allowsHeapAccess()) {
-                //TODO
-                throw new UnsupportedOperationException("Unsuppurted yet!");
+                List<LLVMValueRef> out = new ArrayList<>();
+                LLVMValueRef[] tmp = LLVMGetParams(function);
+                int t = 0;
+                for (MemoryLayout layout : stub_descriptor.argumentLayouts()) {
+                    if (layout instanceof GroupLayout || layout instanceof AddressLayout) {
+                        LLVMValueRef base = tmp[t++];
+                        LLVMValueRef offset = tmp[t++];
+                        if (VM.isPoisonReferences()) {
+                            base = LLVMBuildNeg(builder.value(), base, "");
+                        }
+                        base = LLVMBuildZExtOrBitCast(builder.value(), base, INTPTR_T, "");
+                        base = LLVMBuildAdd(builder.value(), base, offset, "");
+                        out.add(LLVMBuildIntToPtr(builder.value(), base, getPointerType(layout), ""));
+                    } else if (layout instanceof ValueLayout) {
+                        out.add(tmp[t++]);
+                    } else {
+                        throw shouldNotReachHere();
+                    }
+                }
+                args = out.toArray(new LLVMValueRef[0]);
             } else {
                 args = LLVMGetParams(function);
                 if (!options.isCritical()) {
