@@ -402,7 +402,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
     @Override
     protected MethodHandle arrangeDowncall(FunctionDescriptor descriptor, _LinkerOptions options) {
-        if (options.hasCapturedCallState() || options.hasAllocatorParameter()) {
+        if (options.hasCapturedCallState() || options.isReturnInMemory()) {
             //TODO
             throw new UnsupportedOperationException("Unsuppurted yet!");
         }

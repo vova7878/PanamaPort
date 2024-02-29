@@ -49,8 +49,8 @@ class _LinkerOptions {
 
     public static _LinkerOptions forDowncall(FunctionDescriptor desc, Option... options) {
         List<Option> optionsList = Arrays.asList(options);
-        if (desc.returnLayout().isPresent() && desc.returnLayout().get() instanceof GroupLayout) {
-            optionsList.add(AllocatorParameter.INSTANCE);
+        if (desc.returnLayout().filter(layout -> layout instanceof GroupLayout).isPresent()) {
+            optionsList.add(ReturnInMemory.INSTANCE);
         }
         return forShared(LinkerOptionImpl::validateForDowncall, desc, optionsList);
     }
@@ -92,8 +92,8 @@ class _LinkerOptions {
         return fva != null && argIndex >= fva.index();
     }
 
-    public boolean hasAllocatorParameter() {
-        return getOption(AllocatorParameter.class) != null;
+    public boolean isReturnInMemory() {
+        return getOption(ReturnInMemory.class) != null;
     }
 
     public boolean hasCapturedCallState() {
@@ -137,7 +137,7 @@ class _LinkerOptions {
     }
 
     public sealed interface LinkerOptionImpl extends Option
-            permits CaptureCallState, Critical, FirstVariadicArg, AllocatorParameter {
+            permits CaptureCallState, Critical, FirstVariadicArg, ReturnInMemory {
         default void validateForDowncall(FunctionDescriptor descriptor) {
             throw new IllegalArgumentException("Not supported for downcall: " + this);
         }
@@ -166,10 +166,10 @@ class _LinkerOptions {
         }
     }
 
-    public static final class AllocatorParameter implements LinkerOptionImpl {
-        public static final AllocatorParameter INSTANCE = new AllocatorParameter();
+    public static final class ReturnInMemory implements LinkerOptionImpl {
+        public static final ReturnInMemory INSTANCE = new ReturnInMemory();
 
-        private AllocatorParameter() {
+        private ReturnInMemory() {
         }
 
         @Override

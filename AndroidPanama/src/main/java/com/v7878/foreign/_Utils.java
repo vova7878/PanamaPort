@@ -184,7 +184,7 @@ final class _Utils {
 
     public static MethodHandle maybeCheckCaptureSegment(MethodHandle handle, _LinkerOptions options) {
         if (options.hasCapturedCallState()) {
-            int index = options.hasAllocatorParameter() ? 2 : 1;
+            int index = options.isReturnInMemory() ? 2 : 1;
             // (<target address>, ?<allocator>, <capture segment>, ...) -> ...
             handle = MethodHandles.filterArguments(handle, index, MH_CHECK_CAPTURE_SEGMENT);
         }
