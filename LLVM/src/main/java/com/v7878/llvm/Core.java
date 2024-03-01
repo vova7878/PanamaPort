@@ -873,31 +873,12 @@ public class Core {
      * Attribute index are either LLVMAttributeReturnIndex,
      * LLVMAttributeFunctionIndex or a parameter number from 1 to N.
      */
-    public enum LLVMAttributeIndex {
-        LLVMAttributeReturnIndex(0),
+    public static class LLVMAttributeIndex {
+        public static final int LLVMAttributeReturnIndex = 0;
         // ISO C restricts enumerator values to range of 'int'
         // (4294967295 is too large)
         // LLVMAttributeFunctionIndex = ~0U,
-        LLVMAttributeFunctionIndex(-1);
-
-        private final int value;
-
-        LLVMAttributeIndex(int value) {
-            this.value = value;
-        }
-
-        public int value() {
-            return value;
-        }
-
-        public static LLVMAttributeIndex of(int value) {
-            for (var e : values()) {
-                if (e.value() == value) {
-                    return e;
-                }
-            }
-            throw new IllegalArgumentException("value: " + value + " is not found");
-        }
+        public static final int LLVMAttributeFunctionIndex = -1;
     }
 
     //TODO
@@ -2537,15 +2518,15 @@ public class Core {
     //void LLVMDumpValue(LLVMValueRef Val) {
     //    return nothrows_run(() -> Function.LLVMDumpValue.handle().invoke());
     //}
-    ///**
-    // * Return a string representation of the value. Use
-    // * LLVMDisposeMessage to free the string.
-    // *
-    // * @see llvm::Value::print()
-    // */
-    //LLVMString LLVMPrintValueToString(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMPrintValueToString.handle().invoke());
-    //}
+
+    /**
+     * Return a string representation of the value. Use
+     * LLVMDisposeMessage to free the string.
+     */
+    public static String LLVMPrintValueToString(LLVMValueRef Val) {
+        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMPrintValueToString.handle().invoke(Val.value())));
+    }
+
     ///**
     // * Replace all uses of a value with another one.
     // *
@@ -3322,27 +3303,26 @@ public class Core {
     //int /* unsigned */ LLVMGetIntrinsicID(LLVMValueRef Fn) {
     //    return nothrows_run(() -> Function.LLVMGetIntrinsicID.handle().invoke());
     //}
-    ///**
-    // * Obtain the calling function of a function.
-    // *
-    // * The returned value corresponds to the LLVMCallConv enumeration.
-    // *
-    // * @see llvm::Function::getCallingConv()
-    // */
-    //int /* unsigned */ LLVMGetFunctionCallConv(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetFunctionCallConv.handle().invoke());
-    //}
-    ///**
-    // * Set the calling convention of a function.
-    // *
-    // * @see llvm::Function::setCallingConv()
-    // *
-    // * @param Fn Function to operate on
-    // * @param CC LLVMCallConv to set calling convention to
-    // */
-    //void LLVMSetFunctionCallConv(LLVMValueRef Fn, int /* unsigned */ CC) {
-    //    return nothrows_run(() -> Function.LLVMSetFunctionCallConv.handle().invoke());
-    //}
+
+    /**
+     * Obtain the calling function of a function.
+     * <p>
+     * The returned value corresponds to the LLVMCallConv enumeration.
+     */
+    public static LLVMCallConv LLVMGetFunctionCallConv(LLVMValueRef Fn) {
+        return nothrows_run(() -> LLVMCallConv.of((int) Function.LLVMGetFunctionCallConv.handle().invoke(Fn.value())));
+    }
+
+    /**
+     * Set the calling convention of a function.
+     *
+     * @param Fn Function to operate on
+     * @param CC LLVMCallConv to set calling convention to
+     */
+    public static void LLVMSetFunctionCallConv(LLVMValueRef Fn, LLVMCallConv CC) {
+        nothrows_run(() -> Function.LLVMSetFunctionCallConv.handle().invoke(Fn.value(), CC.value()));
+    }
+
     ///**
     // * Obtain the name of the garbage collector to use during code
     // * generation.
@@ -3360,17 +3340,18 @@ public class Core {
     //void LLVMSetGC(LLVMValueRef Fn, String Name) {
     //    return nothrows_run(() -> Function.LLVMSetGC.handle().invoke());
     //}
-    ///**
-    // * Add an attribute to a function.
-    // *
-    // * @see llvm::Function::addAttribute()
-    // */
-    //void LLVMAddFunctionAttr(LLVMValueRef Fn, LLVMAttribute PA) {
-    //    return nothrows_run(() -> Function.LLVMAddFunctionAttr.handle().invoke());
-    //}
-    //void LLVMAddAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, LLVMAttributeRef A) {
-    //    return nothrows_run(() -> Function.LLVMAddAttributeAtIndex.handle().invoke());
-    //}
+
+    /**
+     * Add an attribute to a function.
+     */
+    public static void LLVMAddFunctionAttr(LLVMValueRef Fn, int /* LLVMAttribute */ PA) {
+        nothrows_run(() -> Function.LLVMAddFunctionAttr.handle().invoke(Fn.value(), PA));
+    }
+
+    public static void LLVMAddAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, LLVMAttributeRef A) {
+        nothrows_run(() -> Function.LLVMAddAttributeAtIndex.handle().invoke(F.value(), Idx, A.value()));
+    }
+
     //LLVMAttributeRef LLVMGetEnumAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, int /* unsigned */ KindID) {
     //    return nothrows_run(() -> Function.LLVMGetEnumAttributeAtIndex.handle().invoke());
     //}
@@ -3510,14 +3491,14 @@ public class Core {
     //LLVMValueRef LLVMGetPreviousParam(LLVMValueRef Arg) {
     //    return nothrows_run(() -> Function.LLVMGetPreviousParam.handle().invoke());
     //}
-    ///**
-    // * Add an attribute to a function argument.
-    // *
-    // * @see llvm::Argument::addAttr()
-    // */
-    //void LLVMAddAttribute(LLVMValueRef Arg, LLVMAttribute PA) {
-    //    return nothrows_run(() -> Function.LLVMAddAttribute.handle().invoke());
-    //}
+
+    /**
+     * Add an attribute to a function argument.
+     */
+    public static void LLVMAddAttribute(LLVMValueRef Arg, int /* LLVMAttribute */ PA) {
+        nothrows_run(() -> Function.LLVMAddAttribute.handle().invoke(Arg.value(), PA));
+    }
+
     ///**
     // * Remove an attribute from a function argument.
     // *
@@ -3526,12 +3507,13 @@ public class Core {
     //void LLVMRemoveAttribute(LLVMValueRef Arg, LLVMAttribute PA) {
     //    return nothrows_run(() -> Function.LLVMRemoveAttribute.handle().invoke());
     //}
-    ///**
-    // * Get an attribute from a function argument.
-    // */
-    //LLVMAttribute LLVMGetAttribute(LLVMValueRef Arg) {
-    //    return nothrows_run(() -> Function.LLVMGetAttribute.handle().invoke());
-    //}
+
+    /**
+     * Get an attribute from a function argument.
+     */
+    public static int /* LLVMAttribute */ LLVMGetAttribute(LLVMValueRef Arg) {
+        return nothrows_run(() -> (int) Function.LLVMGetAttribute.handle().invoke(Arg.value()));
+    }
 
     /**
      * Set the alignment for a function parameter.
@@ -3753,6 +3735,7 @@ public class Core {
             return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMAppendBasicBlock.handle().invoke(Fn.value(), c_Name.nativeAddress())));
         }
     }
+
     ///**
     // * Insert a basic block in a function before another basic block.
     // *
@@ -3999,12 +3982,15 @@ public class Core {
     //int /* unsigned */ LLVMGetInstructionCallConv(LLVMValueRef Instr) {
     //    return nothrows_run(() -> Function.LLVMGetInstructionCallConv.handle().invoke());
     //}
-    //void LLVMAddInstrAttribute(LLVMValueRef Instr, int /* unsigned */ index, LLVMAttribute) {
-    //    return nothrows_run(() -> Function.LLVMAddInstrAttribute.handle().invoke());
-    //}
-    //void LLVMRemoveInstrAttribute(LLVMValueRef Instr, int /* unsigned */ index, LLVMAttribute) {
-    //    return nothrows_run(() -> Function.LLVMRemoveInstrAttribute.handle().invoke());
-    //}
+
+    public static void LLVMAddInstrAttribute(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* LLVMAttribute */ PA) {
+        nothrows_run(() -> Function.LLVMAddInstrAttribute.handle().invoke(Instr.value(), index, PA));
+    }
+
+    public static void LLVMRemoveInstrAttribute(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* LLVMAttribute */ PA) {
+        nothrows_run(() -> Function.LLVMRemoveInstrAttribute.handle().invoke(Instr.value(), index, PA));
+    }
+
     //void LLVMSetInstrParamAlignment(LLVMValueRef Instr, int /* unsigned */ index, int /* unsigned */ Align) {
     //    return nothrows_run(() -> Function.LLVMSetInstrParamAlignment.handle().invoke());
     //}

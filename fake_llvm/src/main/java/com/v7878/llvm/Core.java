@@ -749,6 +749,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static String LLVMPrintValueToString(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMConstNull(LLVMTypeRef Ty) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -817,6 +821,22 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMCallConv LLVMGetFunctionCallConv(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetFunctionCallConv(LLVMValueRef Fn, LLVMCallConv CC) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddFunctionAttr(LLVMValueRef Fn, int /* LLVMAttribute */ PA) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, LLVMAttributeRef A) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static int /* unsigned */ LLVMCountParams(LLVMValueRef Fn) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -826,6 +846,14 @@ public class Core {
     }
 
     public static LLVMValueRef LLVMGetParam(LLVMValueRef Fn, int /* unsigned */ Index) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddAttribute(LLVMValueRef Arg, int /* LLVMAttribute */ PA) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int /* LLVMAttribute */ LLVMGetAttribute(LLVMValueRef Arg) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -842,6 +870,14 @@ public class Core {
     }
 
     public static LLVMBasicBlockRef LLVMAppendBasicBlock(LLVMValueRef Fn, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddInstrAttribute(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* LLVMAttribute */ PA) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMRemoveInstrAttribute(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* LLVMAttribute */ PA) {
         throw new UnsupportedOperationException("Stub!");
     }
 
