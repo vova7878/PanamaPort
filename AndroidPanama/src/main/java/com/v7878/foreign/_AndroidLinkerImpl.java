@@ -3,8 +3,10 @@ package com.v7878.foreign;
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
+import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
+import static com.v7878.foreign._CapturableState.ERRNO;
 import static com.v7878.llvm.Analysis.LLVMVerifyModule;
 import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAddInstrAttribute;
@@ -66,6 +68,7 @@ import com.v7878.dex.FieldId;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
+import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.Core;
 import com.v7878.llvm.LLVMException;
 import com.v7878.llvm.ObjectFile;
@@ -76,6 +79,7 @@ import com.v7878.unsafe.NativeCodeBlob;
 import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.VM;
+import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.foreign.LLVMGlobals;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
@@ -95,22 +99,27 @@ import dalvik.system.DexFile;
 
 final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
+    public static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
 
     private static class DowncallArranger implements TransformerI {
         private final MethodHandle stub;
         private final Class<?>[] args;
         private final ValueLayout ret;
         private final boolean allowsHeapAccess;
+        private final int capturedStateMask;
         private final int segment_params_count;
 
-        public DowncallArranger(MethodHandle stub, Class<?>[] args, ValueLayout ret, boolean allowsHeapAccess) {
+        public DowncallArranger(MethodHandle stub, Class<?>[] args, ValueLayout ret,
+                                boolean allowsHeapAccess, int capturedStateMask) {
             this.stub = stub;
             this.args = args;
             this.ret = ret;
             this.allowsHeapAccess = allowsHeapAccess;
+            this.capturedStateMask = capturedStateMask;
             this.segment_params_count = Arrays.stream(args)
                     .mapToInt(t -> t == MemorySegment.class ? 1 : 0)
-                    .reduce(Integer::sum).orElse(0);
+                    .reduce(Integer::sum).orElse(0)
+                    + (capturedStateMask < 0 ? 1 : 0);
         }
 
         private void copyArg(StackFrameAccessor reader, StackFrameAccessor writer,
@@ -160,11 +169,22 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             List<_MemorySessionImpl> acquiredSessions = new ArrayList<>(segment_params_count);
             try {
+                _AbstractMemorySegmentImpl capturedState = null;
+                if (capturedStateMask < 0) {
+                    capturedState = (_AbstractMemorySegmentImpl) thiz_acc.nextReference(MemorySegment.class);
+                    capturedState.scope.acquire0();
+                    acquiredSessions.add(capturedState.scope);
+                }
+
                 for (Class<?> arg : args) {
                     copyArg(thiz_acc, stub_acc, arg, acquiredSessions);
                 }
 
                 invokeExactWithFrameNoChecks(stub, stub_frame);
+
+                if ((capturedStateMask & ERRNO.mask()) != 0) {
+                    VH_ERRNO.set(capturedState, 0, Errno.errno());
+                }
             } finally {
                 for (_MemorySessionImpl session : acquiredSessions) {
                     session.release0();
@@ -233,7 +253,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     private static MethodHandle generateJavaDowncallStub(
-            MethodType handleType, MethodType stubType, _FunctionDescriptorImpl f_descriptor,
+            MethodType stubType, _FunctionDescriptorImpl f_descriptor,
             _FunctionDescriptorImpl stub_descriptor, _LinkerOptions options) {
         final String method_name = "function";
         final String field_name = "scope";
@@ -456,7 +476,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
     @Override
     protected MethodHandle arrangeDowncall(FunctionDescriptor descriptor, _LinkerOptions options) {
-        if (options.hasCapturedCallState() || options.isReturnInMemory()) {
+        if (options.isReturnInMemory()) {
             //TODO
             throw new UnsupportedOperationException("Unsuppurted yet!");
         }
@@ -464,10 +484,23 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         _FunctionDescriptorImpl stub_descriptor = f_descriptor.insertArgumentLayouts(0, ADDRESS); // leading function pointer
         MethodType handleType = fdToHandleMethodType(stub_descriptor);
         MethodType stubType = fdToStubMethodType(stub_descriptor, options.allowsHeapAccess());
-        MethodHandle stub = generateJavaDowncallStub(handleType, stubType, f_descriptor, stub_descriptor, options);
+        MethodHandle stub = generateJavaDowncallStub(stubType, f_descriptor, stub_descriptor, options);
+        int capturedStateMask = options.capturedCallState()
+                .mapToInt(_CapturableState::mask)
+                .reduce(0, (a, b) -> a | b);
+        capturedStateMask |= options.hasCapturedCallState() ? 1 << 31 : 0;
         var arranger = new DowncallArranger(stub, handleType.parameterArray(),
-                (ValueLayout) stub_descriptor.returnLayoutPlain(), options.allowsHeapAccess());
-        return Transformers.makeTransformer(handleType, arranger);
+                (ValueLayout) stub_descriptor.returnLayoutPlain(),
+                options.allowsHeapAccess(), capturedStateMask);
+        if (options.hasCapturedCallState()) {
+            handleType = handleType.insertParameterTypes(0, MemorySegment.class);
+        }
+        MethodHandle tmp = Transformers.makeTransformer(handleType, arranger);
+        int target_index = (options.hasCapturedCallState() ? 1 : 0) + (options.isReturnInMemory() ? 1 : 0);
+        if (target_index != 0) {
+            tmp = _Utils.moveArgument(tmp, target_index, 0);
+        }
+        return tmp;
     }
 
     @Override

@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 /**
  * This class contains misc helper functions to support creation of memory segments.
@@ -189,6 +190,32 @@ final class _Utils {
             handle = MethodHandles.filterArguments(handle, index, MH_CHECK_CAPTURE_SEGMENT);
         }
         return handle;
+    }
+
+    private static int distance(int a, int b) {
+        return a < b ? b - a : a - b;
+    }
+
+    public static MethodHandle moveArgument(MethodHandle mh, int fromIndex, int toIndex) {
+        if (fromIndex == toIndex) {
+            return mh;
+        }
+        MethodType type = mh.type();
+        int[] perms = IntStream.range(0, type.parameterCount()).toArray();
+        Class<?>[] swappedArgs = type.parameterArray();
+        int length = distance(fromIndex, toIndex);
+        Class<?> tmp = swappedArgs[fromIndex];
+        if (fromIndex < toIndex) {
+            System.arraycopy(perms, fromIndex + 1, perms, fromIndex, length);
+            System.arraycopy(swappedArgs, fromIndex + 1, swappedArgs, fromIndex, length);
+        } else {
+            System.arraycopy(perms, toIndex, perms, toIndex + 1, length);
+            System.arraycopy(swappedArgs, toIndex, swappedArgs, toIndex + 1, length);
+        }
+        perms[toIndex] = fromIndex;
+        swappedArgs[toIndex] = tmp;
+        return MethodHandlesFixes.permuteArguments(mh,
+                MethodType.methodType(type.returnType(), swappedArgs), perms);
     }
 
     public static void checkNative(MemorySegment segment) {
