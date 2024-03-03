@@ -1,11 +1,8 @@
 package com.v7878.unsafe.invoke;
 
 import static com.v7878.dex.DexConstants.ACC_STATIC;
-import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
-import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Stack.getStackClass1;
@@ -44,19 +41,6 @@ import dalvik.system.DexFile;
 
 public class MethodHandlesFixes {
 
-    private static final long RTYPE_OFFSET = fieldOffset(
-            getDeclaredField(MethodType.class, "rtype"));
-    private static final long PTYPES_OFFSET = fieldOffset(
-            getDeclaredField(MethodType.class, "ptypes"));
-
-    private static Class<?> rtype(MethodType type) {
-        return (Class<?>) getObject(Objects.requireNonNull(type), RTYPE_OFFSET);
-    }
-
-    private static Class<?>[] ptypes(MethodType type) {
-        return (Class<?>[]) getObject(Objects.requireNonNull(type), PTYPES_OFFSET);
-    }
-
     private static class CollectArguments implements TransformerI {
         private final MethodHandle target;
         private final MethodHandle collector;
@@ -89,9 +73,9 @@ public class MethodHandlesFixes {
 
             // If return type of collector is not void, we have a return value to copy.
             target_accessor.moveTo(pos);
-            if (rtype(collector.type()) != void.class) {
+            if (Transformers.rtype(collector.type()) != void.class) {
                 EmulatedStackFrame.copyNext(collector_accessor.moveToReturn(),
-                        target_accessor, rtype(collector.type()));
+                        target_accessor, Transformers.rtype(collector.type()));
             }
 
             // Finish constructing the target frame.
@@ -115,8 +99,8 @@ public class MethodHandlesFixes {
     private static MethodType collectArgumentsChecks(MethodHandle target, int pos, MethodHandle filter) {
         MethodType targetType = target.type();
         MethodType filterType = filter.type();
-        Class<?> rtype = rtype(filterType);
-        Class<?>[] filterArgs = ptypes(filterType);
+        Class<?> rtype = Transformers.rtype(filterType);
+        Class<?>[] filterArgs = Transformers.ptypes(filterType);
         if (rtype == void.class) {
             return targetType.insertParameterTypes(pos, filterArgs);
         }
@@ -151,7 +135,7 @@ public class MethodHandlesFixes {
         for (int i = 0; i < type.parameterCount(); i++) {
             addClass(map, type.parameterType(i));
         }
-        addClass(map, rtype(type));
+        addClass(map, Transformers.rtype(type));
 
         if (map.size() == 0) {
             return Utils.newEmptyClassLoader();
@@ -273,16 +257,16 @@ public class MethodHandlesFixes {
         }
 
         private void explicitCastArguments(StackFrameAccessor reader, StackFrameAccessor writer) {
-            Class<?>[] fromTypes = ptypes(type);
-            Class<?>[] toTypes = ptypes(target.type());
+            Class<?>[] fromTypes = Transformers.ptypes(type);
+            Class<?>[] toTypes = Transformers.ptypes(target.type());
             for (int i = 0; i < fromTypes.length; ++i) {
                 explicitCast(reader, fromTypes[i], writer, toTypes[i]);
             }
         }
 
         private void explicitCastReturnValue(StackFrameAccessor reader, StackFrameAccessor writer) {
-            Class<?> from = rtype(target.type());
-            Class<?> to = rtype(type);
+            Class<?> from = Transformers.rtype(target.type());
+            Class<?> to = Transformers.rtype(type);
             if (to != void.class) {
                 if (from == void.class) {
                     if (to.isPrimitive()) {
@@ -638,7 +622,7 @@ public class MethodHandlesFixes {
             StackFrameAccessor reader = emulatedStackFrame.createAccessor();
             EmulatedStackFrame calleeFrame = EmulatedStackFrame.create(target.type());
             StackFrameAccessor writer = calleeFrame.createAccessor();
-            Class<?>[] ptypes = ptypes(emulatedStackFrame.type());
+            Class<?>[] ptypes = Transformers.ptypes(emulatedStackFrame.type());
             for (int readerIndex : reorder) {
                 reader.moveTo(readerIndex);
                 EmulatedStackFrame.copyNext(reader, writer, ptypes[readerIndex]);
@@ -704,16 +688,16 @@ public class MethodHandlesFixes {
         }
 
         private void adaptArguments(StackFrameAccessor reader, StackFrameAccessor writer) {
-            Class<?>[] fromTypes = ptypes(type);
-            Class<?>[] toTypes = ptypes(target.type());
+            Class<?>[] fromTypes = Transformers.ptypes(type);
+            Class<?>[] toTypes = Transformers.ptypes(target.type());
             for (int i = 0; i < fromTypes.length; ++i) {
                 adaptArgument(reader, fromTypes[i], writer, toTypes[i]);
             }
         }
 
         private void adaptReturnValue(StackFrameAccessor reader, StackFrameAccessor writer) {
-            Class<?> fromType = rtype(target.type());
-            Class<?> toType = rtype(type);
+            Class<?> fromType = Transformers.rtype(target.type());
+            Class<?> toType = Transformers.rtype(type);
             adaptArgument(reader, fromType, writer, toType);
         }
 

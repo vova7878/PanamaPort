@@ -13,12 +13,14 @@ import static com.v7878.dex.bytecode.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.dex.bytecode.CodeBuilder.Test.EQ;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
+import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicNonFinal;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
+import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
@@ -38,12 +40,14 @@ import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.dex.bytecode.CodeBuilder;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
+import com.v7878.unsafe.DangerLevel;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import dalvik.system.DexFile;
@@ -537,5 +541,19 @@ public class Transformers {
 
     public static boolean explicitCastEquivalentToAsType(MethodType from, MethodType to) {
         return nothrows_run(() -> (boolean) explicitCastEquivalentToAsType.invokeExact(from, to));
+    }
+
+    private static final long RTYPE_OFFSET = fieldOffset(
+            getDeclaredField(MethodType.class, "rtype"));
+    private static final long PTYPES_OFFSET = fieldOffset(
+            getDeclaredField(MethodType.class, "ptypes"));
+
+    public static Class<?> rtype(MethodType type) {
+        return (Class<?>) getObject(Objects.requireNonNull(type), RTYPE_OFFSET);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static Class<?>[] ptypes(MethodType type) {
+        return (Class<?>[]) getObject(Objects.requireNonNull(type), PTYPES_OFFSET);
     }
 }
