@@ -684,7 +684,6 @@ public class MethodHandlesFixes {
     }
 
     public static MethodHandle reorderArguments(MethodHandle target, int... reorder) {
-        System.out.println(target + " " + Arrays.toString(reorder));
         reorder = reorder.clone();  // get a private copy
         MethodType newType = reorderArgumentChecks(reorder, target.type());
         return Transformers.makeTransformer(newType, new PermuteArguments(target, reorder));
