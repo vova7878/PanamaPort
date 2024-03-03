@@ -663,6 +663,32 @@ public class MethodHandlesFixes {
         return Transformers.makeTransformer(newType, new PermuteArguments(target, reorder));
     }
 
+    static MethodType reorderArgumentChecks(int[] reorder, MethodType type) {
+        int limit;
+        if ((limit = reorder.length) != type.parameterCount())
+            throw newIllegalArgumentException("type parameter count and reorder array length do not match",
+                    type, Arrays.toString(reorder));
+
+        Class<?> rtype = Transformers.rtype(type);
+        Class<?>[] atypes = new Class[limit];
+
+        for (int j = 0; j < reorder.length; j++) {
+            int i = reorder[j];
+            if (i < 0 || i >= limit) {
+                throw newIllegalArgumentException("index is out of bounds for type", i, type);
+            }
+            atypes[i] = type.parameterType(j);
+        }
+
+        return MethodType.methodType(rtype, atypes);
+    }
+
+    public static MethodHandle reorderArguments(MethodHandle target, int... reorder) {
+        System.out.println(target + " " + Arrays.toString(reorder));
+        reorder = reorder.clone();  // get a private copy
+        MethodType newType = reorderArgumentChecks(reorder, target.type());
+        return Transformers.makeTransformer(newType, new PermuteArguments(target, reorder));
+    }
 
     static class AsTypeAdapter implements TransformerI {
         private final MethodHandle target;
