@@ -7,12 +7,14 @@ import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign._CapturableState.ERRNO;
+import static com.v7878.foreign._Utils.moveArgument;
 import static com.v7878.llvm.Analysis.LLVMVerifyModule;
 import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAddInstrAttribute;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMArrayType;
 import static com.v7878.llvm.Core.LLVMAttribute.LLVMByValAttribute;
+import static com.v7878.llvm.Core.LLVMAttribute.LLVMStructRetAttribute;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
@@ -185,16 +187,16 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 if ((capturedStateMask & ERRNO.mask()) != 0) {
                     VH_ERRNO.set(capturedState, 0, Errno.errno());
                 }
+
+                if (ret != null) {
+                    thiz_acc.moveToReturn();
+                    stub_acc.moveToReturn();
+                    copyRet(stub_acc, thiz_acc, ret);
+                }
             } finally {
                 for (_MemorySessionImpl session : acquiredSessions) {
                     session.release0();
                 }
-            }
-
-            if (ret != null) {
-                thiz_acc.moveToReturn();
-                stub_acc.moveToReturn();
-                copyRet(stub_acc, thiz_acc, ret);
             }
         }
     }
@@ -438,20 +440,25 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             LLVMValueRef target = LLVMBuildPointerCast(builder.value(), args[0], target_type_ptr, "");
             LLVMValueRef[] target_args = new LLVMValueRef[args.length - 1];
-            boolean[] byval = new boolean[target_args.length];
+            int[] attrs = new int[target_args.length];
             for (int i = 0; i < target_args.length; i++) {
                 MemoryLayout layout = f_descriptor.argumentLayouts().get(i);
                 if (layout instanceof GroupLayout) {
-                    byval[i] = true;
+                    attrs[i] = LLVMByValAttribute;
                 }
                 target_args[i] = args[i + 1];
             }
 
+            if (options.isReturnInMemory()) {
+                attrs[0] = LLVMStructRetAttribute;
+            }
+
             LLVMValueRef ret = LLVMBuildCall(builder.value(), target, target_args, "");
 
-            for (int i = 0; i < byval.length; i++) {
-                if (byval[i]) {
-                    LLVMAddInstrAttribute(ret, i + /* first index is 1, not 0 */ 1, LLVMByValAttribute);
+            final int offset = 1; // Note: first index is 1, not 0
+            for (int i = 0; i < attrs.length; i++) {
+                if (attrs[i] != 0) {
+                    LLVMAddInstrAttribute(ret, i + offset, attrs[i]);
                 }
             }
 
@@ -465,7 +472,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             LLVMMemoryBufferRef buf = LLVMTargetMachineEmitToMemoryBuffer(
                     LLVMGlobals.DEFAULT_MACHINE, module.value(), LLVMObjectFile);
-            try (var of = Utils.lock(LLVMCreateObjectFile(buf), ObjectFile::LLVMDisposeObjectFile);) {
+            try (var of = Utils.lock(LLVMCreateObjectFile(buf), ObjectFile::LLVMDisposeObjectFile)) {
                 byte[] code = getFunctionCode(of.value(), function_name).toArray(JAVA_BYTE);
                 return NativeCodeBlob.makeCodeBlob(scope, code)[0];
             }
@@ -474,14 +481,42 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
     }
 
+    private static class ReturnWrapper implements TransformerI {
+        private final MethodHandle handle;
+        private final MemoryLayout ret_layout;
+        private final int ret_index;
+
+        public ReturnWrapper(MethodHandle handle, MemoryLayout ret_layout, int ret_index) {
+            this.handle = handle;
+            this.ret_layout = ret_layout;
+            this.ret_index = ret_index;
+        }
+
+        @Override
+        public void transform(EmulatedStackFrame stack) throws Throwable {
+            StackFrameAccessor thiz_acc = stack.createAccessor();
+            Arena arena = thiz_acc.getReference(ret_index, Arena.class);
+            MemorySegment ret = arena.allocate(ret_layout);
+            MethodType cached_type = stack.type();
+            stack.setType(handle.type());
+            thiz_acc.setReference(ret_index, ret, MemorySegment.class);
+            invokeExactWithFrameNoChecks(handle, stack);
+            stack.setType(cached_type);
+            thiz_acc.moveToReturn().putNextReference(ret, MemorySegment.class);
+        }
+    }
+
     @Override
     protected MethodHandle arrangeDowncall(FunctionDescriptor descriptor, _LinkerOptions options) {
-        if (options.isReturnInMemory()) {
-            //TODO
-            throw new UnsupportedOperationException("Unsuppurted yet!");
-        }
         _FunctionDescriptorImpl f_descriptor = (_FunctionDescriptorImpl) descriptor;
-        _FunctionDescriptorImpl stub_descriptor = f_descriptor.insertArgumentLayouts(0, ADDRESS); // leading function pointer
+        MemoryLayout ret = null;
+        if (options.isReturnInMemory()) {
+            ret = f_descriptor.returnLayoutPlain();
+            f_descriptor = f_descriptor.dropReturnLayout()
+                    .insertArgumentLayouts(0, ADDRESS.withTargetLayout(ret));
+        }
+        _FunctionDescriptorImpl stub_descriptor = f_descriptor
+                .insertArgumentLayouts(0, ADDRESS); // leading function pointer
         MethodType handleType = fdToHandleMethodType(stub_descriptor);
         MethodType stubType = fdToStubMethodType(stub_descriptor, options.allowsHeapAccess());
         MethodHandle stub = generateJavaDowncallStub(stubType, f_descriptor, stub_descriptor, options);
@@ -495,12 +530,21 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         if (options.hasCapturedCallState()) {
             handleType = handleType.insertParameterTypes(0, MemorySegment.class);
         }
-        MethodHandle tmp = Transformers.makeTransformer(handleType, arranger);
-        int target_index = (options.hasCapturedCallState() ? 1 : 0) + (options.isReturnInMemory() ? 1 : 0);
-        if (target_index != 0) {
-            tmp = _Utils.moveArgument(tmp, target_index, 0);
+        if (options.isReturnInMemory()) {
+            handleType = handleType.changeReturnType(MemorySegment.class);
         }
-        return tmp;
+        MethodHandle handle = Transformers.makeTransformer(handleType, arranger);
+        if (options.isReturnInMemory()) {
+            int ret_index = options.hasCapturedCallState() ? 2 : 1;
+            MethodType type = handleType.changeParameterType(ret_index, Arena.class);
+            ReturnWrapper wrapper = new ReturnWrapper(handle, ret, ret_index);
+            handle = Transformers.makeTransformer(type, wrapper);
+        }
+        if (options.hasCapturedCallState()) {
+            int index = options.isReturnInMemory() ? 2 : 1;
+            handle = moveArgument(handle, 0, index);
+        }
+        return handle;
     }
 
     @Override
