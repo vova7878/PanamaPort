@@ -197,25 +197,15 @@ final class _Utils {
     }
 
     public static MethodHandle moveArgument(MethodHandle mh, int fromIndex, int toIndex) {
-        if (fromIndex == toIndex) {
-            return mh;
-        }
-        MethodType type = mh.type();
-        int[] perms = IntStream.range(0, type.parameterCount()).toArray();
-        Class<?>[] swappedArgs = type.parameterArray();
-        int length = distance(fromIndex, toIndex);
-        Class<?> tmp = swappedArgs[fromIndex];
+        int[] perms = IntStream.range(0, mh.type().parameterCount()).toArray();
+        int length = distance(toIndex, fromIndex);
         if (fromIndex < toIndex) {
-            System.arraycopy(perms, fromIndex + 1, perms, fromIndex, length);
-            System.arraycopy(swappedArgs, fromIndex + 1, swappedArgs, fromIndex, length);
+            System.arraycopy(perms, fromIndex, perms, fromIndex + 1, length);
         } else {
-            System.arraycopy(perms, toIndex, perms, toIndex + 1, length);
-            System.arraycopy(swappedArgs, toIndex, swappedArgs, toIndex + 1, length);
+            System.arraycopy(perms, toIndex + 1, perms, toIndex, length);
         }
-        perms[toIndex] = fromIndex;
-        swappedArgs[toIndex] = tmp;
-        return MethodHandlesFixes.permuteArguments(mh,
-                MethodType.methodType(type.returnType(), swappedArgs), perms);
+        perms[fromIndex] = toIndex;
+        return MethodHandlesFixes.reorderArguments(mh, perms);
     }
 
     public static void checkNative(MemorySegment segment) {
