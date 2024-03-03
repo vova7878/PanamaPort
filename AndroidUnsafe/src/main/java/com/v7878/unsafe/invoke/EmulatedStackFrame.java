@@ -2,6 +2,7 @@ package com.v7878.unsafe.invoke;
 
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.objectFieldOffset;
+import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
@@ -19,6 +20,7 @@ import java.lang.invoke.MethodType;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class EmulatedStackFrame {
     public static final int RETURN_VALUE_IDX = -2;
@@ -72,6 +74,12 @@ public class EmulatedStackFrame {
         return (Object[]) getObject(esf, references_offset);
     }
 
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public void setReferences(Object[] references) {
+        Objects.requireNonNull(references);
+        putObject(esf, references_offset, references);
+    }
+
     private static final long stackFrame_offset = nothrows_run(
             () -> objectFieldOffset(getDeclaredField(esf_class, "stackFrame")));
 
@@ -80,11 +88,22 @@ public class EmulatedStackFrame {
         return (byte[]) getObject(esf, stackFrame_offset);
     }
 
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public void setStackFrame(byte[] stackFrame) {
+        Objects.requireNonNull(stackFrame);
+        putObject(esf, stackFrame_offset, stackFrame);
+    }
+
     private static final long type_offset = nothrows_run(
             () -> objectFieldOffset(getDeclaredField(esf_class, "type")));
 
     public MethodType type() {
         return (MethodType) getObject(esf, type_offset);
+    }
+
+    public void setType(MethodType type) {
+        Objects.requireNonNull(type);
+        putObject(esf, type_offset, type);
     }
 
     public StackFrameAccessor createAccessor() {
@@ -167,6 +186,8 @@ public class EmulatedStackFrame {
         int[] referencesOffsets;
 
         protected ByteBuffer frameBuf;
+        protected Object[] references;
+
         protected EmulatedStackFrame frame;
 
         public StackFrameAccessor() {
@@ -180,7 +201,8 @@ public class EmulatedStackFrame {
                 // Re-initialize storage if not re-attaching to the same stackFrame.
                 frame = stackFrame;
                 frameBuf = ByteBuffer.wrap(frame.stackFrame())
-                        .order(ByteOrder.LITTLE_ENDIAN);
+                        .order(ByteOrder.nativeOrder());
+                references = frame.references();
                 buildTables(stackFrame.type());
             }
             referencesOffset = 0;
@@ -192,13 +214,13 @@ public class EmulatedStackFrame {
         }
 
         private void buildTables(MethodType methodType) {
-            final Class<?>[] ptypes = methodType.parameterArray();
+            Class<?>[] ptypes = Transformers.ptypes(methodType);
             frameOffsets = new int[ptypes.length + 1];
             referencesOffsets = new int[ptypes.length + 1];
             int frameOffset = 0;
             int referenceOffset = 0;
-            for (int i = 0; i < ptypes.length; ++i) {
-                final Class<?> ptype = ptypes[i];
+            for (int i = 0; i < ptypes.length; i++) {
+                Class<?> ptype = ptypes[i];
                 if (ptype.isPrimitive()) {
                     frameOffset += getSize(ptype);
                 } else {
@@ -209,45 +231,57 @@ public class EmulatedStackFrame {
             }
         }
 
-        public Class<?> getCurrentArgumentType() {
-            if (argumentIdx >= frame.type().parameterCount()
-                    || argumentIdx == (RETURN_VALUE_IDX + 1)) {
-                throw new IllegalArgumentException("Invalid argument index: " + argumentIdx);
+        private void checkIndex(int index) {
+            if ((index < 0 || index >= frame.type().parameterCount()) && (index != RETURN_VALUE_IDX)) {
+                throw new IllegalArgumentException("Invalid argument index: " + index);
             }
+        }
+
+        private int toArrayIndex(int index) {
+            return index == RETURN_VALUE_IDX ? frame.type().parameterCount() : index;
+        }
+
+        private int toFrameOffset(int index) {
+            return frameOffsets[toArrayIndex(index)];
+        }
+
+        private int toReferencesOffset(int index) {
+            return referencesOffsets[toArrayIndex(index)];
+        }
+
+        public Class<?> getArgumentType(int index) {
+            checkIndex(index);
             MethodType type = frame.type();
-            return (argumentIdx == RETURN_VALUE_IDX)
-                    ? type.returnType() : type.parameterType(argumentIdx);
+            return (index == RETURN_VALUE_IDX) ? type.returnType() : type.parameterType(index);
+        }
+
+        public void checkWriteType(int index, Class<?> expectedType) {
+            checkAssignable(getArgumentType(index), expectedType);
         }
 
         public void checkWriteType(Class<?> expectedType) {
-            checkAssignable(getCurrentArgumentType(), expectedType);
+            checkAssignable(getArgumentType(argumentIdx), expectedType);
+        }
+
+        public void checkReadType(int index, Class<?> expectedType) {
+            checkAssignable(expectedType, getArgumentType(index));
         }
 
         public void checkReadType(Class<?> expectedType) {
-            checkAssignable(expectedType, getCurrentArgumentType());
+            checkAssignable(expectedType, getArgumentType(argumentIdx));
         }
 
-        public StackFrameAccessor moveTo(int argumentIndex) {
-            if (argumentIndex == RETURN_VALUE_IDX) {
-                return moveToReturn();
-            }
-            referencesOffset = referencesOffsets[argumentIndex];
-            frameBuf.position(frameOffsets[argumentIndex]);
-            argumentIdx = argumentIndex;
+        public StackFrameAccessor moveTo(int index) {
+            checkIndex(index);
+            int array_index = toArrayIndex(index);
+            referencesOffset = referencesOffsets[array_index];
+            frameBuf.position(frameOffsets[array_index]);
+            argumentIdx = index;
             return this;
         }
 
         public StackFrameAccessor moveToReturn() {
-            Class<?> rtype = frame.type().returnType();
-            argumentIdx = RETURN_VALUE_IDX;
-            // Position the cursor appropriately. The return value is either the last element
-            // of the references array, or the last 4 or 8 bytes of the stack frame.
-            if (rtype.isPrimitive()) {
-                frameBuf.position(frameBuf.capacity() - getSize(rtype));
-            } else {
-                referencesOffset = frame.references().length - 1;
-            }
-            return this;
+            return moveTo(RETURN_VALUE_IDX);
         }
 
         public void putNextBoolean(boolean value) {
@@ -301,16 +335,16 @@ public class EmulatedStackFrame {
         public void putNextReference(Object value, Class<?> expectedType) {
             checkWriteType(expectedType);
             argumentIdx++;
-            frame.references()[referencesOffset++] = value;
+            references[referencesOffset++] = value;
         }
 
         public void putNextValue(Object value) {
-            char shorty = TypeId.of(getCurrentArgumentType()).getShorty();
+            char shorty = TypeId.of(getArgumentType(argumentIdx)).getShorty();
             argumentIdx++;
             switch (shorty) {
                 case 'V' -> {
                 }
-                case 'L' -> frame.references()[referencesOffset++] = value;
+                case 'L' -> references[referencesOffset++] = value;
                 case 'Z' -> frameBuf.putInt((boolean) value ? 1 : 0);
                 case 'B' -> frameBuf.putInt((byte) value);
                 case 'C' -> frameBuf.putInt((char) value);
@@ -323,10 +357,73 @@ public class EmulatedStackFrame {
             }
         }
 
+        public void setBoolean(int index, boolean value) {
+            checkWriteType(index, boolean.class);
+            frameBuf.putInt(toFrameOffset(index), value ? 1 : 0);
+        }
+
+        public void setByte(int index, byte value) {
+            checkWriteType(index, byte.class);
+            frameBuf.putInt(toFrameOffset(index), value);
+        }
+
+        public void setChar(int index, char value) {
+            checkWriteType(index, char.class);
+            frameBuf.putInt(toFrameOffset(index), value);
+        }
+
+        public void setShort(int index, short value) {
+            checkWriteType(index, short.class);
+            frameBuf.putInt(toFrameOffset(index), value);
+        }
+
+        public void setInt(int index, int value) {
+            checkWriteType(index, int.class);
+            frameBuf.putInt(toFrameOffset(index), value);
+        }
+
+        public void setFloat(int index, float value) {
+            checkWriteType(index, float.class);
+            frameBuf.putFloat(toFrameOffset(index), value);
+        }
+
+        public void setLong(int index, long value) {
+            checkWriteType(index, long.class);
+            frameBuf.putLong(toFrameOffset(index), value);
+        }
+
+        public void setDouble(int index, double value) {
+            checkWriteType(index, double.class);
+            frameBuf.putDouble(toFrameOffset(index), value);
+        }
+
+        public void setReference(int index, Object value, Class<?> expectedType) {
+            checkWriteType(index, expectedType);
+            references[toReferencesOffset(index)] = value;
+        }
+
+        public void setValue(int index, Object value) {
+            char shorty = TypeId.of(getArgumentType(index)).getShorty();
+            switch (shorty) {
+                case 'V' -> {
+                }
+                case 'L' -> references[toReferencesOffset(index)] = value;
+                case 'Z' -> frameBuf.putInt(toFrameOffset(index), (boolean) value ? 1 : 0);
+                case 'B' -> frameBuf.putInt(toFrameOffset(index), (byte) value);
+                case 'C' -> frameBuf.putInt(toFrameOffset(index), (char) value);
+                case 'S' -> frameBuf.putInt(toFrameOffset(index), (short) value);
+                case 'I' -> frameBuf.putInt(toFrameOffset(index), (int) value);
+                case 'F' -> frameBuf.putFloat(toFrameOffset(index), (float) value);
+                case 'J' -> frameBuf.putLong(toFrameOffset(index), (long) value);
+                case 'D' -> frameBuf.putDouble(toFrameOffset(index), (double) value);
+                default -> throw shouldNotReachHere();
+            }
+        }
+
         public boolean nextBoolean() {
             checkReadType(boolean.class);
             argumentIdx++;
-            return (frameBuf.getInt() != 0);
+            return frameBuf.getInt() != 0;
         }
 
         public byte nextByte() {
@@ -375,14 +472,14 @@ public class EmulatedStackFrame {
             checkReadType(expectedType);
             argumentIdx++;
             //noinspection unchecked
-            return (T) frame.references()[referencesOffset++];
+            return (T) references[referencesOffset++];
         }
 
         public Object nextValue() {
-            char shorty = TypeId.of(getCurrentArgumentType()).getShorty();
+            char shorty = TypeId.of(getArgumentType(argumentIdx)).getShorty();
             argumentIdx++;
             return switch (shorty) {
-                case 'L' -> frame.references()[referencesOffset++];
+                case 'L' -> references[referencesOffset++];
                 case 'Z' -> (frameBuf.getInt() != 0);
                 case 'B' -> (byte) frameBuf.getInt();
                 case 'C' -> (char) frameBuf.getInt();
@@ -391,6 +488,69 @@ public class EmulatedStackFrame {
                 case 'F' -> frameBuf.getFloat();
                 case 'J' -> frameBuf.getLong();
                 case 'D' -> frameBuf.getDouble();
+                /* 'V' */
+                default -> throw shouldNotReachHere();
+            };
+        }
+
+        public boolean getBoolean(int index) {
+            checkReadType(index, boolean.class);
+            return frameBuf.getInt(toFrameOffset(index)) != 0;
+        }
+
+        public byte getByte(int index) {
+            checkReadType(index, byte.class);
+            return (byte) frameBuf.getInt(toFrameOffset(index));
+        }
+
+        public char getChar(int index) {
+            checkReadType(index, char.class);
+            return (char) frameBuf.getInt(toFrameOffset(index));
+        }
+
+        public short getShort(int index) {
+            checkReadType(index, short.class);
+            return (short) frameBuf.getInt(toFrameOffset(index));
+        }
+
+        public int getInt(int index) {
+            checkReadType(index, int.class);
+            return frameBuf.getInt(toFrameOffset(index));
+        }
+
+        public float getFloat(int index) {
+            checkReadType(index, float.class);
+            return frameBuf.getFloat(toFrameOffset(index));
+        }
+
+        public long getLong(int index) {
+            checkReadType(index, long.class);
+            return frameBuf.getLong(toFrameOffset(index));
+        }
+
+        public double getDouble(int index) {
+            checkReadType(index, double.class);
+            return frameBuf.getDouble(toFrameOffset(index));
+        }
+
+        public <T> T getReference(int index, Class<T> expectedType) {
+            checkReadType(index, expectedType);
+            //noinspection unchecked
+            return (T) references[toReferencesOffset(index)];
+        }
+
+        public Object getValue(int index) {
+            char shorty = TypeId.of(getArgumentType(index)).getShorty();
+            return switch (shorty) {
+                case 'L' -> references[toReferencesOffset(index)];
+                case 'Z' -> (frameBuf.getInt(toFrameOffset(index)) != 0);
+                case 'B' -> (byte) frameBuf.getInt(toFrameOffset(index));
+                case 'C' -> (char) frameBuf.getInt(toFrameOffset(index));
+                case 'S' -> (short) frameBuf.getInt(toFrameOffset(index));
+                case 'I' -> frameBuf.getInt(toFrameOffset(index));
+                case 'F' -> frameBuf.getFloat(toFrameOffset(index));
+                case 'J' -> frameBuf.getLong(toFrameOffset(index));
+                case 'D' -> frameBuf.getDouble(toFrameOffset(index));
                 /* 'V' */
                 default -> throw shouldNotReachHere();
             };
