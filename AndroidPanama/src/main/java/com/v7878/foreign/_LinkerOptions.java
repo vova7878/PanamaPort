@@ -29,7 +29,7 @@ package com.v7878.foreign;
 
 import com.v7878.foreign.Linker.Option;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +48,7 @@ class _LinkerOptions {
     }
 
     public static _LinkerOptions forDowncall(FunctionDescriptor desc, Option... options) {
-        List<Option> optionsList = Arrays.asList(options);
+        List<Option> optionsList = new ArrayList<>(List.of(options));
         if (desc.returnLayout().filter(layout -> layout instanceof GroupLayout).isPresent()) {
             optionsList.add(ReturnInMemory.INSTANCE);
         }
