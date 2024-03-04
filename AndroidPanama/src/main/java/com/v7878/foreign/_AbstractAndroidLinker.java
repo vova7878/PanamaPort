@@ -17,6 +17,7 @@ import com.v7878.unsafe.foreign.RawNativeLibraries;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -231,40 +232,87 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         }
     }
 
-    @SuppressWarnings("restricted")
-    private static MemoryLayout stripNames(MemoryLayout ml) {
+    // Port-changed
+    private static MemoryLayout stripNames(MemoryLayout ml, boolean nested) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
         if (ml instanceof StructLayout sl) {
-            return MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
+            MemoryLayout[] memberLayouts = stripNames(sl.memberLayouts(), true);
+            List<MemoryLayout> members = new ArrayList<>(memberLayouts.length);
+            for (MemoryLayout member : memberLayouts) {
+                if (member.byteSize() == 0) {
+                    continue;
+                }
+                if (member instanceof StructLayout sl_sl) {
+                    members.addAll(sl_sl.memberLayouts());
+                    continue;
+                }
+                members.add(member);
+            }
+            if (nested && members.size() == 1) {
+                return members.get(0);
+            }
+            return MemoryLayout.structLayout(members.toArray(new MemoryLayout[0]));
         } else if (ml instanceof UnionLayout ul) {
-            return MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
+            MemoryLayout[] memberLayouts = stripNames(ul.memberLayouts(), true);
+            List<MemoryLayout> members = new ArrayList<>(memberLayouts.length);
+            for (MemoryLayout member : memberLayouts) {
+                if (member.byteSize() == 0) {
+                    continue;
+                }
+                members.add(member);
+            }
+            if (nested && members.size() == 1) {
+                return members.get(0);
+            }
+            return MemoryLayout.unionLayout(members.toArray(new MemoryLayout[0]));
         } else if (ml instanceof SequenceLayout sl) {
-            return MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
+            MemoryLayout el = stripNames(sl.elementLayout(), true);
+            if (nested && sl.elementCount() == 1) {
+                return el;
+            }
+            if (el instanceof SequenceLayout el_sl) {
+                long count = sl.elementCount() * el_sl.elementCount();
+                return MemoryLayout.sequenceLayout(count, el_sl.elementLayout());
+            }
+            return MemoryLayout.sequenceLayout(sl.elementCount(), el);
         } else if (ml instanceof AddressLayout al) {
-            // Port-changed
-            //return al.targetLayout()
-            //        .map(tl -> al.withoutName().withTargetLayout(stripNames(tl))) // restricted
-            //        .orElseGet(al::withoutName);
-
-            return al.targetLayout().map(tl -> al.withoutName().withTargetLayout(
-                            MemoryLayout.sequenceLayout(tl.byteSize(), JAVA_BYTE)))
-                    .orElseGet(al::withoutName);
+            al = al.withoutName();
+            if (nested) {
+                return al.withoutTargetLayout();
+            }
+            if (al.targetLayout().isPresent()) {
+                MemoryLayout tl = al.targetLayout().get();
+                if (tl.byteSize() == 0 && tl.byteAlignment() == 1) {
+                    return al.withoutTargetLayout();
+                }
+                return al.withTargetLayout(
+                        MemoryLayout.paddingLayout(tl.byteSize())
+                                .withByteAlignment(tl.byteAlignment()));
+            }
+            return al;
         } else {
             return ml.withoutName(); // ValueLayout and PaddingLayout;
         }
     }
 
-    private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
+    private static MemoryLayout[] stripNames(List<MemoryLayout> layouts, boolean nested) {
         return layouts.stream()
-                .map(_AbstractAndroidLinker::stripNames)
+                .map(layout -> stripNames(layout, nested))
                 .toArray(MemoryLayout[]::new);
     }
 
+    private static List<MemoryLayout> removeTargets(List<MemoryLayout> layouts) {
+        return List.of(layouts.stream()
+                .map(l -> l instanceof AddressLayout al ? al.withoutTargetLayout() : l)
+                .toArray(MemoryLayout[]::new));
+    }
+
     private static FunctionDescriptor stripNames(FunctionDescriptor function) {
+        MemoryLayout[] args = stripNames(removeTargets(function.argumentLayouts()), false);
         return function.returnLayout()
-                .map(rl -> FunctionDescriptor.of(stripNames(rl), stripNames(function.argumentLayouts())))
-                .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
+                .map(rl -> FunctionDescriptor.of(stripNames(rl, false), args))
+                .orElseGet(() -> FunctionDescriptor.ofVoid(args));
     }
 
     @Override
