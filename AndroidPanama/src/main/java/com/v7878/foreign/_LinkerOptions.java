@@ -56,7 +56,11 @@ class _LinkerOptions {
     }
 
     public static _LinkerOptions forUpcall(FunctionDescriptor desc, Option[] options) {
-        return forShared(LinkerOptionImpl::validateForUpcall, desc, List.of(options));
+        List<Option> optionsList = new ArrayList<>(List.of(options));
+        if (desc.returnLayout().filter(layout -> layout instanceof GroupLayout).isPresent()) {
+            optionsList.add(ReturnInMemory.INSTANCE);
+        }
+        return forShared(LinkerOptionImpl::validateForUpcall, desc, optionsList);
     }
 
     private static _LinkerOptions forShared(BiConsumer<LinkerOptionImpl, FunctionDescriptor> validator,
@@ -174,6 +178,11 @@ class _LinkerOptions {
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
+            // always allowed
+        }
+
+        @Override
+        public void validateForUpcall(FunctionDescriptor descriptor) {
             // always allowed
         }
     }
