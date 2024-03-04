@@ -29,6 +29,7 @@ import static com.v7878.llvm.Core.LLVMGetParams;
 import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
 import static com.v7878.llvm.Core.LLVMPointerType;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
+import static com.v7878.llvm.Core.LLVMSetInstrParamAlignment;
 import static com.v7878.llvm.Core.LLVMStructTypeInContext;
 import static com.v7878.llvm.Extra.getFunctionCode;
 import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
@@ -441,10 +442,12 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             LLVMValueRef target = LLVMBuildPointerCast(builder.value(), args[0], target_type_ptr, "");
             LLVMValueRef[] target_args = new LLVMValueRef[args.length - 1];
             int[] attrs = new int[target_args.length];
+            int[] aligns = new int[target_args.length];
             for (int i = 0; i < target_args.length; i++) {
                 MemoryLayout layout = f_descriptor.argumentLayouts().get(i);
                 if (layout instanceof GroupLayout) {
                     attrs[i] = LLVMByValAttribute;
+                    aligns[i] = Math.toIntExact(layout.byteAlignment());
                 }
                 target_args[i] = args[i + 1];
             }
@@ -459,6 +462,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             for (int i = 0; i < attrs.length; i++) {
                 if (attrs[i] != 0) {
                     LLVMAddInstrAttribute(ret, i + offset, attrs[i]);
+                }
+                if (aligns[i] != 0) {
+                    LLVMSetInstrParamAlignment(ret, i + offset, aligns[i]);
                 }
             }
 
