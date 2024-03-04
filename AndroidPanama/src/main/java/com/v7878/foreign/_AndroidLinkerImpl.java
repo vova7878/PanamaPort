@@ -443,17 +443,24 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             LLVMValueRef[] target_args = new LLVMValueRef[args.length - 1];
             int[] attrs = new int[target_args.length];
             int[] aligns = new int[target_args.length];
-            for (int i = 0; i < target_args.length; i++) {
-                MemoryLayout layout = f_descriptor.argumentLayouts().get(i);
-                if (layout instanceof GroupLayout) {
-                    attrs[i] = LLVMByValAttribute;
-                    aligns[i] = Math.toIntExact(layout.byteAlignment());
+            {
+                int i = 0;
+                if (options.isReturnInMemory()) {
+                    AddressLayout layout = (AddressLayout) f_descriptor.argumentLayouts().get(i);
+                    GroupLayout ret_layout = (GroupLayout) layout.targetLayout().get();
+                    attrs[i] = LLVMStructRetAttribute;
+                    aligns[i] = Math.toIntExact(ret_layout.byteAlignment());
+                    target_args[i] = args[i + 1];
+                    i++;
                 }
-                target_args[i] = args[i + 1];
-            }
-
-            if (options.isReturnInMemory()) {
-                attrs[0] = LLVMStructRetAttribute;
+                for (; i < target_args.length; i++) {
+                    MemoryLayout layout = f_descriptor.argumentLayouts().get(i);
+                    if (layout instanceof GroupLayout) {
+                        attrs[i] = LLVMByValAttribute;
+                        aligns[i] = Math.toIntExact(layout.byteAlignment());
+                    }
+                    target_args[i] = args[i + 1];
+                }
             }
 
             LLVMValueRef ret = LLVMBuildCall(builder.value(), target, target_args, "");
