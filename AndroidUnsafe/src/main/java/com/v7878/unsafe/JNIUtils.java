@@ -392,9 +392,29 @@ public class JNIUtils {
         return getEnvPtr(Thread.currentThread());
     }
 
+    private static final Supplier<MemorySegment> jniNativeInterfacePtr = runOnce(new Supplier<MemorySegment>() {
+        @Keep
+        @CriticalNative
+        public static native int GetJniNativeInterface32();
+
+        @Keep
+        @CriticalNative
+        public static native long GetJniNativeInterface64();
+
+        @Override
+        public MemorySegment get() {
+            String suffix = IS64BIT ? "64" : "32";
+            String name = "GetJniNativeInterface";
+
+            Method get_jni = getDeclaredMethod(this.getClass(), name + suffix);
+            registerNativeMethod(get_jni, ART.find("_ZN3art21GetJniNativeInterfaceEv").get().nativeAddress());
+            long ptr = IS64BIT ? GetJniNativeInterface64() : GetJniNativeInterface32() & 0xffffffffL;
+            return MemorySegment.ofAddress(ptr).reinterpret(JNI_NATIVE_INTERFACE_LAYOUT.byteSize());
+        }
+    });
+
     public static MemorySegment getJNINativeInterface() {
-        // TODO: get raw functions
-        return getCurrentEnvPtr().get(JNIEnv_LAYOUT, 0);
+        return jniNativeInterfacePtr.get();
     }
 
     public static MemorySegment getJNINativeInterfaceFunction(String name) {
@@ -437,9 +457,12 @@ public class JNIUtils {
         return javaVMPtr.get();
     }
 
+    //TODO: get unchecked functions?
+    private static final Supplier<MemorySegment> jniInvokeInterfacePtr =
+            runOnce(() -> getJavaVMPtr().get(JavaVM_LAYOUT, 0));
+
     public static MemorySegment getJNIInvokeInterface() {
-        // TODO: get raw functions
-        return getJavaVMPtr().get(JavaVM_LAYOUT, 0);
+        return jniInvokeInterfacePtr.get();
     }
 
     public static MemorySegment getJNIInvokeInterfaceFunction(String name) {
