@@ -881,6 +881,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMSetInstrParamAlignment(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* unsigned */ Align) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMBuilderRef LLVMCreateBuilderInContext(LLVMContextRef C) {
         throw new UnsupportedOperationException("Stub!");
     }

@@ -3991,9 +3991,10 @@ public class Core {
         nothrows_run(() -> Function.LLVMRemoveInstrAttribute.handle().invoke(Instr.value(), index, PA));
     }
 
-    //void LLVMSetInstrParamAlignment(LLVMValueRef Instr, int /* unsigned */ index, int /* unsigned */ Align) {
-    //    return nothrows_run(() -> Function.LLVMSetInstrParamAlignment.handle().invoke());
-    //}
+    public static void LLVMSetInstrParamAlignment(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* unsigned */ Align) {
+        nothrows_run(() -> Function.LLVMSetInstrParamAlignment.handle().invoke(Instr.value(), index, Align));
+    }
+
     //void LLVMAddCallSiteAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, LLVMAttributeRef A) {
     //    return nothrows_run(() -> Function.LLVMAddCallSiteAttribute.handle().invoke());
     //}
