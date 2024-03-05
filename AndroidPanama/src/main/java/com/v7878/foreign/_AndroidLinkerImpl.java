@@ -420,7 +420,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             } else if (layout instanceof GroupLayout gl) {
                 MemoryLayout wrapper = getGroupWrapper(gl);
                 if (wrapper != null) {
-                    //noinspection StatementWithEmptyBody
                     if (wrapper == VOID_WRAPPER) {
                         // just drop
                     } else {
@@ -482,9 +481,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             }
             assert args.length == stub_descriptor.argumentLayouts().size();
 
-            LLVMValueRef target = LLVMBuildPointerCast(builder.value(), args[0], target_type_ptr, "");
-            int count = 0;
-            int index = 1; // first argument is target
+            int count = 0; // current index in target_args[] and their count
+            int index = 0; // current index in args[]
+            LLVMValueRef target = LLVMBuildPointerCast(builder.value(), args[index++], target_type_ptr, "");
             LLVMValueRef[] target_args = new LLVMValueRef[args.length - 1];
             int[] attrs = new int[target_args.length];
             int[] aligns = new int[target_args.length];
