@@ -985,7 +985,7 @@ public sealed interface MemoryLayout
      * @throws IllegalArgumentException if {@code byteSize <= 0}
      */
     static PaddingLayout paddingLayout(long byteSize) {
-        return _PaddingLayoutImpl.of(_MemoryLayoutUtil.requireByteSizeValid(byteSize, false));
+        return _PaddingLayoutImpl.of(_Utils.requireByteSizeValid(byteSize, false));
     }
 
     /**

@@ -95,6 +95,13 @@ final class _Utils {
         }
     }
 
+    public static long requireByteSizeValid(long byteSize, boolean allowZero) {
+        if ((byteSize == 0 && !allowZero) || byteSize < 0) {
+            throw new IllegalArgumentException("Invalid byte size: " + byteSize);
+        }
+        return byteSize;
+    }
+
     public static long alignUp(long n, long alignment) {
         return (n + alignment - 1) & -alignment;
     }
