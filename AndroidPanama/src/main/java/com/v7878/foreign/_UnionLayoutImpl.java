@@ -50,5 +50,4 @@ final class _UnionLayoutImpl extends _AbstractGroupLayout<_UnionLayoutImpl> impl
         }
         return new _UnionLayoutImpl(elements, size, align, align, null);
     }
-
 }

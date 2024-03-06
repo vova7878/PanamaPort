@@ -240,9 +240,6 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
             MemoryLayout[] memberLayouts = stripNames(sl.memberLayouts(), true);
             List<MemoryLayout> members = new ArrayList<>(memberLayouts.length);
             for (MemoryLayout member : memberLayouts) {
-                if (member.byteSize() == 0) {
-                    continue;
-                }
                 if (member instanceof StructLayout sl_sl) {
                     members.addAll(sl_sl.memberLayouts());
                     continue;
@@ -254,18 +251,11 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
             }
             return MemoryLayout.structLayout(members.toArray(new MemoryLayout[0]));
         } else if (ml instanceof UnionLayout ul) {
-            MemoryLayout[] memberLayouts = stripNames(ul.memberLayouts(), true);
-            List<MemoryLayout> members = new ArrayList<>(memberLayouts.length);
-            for (MemoryLayout member : memberLayouts) {
-                if (member.byteSize() == 0) {
-                    continue;
-                }
-                members.add(member);
+            MemoryLayout[] members = stripNames(ul.memberLayouts(), true);
+            if (nested && members.length == 1) {
+                return members[0];
             }
-            if (nested && members.size() == 1) {
-                return members.get(0);
-            }
-            return MemoryLayout.unionLayout(members.toArray(new MemoryLayout[0]));
+            return MemoryLayout.unionLayout(members);
         } else if (ml instanceof SequenceLayout sl) {
             MemoryLayout el = stripNames(sl.elementLayout(), true);
             if (nested && sl.elementCount() == 1) {
@@ -283,9 +273,6 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
             }
             if (al.targetLayout().isPresent()) {
                 MemoryLayout tl = al.targetLayout().get();
-                if (tl.byteSize() == 0 && tl.byteAlignment() == 1) {
-                    return al.withoutTargetLayout();
-                }
                 return al.withTargetLayout(
                         MemoryLayout.paddingLayout(tl.byteSize())
                                 .withByteAlignment(tl.byteAlignment()));
