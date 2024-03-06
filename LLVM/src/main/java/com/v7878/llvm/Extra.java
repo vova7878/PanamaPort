@@ -10,6 +10,7 @@ import static com.v7878.llvm.ObjectFile.LLVMIsSymbolIteratorAtEnd;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToContainingSection;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToNextSymbol;
 import static com.v7878.unsafe.NativeCodeBlob.CURRENT_INSTRUCTION_SET;
+import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86;
 import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86_64;
 
 import com.v7878.foreign.MemorySegment;
@@ -41,7 +42,10 @@ public class Extra {
 
     public static String LLVMGetHostCPUFeatures() {
         // TODO _ZN4llvm3sys18getHostCPUFeaturesERNS_9StringMapIbNS_15MallocAllocatorEEE
-        if (CURRENT_INSTRUCTION_SET == X86_64) return "sse2";
+        if (CURRENT_INSTRUCTION_SET == X86)
+            return "+x87,+mmx,+sse,+sse2,+sse3,+ssse3";
+        if (CURRENT_INSTRUCTION_SET == X86_64)
+            return "+x87,+mmx,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+popcnt";
         return "";
     }
 
