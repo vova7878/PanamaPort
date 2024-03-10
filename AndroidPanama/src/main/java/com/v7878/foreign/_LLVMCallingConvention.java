@@ -1,5 +1,6 @@
 package com.v7878.foreign;
 
+import static com.v7878.foreign.MemoryLayout.sequenceLayout;
 import static com.v7878.foreign.MemoryLayout.structLayout;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_DOUBLE;
@@ -7,10 +8,14 @@ import static com.v7878.foreign.ValueLayout.JAVA_FLOAT;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
+import static com.v7878.misc.Math.roundUp;
+import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+
+import android.util.Pair;
 
 import com.v7878.foreign._StorageDescriptor.LLVMStorage;
 import com.v7878.foreign._StorageDescriptor.NoStorage;
@@ -185,90 +190,144 @@ final class _LLVMCallingConvention {
         }
     }
 
-    //private static class aarch64_calling_convention {
-    //    private static void markWrapperType(_AndroidLinkerImpl.WrapperType[] types, int start, int size, _AndroidLinkerImpl.WrapperType type) {
-    //        for (int i = 0; i < size; i++) {
-    //            _AndroidLinkerImpl.WrapperType oldType = types[start + i];
-    //            if (oldType == null) {
-    //                types[start + i] = type;
-    //            } else if (oldType.ordinal() != type.ordinal()) {
-    //                types[start + i] = _AndroidLinkerImpl.WrapperType.INT;
-    //            }
-    //        }
-    //    }
-    //
-    //    private static void markWrapperType(MemoryLayout layout, int offset, _AndroidLinkerImpl.WrapperType[] types) {
-    //        if (layout instanceof StructLayout sl) {
-    //            for (MemoryLayout member : sl.memberLayouts()) {
-    //                markWrapperType(member, offset, types);
-    //                offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
-    //            }
-    //        } else if (layout instanceof UnionLayout ul) {
-    //            for (MemoryLayout member : ul.memberLayouts()) {
-    //                markWrapperType(member, offset, types);
-    //            }
-    //        } else if (layout instanceof SequenceLayout sl) {
-    //            MemoryLayout el = sl.elementLayout();
-    //            int count = Math.toIntExact(sl.elementCount());
-    //            int size = Math.toIntExact(el.byteSize());
-    //            for (int i = 0; i < count; i++) {
-    //                markWrapperType(el, offset, types);
-    //                offset = Math.addExact(offset, size);
-    //            }
-    //        } else if (layout instanceof ValueLayout vl) {
-    //            _AndroidLinkerImpl.WrapperType type;
-    //            if (layout instanceof ValueLayout.OfFloat) {
-    //                type = _AndroidLinkerImpl.WrapperType.FLOAT;
-    //            } else if (layout instanceof ValueLayout.OfDouble) {
-    //                type = _AndroidLinkerImpl.WrapperType.DOUBLE;
-    //            } else {
-    //                type = _AndroidLinkerImpl.WrapperType.INT;
-    //            }
-    //            markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
-    //        } else if (layout instanceof PaddingLayout) {
-    //            // skip
-    //        } else {
-    //            throw shouldNotReachHere();
-    //        }
-    //    }
-    //
-    //    public static MemoryLayout getGroupWrapper(GroupLayout layout) {
-    //        if (layout.byteSize() > 32 /* 256 bit */) return null;
-    //        _AndroidLinkerImpl.WrapperType[] types = new _AndroidLinkerImpl.WrapperType[32];
-    //        markWrapperType(layout, 0, types);
-    //        int count = 32;
-    //        while (count > 0 && types[count - 1] == null) {
-    //            count--;
-    //        }
-    //        types = Arrays.copyOfRange(types, 0, count);
-    //        _AndroidLinkerImpl.WrapperType common = null;
-    //        for (_AndroidLinkerImpl.WrapperType type : types) {
-    //            if (common == null) {
-    //                common = type;
-    //            }
-    //            if (common != type) {
-    //                common = _AndroidLinkerImpl.WrapperType.INT;
-    //                break;
-    //            }
-    //        }
-    //        common = common == null ? _AndroidLinkerImpl.WrapperType.INT : common;
-    //        if (count > 16 /* 128 bit */ && common != _AndroidLinkerImpl.WrapperType.DOUBLE) {
-    //            return null;
-    //        }
-    //        return switch (common) {
-    //            case INT -> count <= 8 ? JAVA_LONG : structLayout(JAVA_LONG, JAVA_LONG);
-    //            case DOUBLE -> sequenceLayout(count / 8, JAVA_DOUBLE);
-    //            case FLOAT -> sequenceLayout(count / 4, JAVA_FLOAT);
-    //            //noinspection UnnecessaryDefault
-    //            default -> throw shouldNotReachHere();
-    //        };
-    //    }
-    //}
+    private static class aarch64_android {
+
+        private enum WrapperType {
+            FLOAT, DOUBLE, INT
+        }
+
+        private static void markWrapperType(WrapperType[] types, int start, int size, WrapperType type) {
+            for (int i = 0; i < size; i++) {
+                WrapperType oldType = types[start + i];
+                if (oldType == null) {
+                    types[start + i] = type;
+                } else if (oldType != type) {
+                    types[start + i] = WrapperType.INT;
+                }
+            }
+        }
+
+        private static void markWrapperType(MemoryLayout layout, int offset, WrapperType[] types) {
+            if (layout instanceof StructLayout sl) {
+                for (MemoryLayout member : sl.memberLayouts()) {
+                    markWrapperType(member, offset, types);
+                    offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
+                }
+            } else if (layout instanceof UnionLayout ul) {
+                for (MemoryLayout member : ul.memberLayouts()) {
+                    markWrapperType(member, offset, types);
+                }
+            } else if (layout instanceof SequenceLayout sl) {
+                MemoryLayout el = sl.elementLayout();
+                int count = Math.toIntExact(sl.elementCount());
+                int size = Math.toIntExact(el.byteSize());
+                for (int i = 0; i < count; i++) {
+                    markWrapperType(el, offset, types);
+                    offset = Math.addExact(offset, size);
+                }
+            } else if (layout instanceof ValueLayout vl) {
+                WrapperType type;
+                if (layout instanceof ValueLayout.OfFloat) {
+                    type = WrapperType.FLOAT;
+                } else if (layout instanceof ValueLayout.OfDouble) {
+                    type = WrapperType.DOUBLE;
+                } else {
+                    type = WrapperType.INT;
+                }
+                markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
+            } else if (layout instanceof PaddingLayout) {
+                // skip
+            } else {
+                throw shouldNotReachHere();
+            }
+        }
+
+        public static Pair<ValueLayout, Integer> getWrappers(GroupLayout layout) {
+            if (layout.byteSize() > 32 /* 256 bit */) return null;
+            WrapperType[] types = new WrapperType[32];
+            markWrapperType(layout, 0, types);
+            int count = 32;
+            while (count > 0 && types[count - 1] == null) {
+                count--;
+            }
+            types = Arrays.copyOfRange(types, 0, count);
+            WrapperType common = null;
+            for (WrapperType type : types) {
+                if (common == null) {
+                    common = type;
+                }
+                if (common != type) {
+                    common = WrapperType.INT;
+                    break;
+                }
+            }
+            common = common == null ? WrapperType.INT : common;
+            if (count > 16 /* 128 bit */ && common != WrapperType.DOUBLE) {
+                return null;
+            }
+            int element_size = common == WrapperType.FLOAT ? 4 : 8;
+            int element_count = roundUp(count, element_size) / (element_size);
+            return switch (common) {
+                case INT -> new Pair<>(JAVA_LONG, element_count);
+                case DOUBLE -> new Pair<>(JAVA_DOUBLE, element_count);
+                case FLOAT -> new Pair<>(JAVA_FLOAT, element_count);
+                //noinspection UnnecessaryDefault
+                default -> throw shouldNotReachHere();
+            };
+        }
+
+        public static boolean isFP(ValueLayout layout) {
+            return layout instanceof ValueLayout.OfDouble
+                    || layout instanceof ValueLayout.OfFloat;
+        }
+
+        public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
+            LLVMStorage retStorage = descriptor.returnLayout().map(layout -> {
+                if (layout instanceof ValueLayout vl) {
+                    return new RawStorage(vl);
+                }
+                if (layout instanceof GroupLayout gl) {
+                    var info = getWrappers(gl);
+                    if (info == null) {
+                        return new StackStorage(gl);
+                    }
+                    MemoryLayout wrapper = sequenceLayout(info.second, info.first);
+                    return new WrapperStorage(gl, wrapper);
+                }
+                throw shouldNotReachHere();
+            }).orElse(new NoStorage(null));
+            final int[] arg_regs = {/* integer regs */ 8, /* floating point regs */ 8};
+            LLVMStorage[] argStorages = descriptor.argumentLayouts().stream().map(layout -> {
+                if (layout instanceof ValueLayout vl) {
+                    int type = isFP(vl) ? 1 : 0;
+                    arg_regs[type] = Math.max(0, arg_regs[type] - 1);
+                    return new RawStorage(vl);
+                }
+                if (layout instanceof GroupLayout gl) {
+                    var info = getWrappers(gl);
+                    if (info != null) {
+                        int type = isFP(info.first) ? 1 : 0;
+                        if (arg_regs[type] >= info.second) {
+                            arg_regs[type] -= info.second;
+                            MemoryLayout wrapper = sequenceLayout(info.second, info.first);
+                            return new WrapperStorage(gl, wrapper);
+                        }
+                    }
+                    arg_regs[0] = Math.max(0, arg_regs[0] - 1); // pointer arg
+                    return new StackStorage(gl);
+                }
+                throw shouldNotReachHere();
+            }).toArray(LLVMStorage[]::new);
+            return new _StorageDescriptor(retStorage, argStorages);
+        }
+    }
 
     public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
         if (CURRENT_INSTRUCTION_SET == X86) return x86_android.computeStorages(descriptor);
         if (CURRENT_INSTRUCTION_SET == X86_64) return x86_64_android.computeStorages(descriptor);
-        //TODO: aarch64, arm, riscv64
+        // TODO: test
+        if (CURRENT_INSTRUCTION_SET == ARM64) return aarch64_android.computeStorages(descriptor);
+        //TODO: arm, riscv64
         throw new UnsupportedOperationException("Not supported yet!");
     }
 }
