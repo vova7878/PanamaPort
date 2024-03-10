@@ -4,15 +4,8 @@ import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
-import static com.v7878.foreign.MemoryLayout.sequenceLayout;
-import static com.v7878.foreign.MemoryLayout.structLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
-import static com.v7878.foreign.ValueLayout.JAVA_DOUBLE;
-import static com.v7878.foreign.ValueLayout.JAVA_FLOAT;
-import static com.v7878.foreign.ValueLayout.JAVA_INT;
-import static com.v7878.foreign.ValueLayout.JAVA_LONG;
-import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 import static com.v7878.foreign._CapturableState.ERRNO;
 import static com.v7878.foreign._Utils.moveArgument;
 import static com.v7878.llvm.Analysis.LLVMVerifyModule;
@@ -50,10 +43,6 @@ import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
-import static com.v7878.unsafe.InstructionSet.ARM64;
-import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
-import static com.v7878.unsafe.InstructionSet.X86;
-import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
@@ -84,6 +73,11 @@ import com.v7878.dex.FieldId;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
+import com.v7878.foreign._StorageDescriptor.LLVMStorage;
+import com.v7878.foreign._StorageDescriptor.NoStorage;
+import com.v7878.foreign._StorageDescriptor.RawStorage;
+import com.v7878.foreign._StorageDescriptor.StackStorage;
+import com.v7878.foreign._StorageDescriptor.WrapperStorage;
 import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.Core;
 import com.v7878.llvm.LLVMException;
@@ -91,7 +85,6 @@ import com.v7878.llvm.ObjectFile;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.NativeCodeBlob;
 import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
@@ -270,8 +263,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     private static MethodHandle generateJavaDowncallStub(
-            MethodType stubType, _FunctionDescriptorImpl f_descriptor,
-            _FunctionDescriptorImpl stub_descriptor, _LinkerOptions options) {
+            MethodType stubType, _FunctionDescriptorImpl stub_descriptor,
+            _StorageDescriptor target_descriptor, _LinkerOptions options) {
         final String method_name = "function";
         final String field_name = "scope";
 
@@ -302,7 +295,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         putObject(stub_class, fieldOffset(field), scope);
 
         Method function = getDeclaredMethod(stub_class, method_name, gType.parameterArray());
-        registerNativeMethod(function, generateNativeDowncallStub(scope, f_descriptor, stub_descriptor, options).nativeAddress());
+        registerNativeMethod(function, generateNativeDowncallStub(scope, target_descriptor, stub_descriptor, options).nativeAddress());
 
         MethodHandle stub = unreflect(function);
         Reflection.setMethodType(stub, stubType);
@@ -385,81 +378,72 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
         if (!isCritical) {
             argTypes.add(0, VOID_PTR_T); // JNIEnv*
-            argTypes.add(1, VOID_PTR_T); // jobject or jclass
+            argTypes.add(1, VOID_PTR_T); // jclass
         }
         return LLVMFunctionType(returnType, argTypes.toArray(new LLVMTypeRef[0]), false);
     }
 
-    private static LLVMTypeRef fdToTargetLLVMType(_FunctionDescriptorImpl descriptor, _LinkerOptions options) {
-        MemoryLayout retLayout = descriptor.returnLayoutPlain();
-        List<MemoryLayout> argLayouts = descriptor.argumentLayouts();
-        if (options.isVariadicFunction()) {
-            argLayouts = argLayouts.subList(0, options.firstVariadicArgIndex());
+    private static LLVMTypeRef sdToTargetLLVMType(_StorageDescriptor descriptor, int firstVariadicArgIndex) {
+        LLVMStorage retStorage = descriptor.returnStorage();
+        LLVMStorage[] argStorages = descriptor.argumentStorages();
+        if (firstVariadicArgIndex >= 0) {
+            argStorages = Arrays.copyOfRange(argStorages, 0, firstVariadicArgIndex);
         }
 
         LLVMTypeRef retType;
-        List<LLVMTypeRef> argTypes = new ArrayList<>(argLayouts.size());
+        List<LLVMTypeRef> argTypes = new ArrayList<>(argStorages.length);
 
-        if (retLayout == null) {
+        if (retStorage instanceof NoStorage) {
             retType = VOID_T;
-        } else if (retLayout instanceof GroupLayout gl) {
-            MemoryLayout wrapper = getGroupWrapper(gl, true);
-            if (wrapper != null) {
-                if (wrapper == VOID_WRAPPER) {
-                    retType = VOID_T; // just drop
-                } else {
-                    retType = layoutToLLVMType(wrapper);
-                }
-            } else {
-                // pass through stack as argument with "sret" attribute
-                retType = VOID_T;
-                argTypes.add(layoutToLLVMType(ADDRESS.withTargetLayout(retLayout)));
-            }
+        } else if (retStorage instanceof RawStorage) {
+            retType = layoutToLLVMType(retStorage.layout);
+        } else if (retStorage instanceof WrapperStorage ws) {
+            retType = layoutToLLVMType(ws.wrapper);
+        } else if (retStorage instanceof StackStorage) {
+            // pass through stack as argument with "sret" attribute
+            retType = VOID_T;
+            argTypes.add(layoutToLLVMType(ADDRESS.withTargetLayout(retStorage.layout)));
         } else {
-            retType = layoutToLLVMType(retLayout);
+            throw shouldNotReachHere();
         }
 
-        for (MemoryLayout layout : argLayouts) {
-            if (layout instanceof AddressLayout) {
-                argTypes.add(getPointerType(layout));
-            } else if (layout instanceof GroupLayout gl) {
-                MemoryLayout wrapper = getGroupWrapper(gl, false);
-                if (wrapper != null) {
-                    if (wrapper == VOID_WRAPPER) {
-                        // just drop
-                    } else {
-                        argTypes.add(layoutToLLVMType(wrapper));
-                    }
-                } else {
-                    // pass through stack with "byval" attribute
-                    argTypes.add(getPointerType(gl));
-                }
+        for (LLVMStorage storage : argStorages) {
+            if (storage instanceof NoStorage) {
+                // just drop
+            } else if (storage instanceof RawStorage) {
+                argTypes.add(layoutToLLVMType(storage.layout));
+            } else if (storage instanceof WrapperStorage ws) {
+                argTypes.add(layoutToLLVMType(ws.wrapper));
+            } else if (storage instanceof StackStorage) {
+                // pass through stack with "byval" attribute
+                argTypes.add(layoutToLLVMType(ADDRESS.withTargetLayout(storage.layout)));
             } else {
-                argTypes.add(layoutToLLVMType(layout));
+                throw shouldNotReachHere();
             }
         }
 
-        return LLVMFunctionType(retType, argTypes.toArray(new LLVMTypeRef[0]), options.isVariadicFunction());
+        return LLVMFunctionType(retType, argTypes.toArray(new LLVMTypeRef[0]), firstVariadicArgIndex >= 0);
     }
 
     private static MemorySegment generateNativeDowncallStub(
-            Arena scope, _FunctionDescriptorImpl f_descriptor,
+            Arena scope, _StorageDescriptor target_descriptor,
             _FunctionDescriptorImpl stub_descriptor, _LinkerOptions options) {
         final String function_name = "stub";
         try (var builder = Utils.lock(LLVMCreateBuilderInContext(DEFAULT_CONTEXT), Core::LLVMDisposeBuilder);
              var module = Utils.lock(LLVMModuleCreateWithNameInContext("generic", DEFAULT_CONTEXT), Core::LLVMDisposeModule)) {
 
             LLVMTypeRef stub_type = fdToStubLLVMType(stub_descriptor, options.allowsHeapAccess(), options.isCritical());
-            LLVMValueRef function = LLVMAddFunction(module.value(), function_name, stub_type);
+            LLVMValueRef stub = LLVMAddFunction(module.value(), function_name, stub_type);
 
-            LLVMTypeRef target_type_ptr = LLVMPointerType(fdToTargetLLVMType(f_descriptor, options), 0);
+            LLVMTypeRef target_type = sdToTargetLLVMType(target_descriptor, options.firstVariadicArgIndex());
+            LLVMTypeRef target_type_ptr = LLVMPointerType(target_type, 0);
 
-            LLVMPositionBuilderAtEnd(builder.value(), LLVMAppendBasicBlock(function, ""));
+            LLVMPositionBuilderAtEnd(builder.value(), LLVMAppendBasicBlock(stub, ""));
 
-            LLVMValueRef[] args;
+            LLVMValueRef[] stub_args;
             if (options.allowsHeapAccess()) {
                 List<LLVMValueRef> out = new ArrayList<>();
-                LLVMValueRef[] tmp = LLVMGetParams(function);
+                LLVMValueRef[] tmp = LLVMGetParams(stub);
                 int t = 0;
                 for (MemoryLayout layout : stub_descriptor.argumentLayouts()) {
                     if (layout instanceof GroupLayout || layout instanceof AddressLayout) {
@@ -477,90 +461,94 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         throw shouldNotReachHere();
                     }
                 }
-                args = out.toArray(new LLVMValueRef[0]);
+                stub_args = out.toArray(new LLVMValueRef[0]);
             } else {
-                args = LLVMGetParams(function);
+                stub_args = LLVMGetParams(stub);
                 if (!options.isCritical()) {
-                    args = Arrays.copyOfRange(args, 2, args.length);
+                    // drop JNIEnv* and jclass
+                    stub_args = Arrays.copyOfRange(stub_args, 2, stub_args.length);
                 }
             }
-            assert args.length == stub_descriptor.argumentLayouts().size();
+            assert stub_args.length == stub_descriptor.argumentLayouts().size();
 
             int count = 0; // current index in target_args[] and their count
-            int index = 0; // current index in args[]
-            LLVMValueRef target = LLVMBuildPointerCast(builder.value(), args[index++], target_type_ptr, "");
-            LLVMValueRef[] target_args = new LLVMValueRef[args.length - 1];
+            int index = 0; // current index in stub_args[]
+            LLVMValueRef target = LLVMBuildPointerCast(builder.value(), stub_args[index++], target_type_ptr, "");
+            LLVMValueRef[] target_args = new LLVMValueRef[stub_args.length - index];
             int[] attrs = new int[target_args.length];
             int[] aligns = new int[target_args.length];
-            boolean retVoid = false;
-            MemoryLayout retStore = null;
+            boolean retVoid;
+            MemoryLayout retStore;
             {
-                MemoryLayout retLayout = f_descriptor.returnLayoutPlain();
-                if (retLayout == null) {
+                LLVMStorage retStorage = target_descriptor.returnStorage();
+                if (retStorage instanceof NoStorage) {
                     retVoid = true;
-                } else if (retLayout instanceof GroupLayout gl) {
-                    MemoryLayout retWrapper = getGroupWrapper(gl, true);
-                    if (retWrapper != null) {
-                        int i = index++;
-                        if (retWrapper == VOID_WRAPPER) {
-                            retVoid = true; // just drop
-                        } else {
-                            args[i] = LLVMBuildPointerCast(builder.value(), args[i],
-                                    layoutToLLVMType(ADDRESS.withTargetLayout(retWrapper)), "");
-                            retStore = gl;
-                        }
-                    } else {
-                        // pass through stack as argument with "sret" attribute
-                        int i = index++;
-                        int t = count++;
-                        retVoid = true;
-                        attrs[t] = LLVMStructRetAttribute;
-                        aligns[t] = Math.toIntExact(gl.byteAlignment());
-                        target_args[t] = args[i];
+                    retStore = null;
+                    if (options.isReturnInMemory()) {
+                        index++; // just drop
                     }
+                } else if (retStorage instanceof RawStorage) {
+                    retVoid = false;
+                    retStore = null;
+                } else if (retStorage instanceof WrapperStorage ws) {
+                    retVoid = false;
+                    // Note: store layout, not wrapper
+                    retStore = ws.layout;
+                    stub_args[index] = LLVMBuildPointerCast(builder.value(), stub_args[index],
+                            layoutToLLVMType(ADDRESS.withTargetLayout(ws.wrapper)), "");
+                    index++;
+                } else if (retStorage instanceof StackStorage) {
+                    // pass through stack as argument with "sret" attribute
+                    retVoid = true;
+                    retStore = null;
+                    attrs[count] = LLVMStructRetAttribute;
+                    // Note: alignment from layout, not wrapper
+                    aligns[count] = Math.toIntExact(retStorage.layout.byteAlignment());
+                    target_args[count] = stub_args[index];
+                    index++;
+                    count++;
+                } else {
+                    throw shouldNotReachHere();
                 }
             }
             {
                 int start = index;
-                while (index < args.length) {
-                    MemoryLayout layout = f_descriptor.argumentLayouts().get(index - start);
-                    if (layout instanceof GroupLayout gl) {
-                        MemoryLayout wrapper = getGroupWrapper(gl, false);
-                        if (wrapper != null) {
-                            if (wrapper == VOID_WRAPPER) {
-                                index++; // just drop
-                            } else {
-                                int i = index++;
-                                int t = count++;
-                                args[i] = LLVMBuildPointerCast(builder.value(), args[i],
-                                        layoutToLLVMType(ADDRESS.withTargetLayout(wrapper)), "");
-                                target_args[t] = LLVMBuildLoad(builder.value(), args[i], "");
-                                // Note: copy alignment from gl, not wrapper
-                                LLVMSetAlignment(target_args[t], Math.toIntExact(gl.byteAlignment()));
-                            }
-                        } else {
-                            int i = index++;
-                            int t = count++;
-                            // pass through stack with "byval" attribute
-                            attrs[t] = LLVMByValAttribute;
-                            aligns[t] = Math.toIntExact(gl.byteAlignment());
-                            target_args[t] = args[i];
-                        }
+                while (index < stub_args.length) {
+                    LLVMStorage storage = target_descriptor.argumentStorage(index - start);
+                    if (storage instanceof NoStorage) {
+                        index++; // just drop
+                    } else if (storage instanceof RawStorage) {
+                        target_args[count++] = stub_args[index++];
+                    } else if (storage instanceof WrapperStorage ws) {
+                        stub_args[index] = LLVMBuildPointerCast(builder.value(), stub_args[index],
+                                layoutToLLVMType(ADDRESS.withTargetLayout(ws.wrapper)), "");
+                        target_args[count] = LLVMBuildLoad(builder.value(), stub_args[index], "");
+                        // Note: alignment from layout, not wrapper
+                        LLVMSetAlignment(target_args[count], Math.toIntExact(ws.layout.byteAlignment()));
+                        index++;
+                        count++;
+                    } else if (storage instanceof StackStorage) {
+                        // pass through stack with "byval" attribute
+                        attrs[count] = LLVMByValAttribute;
+                        aligns[count] = Math.toIntExact(storage.layout.byteAlignment());
+                        target_args[count] = stub_args[index];
+                        index++;
+                        count++;
                     } else {
-                        target_args[count++] = args[index++];
+                        throw shouldNotReachHere();
                     }
                 }
             }
 
-            LLVMValueRef ret = LLVMBuildCall(builder.value(), target, Arrays.copyOf(target_args, count), "");
+            LLVMValueRef call = LLVMBuildCall(builder.value(), target, Arrays.copyOf(target_args, count), "");
 
             final int offset = 1; // Note: first index is 1, not 0
             for (int i = 0; i < count; i++) {
                 if (attrs[i] != 0) {
-                    LLVMAddInstrAttribute(ret, i + offset, attrs[i]);
+                    LLVMAddInstrAttribute(call, i + offset, attrs[i]);
                 }
                 if (aligns[i] != 0) {
-                    LLVMSetInstrParamAlignment(ret, i + offset, aligns[i]);
+                    LLVMSetInstrParamAlignment(call, i + offset, aligns[i]);
                 }
             }
 
@@ -568,10 +556,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 LLVMBuildRetVoid(builder.value());
             } else {
                 if (retStore == null) {
-                    LLVMBuildRet(builder.value(), ret);
+                    LLVMBuildRet(builder.value(), call);
                 } else {
-                    int ret_index = 1;
-                    LLVMValueRef store = LLVMBuildStore(builder.value(), ret, args[ret_index]);
+                    final int ret_index = 1;
+                    LLVMValueRef store = LLVMBuildStore(builder.value(), call, stub_args[ret_index]);
                     LLVMSetAlignment(store, Math.toIntExact(retStore.byteAlignment()));
                     LLVMBuildRetVoid(builder.value());
                 }
@@ -617,9 +605,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
     @Override
     protected MethodHandle arrangeDowncall(FunctionDescriptor descriptor, _LinkerOptions options) {
-        _FunctionDescriptorImpl f_descriptor = (_FunctionDescriptorImpl) descriptor;
+        _FunctionDescriptorImpl descriptor_impl = (_FunctionDescriptorImpl) descriptor;
+        _StorageDescriptor target_descriptor = _LLVMCallingConvention.computeStorages(descriptor_impl);
         MemoryLayout ret = null;
-        _FunctionDescriptorImpl stub_descriptor = f_descriptor;
+        _FunctionDescriptorImpl stub_descriptor = descriptor_impl;
         if (options.isReturnInMemory()) {
             ret = stub_descriptor.returnLayoutPlain();
             stub_descriptor = stub_descriptor.dropReturnLayout()
@@ -629,7 +618,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         stub_descriptor = stub_descriptor.insertArgumentLayouts(0, ADDRESS);
         MethodType handleType = fdToHandleMethodType(stub_descriptor);
         MethodType stubType = fdToStubMethodType(stub_descriptor, options.allowsHeapAccess());
-        MethodHandle stub = generateJavaDowncallStub(stubType, f_descriptor, stub_descriptor, options);
+        MethodHandle stub = generateJavaDowncallStub(stubType, stub_descriptor, target_descriptor, options);
         int capturedStateMask = options.capturedCallState()
                 .mapToInt(_CapturableState::mask)
                 .reduce(0, (a, b) -> a | b);
@@ -661,192 +650,5 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor descriptor, _LinkerOptions options) {
         //TODO
         throw new UnsupportedOperationException("Unsuppurted yet!");
-    }
-
-    private static class x86_64_calling_convention {
-
-        private static void markWrapperType(WrapperType[] types, int start, int size, WrapperType type) {
-            for (int i = 0; i < size; i++) {
-                WrapperType oldType = types[start + i];
-                if (oldType == null || oldType.ordinal() < type.ordinal()) {
-                    types[start + i] = type;
-                }
-            }
-        }
-
-        private static void markWrapperType(MemoryLayout layout, int offset, WrapperType[] types) {
-            if (layout instanceof StructLayout sl) {
-                for (MemoryLayout member : sl.memberLayouts()) {
-                    markWrapperType(member, offset, types);
-                    offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
-                }
-            } else if (layout instanceof UnionLayout ul) {
-                for (MemoryLayout member : ul.memberLayouts()) {
-                    markWrapperType(member, offset, types);
-                }
-            } else if (layout instanceof SequenceLayout sl) {
-                MemoryLayout el = sl.elementLayout();
-                int count = Math.toIntExact(sl.elementCount());
-                int size = Math.toIntExact(el.byteSize());
-                for (int i = 0; i < count; i++) {
-                    markWrapperType(el, offset, types);
-                    offset = Math.addExact(offset, size);
-                }
-            } else if (layout instanceof ValueLayout vl) {
-                WrapperType type;
-                if (layout instanceof ValueLayout.OfFloat) {
-                    type = WrapperType.FLOAT;
-                } else if (layout instanceof ValueLayout.OfDouble) {
-                    type = WrapperType.DOUBLE;
-                } else {
-                    type = WrapperType.INT;
-                }
-                markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
-            } else if (layout instanceof PaddingLayout) {
-                // skip
-            } else {
-                throw shouldNotReachHere();
-            }
-        }
-
-        private static MemoryLayout getGroupWrapper(WrapperType[] types, int count) {
-            WrapperType max = null;
-            for (WrapperType type : types) {
-                if (max == null) {
-                    max = type;
-                }
-                if (type != null && type.ordinal() > max.ordinal()) {
-                    max = type;
-                }
-            }
-            return switch (count) {
-                case 0 -> VOID_WRAPPER;
-                case 1 -> JAVA_BYTE;
-                case 2 -> JAVA_SHORT;
-                case 3 -> JAVA_INT;
-                case 4 -> max == WrapperType.INT ? JAVA_INT : JAVA_FLOAT;
-                case 8 -> max == WrapperType.INT ? JAVA_LONG : (max == WrapperType.DOUBLE ?
-                        JAVA_DOUBLE : structLayout(JAVA_FLOAT, JAVA_FLOAT));
-                default -> JAVA_LONG;
-            };
-        }
-
-        public static MemoryLayout getGroupWrapper(GroupLayout layout) {
-            if (layout.byteSize() > 16 /* 128 bit */) return null;
-            WrapperType[] types = new WrapperType[16];
-            markWrapperType(layout, 0, types);
-            int count = 16;
-            while (count > 0 && types[count - 1] == null) {
-                count--;
-            }
-            WrapperType[] upper_half = Arrays.copyOf(types, 8);
-            if (count <= 8) {
-                return getGroupWrapper(upper_half, count);
-            }
-            WrapperType[] lower_half = Arrays.copyOfRange(types, 8, 16);
-            return structLayout(getGroupWrapper(upper_half, 8),
-                    getGroupWrapper(lower_half, count - 8));
-        }
-    }
-
-    private static class aarch64_calling_convention {
-        private static void markWrapperType(WrapperType[] types, int start, int size, WrapperType type) {
-            for (int i = 0; i < size; i++) {
-                WrapperType oldType = types[start + i];
-                if (oldType == null) {
-                    types[start + i] = type;
-                } else if (oldType.ordinal() != type.ordinal()) {
-                    types[start + i] = WrapperType.INT;
-                }
-            }
-        }
-
-        private static void markWrapperType(MemoryLayout layout, int offset, WrapperType[] types) {
-            if (layout instanceof StructLayout sl) {
-                for (MemoryLayout member : sl.memberLayouts()) {
-                    markWrapperType(member, offset, types);
-                    offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
-                }
-            } else if (layout instanceof UnionLayout ul) {
-                for (MemoryLayout member : ul.memberLayouts()) {
-                    markWrapperType(member, offset, types);
-                }
-            } else if (layout instanceof SequenceLayout sl) {
-                MemoryLayout el = sl.elementLayout();
-                int count = Math.toIntExact(sl.elementCount());
-                int size = Math.toIntExact(el.byteSize());
-                for (int i = 0; i < count; i++) {
-                    markWrapperType(el, offset, types);
-                    offset = Math.addExact(offset, size);
-                }
-            } else if (layout instanceof ValueLayout vl) {
-                WrapperType type;
-                if (layout instanceof ValueLayout.OfFloat) {
-                    type = WrapperType.FLOAT;
-                } else if (layout instanceof ValueLayout.OfDouble) {
-                    type = WrapperType.DOUBLE;
-                } else {
-                    type = WrapperType.INT;
-                }
-                markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
-            } else if (layout instanceof PaddingLayout) {
-                // skip
-            } else {
-                throw shouldNotReachHere();
-            }
-        }
-
-        public static MemoryLayout getGroupWrapper(GroupLayout layout) {
-            if (layout.byteSize() > 32 /* 256 bit */) return null;
-            WrapperType[] types = new WrapperType[32];
-            markWrapperType(layout, 0, types);
-            int count = 32;
-            while (count > 0 && types[count - 1] == null) {
-                count--;
-            }
-            types = Arrays.copyOfRange(types, 0, count);
-            WrapperType common = null;
-            for (WrapperType type : types) {
-                if (common == null) {
-                    common = type;
-                }
-                if (common != type) {
-                    common = WrapperType.INT;
-                    break;
-                }
-            }
-            common = common == null ? WrapperType.INT : common;
-            if (count > 16 /* 128 bit */ && common != WrapperType.DOUBLE) {
-                return null;
-            }
-            return switch (common) {
-                case INT -> count <= 8 ? JAVA_LONG : structLayout(JAVA_LONG, JAVA_LONG);
-                case DOUBLE -> sequenceLayout(count / 8, JAVA_DOUBLE);
-                case FLOAT -> sequenceLayout(count / 4, JAVA_FLOAT);
-                //noinspection UnnecessaryDefault
-                default -> throw shouldNotReachHere();
-            };
-        }
-    }
-
-    private enum WrapperType {
-        FLOAT, DOUBLE, INT
-    }
-
-    // Note: invalid layout
-    public static final MemoryLayout VOID_WRAPPER = AndroidUnsafe.allocateInstance(_PaddingLayoutImpl.class);
-
-    public static MemoryLayout getGroupWrapper(GroupLayout layout, boolean is_return) {
-        if (CURRENT_INSTRUCTION_SET == X86) return null; // TODO: check
-        if (CURRENT_INSTRUCTION_SET == X86_64) {
-            return x86_64_calling_convention.getGroupWrapper(layout);
-        }
-        if (CURRENT_INSTRUCTION_SET == ARM64) {
-            // TODO: use is_return
-            // TODO: check
-            return aarch64_calling_convention.getGroupWrapper(layout);
-        }
-        //TODO: arm, riscv64
-        throw new UnsupportedOperationException("Not supported yet!");
     }
 }

@@ -115,7 +115,8 @@ class _LinkerOptions {
     }
 
     public int firstVariadicArgIndex() {
-        return getOption(FirstVariadicArg.class).index();
+        FirstVariadicArg option = getOption(FirstVariadicArg.class);
+        return option == null ? -1 : option.index();
     }
 
     public boolean isCritical() {
