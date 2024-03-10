@@ -20,11 +20,11 @@ import static com.v7878.llvm._Utils.UNSIGNED_LONG_LONG;
 import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.allocString;
-import static com.v7878.unsafe.NativeCodeBlob.CURRENT_INSTRUCTION_SET;
-import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.ARM;
-import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.ARM64;
-import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86;
-import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86_64;
+import static com.v7878.unsafe.InstructionSet.ARM;
+import static com.v7878.unsafe.InstructionSet.ARM64;
+import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
+import static com.v7878.unsafe.InstructionSet.X86;
+import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.foreign.Arena;

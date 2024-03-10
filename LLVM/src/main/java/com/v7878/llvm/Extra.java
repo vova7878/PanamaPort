@@ -9,9 +9,9 @@ import static com.v7878.llvm.ObjectFile.LLVMGetSymbols;
 import static com.v7878.llvm.ObjectFile.LLVMIsSymbolIteratorAtEnd;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToContainingSection;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToNextSymbol;
-import static com.v7878.unsafe.NativeCodeBlob.CURRENT_INSTRUCTION_SET;
-import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86;
-import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86_64;
+import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
+import static com.v7878.unsafe.InstructionSet.X86;
+import static com.v7878.unsafe.InstructionSet.X86_64;
 
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.ObjectFile.LLVMObjectFileRef;

@@ -50,10 +50,10 @@ import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
-import static com.v7878.unsafe.NativeCodeBlob.CURRENT_INSTRUCTION_SET;
-import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.ARM64;
-import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86;
-import static com.v7878.unsafe.NativeCodeBlob.InstructionSet.X86_64;
+import static com.v7878.unsafe.InstructionSet.ARM64;
+import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
+import static com.v7878.unsafe.InstructionSet.X86;
+import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
@@ -366,8 +366,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     private static LLVMTypeRef fdToStubLLVMType(_FunctionDescriptorImpl descriptor,
                                                 boolean allowsHeapAccess, boolean isCritical) {
         MemoryLayout retLayout = descriptor.returnLayoutPlain();
-        LLVMTypeRef returnType = retLayout == null ? VOID_T :
-                layoutToLLVMType(retLayout);
+        LLVMTypeRef returnType = retLayout == null ? VOID_T : layoutToLLVMType(retLayout);
         List<MemoryLayout> argLayouts = descriptor.argumentLayouts();
         List<LLVMTypeRef> argTypes = new ArrayList<>(argLayouts.size());
         for (MemoryLayout layout : argLayouts) {

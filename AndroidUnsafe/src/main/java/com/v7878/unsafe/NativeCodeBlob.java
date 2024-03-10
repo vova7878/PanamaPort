@@ -6,10 +6,10 @@ import static com.v7878.misc.Math.roundUpL;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.copyMemory;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
+import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.VM.getCurrentInstructionSet;
 import static java.lang.annotation.ElementType.METHOD;
 
 import android.system.OsConstants;
@@ -30,37 +30,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class NativeCodeBlob {
-    public enum InstructionSet {
-        ARM(8),
-        ARM64(16),
-        X86(16),
-        X86_64(16),
-        RISCV64(16);
-
-        private final int code_alignment;
-
-        InstructionSet(int code_alignment) {
-            this.code_alignment = code_alignment;
-        }
-
-        public int codeAlignment() {
-            return code_alignment;
-        }
-    }
-
-    public static final InstructionSet CURRENT_INSTRUCTION_SET;
-
-    static {
-        String iset = getCurrentInstructionSet();
-        switch (iset) {
-            case "arm" -> CURRENT_INSTRUCTION_SET = InstructionSet.ARM;
-            case "arm64" -> CURRENT_INSTRUCTION_SET = InstructionSet.ARM64;
-            case "x86" -> CURRENT_INSTRUCTION_SET = InstructionSet.X86;
-            case "x86_64" -> CURRENT_INSTRUCTION_SET = InstructionSet.X86_64;
-            case "riscv64" -> CURRENT_INSTRUCTION_SET = InstructionSet.RISCV64;
-            default -> throw new IllegalStateException("unsupported instruction set: " + iset);
-        }
-    }
 
     private static final int CODE_PROT = OsConstants.PROT_READ | OsConstants.PROT_WRITE | OsConstants.PROT_EXEC;
     private static final int MAP_ANONYMOUS = 0x20;
