@@ -48,7 +48,7 @@ public class Extra {
         if (CURRENT_INSTRUCTION_SET == X86_64)
             return "+x87,+mmx,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+popcnt";
         if (CURRENT_INSTRUCTION_SET == ARM64)
-            return "+fp-armv8,+neon,+v8a";
+            return "+fp-armv8,+neon,+v8a,+reserve-x18";
         return "";
     }
 
