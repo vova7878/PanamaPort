@@ -4315,12 +4315,15 @@ public class Core {
     //LLVMValueRef LLVMBuildAggregateRet(LLVMBuilderRef B, LLVMValueRef *RetVals, int /* unsigned */ N) {
     //    return nothrows_run(() -> Function.LLVMBuildAggregateRet.handle().invoke());
     //}
-    //LLVMValueRef LLVMBuildBr(LLVMBuilderRef B, LLVMBasicBlockRef Dest) {
-    //    return nothrows_run(() -> Function.LLVMBuildBr.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildCondBr(LLVMBuilderRef B, LLVMValueRef If, LLVMBasicBlockRef Then, LLVMBasicBlockRef Else) {
-    //    return nothrows_run(() -> Function.LLVMBuildCondBr.handle().invoke());
-    //}
+
+    public static LLVMValueRef LLVMBuildBr(LLVMBuilderRef B, LLVMBasicBlockRef Dest) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildBr.handle().invoke(B.value(), Dest.value())));
+    }
+
+    public static LLVMValueRef LLVMBuildCondBr(LLVMBuilderRef B, LLVMValueRef If, LLVMBasicBlockRef Then, LLVMBasicBlockRef Else) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildCondBr.handle().invoke(B.value(), If.value(), Then.value(), Else.value())));
+    }
+
     //LLVMValueRef LLVMBuildSwitch(LLVMBuilderRef B, LLVMValueRef V, LLVMBasicBlockRef Else, int /* unsigned */ NumCases) {
     //    return nothrows_run(() -> Function.LLVMBuildSwitch.handle().invoke());
     //}
