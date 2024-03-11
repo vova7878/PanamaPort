@@ -7,7 +7,8 @@ import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.foreign.SimpleBulkLinker.WORD_CLASS;
+import static com.v7878.unsafe.foreign.SimpleLinker.WORD_CLASS;
+import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 
 import androidx.annotation.Keep;
 
@@ -17,7 +18,6 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.invoke.VarHandle;
 import com.v7878.unsafe.foreign.ELF.SymTab;
 import com.v7878.unsafe.foreign.MMap.MMapEntry;
-import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -125,7 +125,7 @@ public class LibDL {
         return ELF.readSymTab(ByteBuffer.wrap(tmp).order(ByteOrder.nativeOrder()), true);
     }
 
-    enum Function implements SymbolHolder {
+    enum Function {
         //FIXME!!! (SIGSEGV on api levels [26, 28])
         //dlopen(s_dlopen, WORD_CLASS, WORD_CLASS, int.class),
         //dlclose(s_dlclose, int.class, WORD_CLASS),
@@ -137,28 +137,18 @@ public class LibDL {
         // for LibDLExt
         android_dlopen_ext(s_android_dlopen_ext, WORD_CLASS, WORD_CLASS, int.class, WORD_CLASS);
 
-        static {
-            SimpleBulkLinker.processSymbols(Arena.global(), Function.values());
-        }
-
         private final MemorySegment symbol;
         private final MethodType type;
-
-        private Supplier<MethodHandle> handle;
+        private final Supplier<MethodHandle> handle;
 
         Function(MemorySegment symbol, Class<?> rtype, Class<?>... atypes) {
             this.symbol = symbol;
             this.type = MethodType.methodType(rtype, atypes);
+            this.handle = processSymbol(Arena.global(), symbol(), name(), type());
         }
 
-        @Override
         public MethodType type() {
             return type;
-        }
-
-        @Override
-        public void setHandle(Supplier<MethodHandle> handle) {
-            this.handle = handle;
         }
 
         public long symbol() {

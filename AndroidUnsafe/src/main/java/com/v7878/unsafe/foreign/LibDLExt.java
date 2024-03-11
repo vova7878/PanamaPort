@@ -8,7 +8,8 @@ import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
-import static com.v7878.unsafe.foreign.SimpleBulkLinker.WORD_CLASS;
+import static com.v7878.unsafe.foreign.SimpleLinker.WORD_CLASS;
+import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 import static com.v7878.unsafe.io.IOUtils.getDescriptorValue;
 
 import android.system.ErrnoException;
@@ -20,14 +21,12 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
 import com.v7878.invoke.VarHandle;
 import com.v7878.unsafe.access.JavaForeignAccess;
-import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
 import com.v7878.unsafe.io.IOUtils;
 
 import java.io.FileDescriptor;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
-import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 public class LibDLExt {
@@ -226,7 +225,7 @@ public class LibDLExt {
         }
     }
 
-    private enum Function implements SymbolHolder2 {
+    private enum Function {
         android_get_LD_LIBRARY_PATH(void.class, WORD_CLASS, WORD_CLASS),
         android_update_LD_LIBRARY_PATH(void.class, WORD_CLASS),
         android_init_anonymous_namespace(boolean.class, WORD_CLASS, WORD_CLASS),
@@ -234,36 +233,16 @@ public class LibDLExt {
         android_link_namespaces(boolean.class, WORD_CLASS, WORD_CLASS, WORD_CLASS),
         android_get_exported_namespace(WORD_CLASS, WORD_CLASS);
 
-        static {
-            SimpleBulkLinker.processSymbols(DLEXT, DLEXT_SCOPE, Function.values());
-        }
-
         private final MethodType type;
-
-        private LongSupplier symbol;
-        private Supplier<MethodHandle> handle;
+        private final Supplier<MethodHandle> handle;
 
         Function(Class<?> rtype, Class<?>... atypes) {
             this.type = MethodType.methodType(rtype, atypes);
+            this.handle = processSymbol(DLEXT, DLEXT_SCOPE, name(), type());
         }
 
-        @Override
         public MethodType type() {
             return type;
-        }
-
-        @Override
-        public void setSymbol(LongSupplier symbol) {
-            this.symbol = symbol;
-        }
-
-        @Override
-        public void setHandle(Supplier<MethodHandle> handle) {
-            this.handle = handle;
-        }
-
-        public long symbol() {
-            return symbol.getAsLong();
         }
 
         public MethodHandle handle() {
@@ -274,7 +253,6 @@ public class LibDLExt {
         public String toString() {
             return name() + "{" +
                     "type=" + type +
-                    ", symbol=" + symbol() +
                     ", handle=" + handle() + '}';
         }
     }

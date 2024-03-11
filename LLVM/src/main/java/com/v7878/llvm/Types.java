@@ -2,7 +2,7 @@ package com.v7878.llvm;
 
 import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.unsafe.Utils.assert_;
-import static com.v7878.unsafe.foreign.SimpleBulkLinker.BOOL_AS_INT_CLASS;
+import static com.v7878.unsafe.foreign.SimpleLinker.BOOL_AS_INT_CLASS;
 
 public final class Types {
     private Types() {

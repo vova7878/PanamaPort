@@ -26,17 +26,14 @@ import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.unsafe.foreign.SimpleBulkLinker;
-import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 public class Target {
@@ -82,7 +79,7 @@ public class Target {
         }
     }
 
-    private enum Function implements SymbolHolder2 {
+    private enum Function {
         // x86 and x86_64
         LLVMInitializeX86TargetInfo(CURRENT_INSTRUCTION_SET == X86 || CURRENT_INSTRUCTION_SET == X86_64, void.class),
         LLVMInitializeX86TargetMC(CURRENT_INSTRUCTION_SET == X86 || CURRENT_INSTRUCTION_SET == X86_64, void.class),
@@ -133,44 +130,20 @@ public class Target {
         LLVMElementAtOffset(UNSIGNED_INT, cLLVMTargetDataRef, cLLVMTypeRef, UNSIGNED_LONG_LONG),
         LLVMOffsetOfElement(UNSIGNED_LONG_LONG, cLLVMTargetDataRef, cLLVMTypeRef, UNSIGNED_INT);
 
-        static {
-            SimpleBulkLinker.processSymbols(LLVM, LLVM_SCOPE, Arrays.stream(Function.values())
-                    .filter(f -> f.is_supperted).toArray(Function[]::new));
-        }
-
-        private final boolean is_supperted;
         private final MethodType type;
-
-        private LongSupplier symbol;
-        private Supplier<MethodHandle> handle;
+        private final Supplier<MethodHandle> handle;
 
         Function(boolean is_supperted, Class<?> rtype, Class<?>... atypes) {
             this.type = MethodType.methodType(rtype, atypes);
-            this.is_supperted = is_supperted;
+            this.handle = is_supperted ? processSymbol(LLVM, LLVM_SCOPE, name(), type()) : null;
         }
 
         Function(Class<?> rtype, Class<?>... atypes) {
-            this.type = MethodType.methodType(rtype, atypes);
-            this.is_supperted = true;
+            this(true, rtype, atypes);
         }
 
-        @Override
         public MethodType type() {
             return type;
-        }
-
-        @Override
-        public void setSymbol(LongSupplier symbol) {
-            this.symbol = symbol;
-        }
-
-        @Override
-        public void setHandle(Supplier<MethodHandle> handle) {
-            this.handle = handle;
-        }
-
-        public long symbol() {
-            return symbol.getAsLong();
         }
 
         public MethodHandle handle() {
@@ -181,7 +154,6 @@ public class Target {
         public String toString() {
             return name() + "{" +
                     "type=" + type +
-                    ", symbol=" + symbol() +
                     ", handle=" + handle() + '}';
         }
     }

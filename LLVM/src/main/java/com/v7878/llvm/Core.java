@@ -47,18 +47,16 @@ import static com.v7878.llvm._Utils.const_ptr;
 import static com.v7878.llvm._Utils.ptr;
 import static com.v7878.llvm._Utils.readPointerArray;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
 import com.v7878.llvm.Types.LLVMModuleProviderRef;
-import com.v7878.unsafe.foreign.SimpleBulkLinker;
-import com.v7878.unsafe.foreign.SimpleBulkLinker.SymbolHolder2;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
-import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 public class Core {
@@ -885,7 +883,7 @@ public class Core {
     static final Class<?> LLVMDiagnosticHandler = VOID_PTR; // void (*LLVMDiagnosticHandler)(LLVMDiagnosticInfoRef, void*);
     static final Class<?> LLVMYieldCallback = VOID_PTR; // void (*LLVMYieldCallback)(LLVMContextRef, void*);
 
-    private enum Function implements SymbolHolder2 {
+    private enum Function {
         LLVMInitializeCore(void.class, cLLVMPassRegistryRef),
         LLVMShutdown(void.class),
         LLVMCreateMessage(CHAR_PTR, CONST_CHAR_PTR),
@@ -1475,36 +1473,16 @@ public class Core {
         LLVMStopMultithreaded(void.class),
         LLVMIsMultithreaded(LLVMBool);
 
-        static {
-            SimpleBulkLinker.processSymbols(LLVM, LLVM_SCOPE, Function.values());
-        }
-
         private final MethodType type;
-
-        private LongSupplier symbol;
-        private Supplier<MethodHandle> handle;
+        private final Supplier<MethodHandle> handle;
 
         Function(Class<?> rtype, Class<?>... atypes) {
             this.type = MethodType.methodType(rtype, atypes);
+            this.handle = processSymbol(LLVM, LLVM_SCOPE, name(), type());
         }
 
-        @Override
         public MethodType type() {
             return type;
-        }
-
-        @Override
-        public void setSymbol(LongSupplier symbol) {
-            this.symbol = symbol;
-        }
-
-        @Override
-        public void setHandle(Supplier<MethodHandle> handle) {
-            this.handle = handle;
-        }
-
-        public long symbol() {
-            return symbol.getAsLong();
         }
 
         public MethodHandle handle() {
@@ -1515,7 +1493,6 @@ public class Core {
         public String toString() {
             return name() + "{" +
                     "type=" + type +
-                    ", symbol=" + symbol() +
                     ", handle=" + handle() + '}';
         }
     }

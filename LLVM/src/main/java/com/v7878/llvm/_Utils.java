@@ -6,7 +6,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.llvm.Core.LLVMDisposeMessage;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
-import static com.v7878.unsafe.foreign.SimpleBulkLinker.WORD_CLASS;
+import static com.v7878.unsafe.foreign.SimpleLinker.WORD_CLASS;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
