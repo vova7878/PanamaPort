@@ -276,11 +276,6 @@ final class _LLVMCallingConvention {
             };
         }
 
-        public static boolean isFP(ValueLayout layout) {
-            return layout instanceof ValueLayout.OfDouble
-                    || layout instanceof ValueLayout.OfFloat;
-        }
-
         public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
             LLVMStorage retStorage = descriptor.returnLayout().map(layout -> {
                 if (layout instanceof ValueLayout vl) {
@@ -296,25 +291,17 @@ final class _LLVMCallingConvention {
                 }
                 throw shouldNotReachHere();
             }).orElse(new NoStorage(null));
-            final int[] arg_regs = {/* integer regs */ 8, /* floating point regs */ 8};
             LLVMStorage[] argStorages = descriptor.argumentLayouts().stream().map(layout -> {
                 if (layout instanceof ValueLayout vl) {
-                    int type = isFP(vl) ? 1 : 0;
-                    arg_regs[type] = Math.max(0, arg_regs[type] - 1);
                     return new RawStorage(vl);
                 }
                 if (layout instanceof GroupLayout gl) {
                     var info = getWrappers(gl);
-                    if (info != null) {
-                        int type = isFP(info.first) ? 1 : 0;
-                        if (arg_regs[type] >= info.second) {
-                            arg_regs[type] -= info.second;
-                            MemoryLayout wrapper = sequenceLayout(info.second, info.first);
-                            return new WrapperStorage(gl, wrapper);
-                        }
+                    if (info == null) {
+                        return new StackStorage(gl);
                     }
-                    arg_regs[0] = Math.max(0, arg_regs[0] - 1); // pointer arg
-                    return new StackStorage(gl);
+                    MemoryLayout wrapper = sequenceLayout(info.second, info.first);
+                    return new WrapperStorage(gl, wrapper);
                 }
                 throw shouldNotReachHere();
             }).toArray(LLVMStorage[]::new);
@@ -325,7 +312,6 @@ final class _LLVMCallingConvention {
     public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
         if (CURRENT_INSTRUCTION_SET == X86) return x86_android.computeStorages(descriptor);
         if (CURRENT_INSTRUCTION_SET == X86_64) return x86_64_android.computeStorages(descriptor);
-        // TODO: test
         if (CURRENT_INSTRUCTION_SET == ARM64) return aarch64_android.computeStorages(descriptor);
         //TODO: arm, riscv64
         throw new UnsupportedOperationException("Not supported yet!");
