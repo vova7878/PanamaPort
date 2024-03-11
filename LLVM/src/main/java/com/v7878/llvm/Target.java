@@ -30,6 +30,7 @@ import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.llvm.Types.AddressValue;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -45,16 +46,39 @@ public class Target {
     static final Class<?> cLLVMTargetDataRef = VOID_PTR;
     static final Class<?> cLLVMTargetLibraryInfoRef = VOID_PTR;
 
-    public static final class LLVMTargetDataRef extends Types.AddressValue {
+    public static final class LLVMTargetDataRef extends AddressValue {
 
-        LLVMTargetDataRef(long value) {
+        private LLVMTargetDataRef(long value) {
             super(value);
+        }
+
+        public static LLVMTargetDataRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMTargetDataRef of 0");
+            }
+            return new LLVMTargetDataRef(value);
+        }
+
+        public static LLVMTargetDataRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMTargetDataRef(value);
         }
     }
 
-    public static final class LLVMTargetLibraryInfoRef extends Types.AddressValue {
-        LLVMTargetLibraryInfoRef(long value) {
+    public static final class LLVMTargetLibraryInfoRef extends AddressValue {
+
+        private LLVMTargetLibraryInfoRef(long value) {
             super(value);
+        }
+
+        public static LLVMTargetLibraryInfoRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMTargetLibraryInfoRef of 0");
+            }
+            return new LLVMTargetLibraryInfoRef(value);
+        }
+
+        public static LLVMTargetLibraryInfoRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMTargetLibraryInfoRef(value);
         }
     }
 
@@ -240,7 +264,7 @@ public class Target {
      * Obtain the data layout for a module.
      */
     public static LLVMTargetDataRef LLVMGetModuleDataLayout(LLVMModuleRef M) {
-        return nothrows_run(() -> new LLVMTargetDataRef((long) Function.LLVMGetModuleDataLayout.handle().invoke(M.value())));
+        return nothrows_run(() -> LLVMTargetDataRef.ofNullable((long) Function.LLVMGetModuleDataLayout.handle().invoke(M.value())));
     }
 
     /**
@@ -256,7 +280,7 @@ public class Target {
     public static LLVMTargetDataRef LLVMCreateTargetData(String StringRep) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_StringRep = allocString(arena, StringRep);
-            return nothrows_run(() -> new LLVMTargetDataRef((long) Function.LLVMCreateTargetData.handle().invoke(c_StringRep.nativeAddress())));
+            return nothrows_run(() -> LLVMTargetDataRef.ofNullable((long) Function.LLVMCreateTargetData.handle().invoke(c_StringRep.nativeAddress())));
         }
     }
 
@@ -309,7 +333,7 @@ public class Target {
      * Returns the integer type that is the same size as a pointer on a target.
      */
     public static LLVMTypeRef LLVMIntPtrType(LLVMTargetDataRef TD) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntPtrType.handle().invoke(TD.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMIntPtrType.handle().invoke(TD.value())));
     }
 
     /**
@@ -317,14 +341,14 @@ public class Target {
      * This version allows the address space to be specified.
      */
     public static LLVMTypeRef LLVMIntPtrTypeForAS(LLVMTargetDataRef TD, int /* unsigned */ AS) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntPtrTypeForAS.handle().invoke(TD.value(), AS)));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMIntPtrTypeForAS.handle().invoke(TD.value(), AS)));
     }
 
     /**
      * Returns the integer type that is the same size as a pointer on a target.
      */
     public static LLVMTypeRef LLVMIntPtrTypeInContext(LLVMContextRef C, LLVMTargetDataRef TD) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntPtrTypeInContext.handle().invoke(C.value(), TD.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMIntPtrTypeInContext.handle().invoke(C.value(), TD.value())));
     }
 
     /**
@@ -332,7 +356,7 @@ public class Target {
      * This version allows the address space to be specified.
      */
     public static LLVMTypeRef LLVMIntPtrTypeForASInContext(LLVMContextRef C, LLVMTargetDataRef TD, int /* unsigned */ AS) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntPtrTypeForASInContext.handle().invoke(C.value(), TD.value(), AS)));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMIntPtrTypeForASInContext.handle().invoke(C.value(), TD.value(), AS)));
     }
 
     /**

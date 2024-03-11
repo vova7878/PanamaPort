@@ -35,26 +35,73 @@ public class ObjectFile {
 
     public static final class LLVMObjectFileRef extends AddressValue {
 
-        LLVMObjectFileRef(long value) {
+        private LLVMObjectFileRef(long value) {
             super(value);
+        }
+
+        public static LLVMObjectFileRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMObjectFileRef of 0");
+            }
+            return new LLVMObjectFileRef(value);
+        }
+
+        public static LLVMObjectFileRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMObjectFileRef(value);
         }
     }
 
     public static final class LLVMSectionIteratorRef extends AddressValue {
-        LLVMSectionIteratorRef(long value) {
+
+        private LLVMSectionIteratorRef(long value) {
             super(value);
+        }
+
+        public static LLVMSectionIteratorRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMSectionIteratorRef of 0");
+            }
+            return new LLVMSectionIteratorRef(value);
+        }
+
+        public static LLVMSectionIteratorRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMSectionIteratorRef(value);
         }
     }
 
     public static final class LLVMSymbolIteratorRef extends AddressValue {
-        LLVMSymbolIteratorRef(long value) {
+
+        private LLVMSymbolIteratorRef(long value) {
             super(value);
+        }
+
+        public static LLVMSymbolIteratorRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMSymbolIteratorRef of 0");
+            }
+            return new LLVMSymbolIteratorRef(value);
+        }
+
+        public static LLVMSymbolIteratorRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMSymbolIteratorRef(value);
         }
     }
 
     public static final class LLVMRelocationIteratorRef extends AddressValue {
-        LLVMRelocationIteratorRef(long value) {
+
+        private LLVMRelocationIteratorRef(long value) {
             super(value);
+        }
+
+        public static LLVMRelocationIteratorRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMRelocationIteratorRef of 0");
+            }
+            return new LLVMRelocationIteratorRef(value);
+        }
+
+        public static LLVMRelocationIteratorRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMRelocationIteratorRef(value);
         }
     }
 
@@ -115,7 +162,7 @@ public class ObjectFile {
     // ObjectFile creation
 
     public static LLVMObjectFileRef LLVMCreateObjectFile(LLVMMemoryBufferRef MemBuf) {
-        return nothrows_run(() -> new LLVMObjectFileRef((long) Function.LLVMCreateObjectFile.handle().invoke(MemBuf.value())));
+        return nothrows_run(() -> LLVMObjectFileRef.ofNullable((long) Function.LLVMCreateObjectFile.handle().invoke(MemBuf.value())));
     }
 
     public static void LLVMDisposeObjectFile(LLVMObjectFileRef ObjectFile) {
@@ -125,7 +172,7 @@ public class ObjectFile {
     // ObjectFile Section iterators
 
     public static LLVMSectionIteratorRef LLVMGetSections(LLVMObjectFileRef ObjectFile) {
-        return nothrows_run(() -> new LLVMSectionIteratorRef((long) Function.LLVMGetSections.handle().invoke(ObjectFile.value())));
+        return nothrows_run(() -> LLVMSectionIteratorRef.ofNullable((long) Function.LLVMGetSections.handle().invoke(ObjectFile.value())));
     }
 
     public static void LLVMDisposeSectionIterator(LLVMSectionIteratorRef SI) {
@@ -147,7 +194,7 @@ public class ObjectFile {
     // ObjectFile Symbol iterators
 
     public static LLVMSymbolIteratorRef LLVMGetSymbols(LLVMObjectFileRef ObjectFile) {
-        return nothrows_run(() -> new LLVMSymbolIteratorRef((long) Function.LLVMGetSymbols.handle().invoke(ObjectFile.value())));
+        return nothrows_run(() -> LLVMSymbolIteratorRef.ofNullable((long) Function.LLVMGetSymbols.handle().invoke(ObjectFile.value())));
     }
 
     public static void LLVMDisposeSymbolIterator(LLVMSymbolIteratorRef SI) {
@@ -195,7 +242,7 @@ public class ObjectFile {
     // Section Relocation iterators
 
     public static LLVMRelocationIteratorRef LLVMGetRelocations(LLVMSectionIteratorRef Section) {
-        return nothrows_run(() -> new LLVMRelocationIteratorRef((long) Function.LLVMGetRelocations.handle().invoke(Section.value())));
+        return nothrows_run(() -> LLVMRelocationIteratorRef.ofNullable((long) Function.LLVMGetRelocations.handle().invoke(Section.value())));
     }
 
     public static void LLVMDisposeRelocationIterator(LLVMRelocationIteratorRef RI) {
@@ -231,7 +278,7 @@ public class ObjectFile {
     }
 
     public static LLVMSymbolIteratorRef LLVMGetRelocationSymbol(LLVMRelocationIteratorRef RI) {
-        return nothrows_run(() -> new LLVMSymbolIteratorRef((long) Function.LLVMGetRelocationSymbol.handle().invoke(RI.value())));
+        return nothrows_run(() -> LLVMSymbolIteratorRef.ofNullable((long) Function.LLVMGetRelocationSymbol.handle().invoke(RI.value())));
     }
 
     public static long /* uint64_t */ LLVMGetRelocationType(LLVMRelocationIteratorRef RI) {

@@ -1540,14 +1540,14 @@ public class Core {
      * LLVMContextDispose() or the context will leak memory.
      */
     public static LLVMContextRef LLVMContextCreate() {
-        return nothrows_run(() -> new LLVMContextRef((long) Function.LLVMContextCreate.handle().invoke()));
+        return nothrows_run(() -> LLVMContextRef.ofNullable((long) Function.LLVMContextCreate.handle().invoke()));
     }
 
     /**
      * Obtain the global context instance.
      */
     public static LLVMContextRef LLVMGetGlobalContext() {
-        return nothrows_run(() -> new LLVMContextRef((long) Function.LLVMGetGlobalContext.handle().invoke()));
+        return nothrows_run(() -> LLVMContextRef.ofNullable((long) Function.LLVMGetGlobalContext.handle().invoke()));
     }
 
     //TODO:
@@ -1637,7 +1637,7 @@ public class Core {
      * Create an enum attribute.
      */
     public static LLVMAttributeRef LLVMCreateEnumAttribute(LLVMContextRef C, int /* unsigned */ KindID, long /* uint64_t */ Val) {
-        return nothrows_run(() -> new LLVMAttributeRef((long) Function.LLVMCreateEnumAttribute.handle().invoke(C.value(), KindID, Val)));
+        return nothrows_run(() -> LLVMAttributeRef.ofNullable((long) Function.LLVMCreateEnumAttribute.handle().invoke(C.value(), KindID, Val)));
     }
 
     /**
@@ -1664,7 +1664,7 @@ public class Core {
             int /* unsigned */ KLength = Math.toIntExact(c_K.byteSize());
             MemorySegment c_V = allocString(arena, V);
             int /* unsigned */ VLength = Math.toIntExact(c_V.byteSize());
-            return nothrows_run(() -> new LLVMAttributeRef((long) Function.LLVMCreateStringAttribute.handle()
+            return nothrows_run(() -> LLVMAttributeRef.ofNullable((long) Function.LLVMCreateStringAttribute.handle()
                     .invoke(C.value(), c_K.nativeAddress(), KLength, c_V.nativeAddress(), VLength)));
         }
     }
@@ -1714,7 +1714,7 @@ public class Core {
     public static LLVMModuleRef LLVMModuleCreateWithName(String ModuleID) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ModuleID = allocString(arena, ModuleID);
-            return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMModuleCreateWithName.handle().invoke(c_ModuleID.nativeAddress())));
+            return nothrows_run(() -> LLVMModuleRef.ofNullable((long) Function.LLVMModuleCreateWithName.handle().invoke(c_ModuleID.nativeAddress())));
         }
     }
 
@@ -1727,7 +1727,7 @@ public class Core {
     public static LLVMModuleRef LLVMModuleCreateWithNameInContext(String ModuleID, LLVMContextRef C) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ModuleID = allocString(arena, ModuleID);
-            return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMModuleCreateWithNameInContext.handle().invoke(c_ModuleID.nativeAddress(), C.value())));
+            return nothrows_run(() -> LLVMModuleRef.ofNullable((long) Function.LLVMModuleCreateWithNameInContext.handle().invoke(c_ModuleID.nativeAddress(), C.value())));
         }
     }
 
@@ -1735,7 +1735,7 @@ public class Core {
      * Return an exact copy of the specified module.
      */
     public static LLVMModuleRef LLVMCloneModule(LLVMModuleRef M) {
-        return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMCloneModule.handle().invoke(M.value())));
+        return nothrows_run(() -> LLVMModuleRef.ofNullable((long) Function.LLVMCloneModule.handle().invoke(M.value())));
     }
 
     /**
@@ -1856,7 +1856,7 @@ public class Core {
      * Obtain the context to which this module is associated.
      */
     public static LLVMContextRef LLVMGetModuleContext(LLVMModuleRef M) {
-        return nothrows_run(() -> new LLVMContextRef((long) Function.LLVMGetModuleContext.handle().invoke(M.value())));
+        return nothrows_run(() -> LLVMContextRef.ofNullable((long) Function.LLVMGetModuleContext.handle().invoke(M.value())));
     }
 
     ///**
@@ -1903,7 +1903,7 @@ public class Core {
     public static LLVMValueRef LLVMAddFunction(LLVMModuleRef M, String Name, LLVMTypeRef FunctionTy) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMAddFunction.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMAddFunction.handle()
                     .invoke(M.value(), c_Name.nativeAddress(), FunctionTy.value())));
         }
     }
@@ -1916,7 +1916,7 @@ public class Core {
     public static LLVMValueRef LLVMGetNamedFunction(LLVMModuleRef M, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetNamedFunction.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetNamedFunction.handle()
                     .invoke(M.value(), c_Name.nativeAddress())));
         }
     }
@@ -2003,7 +2003,7 @@ public class Core {
      * Obtain the context to which this type instance is associated.
      */
     public static LLVMContextRef LLVMGetTypeContext(LLVMTypeRef Ty) {
-        return nothrows_run(() -> new LLVMContextRef((long) Function.LLVMGetTypeContext.handle().invoke(Ty.value())));
+        return nothrows_run(() -> LLVMContextRef.ofNullable((long) Function.LLVMGetTypeContext.handle().invoke(Ty.value())));
     }
 
     /**
@@ -2030,31 +2030,31 @@ public class Core {
      * Obtain an integer type from a context with specified bit width.
      */
     public static LLVMTypeRef LLVMInt1TypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt1TypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt1TypeInContext.handle().invoke(C.value())));
     }
 
     public static LLVMTypeRef LLVMInt8TypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt8TypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt8TypeInContext.handle().invoke(C.value())));
     }
 
     public static LLVMTypeRef LLVMInt16TypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt16TypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt16TypeInContext.handle().invoke(C.value())));
     }
 
     public static LLVMTypeRef LLVMInt32TypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt32TypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt32TypeInContext.handle().invoke(C.value())));
     }
 
     public static LLVMTypeRef LLVMInt64TypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt64TypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt64TypeInContext.handle().invoke(C.value())));
     }
 
     public static LLVMTypeRef LLVMInt128TypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt128TypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt128TypeInContext.handle().invoke(C.value())));
     }
 
     public static LLVMTypeRef LLVMIntTypeInContext(LLVMContextRef C, int /* unsigned */ NumBits) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntTypeInContext.handle().invoke(C.value(), NumBits)));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMIntTypeInContext.handle().invoke(C.value(), NumBits)));
     }
 
     /**
@@ -2062,31 +2062,31 @@ public class Core {
      * width.
      */
     public static LLVMTypeRef LLVMInt1Type() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt1Type.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt1Type.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMInt8Type() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt8Type.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt8Type.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMInt16Type() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt16Type.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt16Type.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMInt32Type() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt32Type.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt32Type.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMInt64Type() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt64Type.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt64Type.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMInt128Type() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMInt128Type.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMInt128Type.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMIntType(int /* unsigned */ NumBits) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMIntType.handle().invoke(NumBits)));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMIntType.handle().invoke(NumBits)));
     }
 
     public static int /* unsigned */ LLVMGetIntTypeWidth(LLVMTypeRef IntegerTy) {
@@ -2101,28 +2101,28 @@ public class Core {
      * Obtain a 16-bit floating point type from a context.
      */
     public static LLVMTypeRef LLVMHalfTypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMHalfTypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMHalfTypeInContext.handle().invoke(C.value())));
     }
 
     /**
      * Obtain a 32-bit floating point type from a context.
      */
     public static LLVMTypeRef LLVMFloatTypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFloatTypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMFloatTypeInContext.handle().invoke(C.value())));
     }
 
     /**
      * Obtain a 64-bit floating point type from a context.
      */
     public static LLVMTypeRef LLVMDoubleTypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMDoubleTypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMDoubleTypeInContext.handle().invoke(C.value())));
     }
 
     /**
      * Obtain a 80-bit floating point type (X87) from a context.
      */
     public static LLVMTypeRef LLVMX86FP80TypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMX86FP80TypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMX86FP80TypeInContext.handle().invoke(C.value())));
     }
 
     /**
@@ -2130,14 +2130,14 @@ public class Core {
      * context.
      */
     public static LLVMTypeRef LLVMFP128TypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFP128TypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMFP128TypeInContext.handle().invoke(C.value())));
     }
 
     /**
      * Obtain a 128-bit floating point type (two 64-bits) from a context.
      */
     public static LLVMTypeRef LLVMPPCFP128TypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMPPCFP128TypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMPPCFP128TypeInContext.handle().invoke(C.value())));
     }
 
     /**
@@ -2146,27 +2146,27 @@ public class Core {
      * These map to the functions in this group of the same name.
      */
     public static LLVMTypeRef LLVMHalfType() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMHalfType.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMHalfType.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMFloatType() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFloatType.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMFloatType.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMDoubleType() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMDoubleType.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMDoubleType.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMX86FP80Type() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMX86FP80Type.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMX86FP80Type.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMFP128Type() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFP128Type.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMFP128Type.handle().invoke()));
     }
 
     public static LLVMTypeRef LLVMPPCFP128Type() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMPPCFP128Type.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMPPCFP128Type.handle().invoke()));
     }
 
     /*
@@ -2183,7 +2183,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ParamTypes = allocArray(arena, ParamTypes);
             int /* unsigned */ ParamCount = arrayLength(ParamTypes);
-            return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMFunctionType.handle()
+            return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMFunctionType.handle()
                     .invoke(ReturnType.value(), c_ParamTypes.nativeAddress(), ParamCount, IsVarArg)));
         }
     }
@@ -2199,7 +2199,7 @@ public class Core {
      * Obtain the Type this function Type returns.
      */
     public static LLVMTypeRef LLVMGetReturnType(LLVMTypeRef FunctionTy) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMGetReturnType.handle().invoke(FunctionTy.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMGetReturnType.handle().invoke(FunctionTy.value())));
     }
 
     ///**
@@ -2239,7 +2239,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
             int /* unsigned */ ElementCount = arrayLength(ElementTypes);
-            return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMStructTypeInContext.handle()
+            return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMStructTypeInContext.handle()
                     .invoke(C.value(), c_ElementTypes.nativeAddress(), ElementCount, Packed)));
         }
     }
@@ -2251,7 +2251,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
             int /* unsigned */ ElementCount = arrayLength(ElementTypes);
-            return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMStructType.handle()
+            return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMStructType.handle()
                     .invoke(c_ElementTypes.nativeAddress(), ElementCount, Packed)));
         }
     }
@@ -2262,7 +2262,7 @@ public class Core {
     public static LLVMTypeRef LLVMStructCreateNamed(LLVMContextRef C, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMStructCreateNamed
+            return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMStructCreateNamed
                     .handle().invoke(C.value(), c_Name.nativeAddress())));
         }
     }
@@ -2343,7 +2343,7 @@ public class Core {
      * This works on array, vector, and pointer types.
      */
     public static LLVMTypeRef LLVMGetElementType(LLVMTypeRef Ty) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMGetElementType.handle().invoke(Ty.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMGetElementType.handle().invoke(Ty.value())));
     }
 
     /**
@@ -2353,7 +2353,7 @@ public class Core {
      * exists in.
      */
     public static LLVMTypeRef LLVMArrayType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMArrayType.handle().invoke(ElementType.value(), ElementCount)));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMArrayType.handle().invoke(ElementType.value(), ElementCount)));
     }
 
     /**
@@ -2372,7 +2372,7 @@ public class Core {
      * exists in.
      */
     public static LLVMTypeRef LLVMPointerType(LLVMTypeRef ElementType, int /* unsigned */ AddressSpace) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMPointerType.handle().invoke(ElementType.value(), AddressSpace)));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMPointerType.handle().invoke(ElementType.value(), AddressSpace)));
     }
 
     /**
@@ -2392,7 +2392,7 @@ public class Core {
      * exists in.
      */
     public static LLVMTypeRef LLVMVectorType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMVectorType.handle().invoke(ElementType.value(), ElementCount)));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMVectorType.handle().invoke(ElementType.value(), ElementCount)));
     }
 
     /**
@@ -2412,42 +2412,42 @@ public class Core {
      * Create a void type in a context.
      */
     public static LLVMTypeRef LLVMVoidTypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMVoidTypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMVoidTypeInContext.handle().invoke(C.value())));
     }
 
     /**
      * Create a label type in a context.
      */
     public static LLVMTypeRef LLVMLabelTypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMLabelTypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMLabelTypeInContext.handle().invoke(C.value())));
     }
 
     /**
      * Create a X86 MMX type in a context.
      */
     public static LLVMTypeRef LLVMX86MMXTypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMX86MMXTypeInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMX86MMXTypeInContext.handle().invoke(C.value())));
     }
 
     /**
      * Create a void type in the global context.
      */
     public static LLVMTypeRef LLVMVoidType() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMVoidType.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMVoidType.handle().invoke()));
     }
 
     /**
      * Create a label type in the global context.
      */
     public static LLVMTypeRef LLVMLabelType() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMLabelType.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMLabelType.handle().invoke()));
     }
 
     /**
      * Create a X86 MMX type in the global context.
      */
     public static LLVMTypeRef LLVMX86MMXType() {
-        return nothrows_run(() -> new LLVMTypeRef((long) Function.LLVMX86MMXType.handle().invoke()));
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMX86MMXType.handle().invoke()));
     }
 
     /*
@@ -2635,7 +2635,7 @@ public class Core {
      * Obtain a constant value referring to the null instance of a type.
      */
     public static LLVMValueRef LLVMConstNull(LLVMTypeRef Ty) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstNull.handle().invoke(Ty.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstNull.handle().invoke(Ty.value())));
     }
 
     /**
@@ -2645,14 +2645,14 @@ public class Core {
      * This is only valid for integer types.
      */
     public static LLVMValueRef LLVMConstAllOnes(LLVMTypeRef Ty) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstAllOnes.handle().invoke(Ty.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstAllOnes.handle().invoke(Ty.value())));
     }
 
     /**
      * Obtain a constant value referring to an undefined value of a type.
      */
     public static LLVMValueRef LLVMGetUndef(LLVMTypeRef Ty) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetUndef.handle().invoke(Ty.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetUndef.handle().invoke(Ty.value())));
     }
 
     ///**
@@ -2695,7 +2695,7 @@ public class Core {
      * @param SignExtend Whether to sign extend the produced value.
      */
     public static LLVMValueRef LLVMConstInt(LLVMTypeRef IntTy, long /* unsigned long long */ N, boolean SignExtend) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstInt.handle().invoke(IntTy.value(), N, SignExtend)));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstInt.handle().invoke(IntTy.value(), N, SignExtend)));
     }
 
     /**
@@ -2705,7 +2705,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Words = allocArray(arena, Words);
             int /* unsigned */ NumWords = arrayLength(Words);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstIntOfArbitraryPrecision
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstIntOfArbitraryPrecision
                     .handle().invoke(IntTy.value(), NumWords, c_Words.nativeAddress())));
         }
     }
@@ -2791,7 +2791,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             int /* unsigned */ Length = Math.toIntExact(c_Str.byteSize());
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstStringInContext.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstStringInContext.handle()
                     .invoke(C.value(), c_Str.nativeAddress(), Length, DontNullTerminate)));
         }
     }
@@ -2806,7 +2806,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             int /* unsigned */ Length = Math.toIntExact(c_Str.byteSize());
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMConstString.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstString.handle()
                     .invoke(c_Str.nativeAddress(), Length, DontNullTerminate)));
         }
     }
@@ -3091,7 +3091,7 @@ public class Core {
      */
 
     public static LLVMModuleRef LLVMGetGlobalParent(LLVMValueRef Global) {
-        return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMGetGlobalParent.handle().invoke(Global.value())));
+        return nothrows_run(() -> LLVMModuleRef.ofNullable((long) Function.LLVMGetGlobalParent.handle().invoke(Global.value())));
     }
 
     public static boolean LLVMIsDeclaration(LLVMValueRef Global) {
@@ -3413,7 +3413,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Params = allocPointerArray(arena, count);
             LLVMGetParams(Fn, c_Params.nativeAddress());
-            return readPointerArray(c_Params, LLVMValueRef.class, LLVMValueRef::new);
+            return readPointerArray(c_Params, LLVMValueRef.class, LLVMValueRef::ofNullable);
         }
     }
 
@@ -3423,7 +3423,7 @@ public class Core {
      * Parameters are indexed from 0.
      */
     public static LLVMValueRef LLVMGetParam(LLVMValueRef Fn, int /* unsigned */ Index) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetParam.handle().invoke(Fn.value(), Index)));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetParam.handle().invoke(Fn.value(), Index)));
     }
 
     ///**
@@ -3620,7 +3620,7 @@ public class Core {
      * Obtain the function to which a basic block belongs.
      */
     public static LLVMValueRef LLVMGetBasicBlockParent(LLVMBasicBlockRef BB) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetBasicBlockParent.handle().invoke(BB.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetBasicBlockParent.handle().invoke(BB.value())));
     }
 
     ///**
@@ -3692,7 +3692,7 @@ public class Core {
      * function.
      */
     public static LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
-        return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMGetEntryBasicBlock.handle().invoke(Fn.value())));
+        return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMGetEntryBasicBlock.handle().invoke(Fn.value())));
     }
 
     /**
@@ -3701,7 +3701,7 @@ public class Core {
     public static LLVMBasicBlockRef LLVMAppendBasicBlockInContext(LLVMContextRef C, LLVMValueRef Fn, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMAppendBasicBlockInContext.handle()
+            return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMAppendBasicBlockInContext.handle()
                     .invoke(C.value(), Fn.value(), c_Name.nativeAddress())));
         }
     }
@@ -3713,7 +3713,7 @@ public class Core {
     public static LLVMBasicBlockRef LLVMAppendBasicBlock(LLVMValueRef Fn, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMAppendBasicBlock.handle().invoke(Fn.value(), c_Name.nativeAddress())));
+            return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMAppendBasicBlock.handle().invoke(Fn.value(), c_Name.nativeAddress())));
         }
     }
 
@@ -4256,11 +4256,11 @@ public class Core {
      */
 
     public static LLVMBuilderRef LLVMCreateBuilderInContext(LLVMContextRef C) {
-        return nothrows_run(() -> new LLVMBuilderRef((long) Function.LLVMCreateBuilderInContext.handle().invoke(C.value())));
+        return nothrows_run(() -> LLVMBuilderRef.ofNullable((long) Function.LLVMCreateBuilderInContext.handle().invoke(C.value())));
     }
 
     public static LLVMBuilderRef LLVMCreateBuilder() {
-        return nothrows_run(() -> new LLVMBuilderRef((long) Function.LLVMCreateBuilder.handle().invoke()));
+        return nothrows_run(() -> LLVMBuilderRef.ofNullable((long) Function.LLVMCreateBuilder.handle().invoke()));
     }
 
     //void LLVMPositionBuilder(LLVMBuilderRef Builder, LLVMBasicBlockRef Block, LLVMValueRef Instr) {
@@ -4275,7 +4275,7 @@ public class Core {
     }
 
     public static LLVMBasicBlockRef LLVMGetInsertBlock(LLVMBuilderRef Builder) {
-        return nothrows_run(() -> new LLVMBasicBlockRef((long) Function.LLVMGetInsertBlock.handle().invoke(Builder.value())));
+        return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMGetInsertBlock.handle().invoke(Builder.value())));
     }
 
     //void LLVMClearInsertionPosition(LLVMBuilderRef Builder) {
@@ -4299,7 +4299,7 @@ public class Core {
     }
 
     public static LLVMValueRef LLVMGetCurrentDebugLocation(LLVMBuilderRef Builder) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetCurrentDebugLocation.handle().invoke(Builder.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetCurrentDebugLocation.handle().invoke(Builder.value())));
     }
 
     public static void LLVMSetInstDebugLocation(LLVMBuilderRef Builder, LLVMValueRef Inst) {
@@ -4309,11 +4309,11 @@ public class Core {
     /* Terminators */
 
     public static LLVMValueRef LLVMBuildRetVoid(LLVMBuilderRef Builder) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildRetVoid.handle().invoke(Builder.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildRetVoid.handle().invoke(Builder.value())));
     }
 
     public static LLVMValueRef LLVMBuildRet(LLVMBuilderRef Builder, LLVMValueRef V) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildRet.handle().invoke(Builder.value(), V.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildRet.handle().invoke(Builder.value(), V.value())));
     }
 
     //LLVMValueRef LLVMBuildAggregateRet(LLVMBuilderRef B, LLVMValueRef *RetVals, int /* unsigned */ N) {
@@ -4321,11 +4321,11 @@ public class Core {
     //}
 
     public static LLVMValueRef LLVMBuildBr(LLVMBuilderRef B, LLVMBasicBlockRef Dest) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildBr.handle().invoke(B.value(), Dest.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildBr.handle().invoke(B.value(), Dest.value())));
     }
 
     public static LLVMValueRef LLVMBuildCondBr(LLVMBuilderRef B, LLVMValueRef If, LLVMBasicBlockRef Then, LLVMBasicBlockRef Else) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildCondBr.handle().invoke(B.value(), If.value(), Then.value(), Else.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildCondBr.handle().invoke(B.value(), If.value(), Then.value(), Else.value())));
     }
 
     //LLVMValueRef LLVMBuildSwitch(LLVMBuilderRef B, LLVMValueRef V, LLVMBasicBlockRef Else, int /* unsigned */ NumCases) {
@@ -4380,7 +4380,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildAdd.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildAdd.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4388,7 +4388,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNSWAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNSWAdd.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNSWAdd.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4396,7 +4396,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNUWAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNUWAdd.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNUWAdd.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4404,7 +4404,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFAdd.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFAdd.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4412,7 +4412,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildSub.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildSub.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4420,7 +4420,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNSWSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNSWSub.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNSWSub.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4428,7 +4428,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNUWSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNUWSub.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNUWSub.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4436,7 +4436,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFSub.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFSub.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4444,7 +4444,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildMul.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildMul.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4452,7 +4452,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNSWMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNSWMul.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNSWMul.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4460,7 +4460,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNUWMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNUWMul.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNUWMul.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4468,7 +4468,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFMul.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFMul.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4476,7 +4476,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildUDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildUDiv.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildUDiv.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4484,7 +4484,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildSDiv.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildSDiv.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4492,7 +4492,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildExactSDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildExactSDiv.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildExactSDiv.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4500,7 +4500,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFDiv.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFDiv.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4508,7 +4508,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildURem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildURem.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildURem.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4516,7 +4516,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSRem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildSRem.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildSRem.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4524,7 +4524,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFRem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFRem.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFRem.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4532,7 +4532,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildShl(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildShl.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildShl.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4540,7 +4540,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildLShr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildLShr.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildLShr.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4548,7 +4548,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAShr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildAShr.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildAShr.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4556,7 +4556,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAnd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildAnd.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildAnd.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4564,7 +4564,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildOr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildOr.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildOr.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4572,7 +4572,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildXor(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildXor.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildXor.handle()
                     .invoke(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4580,7 +4580,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildBinOp(LLVMBuilderRef B, LLVMOpcode Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildBinOp.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildBinOp.handle()
                     .invoke(B.value(), Op.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
         }
     }
@@ -4588,7 +4588,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNeg.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNeg.handle()
                     .invoke(B.value(), V.value(), c_Name.nativeAddress())));
         }
     }
@@ -4596,7 +4596,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNSWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNSWNeg.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNSWNeg.handle()
                     .invoke(B.value(), V.value(), c_Name.nativeAddress())));
         }
     }
@@ -4604,7 +4604,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNUWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNUWNeg.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNUWNeg.handle()
                     .invoke(B.value(), V.value(), c_Name.nativeAddress())));
         }
     }
@@ -4612,7 +4612,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFNeg.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFNeg.handle()
                     .invoke(B.value(), V.value(), c_Name.nativeAddress())));
         }
     }
@@ -4620,7 +4620,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNot(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildNot.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildNot.handle()
                     .invoke(B.value(), V.value(), c_Name.nativeAddress())));
         }
     }
@@ -4637,7 +4637,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAlloca(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildAlloca.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildAlloca.handle()
                     .invoke(B.value(), Ty.value(), c_Name.nativeAddress())));
         }
     }
@@ -4645,24 +4645,24 @@ public class Core {
     public static LLVMValueRef LLVMBuildArrayAlloca(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildArrayAlloca.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildArrayAlloca.handle()
                     .invoke(B.value(), Ty.value(), Val.value(), c_Name.nativeAddress())));
         }
     }
 
     public static LLVMValueRef LLVMBuildFree(LLVMBuilderRef B, LLVMValueRef Ptr) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFree.handle().invoke(B.value(), Ptr.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFree.handle().invoke(B.value(), Ptr.value())));
     }
 
     public static LLVMValueRef LLVMBuildLoad(LLVMBuilderRef B, LLVMValueRef Ptr, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildLoad.handle().invoke(B.value(), Ptr.value(), c_Name.nativeAddress())));
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildLoad.handle().invoke(B.value(), Ptr.value(), c_Name.nativeAddress())));
         }
     }
 
     public static LLVMValueRef LLVMBuildStore(LLVMBuilderRef B, LLVMValueRef Val, LLVMValueRef Ptr) {
-        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildStore.handle().invoke(B.value(), Val.value(), Ptr.value())));
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildStore.handle().invoke(B.value(), Val.value(), Ptr.value())));
     }
 
     //LLVMValueRef LLVMBuildGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef *Indices, int /* unsigned */ NumIndices, String Name) {
@@ -4679,7 +4679,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildGlobalString.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildGlobalString.handle()
                     .invoke(B.value(), c_Str.nativeAddress(), c_Name.nativeAddress())));
         }
     }
@@ -4688,7 +4688,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildGlobalStringPtr.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildGlobalStringPtr.handle()
                     .invoke(B.value(), c_Str.nativeAddress(), c_Name.nativeAddress())));
         }
     }
@@ -4714,7 +4714,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildTrunc(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildTrunc.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildTrunc.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4722,7 +4722,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildZExt(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildZExt.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildZExt.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4730,7 +4730,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSExt(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildSExt.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildSExt.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4738,7 +4738,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPToUI(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFPToUI.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFPToUI.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4746,7 +4746,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPToSI(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFPToSI.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFPToSI.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4754,7 +4754,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildUIToFP(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildUIToFP.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildUIToFP.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4762,7 +4762,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSIToFP(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildSIToFP.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildSIToFP.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4770,7 +4770,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPTrunc(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFPTrunc.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFPTrunc.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4778,7 +4778,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPExt(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFPExt.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFPExt.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4786,7 +4786,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildPtrToInt(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildPtrToInt.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildPtrToInt.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4794,7 +4794,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildIntToPtr(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildIntToPtr.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildIntToPtr.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4802,7 +4802,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildBitCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildBitCast.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildBitCast.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4810,7 +4810,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAddrSpaceCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildAddrSpaceCast.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildAddrSpaceCast.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4818,7 +4818,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildZExtOrBitCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildZExtOrBitCast.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildZExtOrBitCast.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4826,7 +4826,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSExtOrBitCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildSExtOrBitCast.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildSExtOrBitCast.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4834,7 +4834,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildTruncOrBitCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildTruncOrBitCast.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildTruncOrBitCast.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4842,7 +4842,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildCast(LLVMBuilderRef B, LLVMOpcode Op, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildCast.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildCast.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4850,7 +4850,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildPointerCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildPointerCast.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildPointerCast.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4858,7 +4858,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildIntCast(LLVMBuilderRef B, LLVMValueRef Val, /*Signed cast!*/ LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildIntCast.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildIntCast.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4866,7 +4866,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPCast(LLVMBuilderRef B, LLVMValueRef Val, /*Signed cast!*/ LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildFPCast.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFPCast.handle()
                     .invoke(B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress())));
         }
     }
@@ -4891,7 +4891,7 @@ public class Core {
             MemorySegment c_Args = allocArray(arena, Args);
             int /* unsigned */ NumArgs = arrayLength(Args);
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildCall.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildCall.handle()
                     .invoke(B.value(), Fn.value(), c_Args.nativeAddress(), NumArgs, c_Name.nativeAddress())));
         }
     }
@@ -4915,7 +4915,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildExtractValue(LLVMBuilderRef B, LLVMValueRef AggVal, int /* unsigned */ Index, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildExtractValue.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildExtractValue.handle()
                     .invoke(B.value(), AggVal.value(), Index, c_Name.nativeAddress())));
         }
     }
@@ -4923,7 +4923,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildInsertValue(LLVMBuilderRef B, LLVMValueRef AggVal, LLVMValueRef EltVal, int /* unsigned */ Index, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMBuildInsertValue.handle()
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildInsertValue.handle()
                     .invoke(B.value(), AggVal.value(), EltVal.value(), Index, c_Name.nativeAddress())));
         }
     }
@@ -4974,7 +4974,7 @@ public class Core {
      * JIT. They take ModuleProviders for historical reasons.
      */
     public static LLVMModuleProviderRef LLVMCreateModuleProviderForExistingModule(LLVMModuleRef M) {
-        return nothrows_run(() -> new LLVMModuleProviderRef((long) Function.LLVMCreateModuleProviderForExistingModule.handle().invoke(M.value())));
+        return nothrows_run(() -> LLVMModuleProviderRef.ofNullable((long) Function.LLVMCreateModuleProviderForExistingModule.handle().invoke(M.value())));
     }
 
     /**
@@ -5001,7 +5001,7 @@ public class Core {
             String BufferName, boolean RequiresNullTerminator) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BufferName = allocString(arena, BufferName);
-            return nothrows_run(() -> new LLVMMemoryBufferRef((long) Function.LLVMCreateMemoryBufferWithMemoryRange
+            return nothrows_run(() -> LLVMMemoryBufferRef.ofNullable((long) Function.LLVMCreateMemoryBufferWithMemoryRange
                     .handle().invoke(InputData, InputDataLength, c_BufferName.nativeAddress(), RequiresNullTerminator)));
         }
     }
@@ -5018,7 +5018,7 @@ public class Core {
             long InputData, long /* size_t */ InputDataLength, String BufferName) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BufferName = allocString(arena, BufferName);
-            return nothrows_run(() -> new LLVMMemoryBufferRef(
+            return nothrows_run(() -> LLVMMemoryBufferRef.ofNullable(
                     (long) Function.LLVMCreateMemoryBufferWithMemoryRangeCopy.handle()
                             .invoke(InputData, InputDataLength, c_BufferName.nativeAddress())));
         }
@@ -5059,7 +5059,7 @@ public class Core {
      * Return the global pass registry, for use with initialization functions.
      */
     public static LLVMPassRegistryRef LLVMGetGlobalPassRegistry() {
-        return nothrows_run(() -> new LLVMPassRegistryRef((long) Function.LLVMGetGlobalPassRegistry.handle().invoke()));
+        return nothrows_run(() -> LLVMPassRegistryRef.ofNullable((long) Function.LLVMGetGlobalPassRegistry.handle().invoke()));
     }
 
     /*

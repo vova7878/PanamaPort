@@ -56,20 +56,55 @@ public class ExecutionEngine {
 
     public static final class LLVMGenericValueRef extends AddressValue {
 
-        LLVMGenericValueRef(long value) {
+        private LLVMGenericValueRef(long value) {
             super(value);
+        }
+
+        public static LLVMGenericValueRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMGenericValueRef of 0");
+            }
+            return new LLVMGenericValueRef(value);
+        }
+
+        public static LLVMGenericValueRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMGenericValueRef(value);
         }
     }
 
     public static final class LLVMExecutionEngineRef extends AddressValue {
-        LLVMExecutionEngineRef(long value) {
+
+        private LLVMExecutionEngineRef(long value) {
             super(value);
+        }
+
+        public static LLVMExecutionEngineRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMExecutionEngineRef of 0");
+            }
+            return new LLVMExecutionEngineRef(value);
+        }
+
+        public static LLVMExecutionEngineRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMExecutionEngineRef(value);
         }
     }
 
     public static final class LLVMMCJITMemoryManagerRef extends AddressValue {
-        LLVMMCJITMemoryManagerRef(long value) {
+
+        private LLVMMCJITMemoryManagerRef(long value) {
             super(value);
+        }
+
+        public static LLVMMCJITMemoryManagerRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMMCJITMemoryManagerRef of 0");
+            }
+            return new LLVMMCJITMemoryManagerRef(value);
+        }
+
+        public static LLVMMCJITMemoryManagerRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMMCJITMemoryManagerRef(value);
         }
     }
 
@@ -160,12 +195,12 @@ public class ExecutionEngine {
     /*===-- Operations on generic values --------------------------------------===*/
 
     public static LLVMGenericValueRef LLVMCreateGenericValueOfInt(LLVMTypeRef Ty, long /* unsigned long long */ N, boolean IsSigned) {
-        return nothrows_run(() -> new LLVMGenericValueRef((long) Function.LLVMCreateGenericValueOfInt.handle().invoke(Ty.value(), N, IsSigned)));
+        return nothrows_run(() -> LLVMGenericValueRef.ofNullable((long) Function.LLVMCreateGenericValueOfInt.handle().invoke(Ty.value(), N, IsSigned)));
     }
 
     /* package-private */
     static LLVMGenericValueRef LLVMCreateGenericValueOfPointer(long P) {
-        return nothrows_run(() -> new LLVMGenericValueRef((long) Function.LLVMCreateGenericValueOfPointer.handle().invoke(P)));
+        return nothrows_run(() -> LLVMGenericValueRef.ofNullable((long) Function.LLVMCreateGenericValueOfPointer.handle().invoke(P)));
     }
 
     // Port-added
@@ -174,7 +209,7 @@ public class ExecutionEngine {
     }
 
     public static LLVMGenericValueRef LLVMCreateGenericValueOfFloat(LLVMTypeRef Ty, double N) {
-        return nothrows_run(() -> new LLVMGenericValueRef((long) Function.LLVMCreateGenericValueOfFloat.handle().invoke(Ty.value(), N)));
+        return nothrows_run(() -> LLVMGenericValueRef.ofNullable((long) Function.LLVMCreateGenericValueOfFloat.handle().invoke(Ty.value(), N)));
     }
 
     public static int /* unsigned */ LLVMGenericValueIntWidth(LLVMGenericValueRef GenVal) {
@@ -212,7 +247,7 @@ public class ExecutionEngine {
             boolean err = nothrows_run(() -> (boolean) Function.LLVMCreateExecutionEngineForModule.handle()
                     .invoke(c_OutEE.nativeAddress(), M.value(), c_OutError.nativeAddress()));
             if (!err) {
-                OutEE.accept(new LLVMExecutionEngineRef(c_OutEE.get(ADDRESS, 0).nativeAddress()));
+                OutEE.accept(LLVMExecutionEngineRef.ofNullable(c_OutEE.get(ADDRESS, 0).nativeAddress()));
             } else {
                 OutError.accept(addressToLLVMString(c_OutError.get(ADDRESS, 0).nativeAddress()));
             }
@@ -237,7 +272,7 @@ public class ExecutionEngine {
             boolean err = nothrows_run(() -> (boolean) Function.LLVMCreateInterpreterForModule.handle()
                     .invoke(c_OutInterp.nativeAddress(), M.value(), c_OutError.nativeAddress()));
             if (!err) {
-                OutInterp.accept(new LLVMExecutionEngineRef(c_OutInterp.get(ADDRESS, 0).nativeAddress()));
+                OutInterp.accept(LLVMExecutionEngineRef.ofNullable(c_OutInterp.get(ADDRESS, 0).nativeAddress()));
             } else {
                 OutError.accept(addressToLLVMString(c_OutError.get(ADDRESS, 0).nativeAddress()));
             }
@@ -262,7 +297,7 @@ public class ExecutionEngine {
             boolean err = nothrows_run(() -> (boolean) Function.LLVMCreateJITCompilerForModule.handle()
                     .invoke(c_OutJIT.nativeAddress(), M.value(), OptLevel, c_OutError.nativeAddress()));
             if (!err) {
-                OutJIT.accept(new LLVMExecutionEngineRef(c_OutJIT.get(ADDRESS, 0).nativeAddress()));
+                OutJIT.accept(LLVMExecutionEngineRef.ofNullable(c_OutJIT.get(ADDRESS, 0).nativeAddress()));
             } else {
                 OutError.accept(addressToLLVMString(c_OutError.get(ADDRESS, 0).nativeAddress()));
             }
@@ -324,7 +359,7 @@ public class ExecutionEngine {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Args = allocArray(arena, Args);
             int /* unsigned */ NumArgs = arrayLength(Args);
-            return nothrows_run(() -> new LLVMGenericValueRef((long) Function.LLVMRunFunction.handle()
+            return nothrows_run(() -> LLVMGenericValueRef.ofNullable((long) Function.LLVMRunFunction.handle()
                     .invoke(EE.value(), F.value(), NumArgs, c_Args.nativeAddress())));
         }
     }

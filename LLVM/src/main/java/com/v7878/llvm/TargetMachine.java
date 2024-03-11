@@ -39,14 +39,37 @@ public class TargetMachine {
 
     public static final class LLVMTargetMachineRef extends AddressValue {
 
-        LLVMTargetMachineRef(long value) {
+        private LLVMTargetMachineRef(long value) {
             super(value);
+        }
+
+        public static LLVMTargetMachineRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMTargetMachineRef of 0");
+            }
+            return new LLVMTargetMachineRef(value);
+        }
+
+        public static LLVMTargetMachineRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMTargetMachineRef(value);
         }
     }
 
     public static final class LLVMTargetRef extends AddressValue {
-        LLVMTargetRef(long value) {
+
+        private LLVMTargetRef(long value) {
             super(value);
+        }
+
+        public static LLVMTargetRef of(long value) {
+            if (value == 0) {
+                throw new IllegalStateException("LLVMTargetRef of 0");
+            }
+            return new LLVMTargetRef(value);
+        }
+
+        public static LLVMTargetRef ofNullable(long value) {
+            return value == 0 ? null : new LLVMTargetRef(value);
         }
     }
 
@@ -193,14 +216,14 @@ public class TargetMachine {
      * Returns the first llvm::Target in the registered targets list.
      */
     public static LLVMTargetRef LLVMGetFirstTarget() {
-        return nothrows_run(() -> new LLVMTargetRef((long) Function.LLVMGetFirstTarget.handle().invoke()));
+        return nothrows_run(() -> LLVMTargetRef.ofNullable((long) Function.LLVMGetFirstTarget.handle().invoke()));
     }
 
     /**
      * Returns the next llvm::Target given a previous one (or null if there's none)
      */
     public static LLVMTargetRef LLVMGetNextTarget(LLVMTargetRef T) {
-        return nothrows_run(() -> new LLVMTargetRef((long) Function.LLVMGetNextTarget.handle().invoke(T.value())));
+        return nothrows_run(() -> LLVMTargetRef.ofNullable((long) Function.LLVMGetNextTarget.handle().invoke(T.value())));
     }
 
     /*===-- Target ------------------------------------------------------------===*/
@@ -212,7 +235,7 @@ public class TargetMachine {
     public static LLVMTargetRef LLVMGetTargetFromName(String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> new LLVMTargetRef((long) Function.LLVMGetTargetFromName.handle().invoke(c_Name.nativeAddress())));
+            return nothrows_run(() -> LLVMTargetRef.ofNullable((long) Function.LLVMGetTargetFromName.handle().invoke(c_Name.nativeAddress())));
         }
     }
 
@@ -228,7 +251,7 @@ public class TargetMachine {
             boolean err = nothrows_run(() -> (boolean) Function.LLVMGetTargetFromTriple.handle()
                     .invoke(c_Triple.nativeAddress(), c_T.nativeAddress(), c_ErrorMessage.nativeAddress()));
             if (!err) {
-                T.accept(new LLVMTargetRef(c_T.get(ADDRESS, 0).nativeAddress()));
+                T.accept(LLVMTargetRef.ofNullable(c_T.get(ADDRESS, 0).nativeAddress()));
             } else {
                 ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
             }
@@ -296,7 +319,7 @@ public class TargetMachine {
             MemorySegment c_Triple = allocString(arena, Triple);
             MemorySegment c_CPU = allocString(arena, CPU);
             MemorySegment c_Features = allocString(arena, Features);
-            return nothrows_run(() -> new LLVMTargetMachineRef((long) Function.LLVMCreateTargetMachine.handle()
+            return nothrows_run(() -> LLVMTargetMachineRef.ofNullable((long) Function.LLVMCreateTargetMachine.handle()
                     .invoke(T.value(), c_Triple.nativeAddress(), c_CPU.nativeAddress(), c_Features.nativeAddress(),
                             Level.value(), Reloc.value(), CodeModel.value())));
         }
@@ -314,7 +337,7 @@ public class TargetMachine {
      * Returns the Target used in a TargetMachine
      */
     public static LLVMTargetRef LLVMGetTargetMachineTarget(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> new LLVMTargetRef((long) Function.LLVMGetTargetMachineTarget.handle().invoke(T.value())));
+        return nothrows_run(() -> LLVMTargetRef.ofNullable((long) Function.LLVMGetTargetMachineTarget.handle().invoke(T.value())));
     }
 
     /**
@@ -345,7 +368,7 @@ public class TargetMachine {
      * Create a DataLayout based on the targetMachine.
      */
     public static LLVMTargetDataRef LLVMCreateTargetDataLayout(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> new LLVMTargetDataRef((long) Function.LLVMCreateTargetDataLayout.handle().invoke(T.value())));
+        return nothrows_run(() -> LLVMTargetDataRef.ofNullable((long) Function.LLVMCreateTargetDataLayout.handle().invoke(T.value())));
     }
 
     /**
@@ -401,7 +424,7 @@ public class TargetMachine {
             boolean err = nothrows_run(() -> (boolean) Function.LLVMTargetMachineEmitToMemoryBuffer.handle()
                     .invoke(T.value(), M.value(), codegen.value(), c_ErrorMessage.nativeAddress(), c_OutMemBuf.nativeAddress()));
             if (!err) {
-                OutMemBuf.accept(new LLVMMemoryBufferRef(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
+                OutMemBuf.accept(LLVMMemoryBufferRef.ofNullable(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
             } else {
                 ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
             }
