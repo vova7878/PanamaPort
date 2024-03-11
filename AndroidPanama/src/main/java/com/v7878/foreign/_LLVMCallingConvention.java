@@ -18,9 +18,9 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import android.util.Pair;
 
 import com.v7878.foreign._StorageDescriptor.LLVMStorage;
+import com.v7878.foreign._StorageDescriptor.MemoryStorage;
 import com.v7878.foreign._StorageDescriptor.NoStorage;
 import com.v7878.foreign._StorageDescriptor.RawStorage;
-import com.v7878.foreign._StorageDescriptor.StackStorage;
 import com.v7878.foreign._StorageDescriptor.WrapperStorage;
 
 import java.util.Arrays;
@@ -30,11 +30,11 @@ final class _LLVMCallingConvention {
         public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
             LLVMStorage retStorage = descriptor.returnLayout()
                     .map(layout -> layout instanceof GroupLayout ?
-                            new StackStorage(layout) : new RawStorage(layout))
+                            new MemoryStorage(layout) : new RawStorage(layout))
                     .orElse(new NoStorage(null));
             LLVMStorage[] argStorages = descriptor.argumentLayouts().stream()
                     .map(layout -> layout instanceof GroupLayout ?
-                            new StackStorage(layout) : new RawStorage(layout))
+                            new MemoryStorage(layout) : new RawStorage(layout))
                     .toArray(LLVMStorage[]::new);
             return new _StorageDescriptor(retStorage, argStorages);
         }
@@ -141,7 +141,7 @@ final class _LLVMCallingConvention {
                 if (layout instanceof GroupLayout gl) {
                     ValueLayout[] tmp = getWrappers(gl);
                     if (tmp == null) {
-                        return new StackStorage(gl);
+                        return new MemoryStorage(gl);
                     }
                     MemoryLayout wrapper = tmp.length == 1 ? tmp[0] : structLayout(tmp[0], tmp[1]);
                     return new WrapperStorage(gl, wrapper);
@@ -182,7 +182,7 @@ final class _LLVMCallingConvention {
                         }
                     }
                     arg_regs[0] = Math.max(0, arg_regs[0] - 1); // pointer arg
-                    return new StackStorage(gl);
+                    return new MemoryStorage(gl);
                 }
                 throw shouldNotReachHere();
             }).toArray(LLVMStorage[]::new);
@@ -284,7 +284,7 @@ final class _LLVMCallingConvention {
                 if (layout instanceof GroupLayout gl) {
                     var info = getWrappers(gl);
                     if (info == null) {
-                        return new StackStorage(gl);
+                        return new MemoryStorage(gl);
                     }
                     MemoryLayout wrapper = sequenceLayout(info.second, info.first);
                     return new WrapperStorage(gl, wrapper);
@@ -298,7 +298,7 @@ final class _LLVMCallingConvention {
                 if (layout instanceof GroupLayout gl) {
                     var info = getWrappers(gl);
                     if (info == null) {
-                        return new StackStorage(gl);
+                        return new MemoryStorage(gl);
                     }
                     MemoryLayout wrapper = sequenceLayout(info.second, info.first);
                     return new WrapperStorage(gl, wrapper);

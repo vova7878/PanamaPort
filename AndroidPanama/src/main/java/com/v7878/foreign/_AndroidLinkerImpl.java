@@ -74,9 +74,9 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.foreign._StorageDescriptor.LLVMStorage;
+import com.v7878.foreign._StorageDescriptor.MemoryStorage;
 import com.v7878.foreign._StorageDescriptor.NoStorage;
 import com.v7878.foreign._StorageDescriptor.RawStorage;
-import com.v7878.foreign._StorageDescriptor.StackStorage;
 import com.v7878.foreign._StorageDescriptor.WrapperStorage;
 import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.Core;
@@ -399,8 +399,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             retType = layoutToLLVMType(retStorage.layout);
         } else if (retStorage instanceof WrapperStorage ws) {
             retType = layoutToLLVMType(ws.wrapper);
-        } else if (retStorage instanceof StackStorage) {
-            // pass through stack as argument with "sret" attribute
+        } else if (retStorage instanceof MemoryStorage) {
+            // pass as pointer argument with "sret" attribute
             retType = VOID_T;
             argTypes.add(layoutToLLVMType(ADDRESS.withTargetLayout(retStorage.layout)));
         } else {
@@ -414,8 +414,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 argTypes.add(layoutToLLVMType(storage.layout));
             } else if (storage instanceof WrapperStorage ws) {
                 argTypes.add(layoutToLLVMType(ws.wrapper));
-            } else if (storage instanceof StackStorage) {
-                // pass through stack with "byval" attribute
+            } else if (storage instanceof MemoryStorage) {
+                // pass as pointer with "byval" attribute
                 argTypes.add(layoutToLLVMType(ADDRESS.withTargetLayout(storage.layout)));
             } else {
                 throw shouldNotReachHere();
@@ -497,8 +497,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     stub_args[index] = LLVMBuildPointerCast(builder.value(), stub_args[index],
                             layoutToLLVMType(ADDRESS.withTargetLayout(ws.wrapper)), "");
                     index++;
-                } else if (retStorage instanceof StackStorage) {
-                    // pass through stack as argument with "sret" attribute
+                } else if (retStorage instanceof MemoryStorage) {
+                    // pass as pointer argument with "sret" attribute
                     retVoid = true;
                     retStore = null;
                     attrs[count] = LLVMStructRetAttribute;
@@ -527,8 +527,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         LLVMSetAlignment(target_args[count], Math.toIntExact(ws.layout.byteAlignment()));
                         index++;
                         count++;
-                    } else if (storage instanceof StackStorage) {
-                        // pass through stack with "byval" attribute
+                    } else if (storage instanceof MemoryStorage) {
+                        // pass as pointer with "byval" attribute
                         attrs[count] = LLVMByValAttribute;
                         aligns[count] = Math.toIntExact(storage.layout.byteAlignment());
                         target_args[count] = stub_args[index];
