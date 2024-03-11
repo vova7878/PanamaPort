@@ -1,4 +1,4 @@
-package com.v7878.unsafe.foreign;
+package com.v7878.unsafe.llvm;
 
 import static com.v7878.llvm.Core.LLVMContextCreate;
 import static com.v7878.llvm.Core.LLVMDoubleTypeInContext;
