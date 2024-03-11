@@ -469,6 +469,14 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static String LLVMGetStringAttributeKind(LLVMAttributeRef A) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static String LLVMGetStringAttributeValue(LLVMAttributeRef A) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static boolean LLVMIsEnumAttribute(LLVMAttributeRef A) {
         throw new UnsupportedOperationException("Stub!");
     }

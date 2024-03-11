@@ -1,5 +1,6 @@
 package com.v7878.llvm;
 
+import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.llvm.LibLLVM.LLVM;
 import static com.v7878.llvm.LibLLVM.LLVM_SCOPE;
 import static com.v7878.llvm.Types.LLVMAttributeRef;
@@ -46,6 +47,7 @@ import static com.v7878.llvm._Utils.arrayLength;
 import static com.v7878.llvm._Utils.const_ptr;
 import static com.v7878.llvm._Utils.ptr;
 import static com.v7878.llvm._Utils.readPointerArray;
+import static com.v7878.llvm._Utils.stringLength;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 
@@ -1597,7 +1599,7 @@ public class Core {
     public static int /* unsigned */ LLVMGetMDKindIDInContext(LLVMContextRef C, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            int /* unsigned */ SLen = Math.toIntExact(c_Name.byteSize());
+            int /* unsigned */ SLen = Math.toIntExact(stringLength(c_Name));
             return nothrows_run(() -> (int) Function.LLVMGetMDKindIDInContext.handle().invoke(C.value(), c_Name.nativeAddress(), SLen));
         }
     }
@@ -1605,7 +1607,7 @@ public class Core {
     public static int /* unsigned */ LLVMGetMDKindID(String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            int /* unsigned */ SLen = Math.toIntExact(c_Name.byteSize());
+            int /* unsigned */ SLen = Math.toIntExact(stringLength(c_Name));
             return nothrows_run(() -> (int) Function.LLVMGetMDKindID.handle().invoke(c_Name.nativeAddress(), SLen));
         }
     }
@@ -1624,7 +1626,7 @@ public class Core {
     public static int /* unsigned */ LLVMGetEnumAttributeKindForName(String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            long /* size_t */ SLen = c_Name.byteSize();
+            long /* size_t */ SLen = stringLength(c_Name);
             return nothrows_run(() -> (int) Function.LLVMGetEnumAttributeKindForName.handle().invoke(c_Name.nativeAddress(), SLen));
         }
     }
@@ -1661,27 +1663,37 @@ public class Core {
     public static LLVMAttributeRef LLVMCreateStringAttribute(LLVMContextRef C, String K, String V) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_K = allocString(arena, K);
-            int /* unsigned */ KLength = Math.toIntExact(c_K.byteSize());
+            int /* unsigned */ KLength = Math.toIntExact(stringLength(c_K));
             MemorySegment c_V = allocString(arena, V);
-            int /* unsigned */ VLength = Math.toIntExact(c_V.byteSize());
+            int /* unsigned */ VLength = Math.toIntExact(stringLength(c_V));
             return nothrows_run(() -> LLVMAttributeRef.ofNullable((long) Function.LLVMCreateStringAttribute.handle()
                     .invoke(C.value(), c_K.nativeAddress(), KLength, c_V.nativeAddress(), VLength)));
         }
     }
 
-    //TODO
-    ///**
-    // * Get the string attribute's kind.
-    // */
-    //String LLVMGetStringAttributeKind(LLVMAttributeRef A, int /* unsigned */ *Length) {
-    //    return nothrows_run(() -> Function.LLVMGetStringAttributeKind.handle().invoke());
-    //}
-    ///**
-    // * Get the string attribute's value.
-    // */
-    //String LLVMGetStringAttributeValue(LLVMAttributeRef A, int /* unsigned */ *Length) {
-    //    return nothrows_run(() -> Function.LLVMGetStringAttributeValue.handle().invoke());
-    //}
+    /**
+     * Get the string attribute's kind.
+     */
+    public static String LLVMGetStringAttributeKind(LLVMAttributeRef A) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Length = arena.allocate(JAVA_INT);
+            long ptr = nothrows_run(() -> (long) Function.LLVMGetStringAttributeKind.handle().invoke(A.value(), c_Length.nativeAddress()));
+            int /* unsigned */ Length = c_Length.get(JAVA_INT, 0);
+            return addressToString(ptr, Length);
+        }
+    }
+
+    /**
+     * Get the string attribute's value.
+     */
+    public static String LLVMGetStringAttributeValue(LLVMAttributeRef A) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Length = arena.allocate(JAVA_INT);
+            long ptr = nothrows_run(() -> (long) Function.LLVMGetStringAttributeValue.handle().invoke(A.value(), c_Length.nativeAddress()));
+            int /* unsigned */ Length = c_Length.get(JAVA_INT, 0);
+            return addressToString(ptr, Length);
+        }
+    }
 
     /**
      * Check for the different types of attributes.
@@ -1770,7 +1782,7 @@ public class Core {
     public static void LLVMSetModuleIdentifier(LLVMModuleRef M, String Ident) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Ident = allocString(arena, Ident);
-            long /* size_t */ Len = c_Ident.byteSize();
+            long /* size_t */ Len = stringLength(c_Ident);
             nothrows_run(() -> Function.LLVMSetModuleIdentifier.handle().invoke(c_Ident.nativeAddress(), Len));
         }
     }
@@ -2790,7 +2802,7 @@ public class Core {
     public static LLVMValueRef LLVMConstStringInContext(LLVMContextRef C, String Str, boolean DontNullTerminate) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
-            int /* unsigned */ Length = Math.toIntExact(c_Str.byteSize());
+            int /* unsigned */ Length = Math.toIntExact(stringLength(c_Str));
             return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstStringInContext.handle()
                     .invoke(C.value(), c_Str.nativeAddress(), Length, DontNullTerminate)));
         }
@@ -2805,7 +2817,7 @@ public class Core {
     public static LLVMValueRef LLVMConstString(String Str, boolean DontNullTerminate) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
-            int /* unsigned */ Length = Math.toIntExact(c_Str.byteSize());
+            int /* unsigned */ Length = Math.toIntExact(stringLength(c_Str));
             return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstString.handle()
                     .invoke(c_Str.nativeAddress(), Length, DontNullTerminate)));
         }

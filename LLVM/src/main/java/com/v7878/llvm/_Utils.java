@@ -72,6 +72,10 @@ final class _Utils {
         return value == null ? MemorySegment.NULL : scope.allocateFrom(value);
     }
 
+    public static long stringLength(MemorySegment string) {
+        return string.byteSize() - 1;
+    }
+
     public static MemorySegment allocArray(Arena scope, AddressValue... values) {
         if (values == null || values.length == 0) {
             return MemorySegment.NULL;
