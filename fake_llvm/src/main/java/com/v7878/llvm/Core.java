@@ -525,7 +525,15 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMContextRef LLVMGetModuleContext(LLVMModuleRef M) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMAddFunction(LLVMModuleRef M, String Name, LLVMTypeRef FunctionTy) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetNamedFunction(LLVMModuleRef M, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -781,6 +789,14 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMModuleRef LLVMGetGlobalParent(LLVMValueRef Global) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsDeclaration(LLVMValueRef Global) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMLinkage LLVMGetLinkage(LLVMValueRef Global) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -858,6 +874,10 @@ public class Core {
     }
 
     public static void LLVMSetParamAlignment(LLVMValueRef Arg, int /* unsigned */ Align) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetBasicBlockParent(LLVMBasicBlockRef BB) {
         throw new UnsupportedOperationException("Stub!");
     }
 

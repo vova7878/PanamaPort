@@ -1851,14 +1851,14 @@ public class Core {
     //void LLVMSetModuleInlineAsm(LLVMModuleRef M, String Asm) {
     //    return nothrows_run(() -> Function.LLVMSetModuleInlineAsm.handle().invoke());
     //}
-    ///**
-    // * Obtain the context to which this module is associated.
-    // *
-    // * @see Module::getContext()
-    // */
-    //LLVMContextRef LLVMGetModuleContext(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMGetModuleContext.handle().invoke());
-    //}
+
+    /**
+     * Obtain the context to which this module is associated.
+     */
+    public static LLVMContextRef LLVMGetModuleContext(LLVMModuleRef M) {
+        return nothrows_run(() -> new LLVMContextRef((long) Function.LLVMGetModuleContext.handle().invoke(M.value())));
+    }
+
     ///**
     // * Obtain a Type from a module by its registered name.
     // */
@@ -1908,16 +1908,19 @@ public class Core {
         }
     }
 
-    ///**
-    // * Obtain a Function value from a Module by its name.
-    // *
-    // * The returned value corresponds to a llvm::Function value.
-    // *
-    // * @see llvm::Module::getFunction()
-    // */
-    //LLVMValueRef LLVMGetNamedFunction(LLVMModuleRef M, String Name) {
-    //    return nothrows_run(() -> Function.LLVMGetNamedFunction.handle().invoke());
-    //}
+    /**
+     * Obtain a Function value from a Module by its name.
+     * <p>
+     * The returned value corresponds to a llvm::Function value.
+     */
+    public static LLVMValueRef LLVMGetNamedFunction(LLVMModuleRef M, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetNamedFunction.handle()
+                    .invoke(M.value(), c_Name.nativeAddress())));
+        }
+    }
+
     ///**
     // * Obtain an iterator to the first Function in a Module.
     // *
@@ -3087,12 +3090,13 @@ public class Core {
      * this group relate to functions in the llvm::GlobalValue class tree.
      */
 
-    //LLVMModuleRef LLVMGetGlobalParent(LLVMValueRef Global) {
-    //    return nothrows_run(() -> Function.LLVMGetGlobalParent.handle().invoke());
-    //}
-    //boolean LLVMIsDeclaration(LLVMValueRef Global) {
-    //    return nothrows_run(() -> Function.LLVMIsDeclaration.handle().invoke());
-    //}
+    public static LLVMModuleRef LLVMGetGlobalParent(LLVMValueRef Global) {
+        return nothrows_run(() -> new LLVMModuleRef((long) Function.LLVMGetGlobalParent.handle().invoke(Global.value())));
+    }
+
+    public static boolean LLVMIsDeclaration(LLVMValueRef Global) {
+        return nothrows_run(() -> (boolean) Function.LLVMIsDeclaration.handle().invoke(Global.value()));
+    }
 
     public static LLVMLinkage LLVMGetLinkage(LLVMValueRef Global) {
         return nothrows_run(() -> LLVMLinkage.of((int) Function.LLVMGetLinkage.handle().invoke(Global.value())));
@@ -3611,14 +3615,14 @@ public class Core {
     //String LLVMGetBasicBlockName(LLVMBasicBlockRef BB) {
     //    return nothrows_run(() -> Function.LLVMGetBasicBlockName.handle().invoke());
     //}
-    ///**
-    // * Obtain the function to which a basic block belongs.
-    // *
-    // * @see llvm::BasicBlock::getParent()
-    // */
-    //LLVMValueRef LLVMGetBasicBlockParent(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMGetBasicBlockParent.handle().invoke());
-    //}
+
+    /**
+     * Obtain the function to which a basic block belongs.
+     */
+    public static LLVMValueRef LLVMGetBasicBlockParent(LLVMBasicBlockRef BB) {
+        return nothrows_run(() -> new LLVMValueRef((long) Function.LLVMGetBasicBlockParent.handle().invoke(BB.value())));
+    }
+
     ///**
     // * Obtain the terminator instruction for a basic block.
     // *
