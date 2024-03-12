@@ -134,6 +134,7 @@ final class _LLVMCallingConvention {
         }
 
         public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
+            final int[] arg_regs = {/* integer regs */ 6, /* floating point regs */ 8};
             LLVMStorage retStorage = descriptor.returnLayout().map(layout -> {
                 if (layout instanceof ValueLayout vl) {
                     return new RawStorage(vl);
@@ -141,6 +142,7 @@ final class _LLVMCallingConvention {
                 if (layout instanceof GroupLayout gl) {
                     ValueLayout[] tmp = getWrappers(gl);
                     if (tmp == null) {
+                        arg_regs[0] = Math.max(0, arg_regs[0] - 1); // pointer arg
                         return new MemoryStorage(gl);
                     }
                     MemoryLayout wrapper = tmp.length == 1 ? tmp[0] : structLayout(tmp[0], tmp[1]);
@@ -148,7 +150,6 @@ final class _LLVMCallingConvention {
                 }
                 throw shouldNotReachHere();
             }).orElse(new NoStorage(null));
-            final int[] arg_regs = {/* integer regs */ 6, /* floating point regs */ 8};
             LLVMStorage[] argStorages = descriptor.argumentLayouts().stream().map(layout -> {
                 if (layout instanceof ValueLayout vl) {
                     int type = isFP(vl) ? 1 : 0;
