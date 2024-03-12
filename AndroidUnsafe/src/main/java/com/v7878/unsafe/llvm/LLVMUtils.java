@@ -1,5 +1,9 @@
 package com.v7878.unsafe.llvm;
 
+import static com.v7878.llvm.Core.LLVMGetBasicBlockParent;
+import static com.v7878.llvm.Core.LLVMGetGlobalParent;
+import static com.v7878.llvm.Core.LLVMGetInsertBlock;
+import static com.v7878.llvm.Core.LLVMGetModuleContext;
 import static com.v7878.llvm.ObjectFile.LLVMGetSectionSegment;
 import static com.v7878.llvm.ObjectFile.LLVMGetSections;
 import static com.v7878.llvm.ObjectFile.LLVMGetSymbolAddress;
@@ -13,6 +17,9 @@ import static com.v7878.llvm.ObjectFile.LLVMMoveToNextSymbol;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.ObjectFile;
 import com.v7878.llvm.ObjectFile.LLVMObjectFileRef;
+import com.v7878.llvm.Types.LLVMBuilderRef;
+import com.v7878.llvm.Types.LLVMContextRef;
+import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.unsafe.Utils;
 
 import java.util.List;
@@ -58,5 +65,17 @@ public class LLVMUtils {
 
     public static MemorySegment getFunctionCode(LLVMObjectFileRef obj, String name) {
         return getFunctionsCode(obj, name)[0];
+    }
+
+    public static LLVMModuleRef getBuilderModule(LLVMBuilderRef builder) {
+        return LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
+    }
+
+    public static LLVMContextRef getModuleContext(LLVMModuleRef module) {
+        return LLVMGetModuleContext(module);
+    }
+
+    public static LLVMContextRef getBuilderContext(LLVMBuilderRef builder) {
+        return LLVMGetModuleContext(getBuilderModule(builder));
     }
 }

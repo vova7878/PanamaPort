@@ -50,17 +50,18 @@ import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
-import static com.v7878.unsafe.llvm.LLVMGlobals.DEFAULT_CONTEXT;
-import static com.v7878.unsafe.llvm.LLVMGlobals.DOUBLE_T;
-import static com.v7878.unsafe.llvm.LLVMGlobals.FLOAT_T;
-import static com.v7878.unsafe.llvm.LLVMGlobals.INT16_T;
-import static com.v7878.unsafe.llvm.LLVMGlobals.INT1_T;
-import static com.v7878.unsafe.llvm.LLVMGlobals.INT32_T;
-import static com.v7878.unsafe.llvm.LLVMGlobals.INT64_T;
-import static com.v7878.unsafe.llvm.LLVMGlobals.INT8_T;
-import static com.v7878.unsafe.llvm.LLVMGlobals.INTPTR_T;
-import static com.v7878.unsafe.llvm.LLVMGlobals.VOID_PTR_T;
-import static com.v7878.unsafe.llvm.LLVMGlobals.VOID_T;
+import static com.v7878.unsafe.llvm.LLVMGlobals.double_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.float_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int16_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int1_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int64_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int8_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.newContext;
+import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
+import static com.v7878.unsafe.llvm.LLVMGlobals.void_ptr_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.getFunctionCode;
 
 import com.v7878.dex.AnnotationItem;
@@ -82,6 +83,8 @@ import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.Core;
 import com.v7878.llvm.LLVMException;
 import com.v7878.llvm.ObjectFile;
+import com.v7878.llvm.TargetMachine;
+import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
@@ -94,7 +97,6 @@ import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.Transformers;
 import com.v7878.unsafe.invoke.Transformers.TransformerI;
-import com.v7878.unsafe.llvm.LLVMGlobals;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -303,42 +305,42 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     // Note: all layouts already has natural alignment
-    private static LLVMTypeRef layoutToLLVMType(MemoryLayout layout) {
+    private static LLVMTypeRef layoutToLLVMType(LLVMContextRef context, MemoryLayout layout) {
         Objects.requireNonNull(layout);
         LLVMTypeRef out;
         if (layout instanceof ValueLayout.OfByte) {
-            out = INT8_T;
+            out = int8_t(context);
         } else if (layout instanceof ValueLayout.OfBoolean) {
-            out = INT1_T;
+            out = int1_t(context);
         } else if (layout instanceof ValueLayout.OfShort || layout instanceof ValueLayout.OfChar) {
-            out = INT16_T;
+            out = int16_t(context);
         } else if (layout instanceof ValueLayout.OfInt) {
-            out = INT32_T;
+            out = int32_t(context);
         } else if (layout instanceof ValueLayout.OfFloat) {
-            out = FLOAT_T;
+            out = float_t(context);
         } else if (layout instanceof ValueLayout.OfLong) {
-            out = INT64_T;
+            out = int64_t(context);
         } else if (layout instanceof ValueLayout.OfDouble) {
-            out = DOUBLE_T;
+            out = double_t(context);
         } else if (layout instanceof AddressLayout addressLayout) {
             out = LLVMPointerType(addressLayout.targetLayout()
-                    .map(_AndroidLinkerImpl::layoutToLLVMType)
-                    .orElse(VOID_T), 0);
+                    .map(target -> layoutToLLVMType(context, target))
+                    .orElse(void_t(context)), 0);
         } else if (layout instanceof UnionLayout) {
             // TODO: it`s ok?
-            out = LLVMArrayType(INT8_T, Math.toIntExact(layout.byteSize()));
+            out = LLVMArrayType(int8_t(context), Math.toIntExact(layout.byteSize()));
         } else if (layout instanceof SequenceLayout sequence) {
-            out = LLVMArrayType(layoutToLLVMType(sequence.elementLayout()),
+            out = LLVMArrayType(layoutToLLVMType(context, sequence.elementLayout()),
                     Math.toIntExact(sequence.elementCount()));
         } else if (layout instanceof StructLayout struct) {
             List<MemoryLayout> members = struct.memberLayouts();
             List<LLVMTypeRef> elements = new ArrayList<>(members.size());
             for (MemoryLayout member : members) {
                 if (!(member instanceof PaddingLayout)) {
-                    elements.add(layoutToLLVMType(member));
+                    elements.add(layoutToLLVMType(context, member));
                 }
             }
-            out = LLVMStructTypeInContext(DEFAULT_CONTEXT, elements.toArray(new LLVMTypeRef[0]), false);
+            out = LLVMStructTypeInContext(context, elements.toArray(new LLVMTypeRef[0]), false);
             // TODO: check offsets
         } else {
             throw shouldNotReachHere();
@@ -346,44 +348,44 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return out;
     }
 
-    private static LLVMTypeRef getPointerType(MemoryLayout layout) {
+    private static LLVMTypeRef getPointerType(LLVMContextRef context, MemoryLayout layout) {
         if (layout instanceof AddressLayout addressLayout) {
-            return layoutToLLVMType(addressLayout);
+            return layoutToLLVMType(context, addressLayout);
         }
         if (layout instanceof GroupLayout) {
-            return LLVMPointerType(layoutToLLVMType(layout), 0);
+            return LLVMPointerType(layoutToLLVMType(context, layout), 0);
         }
         throw shouldNotReachHere();
     }
 
-    private static LLVMTypeRef fdToStubLLVMType(_FunctionDescriptorImpl descriptor,
+    private static LLVMTypeRef fdToStubLLVMType(LLVMContextRef context, _FunctionDescriptorImpl descriptor,
                                                 boolean allowsHeapAccess, boolean isCritical) {
         MemoryLayout retLayout = descriptor.returnLayoutPlain();
-        LLVMTypeRef returnType = retLayout == null ? VOID_T : layoutToLLVMType(retLayout);
+        LLVMTypeRef returnType = retLayout == null ? void_t(context) : layoutToLLVMType(context, retLayout);
         List<MemoryLayout> argLayouts = descriptor.argumentLayouts();
         List<LLVMTypeRef> argTypes = new ArrayList<>(argLayouts.size());
         for (MemoryLayout layout : argLayouts) {
             if (layout instanceof AddressLayout || layout instanceof GroupLayout) {
                 if (allowsHeapAccess) {
-                    argTypes.add(INT32_T);
-                    argTypes.add(INTPTR_T);
+                    argTypes.add(int32_t(context));
+                    argTypes.add(intptr_t(context));
                 } else {
-                    argTypes.add(getPointerType(layout));
+                    argTypes.add(getPointerType(context, layout));
                 }
             } else if (layout instanceof ValueLayout) {
-                argTypes.add(layoutToLLVMType(layout));
+                argTypes.add(layoutToLLVMType(context, layout));
             } else {
                 throw shouldNotReachHere();
             }
         }
         if (!isCritical) {
-            argTypes.add(0, VOID_PTR_T); // JNIEnv*
-            argTypes.add(1, VOID_PTR_T); // jclass
+            argTypes.add(0, void_ptr_t(context)); // JNIEnv*
+            argTypes.add(1, void_ptr_t(context)); // jclass
         }
         return LLVMFunctionType(returnType, argTypes.toArray(new LLVMTypeRef[0]), false);
     }
 
-    private static LLVMTypeRef sdToTargetLLVMType(_StorageDescriptor descriptor, int firstVariadicArgIndex) {
+    private static LLVMTypeRef sdToTargetLLVMType(LLVMContextRef context, _StorageDescriptor descriptor, int firstVariadicArgIndex) {
         LLVMStorage retStorage = descriptor.returnStorage();
         LLVMStorage[] argStorages = descriptor.argumentStorages();
         if (firstVariadicArgIndex >= 0) {
@@ -394,15 +396,15 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         List<LLVMTypeRef> argTypes = new ArrayList<>(argStorages.length);
 
         if (retStorage instanceof NoStorage) {
-            retType = VOID_T;
+            retType = void_t(context);
         } else if (retStorage instanceof RawStorage) {
-            retType = layoutToLLVMType(retStorage.layout);
+            retType = layoutToLLVMType(context, retStorage.layout);
         } else if (retStorage instanceof WrapperStorage ws) {
-            retType = layoutToLLVMType(ws.wrapper);
+            retType = layoutToLLVMType(context, ws.wrapper);
         } else if (retStorage instanceof MemoryStorage) {
             // pass as pointer argument with "sret" attribute
-            retType = VOID_T;
-            argTypes.add(layoutToLLVMType(ADDRESS.withTargetLayout(retStorage.layout)));
+            retType = void_t(context);
+            argTypes.add(layoutToLLVMType(context, ADDRESS.withTargetLayout(retStorage.layout)));
         } else {
             throw shouldNotReachHere();
         }
@@ -411,12 +413,12 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             if (storage instanceof NoStorage) {
                 // just drop
             } else if (storage instanceof RawStorage) {
-                argTypes.add(layoutToLLVMType(storage.layout));
+                argTypes.add(layoutToLLVMType(context, storage.layout));
             } else if (storage instanceof WrapperStorage ws) {
-                argTypes.add(layoutToLLVMType(ws.wrapper));
+                argTypes.add(layoutToLLVMType(context, ws.wrapper));
             } else if (storage instanceof MemoryStorage) {
                 // pass as pointer with "byval" attribute
-                argTypes.add(layoutToLLVMType(ADDRESS.withTargetLayout(storage.layout)));
+                argTypes.add(layoutToLLVMType(context, ADDRESS.withTargetLayout(storage.layout)));
             } else {
                 throw shouldNotReachHere();
             }
@@ -429,13 +431,14 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             Arena scope, _StorageDescriptor target_descriptor,
             _FunctionDescriptorImpl stub_descriptor, _LinkerOptions options) {
         final String function_name = "stub";
-        try (var builder = Utils.lock(LLVMCreateBuilderInContext(DEFAULT_CONTEXT), Core::LLVMDisposeBuilder);
-             var module = Utils.lock(LLVMModuleCreateWithNameInContext("generic", DEFAULT_CONTEXT), Core::LLVMDisposeModule)) {
+        try (var context = Utils.lock(newContext(), Core::LLVMContextDispose);
+             var builder = Utils.lock(LLVMCreateBuilderInContext(context.value()), Core::LLVMDisposeBuilder);
+             var module = Utils.lock(LLVMModuleCreateWithNameInContext("generic", context.value()), Core::LLVMDisposeModule)) {
 
-            LLVMTypeRef stub_type = fdToStubLLVMType(stub_descriptor, options.allowsHeapAccess(), options.isCritical());
+            LLVMTypeRef stub_type = fdToStubLLVMType(context.value(), stub_descriptor, options.allowsHeapAccess(), options.isCritical());
             LLVMValueRef stub = LLVMAddFunction(module.value(), function_name, stub_type);
 
-            LLVMTypeRef target_type = sdToTargetLLVMType(target_descriptor, options.firstVariadicArgIndex());
+            LLVMTypeRef target_type = sdToTargetLLVMType(context.value(), target_descriptor, options.firstVariadicArgIndex());
             LLVMTypeRef target_type_ptr = LLVMPointerType(target_type, 0);
 
             LLVMPositionBuilderAtEnd(builder.value(), LLVMAppendBasicBlock(stub, ""));
@@ -452,9 +455,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         if (VM.isPoisonReferences()) {
                             base = LLVMBuildNeg(builder.value(), base, "");
                         }
-                        base = LLVMBuildZExtOrBitCast(builder.value(), base, INTPTR_T, "");
+                        base = LLVMBuildZExtOrBitCast(builder.value(), base, intptr_t(context.value()), "");
                         base = LLVMBuildAdd(builder.value(), base, offset, "");
-                        out.add(LLVMBuildIntToPtr(builder.value(), base, getPointerType(layout), ""));
+                        out.add(LLVMBuildIntToPtr(builder.value(), base, getPointerType(context.value(), layout), ""));
                     } else if (layout instanceof ValueLayout) {
                         out.add(tmp[t++]);
                     } else {
@@ -495,7 +498,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     // Note: store layout, not wrapper
                     retStore = ws.layout;
                     stub_args[index] = LLVMBuildPointerCast(builder.value(), stub_args[index],
-                            layoutToLLVMType(ADDRESS.withTargetLayout(ws.wrapper)), "");
+                            layoutToLLVMType(context.value(), ADDRESS.withTargetLayout(ws.wrapper)), "");
                     index++;
                 } else if (retStorage instanceof MemoryStorage) {
                     // pass as pointer argument with "sret" attribute
@@ -521,7 +524,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         target_args[count++] = stub_args[index++];
                     } else if (storage instanceof WrapperStorage ws) {
                         stub_args[index] = LLVMBuildPointerCast(builder.value(), stub_args[index],
-                                layoutToLLVMType(ADDRESS.withTargetLayout(ws.wrapper)), "");
+                                layoutToLLVMType(context.value(), ADDRESS.withTargetLayout(ws.wrapper)), "");
                         target_args[count] = LLVMBuildLoad(builder.value(), stub_args[index], "");
                         // Note: alignment from layout, not wrapper
                         LLVMSetAlignment(target_args[count], Math.toIntExact(ws.layout.byteAlignment()));
@@ -567,11 +570,13 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             LLVMVerifyModule(module.value());
 
-            LLVMMemoryBufferRef buf = LLVMTargetMachineEmitToMemoryBuffer(
-                    LLVMGlobals.DEFAULT_MACHINE, module.value(), LLVMObjectFile);
-            try (var of = Utils.lock(LLVMCreateObjectFile(buf), ObjectFile::LLVMDisposeObjectFile)) {
-                byte[] code = getFunctionCode(of.value(), function_name).toArray(JAVA_BYTE);
-                return NativeCodeBlob.makeCodeBlob(scope, code)[0];
+            try (var machine = Utils.lock(newDefaultMachine(), TargetMachine::LLVMDisposeTargetMachine)) {
+                LLVMMemoryBufferRef buf = LLVMTargetMachineEmitToMemoryBuffer(
+                        machine.value(), module.value(), LLVMObjectFile);
+                try (var of = Utils.lock(LLVMCreateObjectFile(buf), ObjectFile::LLVMDisposeObjectFile)) {
+                    byte[] code = getFunctionCode(of.value(), function_name).toArray(JAVA_BYTE);
+                    return NativeCodeBlob.makeCodeBlob(scope, code)[0];
+                }
             }
         } catch (LLVMException e) {
             throw shouldNotHappen(e);
