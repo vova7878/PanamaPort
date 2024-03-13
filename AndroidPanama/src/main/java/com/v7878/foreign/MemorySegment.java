@@ -639,6 +639,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *                                   {@code newSize < 0}, or {@code newSize > byteSize() - offset}
      * @see #asSlice(long, long, long)
      */
+    @Keep
     MemorySegment asSlice(long offset, long newSize);
 
     /**
@@ -680,6 +681,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *                                   under the alignment constraint specified by {@code layout}
      * @see #asSlice(long, long, long)
      */
+    @Keep
     MemorySegment asSlice(long offset, MemoryLayout layout);
 
     /**

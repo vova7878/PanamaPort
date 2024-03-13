@@ -7,6 +7,8 @@ import static com.v7878.misc.Math.toUnsignedLong;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
+import androidx.annotation.Keep;
+
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
 import com.v7878.dex.EncodedMethod;
@@ -57,6 +59,7 @@ public class AndroidUnsafe {
             INSTANCE = allocateInstance(impl);
         }
 
+        @Keep
         public abstract <T> T throwException(Throwable th);
     }
 

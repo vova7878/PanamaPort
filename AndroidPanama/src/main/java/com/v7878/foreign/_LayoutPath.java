@@ -31,6 +31,8 @@ package com.v7878.foreign;
 import static com.v7878.misc.Math.ceilDiv;
 import static java.util.stream.Collectors.joining;
 
+import androidx.annotation.Keep;
+
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
@@ -183,6 +185,7 @@ class _LayoutPath {
         return derefPath(derefLayout, handle, this);
     }
 
+    @Keep
     private static MemorySegment resizeSegment(MemorySegment segment, MemoryLayout layout) {
         return _Utils.longToAddress(segment.address(), layout.byteSize(), layout.byteAlignment());
     }
@@ -239,6 +242,7 @@ class _LayoutPath {
         return handle;
     }
 
+    @Keep
     private static long addScaledOffset(long base, long index, long stride, long bound) {
         Objects.checkIndex(index, bound);
         return base + (stride * index);
@@ -283,6 +287,7 @@ class _LayoutPath {
         return sliceHandle;
     }
 
+    @Keep
     private static void checkAlign(MemorySegment segment, long offset, MemoryLayout constraint) {
         if (!((_AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, constraint)) {
             throw new IllegalArgumentException(String.format(

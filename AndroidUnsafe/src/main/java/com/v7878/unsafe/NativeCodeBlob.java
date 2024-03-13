@@ -14,6 +14,8 @@ import static java.lang.annotation.ElementType.METHOD;
 
 import android.system.OsConstants;
 
+import androidx.annotation.Keep;
+
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.unsafe.access.JavaForeignAccess;
@@ -77,6 +79,7 @@ public class NativeCodeBlob {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
     @Repeatable(ASMs.class)
+    @Keep
     public @interface ASM {
         InstructionSet iset();
 
@@ -85,12 +88,14 @@ public class NativeCodeBlob {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
+    @Keep
     public @interface ASMs {
         ASM[] value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
+    @Keep
     public @interface ASM_GENERATOR {
         Class<?> declaring_class() default void.class;
 
