@@ -1,8 +1,16 @@
 package com.v7878.llvm;
 
+import static com.v7878.llvm.Core.LLVMContextDispose;
+import static com.v7878.llvm.Core.LLVMDisposeBuilder;
+import static com.v7878.llvm.Core.LLVMDisposeMemoryBuffer;
+import static com.v7878.llvm.Core.LLVMDisposeModule;
+import static com.v7878.llvm.Core.LLVMDisposeModuleProvider;
+import static com.v7878.llvm.Core.LLVMDisposePassManager;
 import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.SimpleLinker.BOOL_AS_INT_CLASS;
+
+import com.v7878.unsafe.Utils.FineClosable;
 
 import java.util.Objects;
 
@@ -60,7 +68,7 @@ public final class Types {
     static final Class<?> cLLVMAttributeRef = VOID_PTR;
     static final Class<?> cLLVMDiagnosticInfoRef = VOID_PTR;
 
-    public static final class LLVMMemoryBufferRef extends AddressValue {
+    public static final class LLVMMemoryBufferRef extends AddressValue implements FineClosable {
 
         private LLVMMemoryBufferRef(long value) {
             super(value);
@@ -76,9 +84,14 @@ public final class Types {
         public static LLVMMemoryBufferRef ofNullable(long value) {
             return value == 0 ? null : new LLVMMemoryBufferRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMDisposeMemoryBuffer(this);
+        }
     }
 
-    public static final class LLVMContextRef extends AddressValue {
+    public static final class LLVMContextRef extends AddressValue implements FineClosable {
         private LLVMContextRef(long value) {
             super(value);
         }
@@ -93,9 +106,14 @@ public final class Types {
         public static LLVMContextRef ofNullable(long value) {
             return value == 0 ? null : new LLVMContextRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMContextDispose(this);
+        }
     }
 
-    public static final class LLVMModuleRef extends AddressValue {
+    public static final class LLVMModuleRef extends AddressValue implements FineClosable {
         private LLVMModuleRef(long value) {
             super(value);
         }
@@ -109,6 +127,11 @@ public final class Types {
 
         public static LLVMModuleRef ofNullable(long value) {
             return value == 0 ? null : new LLVMModuleRef(value);
+        }
+
+        @Override
+        public void close() {
+            LLVMDisposeModule(this);
         }
     }
 
@@ -163,7 +186,7 @@ public final class Types {
         }
     }
 
-    public static final class LLVMBuilderRef extends AddressValue {
+    public static final class LLVMBuilderRef extends AddressValue implements FineClosable {
         private LLVMBuilderRef(long value) {
             super(value);
         }
@@ -178,9 +201,14 @@ public final class Types {
         public static LLVMBuilderRef ofNullable(long value) {
             return value == 0 ? null : new LLVMBuilderRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMDisposeBuilder(this);
+        }
     }
 
-    public static final class LLVMModuleProviderRef extends AddressValue {
+    public static final class LLVMModuleProviderRef extends AddressValue implements FineClosable {
         private LLVMModuleProviderRef(long value) {
             super(value);
         }
@@ -195,9 +223,14 @@ public final class Types {
         public static LLVMModuleProviderRef ofNullable(long value) {
             return value == 0 ? null : new LLVMModuleProviderRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMDisposeModuleProvider(this);
+        }
     }
 
-    public static final class LLVMPassManagerRef extends AddressValue {
+    public static final class LLVMPassManagerRef extends AddressValue implements FineClosable {
         private LLVMPassManagerRef(long value) {
             super(value);
         }
@@ -211,6 +244,11 @@ public final class Types {
 
         public static LLVMPassManagerRef ofNullable(long value) {
             return value == 0 ? null : new LLVMPassManagerRef(value);
+        }
+
+        @Override
+        public void close() {
+            LLVMDisposePassManager(this);
         }
     }
 

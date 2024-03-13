@@ -5,26 +5,46 @@ import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 
 public class ObjectFile {
 
-    public static final class LLVMObjectFileRef {
+    public static final class LLVMObjectFileRef implements AutoCloseable {
         private LLVMObjectFileRef() {
             throw new UnsupportedOperationException("Stub!");
         }
+
+        @Override
+        public void close() {
+            throw new UnsupportedOperationException("Stub!");
+        }
     }
 
-    public static final class LLVMSectionIteratorRef {
+    public static final class LLVMSectionIteratorRef implements AutoCloseable {
         private LLVMSectionIteratorRef() {
             throw new UnsupportedOperationException("Stub!");
         }
-    }
 
-    public static final class LLVMSymbolIteratorRef {
-        private LLVMSymbolIteratorRef() {
+        @Override
+        public void close() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
-    public static final class LLVMRelocationIteratorRef {
+    public static final class LLVMSymbolIteratorRef implements AutoCloseable {
+        private LLVMSymbolIteratorRef() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+
+        @Override
+        public void close() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+    }
+
+    public static final class LLVMRelocationIteratorRef implements AutoCloseable {
         private LLVMRelocationIteratorRef() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+
+        @Override
+        public void close() {
             throw new UnsupportedOperationException("Stub!");
         }
     }

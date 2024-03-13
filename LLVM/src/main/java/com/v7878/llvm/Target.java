@@ -31,6 +31,7 @@ import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.AddressValue;
+import com.v7878.unsafe.Utils.FineClosable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -46,7 +47,7 @@ public class Target {
     static final Class<?> cLLVMTargetDataRef = VOID_PTR;
     static final Class<?> cLLVMTargetLibraryInfoRef = VOID_PTR;
 
-    public static final class LLVMTargetDataRef extends AddressValue {
+    public static final class LLVMTargetDataRef extends AddressValue implements FineClosable {
 
         private LLVMTargetDataRef(long value) {
             super(value);
@@ -62,9 +63,14 @@ public class Target {
         public static LLVMTargetDataRef ofNullable(long value) {
             return value == 0 ? null : new LLVMTargetDataRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMDisposeTargetData(this);
+        }
     }
 
-    public static final class LLVMTargetLibraryInfoRef extends AddressValue {
+    public static final class LLVMTargetLibraryInfoRef extends AddressValue implements FineClosable {
 
         private LLVMTargetLibraryInfoRef(long value) {
             super(value);
@@ -79,6 +85,12 @@ public class Target {
 
         public static LLVMTargetLibraryInfoRef ofNullable(long value) {
             return value == 0 ? null : new LLVMTargetLibraryInfoRef(value);
+        }
+
+        @Override
+        public void close() {
+            // TODO
+            throw new UnsupportedOperationException("Not supported yet!");
         }
     }
 

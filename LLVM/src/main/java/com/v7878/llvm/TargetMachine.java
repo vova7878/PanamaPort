@@ -26,6 +26,7 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Target.LLVMTargetDataRef;
 import com.v7878.llvm.Types.AddressValue;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
+import com.v7878.unsafe.Utils.FineClosable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -37,7 +38,7 @@ public class TargetMachine {
     static final Class<?> cLLVMTargetMachineRef = VOID_PTR;
     static final Class<?> cLLVMTargetRef = VOID_PTR;
 
-    public static final class LLVMTargetMachineRef extends AddressValue {
+    public static final class LLVMTargetMachineRef extends AddressValue implements FineClosable {
 
         private LLVMTargetMachineRef(long value) {
             super(value);
@@ -52,6 +53,11 @@ public class TargetMachine {
 
         public static LLVMTargetMachineRef ofNullable(long value) {
             return value == 0 ? null : new LLVMTargetMachineRef(value);
+        }
+
+        @Override
+        public void close() {
+            LLVMDisposeTargetMachine(this);
         }
     }
 

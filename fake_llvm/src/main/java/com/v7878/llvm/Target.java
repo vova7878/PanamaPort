@@ -7,14 +7,24 @@ import static com.v7878.llvm.Types.LLVMTypeRef;
 import static com.v7878.llvm.Types.LLVMValueRef;
 
 public class Target {
-    public static final class LLVMTargetDataRef {
+    public static final class LLVMTargetDataRef implements AutoCloseable {
         private LLVMTargetDataRef() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+
+        @Override
+        public void close() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
-    public static final class LLVMTargetLibraryInfoRef {
+    public static final class LLVMTargetLibraryInfoRef implements AutoCloseable {
         private LLVMTargetLibraryInfoRef() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+
+        @Override
+        public void close() {
             throw new UnsupportedOperationException("Stub!");
         }
     }

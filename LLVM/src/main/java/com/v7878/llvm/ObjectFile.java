@@ -15,6 +15,7 @@ import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.AddressValue;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
+import com.v7878.unsafe.Utils.FineClosable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -33,7 +34,7 @@ public class ObjectFile {
     static final Class<?> cLLVMSymbolIteratorRef = VOID_PTR;
     static final Class<?> cLLVMRelocationIteratorRef = VOID_PTR;
 
-    public static final class LLVMObjectFileRef extends AddressValue {
+    public static final class LLVMObjectFileRef extends AddressValue implements FineClosable {
 
         private LLVMObjectFileRef(long value) {
             super(value);
@@ -49,9 +50,14 @@ public class ObjectFile {
         public static LLVMObjectFileRef ofNullable(long value) {
             return value == 0 ? null : new LLVMObjectFileRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMDisposeObjectFile(this);
+        }
     }
 
-    public static final class LLVMSectionIteratorRef extends AddressValue {
+    public static final class LLVMSectionIteratorRef extends AddressValue implements FineClosable {
 
         private LLVMSectionIteratorRef(long value) {
             super(value);
@@ -67,9 +73,14 @@ public class ObjectFile {
         public static LLVMSectionIteratorRef ofNullable(long value) {
             return value == 0 ? null : new LLVMSectionIteratorRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMDisposeSectionIterator(this);
+        }
     }
 
-    public static final class LLVMSymbolIteratorRef extends AddressValue {
+    public static final class LLVMSymbolIteratorRef extends AddressValue implements FineClosable {
 
         private LLVMSymbolIteratorRef(long value) {
             super(value);
@@ -85,9 +96,14 @@ public class ObjectFile {
         public static LLVMSymbolIteratorRef ofNullable(long value) {
             return value == 0 ? null : new LLVMSymbolIteratorRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMDisposeSymbolIterator(this);
+        }
     }
 
-    public static final class LLVMRelocationIteratorRef extends AddressValue {
+    public static final class LLVMRelocationIteratorRef extends AddressValue implements FineClosable {
 
         private LLVMRelocationIteratorRef(long value) {
             super(value);
@@ -102,6 +118,11 @@ public class ObjectFile {
 
         public static LLVMRelocationIteratorRef ofNullable(long value) {
             return value == 0 ? null : new LLVMRelocationIteratorRef(value);
+        }
+
+        @Override
+        public void close() {
+            LLVMDisposeRelocationIterator(this);
         }
     }
 

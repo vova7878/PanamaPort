@@ -55,6 +55,7 @@ import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
 import com.v7878.llvm.Types.LLVMModuleProviderRef;
+import com.v7878.llvm.Types.LLVMPassManagerRef;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -5121,22 +5122,21 @@ public class Core {
     //boolean LLVMFinalizeFunctionPassManager(LLVMPassManagerRef FPM) {
     //    return nothrows_run(() -> Function.LLVMFinalizeFunctionPassManager.handle().invoke());
     //}
-    ///** Frees the memory of a pass pipeline. For function pipelines, does not free
-    //    the module provider.
-    //    @see llvm::PassManagerBase::~PassManagerBase. */
-    //void LLVMDisposePassManager(LLVMPassManagerRef PM) {
-    //    return nothrows_run(() -> Function.LLVMDisposePassManager.handle().invoke());
-    //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreThreading Threading
-    // *
-    // * Handle the structures needed to make LLVM safe for multithreading.
-    // *
-    // * @{
-    // */
+
+    /**
+     * Frees the memory of a pass pipeline. For function pipelines, does not free
+     * the module provider.
+     */
+    public static void LLVMDisposePassManager(LLVMPassManagerRef PM) {
+        nothrows_run(() -> Function.LLVMDisposePassManager.handle().invoke(PM.value()));
+    }
+
+    /*
+     * @defgroup LLVMCCoreThreading Threading
+     *
+     * Handle the structures needed to make LLVM safe for multithreading.
+     */
+
     ///** Deprecated: Multi-threading can only be enabled/disabled with the compile
     //    time define LLVM_ENABLE_THREADS.  This function always returns
     //    LLVMIsMultithreaded(). */

@@ -10,8 +10,13 @@ import java.util.function.Consumer;
 
 public class TargetMachine {
 
-    public static final class LLVMTargetMachineRef {
+    public static final class LLVMTargetMachineRef implements AutoCloseable {
         private LLVMTargetMachineRef() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+
+        @Override
+        public void close() {
             throw new UnsupportedOperationException("Stub!");
         }
     }

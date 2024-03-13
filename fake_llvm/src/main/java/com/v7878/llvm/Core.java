@@ -1254,4 +1254,8 @@ public class Core {
     public static LLVMPassRegistryRef LLVMGetGlobalPassRegistry() {
         throw new UnsupportedOperationException("Stub!");
     }
+
+    public static void LLVMDisposePassManager(Types.LLVMPassManagerRef PM) {
+        throw new UnsupportedOperationException("Stub!");
+    }
 }

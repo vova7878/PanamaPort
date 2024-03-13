@@ -12,21 +12,36 @@ import java.util.function.Consumer;
 
 @TargetApi(Build.VERSION_CODES.O_MR1)
 public class ExecutionEngine {
-    public static final class LLVMGenericValueRef {
+    public static final class LLVMGenericValueRef implements AutoCloseable {
 
         private LLVMGenericValueRef() {
             throw new UnsupportedOperationException("Stub!");
         }
-    }
 
-    public static final class LLVMExecutionEngineRef {
-        private LLVMExecutionEngineRef() {
+        @Override
+        public void close() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
-    public static final class LLVMMCJITMemoryManagerRef {
+    public static final class LLVMExecutionEngineRef implements AutoCloseable {
+        private LLVMExecutionEngineRef() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+
+        @Override
+        public void close() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+    }
+
+    public static final class LLVMMCJITMemoryManagerRef implements AutoCloseable {
         private LLVMMCJITMemoryManagerRef() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+
+        @Override
+        public void close() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
@@ -108,6 +123,10 @@ public class ExecutionEngine {
     }
 
     public static LLVMGenericValueRef LLVMRunFunction(LLVMExecutionEngineRef EE, LLVMValueRef F, LLVMGenericValueRef[] Args) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMDisposeMCJITMemoryManager(LLVMMCJITMemoryManagerRef MM) {
         throw new UnsupportedOperationException("Stub!");
     }
 }

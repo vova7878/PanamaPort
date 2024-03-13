@@ -35,6 +35,7 @@ import com.v7878.llvm.Types.AddressValue;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.unsafe.Utils.FineClosable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -54,7 +55,7 @@ public class ExecutionEngine {
     static final Class<?> cLLVMExecutionEngineRef = VOID_PTR;
     static final Class<?> cLLVMMCJITMemoryManagerRef = VOID_PTR;
 
-    public static final class LLVMGenericValueRef extends AddressValue {
+    public static final class LLVMGenericValueRef extends AddressValue implements FineClosable {
 
         private LLVMGenericValueRef(long value) {
             super(value);
@@ -70,9 +71,14 @@ public class ExecutionEngine {
         public static LLVMGenericValueRef ofNullable(long value) {
             return value == 0 ? null : new LLVMGenericValueRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMDisposeGenericValue(this);
+        }
     }
 
-    public static final class LLVMExecutionEngineRef extends AddressValue {
+    public static final class LLVMExecutionEngineRef extends AddressValue implements FineClosable {
 
         private LLVMExecutionEngineRef(long value) {
             super(value);
@@ -88,9 +94,14 @@ public class ExecutionEngine {
         public static LLVMExecutionEngineRef ofNullable(long value) {
             return value == 0 ? null : new LLVMExecutionEngineRef(value);
         }
+
+        @Override
+        public void close() {
+            LLVMDisposeExecutionEngine(this);
+        }
     }
 
-    public static final class LLVMMCJITMemoryManagerRef extends AddressValue {
+    public static final class LLVMMCJITMemoryManagerRef extends AddressValue implements FineClosable {
 
         private LLVMMCJITMemoryManagerRef(long value) {
             super(value);
@@ -105,6 +116,11 @@ public class ExecutionEngine {
 
         public static LLVMMCJITMemoryManagerRef ofNullable(long value) {
             return value == 0 ? null : new LLVMMCJITMemoryManagerRef(value);
+        }
+
+        @Override
+        public void close() {
+            LLVMDisposeMCJITMemoryManager(this);
         }
     }
 
@@ -414,7 +430,8 @@ public class ExecutionEngine {
     //LLVMMCJITMemoryManagerRef LLVMCreateSimpleMCJITMemoryManager(void *Opaque, LLVMMemoryManagerAllocateCodeSectionCallback AllocateCodeSection, LLVMMemoryManagerAllocateDataSectionCallback AllocateDataSection, LLVMMemoryManagerFinalizeMemoryCallback FinalizeMemory, LLVMMemoryManagerDestroyCallback Destroy) {
     //    return nothrows_run(() -> Function.LLVMCreateSimpleMCJITMemoryManager.handle().invoke());
     //}
-    //void LLVMDisposeMCJITMemoryManager(LLVMMCJITMemoryManagerRef MM) {
-    //    return nothrows_run(() -> Function.LLVMDisposeMCJITMemoryManager.handle().invoke());
-    //}
+
+    public static void LLVMDisposeMCJITMemoryManager(LLVMMCJITMemoryManagerRef MM) {
+        nothrows_run(() -> Function.LLVMDisposeMCJITMemoryManager.handle().invoke(MM.value()));
+    }
 }
