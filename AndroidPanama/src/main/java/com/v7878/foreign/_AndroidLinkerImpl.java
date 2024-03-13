@@ -80,10 +80,7 @@ import com.v7878.foreign._StorageDescriptor.NoStorage;
 import com.v7878.foreign._StorageDescriptor.RawStorage;
 import com.v7878.foreign._StorageDescriptor.WrapperStorage;
 import com.v7878.invoke.VarHandle;
-import com.v7878.llvm.Core;
 import com.v7878.llvm.LLVMException;
-import com.v7878.llvm.ObjectFile;
-import com.v7878.llvm.TargetMachine;
 import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
@@ -431,17 +428,16 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             Arena scope, _StorageDescriptor target_descriptor,
             _FunctionDescriptorImpl stub_descriptor, _LinkerOptions options) {
         final String function_name = "stub";
-        try (var context = Utils.lock(newContext(), Core::LLVMContextDispose);
-             var builder = Utils.lock(LLVMCreateBuilderInContext(context.value()), Core::LLVMDisposeBuilder);
-             var module = Utils.lock(LLVMModuleCreateWithNameInContext("generic", context.value()), Core::LLVMDisposeModule)) {
+        try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
+             var module = LLVMModuleCreateWithNameInContext("generic", context)) {
 
-            LLVMTypeRef stub_type = fdToStubLLVMType(context.value(), stub_descriptor, options.allowsHeapAccess(), options.isCritical());
-            LLVMValueRef stub = LLVMAddFunction(module.value(), function_name, stub_type);
+            LLVMTypeRef stub_type = fdToStubLLVMType(context, stub_descriptor, options.allowsHeapAccess(), options.isCritical());
+            LLVMValueRef stub = LLVMAddFunction(module, function_name, stub_type);
 
-            LLVMTypeRef target_type = sdToTargetLLVMType(context.value(), target_descriptor, options.firstVariadicArgIndex());
+            LLVMTypeRef target_type = sdToTargetLLVMType(context, target_descriptor, options.firstVariadicArgIndex());
             LLVMTypeRef target_type_ptr = LLVMPointerType(target_type, 0);
 
-            LLVMPositionBuilderAtEnd(builder.value(), LLVMAppendBasicBlock(stub, ""));
+            LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(stub, ""));
 
             LLVMValueRef[] stub_args;
             if (options.allowsHeapAccess()) {
@@ -453,11 +449,11 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         LLVMValueRef base = tmp[t++];
                         LLVMValueRef offset = tmp[t++];
                         if (VM.isPoisonReferences()) {
-                            base = LLVMBuildNeg(builder.value(), base, "");
+                            base = LLVMBuildNeg(builder, base, "");
                         }
-                        base = LLVMBuildZExtOrBitCast(builder.value(), base, intptr_t(context.value()), "");
-                        base = LLVMBuildAdd(builder.value(), base, offset, "");
-                        out.add(LLVMBuildIntToPtr(builder.value(), base, getPointerType(context.value(), layout), ""));
+                        base = LLVMBuildZExtOrBitCast(builder, base, intptr_t(context), "");
+                        base = LLVMBuildAdd(builder, base, offset, "");
+                        out.add(LLVMBuildIntToPtr(builder, base, getPointerType(context, layout), ""));
                     } else if (layout instanceof ValueLayout) {
                         out.add(tmp[t++]);
                     } else {
@@ -476,7 +472,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             int count = 0; // current index in target_args[] and their count
             int index = 0; // current index in stub_args[]
-            LLVMValueRef target = LLVMBuildPointerCast(builder.value(), stub_args[index++], target_type_ptr, "");
+            LLVMValueRef target = LLVMBuildPointerCast(builder, stub_args[index++], target_type_ptr, "");
             LLVMValueRef[] target_args = new LLVMValueRef[stub_args.length - index];
             int[] attrs = new int[target_args.length];
             int[] aligns = new int[target_args.length];
@@ -497,8 +493,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     retVoid = false;
                     // Note: store layout, not wrapper
                     retStore = ws.layout;
-                    stub_args[index] = LLVMBuildPointerCast(builder.value(), stub_args[index],
-                            layoutToLLVMType(context.value(), ADDRESS.withTargetLayout(ws.wrapper)), "");
+                    stub_args[index] = LLVMBuildPointerCast(builder, stub_args[index],
+                            layoutToLLVMType(context, ADDRESS.withTargetLayout(ws.wrapper)), "");
                     index++;
                 } else if (retStorage instanceof MemoryStorage) {
                     // pass as pointer argument with "sret" attribute
@@ -523,9 +519,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     } else if (storage instanceof RawStorage) {
                         target_args[count++] = stub_args[index++];
                     } else if (storage instanceof WrapperStorage ws) {
-                        stub_args[index] = LLVMBuildPointerCast(builder.value(), stub_args[index],
-                                layoutToLLVMType(context.value(), ADDRESS.withTargetLayout(ws.wrapper)), "");
-                        target_args[count] = LLVMBuildLoad(builder.value(), stub_args[index], "");
+                        stub_args[index] = LLVMBuildPointerCast(builder, stub_args[index],
+                                layoutToLLVMType(context, ADDRESS.withTargetLayout(ws.wrapper)), "");
+                        target_args[count] = LLVMBuildLoad(builder, stub_args[index], "");
                         // Note: alignment from layout, not wrapper
                         LLVMSetAlignment(target_args[count], Math.toIntExact(ws.layout.byteAlignment()));
                         index++;
@@ -543,7 +539,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 }
             }
 
-            LLVMValueRef call = LLVMBuildCall(builder.value(), target, Arrays.copyOf(target_args, count), "");
+            LLVMValueRef call = LLVMBuildCall(builder, target, Arrays.copyOf(target_args, count), "");
 
             final int offset = 1; // Note: first index is 1, not 0
             for (int i = 0; i < count; i++) {
@@ -556,25 +552,25 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             }
 
             if (retVoid) {
-                LLVMBuildRetVoid(builder.value());
+                LLVMBuildRetVoid(builder);
             } else {
                 if (retStore == null) {
-                    LLVMBuildRet(builder.value(), call);
+                    LLVMBuildRet(builder, call);
                 } else {
                     final int ret_index = 1;
-                    LLVMValueRef store = LLVMBuildStore(builder.value(), call, stub_args[ret_index]);
+                    LLVMValueRef store = LLVMBuildStore(builder, call, stub_args[ret_index]);
                     LLVMSetAlignment(store, Math.toIntExact(retStore.byteAlignment()));
-                    LLVMBuildRetVoid(builder.value());
+                    LLVMBuildRetVoid(builder);
                 }
             }
 
-            LLVMVerifyModule(module.value());
+            LLVMVerifyModule(module);
 
-            try (var machine = Utils.lock(newDefaultMachine(), TargetMachine::LLVMDisposeTargetMachine)) {
+            try (var machine = newDefaultMachine()) {
                 LLVMMemoryBufferRef buf = LLVMTargetMachineEmitToMemoryBuffer(
-                        machine.value(), module.value(), LLVMObjectFile);
-                try (var of = Utils.lock(LLVMCreateObjectFile(buf), ObjectFile::LLVMDisposeObjectFile)) {
-                    byte[] code = getFunctionCode(of.value(), function_name).toArray(JAVA_BYTE);
+                        machine, module, LLVMObjectFile);
+                try (var of = LLVMCreateObjectFile(buf)) {
+                    byte[] code = getFunctionCode(of, function_name).toArray(JAVA_BYTE);
                     return NativeCodeBlob.makeCodeBlob(scope, code)[0];
                 }
             }

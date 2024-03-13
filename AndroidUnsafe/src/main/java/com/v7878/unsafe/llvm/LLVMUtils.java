@@ -15,12 +15,10 @@ import static com.v7878.llvm.ObjectFile.LLVMMoveToContainingSection;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToNextSymbol;
 
 import com.v7878.foreign.MemorySegment;
-import com.v7878.llvm.ObjectFile;
 import com.v7878.llvm.ObjectFile.LLVMObjectFileRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMModuleRef;
-import com.v7878.unsafe.Utils;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,18 +36,16 @@ public class LLVMUtils {
 
         MemorySegment[] out = new MemorySegment[names.length];
 
-        try (var sym = Utils.lock(LLVMGetSymbols(obj), ObjectFile::LLVMDisposeSymbolIterator);
-             var section = Utils.lock(LLVMGetSections(obj), ObjectFile::LLVMDisposeSectionIterator)) {
-            for (; !LLVMIsSymbolIteratorAtEnd(obj, sym.value());
-                 LLVMMoveToNextSymbol(sym.value())) {
-                String name = LLVMGetSymbolName(sym.value());
+        try (var sym = LLVMGetSymbols(obj); var section = LLVMGetSections(obj)) {
+            for (; !LLVMIsSymbolIteratorAtEnd(obj, sym); LLVMMoveToNextSymbol(sym)) {
+                String name = LLVMGetSymbolName(sym);
                 int index = l_names.indexOf(name);
                 if (index >= 0) {
-                    long offset = LLVMGetSymbolAddress(sym.value());
-                    long size = LLVMGetSymbolSize(sym.value());
+                    long offset = LLVMGetSymbolAddress(sym);
+                    long size = LLVMGetSymbolSize(sym);
 
-                    LLVMMoveToContainingSection(section.value(), sym.value());
-                    out[index] = LLVMGetSectionSegment(section.value()).asSlice(offset, size);
+                    LLVMMoveToContainingSection(section, sym);
+                    out[index] = LLVMGetSectionSegment(section).asSlice(offset, size);
                 }
             }
         }
