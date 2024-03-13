@@ -4678,15 +4678,33 @@ public class Core {
         return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildStore.handle().invoke(B.value(), Val.value(), Ptr.value())));
     }
 
-    //LLVMValueRef LLVMBuildGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef *Indices, int /* unsigned */ NumIndices, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildGEP.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildInBoundsGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef *Indices, int /* unsigned */ NumIndices, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildInBoundsGEP.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildStructGEP(LLVMBuilderRef B, LLVMValueRef Pointer, int /* unsigned */ Idx, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildStructGEP.handle().invoke());
-    //}
+    public static LLVMValueRef LLVMBuildGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef[] Indices, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Indices = allocArray(arena, Indices);
+            int /* unsigned */ NumIndices = arrayLength(Indices);
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildGEP.handle()
+                    .invoke(B.value(), Pointer.value(), c_Indices.nativeAddress(), NumIndices, c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildInBoundsGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef[] Indices, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Indices = allocArray(arena, Indices);
+            int /* unsigned */ NumIndices = arrayLength(Indices);
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildInBoundsGEP.handle()
+                    .invoke(B.value(), Pointer.value(), c_Indices.nativeAddress(), NumIndices, c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildStructGEP(LLVMBuilderRef B, LLVMValueRef Pointer, int /* unsigned */ Idx, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildStructGEP.handle()
+                    .invoke(B.value(), Pointer.value(), Idx, c_Name.nativeAddress())));
+        }
+    }
 
     public static LLVMValueRef LLVMBuildGlobalString(LLVMBuilderRef B, String Str, String Name) {
         try (Arena arena = Arena.ofConfined()) {

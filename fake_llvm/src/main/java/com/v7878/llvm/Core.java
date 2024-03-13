@@ -1105,6 +1105,18 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMBuildGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef[] Indices, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildInBoundsGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef[] Indices, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildStructGEP(LLVMBuilderRef B, LLVMValueRef Pointer, int /* unsigned */ Idx, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMBuildGlobalString(LLVMBuilderRef B, String Str, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
