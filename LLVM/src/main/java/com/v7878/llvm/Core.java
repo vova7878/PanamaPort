@@ -4151,93 +4151,104 @@ public class Core {
     //LLVMBasicBlockRef LLVMGetSwitchDefaultDest(LLVMValueRef SwitchInstr) {
     //    return nothrows_run(() -> Function.LLVMGetSwitchDefaultDest.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueInstructionAlloca Allocas
-    // *
-    // * Functions in this group only apply to instructions that map to
-    // * llvm::AllocaInst instances.
-    // *
-    // * @{
-    // */
-    ///**
-    // * Obtain the type that is being allocated by the alloca instruction.
-    // */
-    //LLVMTypeRef LLVMGetAllocatedType(LLVMValueRef Alloca) {
-    //    return nothrows_run(() -> Function.LLVMGetAllocatedType.handle().invoke());
-    //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueInstructionGetElementPointer GEPs
-    // *
-    // * Functions in this group only apply to instructions that map to
-    // * llvm::GetElementPtrInst instances.
-    // *
-    // * @{
-    // */
-    ///**
-    // * Check whether the given GEP instruction is inbounds.
-    // */
-    //boolean LLVMIsInBounds(LLVMValueRef GEP) {
-    //    return nothrows_run(() -> Function.LLVMIsInBounds.handle().invoke());
-    //}
-    ///**
-    // * Set the given GEP instruction to be inbounds or not.
-    // */
-    //void LLVMSetIsInBounds(LLVMValueRef GEP, boolean InBounds) {
-    //    return nothrows_run(() -> Function.LLVMSetIsInBounds.handle().invoke());
-    //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueInstructionPHINode PHI Nodes
-    // *
-    // * Functions in this group only apply to instructions that map to
-    // * llvm::PHINode instances.
-    // *
-    // * @{
-    // */
-    ///**
-    // * Add an incoming value to the end of a PHI list.
-    // */
-    //void LLVMAddIncoming(LLVMValueRef PhiNode, LLVMValueRef *IncomingValues, LLVMBasicBlockRef *IncomingBlocks, int /* unsigned */ Count) {
-    //    return nothrows_run(() -> Function.LLVMAddIncoming.handle().invoke());
-    //}
-    ///**
-    // * Obtain the number of incoming basic blocks to a PHI node.
-    // */
-    //int /* unsigned */ LLVMCountIncoming(LLVMValueRef PhiNode) {
-    //    return nothrows_run(() -> Function.LLVMCountIncoming.handle().invoke());
-    //}
-    ///**
-    // * Obtain an incoming value to a PHI node as an LLVMValueRef.
-    // */
-    //LLVMValueRef LLVMGetIncomingValue(LLVMValueRef PhiNode, int /* unsigned */ Index) {
-    //    return nothrows_run(() -> Function.LLVMGetIncomingValue.handle().invoke());
-    //}
-    ///**
-    // * Obtain an incoming value to a PHI node as an LLVMBasicBlockRef.
-    // */
-    //LLVMBasicBlockRef LLVMGetIncomingBlock(LLVMValueRef PhiNode, int /* unsigned */ Index) {
-    //    return nothrows_run(() -> Function.LLVMGetIncomingBlock.handle().invoke());
-    //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @defgroup LLVMCCoreValueInstructionExtractValue ExtractValue
-    // * @defgroup LLVMCCoreValueInstructionInsertValue InsertValue
-    // *
-    // * Functions in this group only apply to instructions that map to
-    // * llvm::ExtractValue and llvm::InsertValue instances.
-    // *
-    // * @{
-    // */
+
+    /*
+     * @defgroup LLVMCCoreValueInstructionAlloca Allocas
+     *
+     * Functions in this group only apply to instructions that map to
+     * llvm::AllocaInst instances.
+     */
+
+    /**
+     * Obtain the type that is being allocated by the alloca instruction.
+     */
+    public static LLVMTypeRef LLVMGetAllocatedType(LLVMValueRef Alloca) {
+        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMGetAllocatedType.handle().invoke(Alloca.value())));
+    }
+
+    /*
+     * @defgroup LLVMCCoreValueInstructionGetElementPointer GEPs
+     *
+     * Functions in this group only apply to instructions that map to
+     * llvm::GetElementPtrInst instances.
+     */
+
+    /**
+     * Check whether the given GEP instruction is inbounds.
+     */
+    public static boolean LLVMIsInBounds(LLVMValueRef GEP) {
+        return nothrows_run(() -> (boolean) Function.LLVMIsInBounds.handle().invoke(GEP.value()));
+    }
+
+    /**
+     * Set the given GEP instruction to be inbounds or not.
+     */
+    public static void LLVMSetIsInBounds(LLVMValueRef GEP, boolean InBounds) {
+        nothrows_run(() -> Function.LLVMSetIsInBounds.handle().invoke(GEP.value(), InBounds));
+    }
+
+    /*
+     * @defgroup LLVMCCoreValueInstructionPHINode PHI Nodes
+     *
+     * Functions in this group only apply to instructions that map to
+     * llvm::PHINode instances.
+     */
+
+    /**
+     * Add an incoming value to the end of a PHI list.
+     */
+    public static void LLVMAddIncoming(LLVMValueRef PhiNode, LLVMValueRef[] IncomingValues, LLVMBasicBlockRef[] IncomingBlocks) {
+        // TODO: maybe cleanup code?
+        if (IncomingValues == null) {
+            IncomingValues = new LLVMValueRef[0];
+        }
+        if (IncomingBlocks == null) {
+            IncomingBlocks = new LLVMBasicBlockRef[0];
+        }
+        int /* unsigned */ Count;
+        if ((Count = IncomingValues.length) != IncomingBlocks.length) {
+            String msg = "IncomingValues.length(%s) != IncomingBlocks.length(%s)";
+            throw new IllegalArgumentException(String.format(msg,
+                    IncomingValues.length, IncomingBlocks.length));
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_IncomingValues = allocArray(arena, IncomingValues);
+            MemorySegment c_IncomingBlocks = allocArray(arena, IncomingBlocks);
+            nothrows_run(() -> Function.LLVMAddIncoming.handle().invoke(
+                    PhiNode.value(), c_IncomingValues.nativeAddress(),
+                    c_IncomingBlocks.nativeAddress(), Count));
+        }
+    }
+
+    /**
+     * Obtain the number of incoming basic blocks to a PHI node.
+     */
+    public static int /* unsigned */ LLVMCountIncoming(LLVMValueRef PhiNode) {
+        return nothrows_run(() -> (int) Function.LLVMCountIncoming.handle().invoke(PhiNode.value()));
+    }
+
+    /**
+     * Obtain an incoming value to a PHI node as an LLVMValueRef.
+     */
+    public static LLVMValueRef LLVMGetIncomingValue(LLVMValueRef PhiNode, int /* unsigned */ Index) {
+        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetIncomingValue.handle().invoke(PhiNode.value(), Index)));
+    }
+
+    /**
+     * Obtain an incoming value to a PHI node as an LLVMBasicBlockRef.
+     */
+    public static LLVMBasicBlockRef LLVMGetIncomingBlock(LLVMValueRef PhiNode, int /* unsigned */ Index) {
+        return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMGetIncomingBlock.handle().invoke(PhiNode.value(), Index)));
+    }
+
+    /*
+     * @defgroup LLVMCCoreValueInstructionExtractValue ExtractValue
+     * @defgroup LLVMCCoreValueInstructionInsertValue InsertValue
+     *
+     * Functions in this group only apply to instructions that map to
+     * llvm::ExtractValue and llvm::InsertValue instances.
+     */
+
     ///**
     // * Obtain the number of indices.
     // * NB: This also works on GEP.
@@ -4251,15 +4262,6 @@ public class Core {
     //const int /* unsigned */ *LLVMGetIndices(LLVMValueRef Inst) {
     //    return nothrows_run(() -> Function.*LLVMGetIndices.handle().invoke());
     //}
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @}
-    // */
-    ///**
-    // * @}
-    // */
 
     /*
      * @defgroup LLVMCCoreInstructionBuilder Instruction Builders

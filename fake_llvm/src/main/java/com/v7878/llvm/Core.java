@@ -913,6 +913,34 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMTypeRef LLVMGetAllocatedType(LLVMValueRef Alloca) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsInBounds(LLVMValueRef GEP) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetIsInBounds(LLVMValueRef GEP, boolean InBounds) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddIncoming(LLVMValueRef PhiNode, LLVMValueRef[] IncomingValues, LLVMBasicBlockRef[] IncomingBlocks) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int /* unsigned */ LLVMCountIncoming(LLVMValueRef PhiNode) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetIncomingValue(LLVMValueRef PhiNode, int /* unsigned */ Index) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMBasicBlockRef LLVMGetIncomingBlock(LLVMValueRef PhiNode, int /* unsigned */ Index) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMBuilderRef LLVMCreateBuilderInContext(LLVMContextRef C) {
         throw new UnsupportedOperationException("Stub!");
     }
