@@ -4886,18 +4886,31 @@ public class Core {
 
     /* Comparisons */
 
-    //LLVMValueRef LLVMBuildICmp(LLVMBuilderRef B, LLVMIntPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildICmp.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildFCmp(LLVMBuilderRef B, LLVMRealPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildFCmp.handle().invoke());
-    //}
+    public static LLVMValueRef LLVMBuildICmp(LLVMBuilderRef B, LLVMIntPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildICmp.handle()
+                    .invoke(B.value(), Op.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildFCmp(LLVMBuilderRef B, LLVMRealPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFCmp.handle()
+                    .invoke(B.value(), Op.value(), LHS.value(), RHS.value(), c_Name.nativeAddress())));
+        }
+    }
 
     /* Miscellaneous instructions */
 
-    //LLVMValueRef LLVMBuildPhi(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildPhi.handle().invoke());
-    //}
+    public static LLVMValueRef LLVMBuildPhi(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildPhi.handle()
+                    .invoke(B.value(), Ty.value(), c_Name.nativeAddress())));
+        }
+    }
 
     public static LLVMValueRef LLVMBuildCall(LLVMBuilderRef B, LLVMValueRef Fn, LLVMValueRef[] Args, String Name) {
         try (Arena arena = Arena.ofConfined()) {
