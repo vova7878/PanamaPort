@@ -1229,8 +1229,6 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    /* Miscellaneous instructions */
-
     public static LLVMValueRef LLVMBuildPhi(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
