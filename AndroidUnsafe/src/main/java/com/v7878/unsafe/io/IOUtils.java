@@ -115,35 +115,33 @@ public class IOUtils {
     //int ashmem_unpin_region(int fd, size_t offset, size_t len);
     //int ashmem_get_size_region(int fd);
 
-    private static final int PROT_MASK = OsConstants.PROT_READ | OsConstants.PROT_WRITE
-            | OsConstants.PROT_EXEC | OsConstants.PROT_NONE;
-    private static final int PROT_RWX = OsConstants.PROT_READ | OsConstants.PROT_WRITE
-            | OsConstants.PROT_EXEC;
+    public static final int MAP_ANONYMOUS = 0x20;
 
-    private static void validateProt(int prot) {
-        if ((prot & ~PROT_MASK) != 0) {
-            throw new IllegalArgumentException("Invalid prot value");
-        }
-    }
-
-    public static MemorySegment map(FileDescriptor fd, int prot, long offset,
-                                    long length, Arena scope) throws ErrnoException {
-        if (!fd.valid()) {
-            throw new IllegalStateException("FileDescriptor is not valid");
-        }
-        validateProt(prot);
+    public static MemorySegment mmap(MemorySegment address, FileDescriptor fd, long offset,
+                                     long length, int prot, int flags, Arena scope) throws ErrnoException {
+        Objects.requireNonNull(scope);
         if (offset < 0) {
             throw new IllegalArgumentException("Offset must be >= 0");
         }
         if (length <= 0) {
             throw new IllegalArgumentException("Length must be > 0");
         }
-        long address = Os.mmap(0, length, prot, OsConstants.MAP_PRIVATE, fd, offset);
+        if ((flags & MAP_ANONYMOUS) != 0) {
+            if (fd != null) {
+                throw new IllegalArgumentException("FileDescriptor must be null if the MAP_ANONYMOUS flag is set");
+            }
+        } else if (!fd.valid()) {
+            throw new IllegalStateException("FileDescriptor is not valid");
+        }
+        if (address == null) {
+            address = MemorySegment.NULL;
+        }
+        long mmap_address = Os.mmap(address.nativeAddress(), length, prot, flags, fd, offset);
         boolean readOnly = (prot & OsConstants.PROT_WRITE) == 0;
         return JavaForeignAccess.mapSegment(new UnmapperProxy() {
             @Override
             public long address() {
-                return address;
+                return mmap_address;
             }
 
             @Override
@@ -154,14 +152,20 @@ public class IOUtils {
             @Override
             public void unmap() {
                 try {
-                    Os.munmap(address, length);
+                    Os.munmap(mmap_address, length);
                 } catch (ErrnoException e) { /* swallow exception */ }
             }
         }, length, readOnly, scope);
     }
 
-    public static MemorySegment map(FileDescriptor fd, long offset,
-                                    long length, Arena scope) throws ErrnoException {
-        return map(fd, PROT_RWX, offset, length, scope);
+    public static MemorySegment mmap(FileDescriptor fd, int prot, long offset,
+                                     long length, Arena scope) throws ErrnoException {
+        return mmap(null, fd, offset, length, prot, OsConstants.MAP_PRIVATE, scope);
+    }
+
+    private static final int PROT_RWX = OsConstants.PROT_READ | OsConstants.PROT_WRITE | OsConstants.PROT_EXEC;
+
+    public static MemorySegment mmap(FileDescriptor fd, long offset, long length, Arena scope) throws ErrnoException {
+        return mmap(fd, PROT_RWX, offset, length, scope);
     }
 }
