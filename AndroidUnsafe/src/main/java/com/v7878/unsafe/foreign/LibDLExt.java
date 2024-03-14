@@ -377,7 +377,7 @@ public class LibDLExt {
             FileDescriptor fd = IOUtils.ashmem_create_region(
                     "(mem_dlopen)", length);
             try (Arena arena = Arena.ofConfined()) {
-                MemorySegment target = IOUtils.map(fd, 0, length, arena);
+                MemorySegment target = IOUtils.mmap(fd, 0, length, arena);
                 target.copyFrom(segment);
                 target.force();
                 return android_dlopen_ext(fd, 0, flags);
