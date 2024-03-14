@@ -6,6 +6,7 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 import static com.v7878.unsafe.foreign.SimpleLinker.WORD_CLASS;
@@ -393,4 +394,9 @@ public class LibDLExt {
 
     //TODO
     //public static final AndroidNamespace DEFAULT_NAMESPACE = ...;
+
+    //TODO: open with system namespace via android_dlopen_ext
+    public static SymbolLookup systemLibraryLookup(String name, Arena arena) {
+        return SymbolLookup.libraryLookup("/system/lib" + (IS64BIT ? "64" : "") + "/" + name, arena);
+    }
 }
