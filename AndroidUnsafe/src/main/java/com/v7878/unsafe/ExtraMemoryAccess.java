@@ -33,6 +33,7 @@ import com.v7878.dex.EncodedMethod;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
+import com.v7878.foreign.Arena;
 import com.v7878.foreign.Linker;
 import com.v7878.unsafe.NativeCodeBlob.ASM;
 
@@ -46,7 +47,7 @@ public class ExtraMemoryAccess {
     @Keep
     private static class Swaps {
         static {
-            processASM();
+            processASM(Arena.global());
         }
 
         @ASM(iset = X86, code = {
@@ -280,7 +281,7 @@ public class ExtraMemoryAccess {
         private static final long COPY_SWAP_LONGS;
 
         static {
-            processASM();
+            processASM(Arena.global());
 
             ensureClassInitialized(Swaps.class);
 
