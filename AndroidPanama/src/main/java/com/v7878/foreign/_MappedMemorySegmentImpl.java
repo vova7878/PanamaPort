@@ -30,7 +30,9 @@ package com.v7878.foreign;
 import com.v7878.unsafe.access.JavaNioAccess;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
+import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * Implementation for a mapped memory segments. A mapped memory segment is a native memory segment, which
@@ -44,7 +46,11 @@ final class _MappedMemorySegmentImpl extends _NativeMemorySegmentImpl {
 
     public _MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, _MemorySessionImpl scope) {
         super(min, length, readOnly, scope);
-        this.unmapper = unmapper;
+        this.unmapper = Objects.requireNonNull(unmapper);
+    }
+
+    private FileDescriptor fileDescriptor() {
+        return unmapper.fileDescriptor();
     }
 
     @Override
@@ -72,24 +78,24 @@ final class _MappedMemorySegmentImpl extends _NativeMemorySegmentImpl {
     // support for mapped segments
 
     public void load() {
-        if (unmapper != null) {
+        if (fileDescriptor() != null) {
             _ScopedMemoryAccess.load(sessionImpl(), min, length);
         }
     }
 
     public void unload() {
-        if (unmapper != null) {
+        if (fileDescriptor() != null) {
             _ScopedMemoryAccess.unload(sessionImpl(), min, length);
         }
     }
 
     public boolean isLoaded() {
-        return unmapper == null || _ScopedMemoryAccess.isLoaded(sessionImpl(), min, length);
+        return fileDescriptor() == null || _ScopedMemoryAccess.isLoaded(sessionImpl(), min, length);
     }
 
     public void force() {
-        if (unmapper != null) {
-            _ScopedMemoryAccess.force(sessionImpl(), unmapper.fileDescriptor(), min, 0, length);
+        if (fileDescriptor() != null) {
+            _ScopedMemoryAccess.force(sessionImpl(), fileDescriptor(), min, 0, length);
         }
     }
 }
