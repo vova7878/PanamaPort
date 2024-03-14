@@ -27,8 +27,6 @@
 
 package com.v7878.foreign;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign._HeapMemorySegmentImpl.OfByte;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfChar;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfDouble;
@@ -39,6 +37,7 @@ import com.v7878.foreign._HeapMemorySegmentImpl.OfObject;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfShort;
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
@@ -58,7 +57,8 @@ class _SegmentFactories {
     // Unsafe native segment factories. These are used by the implementation code, to skip the sanity checks
     // associated with MemorySegment::ofAddress.
 
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, boolean readOnly, _MemorySessionImpl sessionImpl, Runnable action) {
+    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, boolean readOnly,
+                                                           _MemorySessionImpl sessionImpl, Runnable action) {
         ensureInitialized();
         if (action == null) {
             sessionImpl.checkValidState();
@@ -68,11 +68,13 @@ class _SegmentFactories {
         return new _NativeMemorySegmentImpl(min, byteSize, readOnly, sessionImpl);
     }
 
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, _MemorySessionImpl sessionImpl, Runnable action) {
+    public static MemorySegment makeNativeSegmentUnchecked(
+            long min, long byteSize, _MemorySessionImpl sessionImpl, Runnable action) {
         return makeNativeSegmentUnchecked(min, byteSize, false, sessionImpl, action);
     }
 
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, _MemorySessionImpl sessionImpl) {
+    public static MemorySegment makeNativeSegmentUnchecked(
+            long min, long byteSize, _MemorySessionImpl sessionImpl) {
         return makeNativeSegmentUnchecked(min, byteSize, sessionImpl, null);
     }
 
@@ -144,7 +146,8 @@ class _SegmentFactories {
                 _MemorySessionImpl.createHeap(arr));
     }
 
-    public static MemorySegment allocateSegment(long byteSize, long byteAlignment, _MemorySessionImpl sessionImpl) {
+    public static MemorySegment allocateSegment(long byteSize, long byteAlignment,
+                                                _MemorySessionImpl sessionImpl) {
         ensureInitialized();
         sessionImpl.checkValidState();
         //TODO
@@ -152,13 +155,12 @@ class _SegmentFactories {
         //    byteAlignment = Math.max(byteAlignment, AndroidUnsafe.pageSize());
         //}
         long alignedSize = Math.max(1L, byteAlignment > MAX_MALLOC_ALIGN ?
-                byteSize + (byteAlignment - 1) :
-                byteSize);
+                byteSize + (byteAlignment - 1) : byteSize);
 
         long buf = allocateMemoryWrapper(alignedSize);
         long alignedBuf = _Utils.alignUp(buf, byteAlignment);
-        _AbstractMemorySegmentImpl segment = new _NativeMemorySegmentImpl(buf, alignedSize,
-                false, sessionImpl);
+        _AbstractMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
+                buf, alignedSize, false, sessionImpl);
         sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
             @Override
             public void cleanup() {
@@ -180,22 +182,20 @@ class _SegmentFactories {
         }
     }
 
-    public static MemorySegment mapSegment(UnmapperProxy unmapper, long size, boolean readOnly, _MemorySessionImpl sessionImpl) {
+    public static MemorySegment mapSegment(UnmapperProxy unmapper, long size,
+                                           boolean readOnly, _MemorySessionImpl sessionImpl) {
         ensureInitialized();
-        if (unmapper != null) {
-            _AbstractMemorySegmentImpl segment = new _MappedMemorySegmentImpl(
-                    unmapper.address(), unmapper, size, readOnly, sessionImpl);
-            ResourceCleanup resource = new ResourceCleanup() {
-                @Override
-                public void cleanup() {
-                    unmapper.unmap();
-                }
-            };
-            sessionImpl.addOrCleanupIfFail(resource);
-            return segment;
-        } else {
-            return new _MappedMemorySegmentImpl(0, null, 0, readOnly, sessionImpl);
-        }
+        Objects.requireNonNull(unmapper);
+        sessionImpl.checkValidState();
+        _AbstractMemorySegmentImpl segment = new _MappedMemorySegmentImpl(
+                unmapper.address(), unmapper, size, readOnly, sessionImpl);
+        sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
+            @Override
+            public void cleanup() {
+                unmapper.unmap();
+            }
+        });
+        return segment;
     }
 
     // The method below needs to be called before any concrete subclass of MemorySegment
@@ -203,10 +203,7 @@ class _SegmentFactories {
     // where one thread attempts to initialize e.g. MemorySegment (and then NativeMemorySegmentImpl, via
     // the MemorySegment.NULL field) while another thread is attempting to initialize
     // NativeMemorySegmentImpl (and then MemorySegment, the super-interface).
-    //TODO?: check
-    @Keep
     private static void ensureInitialized() {
-        //noinspection unused
-        MemorySegment segment = MemorySegment.NULL;
+        Utils.ensureClassInitialized(MemorySegment.class);
     }
 }
