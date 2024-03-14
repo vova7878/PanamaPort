@@ -89,6 +89,7 @@ import com.v7878.unsafe.NativeCodeBlob;
 import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.VM;
+import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
@@ -288,7 +289,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         DexFile dex = openDexFile(new Dex(stub_def).compile());
         Class<?> stub_class = loadClass(dex, stub_name, Utils.newEmptyClassLoader());
 
-        Arena scope = Arena.ofAuto();
+        Arena scope = JavaForeignAccess.createImplicitHeapArena(stub_class);
 
         Field field = getDeclaredField(stub_class, field_name);
         putObject(stub_class, fieldOffset(field), scope);

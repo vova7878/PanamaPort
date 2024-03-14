@@ -32,7 +32,7 @@ import java.util.function.Supplier;
 
 public class LibDLExt {
 
-    public static final Arena DLEXT_SCOPE = JavaForeignAccess.createHeapArena(LibDLExt.class);
+    public static final Arena DLEXT_SCOPE = JavaForeignAccess.createImplicitHeapArena(LibDLExt.class);
     public static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
             CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", DLEXT_SCOPE);
 
