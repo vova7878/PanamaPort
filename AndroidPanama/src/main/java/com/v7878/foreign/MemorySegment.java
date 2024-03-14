@@ -2681,6 +2681,11 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             }
 
             @Override
+            protected Arena _createImplicitHeapArena(Object ref) {
+                return _MemorySessionImpl.createImplicitHeap(ref).asArena();
+            }
+
+            @Override
             protected MemorySegment _makeNativeSegmentUnchecked(
                     long min, long byteSize, boolean readOnly, Arena scope, Runnable action) {
                 return _SegmentFactories.makeNativeSegmentUnchecked(min, byteSize,

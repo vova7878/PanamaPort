@@ -27,6 +27,8 @@
 
 package com.v7878.foreign;
 
+import androidx.annotation.Keep;
+
 import java.util.Objects;
 
 /**
@@ -34,7 +36,7 @@ import java.util.Objects;
  * Adding new resources to the global session, does nothing: as the session can never become not-alive, there is nothing to track.
  * Acquiring and or releasing a memory session similarly does nothing.
  */
-non-sealed class _GlobalSession extends _MemorySessionImpl {
+sealed class _GlobalSession extends _MemorySessionImpl {
 
     public static final _GlobalSession INSTANCE = new _GlobalSession();
 
@@ -68,28 +70,16 @@ non-sealed class _GlobalSession extends _MemorySessionImpl {
     }
 
     /**
-     * This is a global session that wraps a heap object. Possible objects are: Java arrays, buffers and
-     * class loaders. Objects of two heap sessions are compared by identity. That is, if the wrapped object is the same,
-     * then the resulting heap sessions are also considered equals. We do not compare the objects using
-     * {@link Object#equals(Object)}, as that would be problematic when comparing buffers, whose equality and
-     * hash codes are content-dependent.
+     * This is a global session that wraps a heap object.
+     * Possible objects are: Java arrays, buffers and class loaders.
      */
-    static class HeapSession extends _GlobalSession {
+    @Keep
+    static final class HeapSession extends _GlobalSession {
 
         final Object ref;
 
         public HeapSession(Object ref) {
             this.ref = Objects.requireNonNull(ref);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return obj instanceof HeapSession session && ref == session.ref;
-        }
-
-        @Override
-        public int hashCode() {
-            return System.identityHashCode(ref);
         }
     }
 }

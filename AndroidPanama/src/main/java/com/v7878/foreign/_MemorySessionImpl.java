@@ -34,6 +34,7 @@ import androidx.annotation.Keep;
 
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.foreign._GlobalSession.HeapSession;
+import com.v7878.foreign._ImplicitSession.ImplicitHeapSession;
 import com.v7878.foreign._ScopedMemoryAccess.ScopedAccessError;
 
 import java.util.Objects;
@@ -122,6 +123,10 @@ abstract sealed class _MemorySessionImpl implements Scope
 
     public static _MemorySessionImpl createHeap(Object ref) {
         return new HeapSession(ref);
+    }
+
+    public static _MemorySessionImpl createImplicitHeap(Object ref) {
+        return new ImplicitHeapSession(ref);
     }
 
     public abstract void release0();

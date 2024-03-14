@@ -53,6 +53,12 @@ public abstract class JavaForeignAccess {
         return INSTANCE._createHeapArena(ref);
     }
 
+    protected abstract Arena _createImplicitHeapArena(Object ref);
+
+    public static Arena createImplicitHeapArena(Object ref) {
+        return INSTANCE._createImplicitHeapArena(ref);
+    }
+
     protected abstract MemorySegment _makeNativeSegmentUnchecked(
             long min, long byteSize, boolean readOnly, Arena scope, Runnable action);
 

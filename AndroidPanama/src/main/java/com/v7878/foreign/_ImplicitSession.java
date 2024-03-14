@@ -27,7 +27,11 @@
 
 package com.v7878.foreign;
 
+import androidx.annotation.Keep;
+
 import com.v7878.unsafe.Utils;
+
+import java.util.Objects;
 
 //TODO
 //import sun.nio.ch.DirectBuffer;
@@ -40,7 +44,7 @@ import com.v7878.unsafe.Utils;
  * {@link DirectBuffer#address()}, where obtaining an address of a buffer instance associated
  * with a potentially closeable session is forbidden.
  */
-final class _ImplicitSession extends _SharedSession {
+sealed class _ImplicitSession extends _SharedSession {
 
     public _ImplicitSession() {
         super();
@@ -68,5 +72,19 @@ final class _ImplicitSession extends _SharedSession {
     @Override
     public void justClose() {
         throw nonCloseable();
+    }
+
+    /**
+     * This is an implicit session that wraps a heap object.
+     * Possible objects are: Java arrays, buffers and class loaders.
+     */
+    @Keep
+    static final class ImplicitHeapSession extends _ImplicitSession {
+
+        final Object ref;
+
+        public ImplicitHeapSession(Object ref) {
+            this.ref = Objects.requireNonNull(ref);
+        }
     }
 }
