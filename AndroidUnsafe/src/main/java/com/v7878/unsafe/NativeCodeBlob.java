@@ -1,24 +1,21 @@
 package com.v7878.unsafe;
 
-import static android.system.Os.mmap;
-import static android.system.Os.munmap;
 import static com.v7878.misc.Math.roundUpL;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
-import static com.v7878.unsafe.AndroidUnsafe.copyMemory;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
-import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.shouldNotHappen;
+import static com.v7878.unsafe.io.IOUtils.MAP_ANONYMOUS;
 import static java.lang.annotation.ElementType.METHOD;
 
+import android.system.ErrnoException;
 import android.system.OsConstants;
 
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.unsafe.access.JavaForeignAccess;
+import com.v7878.unsafe.io.IOUtils;
 
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -26,6 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -34,38 +32,41 @@ import java.util.Optional;
 public class NativeCodeBlob {
 
     private static final int CODE_PROT = OsConstants.PROT_READ | OsConstants.PROT_WRITE | OsConstants.PROT_EXEC;
-    private static final int MAP_ANONYMOUS = 0x20;
     private static final int CODE_FLAGS = OsConstants.MAP_PRIVATE | MAP_ANONYMOUS;
-
     private static final int CODE_ALIGNMENT = CURRENT_INSTRUCTION_SET.codeAlignment();
 
-    static MemorySegment[] makeCodeBlobInternal(Arena arena, byte[]... code) {
+    private static MemorySegment[] makeCodeBlobInternal(Arena arena, MemorySegment... code) {
         int count = code.length;
         long size = 0;
         long[] offsets = new long[count];
         for (int i = 0; i < count; i++) {
             size = roundUpL(size, CODE_ALIGNMENT);
             offsets[i] = size;
-            size += code[i].length;
+            size += code[i].byteSize();
         }
 
-        //TODO: make IOUtils.mapSegment for it
-        long finalSize = size;
-        long address = nothrows_run(() -> mmap(0, finalSize,
-                CODE_PROT, CODE_FLAGS, null, 0));
-        JavaForeignAccess.addOrCleanupIfFail(arena.scope(),
-                () -> nothrows_run(() -> munmap(address, finalSize)));
-        MemorySegment data = MemorySegment.ofAddress(address)
-                .reinterpret(finalSize, arena, null);
+        MemorySegment data;
+        try {
+            data = IOUtils.mmap(null, null, 0, size, CODE_PROT, CODE_FLAGS, arena);
+        } catch (ErrnoException e) {
+            throw shouldNotHappen(e);
+        }
 
         MemorySegment[] out = new MemorySegment[count];
         for (int i = 0; i < count; i++) {
-            MemorySegment tmp = data.asSlice(offsets[i], code[i].length);
-            copyMemory(code[i], ARRAY_BYTE_BASE_OFFSET,
-                    null, tmp.nativeAddress(), code[i].length);
+            MemorySegment tmp = data.asSlice(offsets[i], code[i].byteSize());
+            MemorySegment.copy(code[i], 0, tmp, 0, code[i].byteSize());
             out[i] = tmp;
         }
         return out;
+    }
+
+    public static MemorySegment[] makeCodeBlob(Arena arena, MemorySegment... code) {
+        Objects.requireNonNull(arena);
+        if (code.length == 0) {
+            return new MemorySegment[0];
+        }
+        return makeCodeBlobInternal(arena, code.clone());
     }
 
     public static MemorySegment[] makeCodeBlob(Arena arena, byte[]... code) {
@@ -73,7 +74,8 @@ public class NativeCodeBlob {
         if (code.length == 0) {
             return new MemorySegment[0];
         }
-        return makeCodeBlobInternal(arena, code.clone());
+        return makeCodeBlobInternal(arena, Arrays.stream(code)
+                .map(MemorySegment::ofArray).toArray(MemorySegment[]::new));
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -93,15 +95,6 @@ public class NativeCodeBlob {
         ASM[] value();
     }
 
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(METHOD)
-    @Keep
-    public @interface ASM_GENERATOR {
-        Class<?> declaring_class() default void.class;
-
-        String value(); // generator method name
-    }
-
     private static final byte[] NOT_FOUND = new byte[0];
 
     private static Optional<byte[]> getCode(ASM asm) {
@@ -112,41 +105,20 @@ public class NativeCodeBlob {
         return Optional.of(code);
     }
 
-    private static Optional<byte[]> getCode(ASM_GENERATOR asm, Class<?> clazz) {
-        if (asm.declaring_class() != void.class) {
-            clazz = asm.declaring_class();
-        }
-        Method generator = getDeclaredMethod(clazz, asm.value(), InstructionSet.class);
-        if (!Modifier.isStatic(generator.getModifiers())) {
-            throw new IllegalArgumentException("asm generator method is not static: " + generator);
-        }
-        if (generator.getReturnType() != byte[].class) {
-            throw new IllegalArgumentException("return type of asm generator method is not byte[]: " + generator);
-        }
-        byte[] code = (byte[]) nothrows_run(() -> generator.invoke(null, CURRENT_INSTRUCTION_SET));
-        if (code == null) {
-            return Optional.empty();
-        }
-        if (code.length == 0) {
-            return Optional.of(NOT_FOUND);
-        }
-        return Optional.of(code);
+    public static void processASM(Arena arena) {
+        processASM(arena, Stack.getStackClass1());
     }
 
-    public static void processASM() {
-        processASM(Stack.getStackClass1());
-    }
-
-    public static void processASM(Class<?> clazz) {
+    public static void processASM(Arena arena, Class<?> clazz) {
+        Objects.requireNonNull(arena);
         Objects.requireNonNull(clazz);
-        Method[] methods = getDeclaredMethods(clazz);
 
+        Method[] methods = getDeclaredMethods(clazz);
         Map<Method, byte[]> work = new HashMap<>(methods.length);
 
         for (Method method : methods) {
             ASM[] data = method.getDeclaredAnnotationsByType(ASM.class);
-            ASM_GENERATOR generator = method.getDeclaredAnnotation(ASM_GENERATOR.class);
-            if (data.length != 0 || generator != null) {
+            if (data.length != 0) {
                 if (!Modifier.isNative(method.getModifiers())) {
                     throw new IllegalArgumentException("Non-native method annotated with ASM: " + method);
                 }
@@ -154,21 +126,15 @@ public class NativeCodeBlob {
                 for (ASM tmp : data) {
                     if (tmp.iset() == CURRENT_INSTRUCTION_SET) {
                         code = getCode(tmp);
-                        if (code.isPresent()) {
-                            break;
-                        }
+                        break;
                     }
-                }
-                if (!code.isPresent() && generator != null) {
-                    code = getCode(generator, clazz);
                 }
                 if (code.isPresent()) {
                     if (code.get() == NOT_FOUND) {
                         throw new IllegalStateException("Unable to find ASM for " +
                                 CURRENT_INSTRUCTION_SET + " instruction set for method " + method);
-                    } else {
-                        work.put(method, code.get());
                     }
+                    work.put(method, code.get());
                 }
             }
         }
@@ -178,15 +144,14 @@ public class NativeCodeBlob {
 
         {
             int i = 0;
-            for (Map.Entry<Method, byte[]> tmp : work.entrySet()) {
+            for (var tmp : work.entrySet()) {
                 methods[i] = tmp.getKey();
                 code[i] = tmp.getValue();
                 i++;
             }
         }
 
-        //TODO: add arena parameter
-        MemorySegment[] ptrs = makeCodeBlobInternal(Arena.global(), code);
+        MemorySegment[] ptrs = makeCodeBlob(arena, code);
 
         for (int i = 0; i < methods.length; i++) {
             registerNativeMethod(methods[i], ptrs[i].nativeAddress());
