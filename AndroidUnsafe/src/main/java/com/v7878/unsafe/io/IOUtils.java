@@ -19,12 +19,13 @@ import android.system.OsConstants;
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
-import com.v7878.foreign.Linker;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.foreign.SymbolLookup;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 import com.v7878.unsafe.foreign.Errno;
+import com.v7878.unsafe.foreign.LibDLExt;
 
 import java.io.FileDescriptor;
 import java.lang.invoke.MethodHandle;
@@ -36,6 +37,8 @@ import java.util.function.Supplier;
 import dalvik.annotation.optimization.CriticalNative;
 
 public class IOUtils {
+    public static final Arena CUTILS_SCOPE = JavaForeignAccess.createImplicitHeapArena(IOUtils.class);
+    public static final SymbolLookup CUTILS = LibDLExt.systemLibraryLookup("libcutils.so", CUTILS_SCOPE);
 
     private static final int file_descriptor_offset = nothrows_run(
             () -> fieldOffset(getDeclaredField(FileDescriptor.class, "descriptor")));
@@ -75,8 +78,7 @@ public class IOUtils {
     static {
         Class<?> word = IS64BIT ? long.class : int.class;
         String suffix = IS64BIT ? "64" : "32";
-        MemorySegment ashmem_create_region = Linker.nativeLinker().defaultLookup()
-                .find("ashmem_create_region").orElseThrow(ExceptionInInitializerError::new);
+        MemorySegment ashmem_create_region = CUTILS.find("ashmem_create_region").get();
         Method ashmem_create_region_m = getDeclaredMethod(IOUtils.class,
                 "raw_ashmem_create_region" + suffix, word, word);
         registerNativeMethod(ashmem_create_region_m, ashmem_create_region.nativeAddress());
