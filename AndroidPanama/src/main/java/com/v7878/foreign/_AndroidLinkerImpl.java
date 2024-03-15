@@ -15,6 +15,7 @@ import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMArrayType;
 import static com.v7878.llvm.Core.LLVMAttribute.LLVMByValAttribute;
 import static com.v7878.llvm.Core.LLVMAttribute.LLVMStructRetAttribute;
+import static com.v7878.llvm.Core.LLVMAttributeIndex.LLVMAttributeFirstArgIndex;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
@@ -542,7 +543,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             LLVMValueRef call = LLVMBuildCall(builder, target, Arrays.copyOf(target_args, count), "");
 
-            final int offset = 1; // Note: first index is 1, not 0
+            final int offset = LLVMAttributeFirstArgIndex;
             for (int i = 0; i < count; i++) {
                 if (attrs[i] != 0) {
                     LLVMAddInstrAttribute(call, i + offset, attrs[i]);
