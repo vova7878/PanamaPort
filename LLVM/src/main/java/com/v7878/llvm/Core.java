@@ -4278,12 +4278,13 @@ public class Core {
         return nothrows_run(() -> LLVMBuilderRef.ofNullable((long) Function.LLVMCreateBuilder.handle().invoke()));
     }
 
-    //void LLVMPositionBuilder(LLVMBuilderRef Builder, LLVMBasicBlockRef Block, LLVMValueRef Instr) {
-    //    return nothrows_run(() -> Function.LLVMPositionBuilder.handle().invoke());
-    //}
-    //void LLVMPositionBuilderBefore(LLVMBuilderRef Builder, LLVMValueRef Instr) {
-    //    return nothrows_run(() -> Function.LLVMPositionBuilderBefore.handle().invoke());
-    //}
+    public static void LLVMPositionBuilder(LLVMBuilderRef Builder, LLVMBasicBlockRef Block, LLVMValueRef Instr) {
+        nothrows_run(() -> Function.LLVMPositionBuilder.handle().invoke(Builder.value(), Block.value(), Instr.value()));
+    }
+
+    public static void LLVMPositionBuilderBefore(LLVMBuilderRef Builder, LLVMValueRef Instr) {
+        nothrows_run(() -> Function.LLVMPositionBuilderBefore.handle().invoke(Builder.value(), Instr.value()));
+    }
 
     public static void LLVMPositionBuilderAtEnd(LLVMBuilderRef Builder, LLVMBasicBlockRef Block) {
         nothrows_run(() -> Function.LLVMPositionBuilderAtEnd.handle().invoke(Builder.value(), Block.value()));
@@ -4293,15 +4294,20 @@ public class Core {
         return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMGetInsertBlock.handle().invoke(Builder.value())));
     }
 
-    //void LLVMClearInsertionPosition(LLVMBuilderRef Builder) {
-    //    return nothrows_run(() -> Function.LLVMClearInsertionPosition.handle().invoke());
-    //}
-    //void LLVMInsertIntoBuilder(LLVMBuilderRef Builder, LLVMValueRef Instr) {
-    //    return nothrows_run(() -> Function.LLVMInsertIntoBuilder.handle().invoke());
-    //}
-    //void LLVMInsertIntoBuilderWithName(LLVMBuilderRef Builder, LLVMValueRef Instr, String Name) {
-    //    return nothrows_run(() -> Function.LLVMInsertIntoBuilderWithName.handle().invoke());
-    //}
+    public static void LLVMClearInsertionPosition(LLVMBuilderRef Builder) {
+        nothrows_run(() -> Function.LLVMClearInsertionPosition.handle().invoke(Builder.value()));
+    }
+
+    public static void LLVMInsertIntoBuilder(LLVMBuilderRef Builder, LLVMValueRef Instr) {
+        nothrows_run(() -> Function.LLVMInsertIntoBuilder.handle().invoke(Builder.value(), Instr.value()));
+    }
+
+    public static void LLVMInsertIntoBuilderWithName(LLVMBuilderRef Builder, LLVMValueRef Instr, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            nothrows_run(() -> Function.LLVMInsertIntoBuilderWithName.handle().invoke(Builder.value(), Instr.value(), c_Name.nativeAddress()));
+        }
+    }
 
     public static void LLVMDisposeBuilder(LLVMBuilderRef Builder) {
         nothrows_run(() -> Function.LLVMDisposeBuilder.handle().invoke(Builder.value()));
@@ -4642,12 +4648,21 @@ public class Core {
 
     /* Memory */
 
-    //LLVMValueRef LLVMBuildMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildMalloc.handle().invoke());
-    //}
-    //LLVMValueRef LLVMBuildArrayMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildArrayMalloc.handle().invoke());
-    //}
+    public static LLVMValueRef LLVMBuildMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildMalloc.handle()
+                    .invoke(B.value(), Ty.value(), c_Name.nativeAddress())));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildArrayMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildArrayMalloc.handle()
+                    .invoke(B.value(), Ty.value(), Val.value(), c_Name.nativeAddress())));
+        }
+    }
 
     public static LLVMValueRef LLVMBuildAlloca(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         try (Arena arena = Arena.ofConfined()) {
@@ -4942,9 +4957,14 @@ public class Core {
         }
     }
 
-    //LLVMValueRef LLVMBuildSelect(LLVMBuilderRef B, LLVMValueRef If, LLVMValueRef Then, LLVMValueRef Else, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildSelect.handle().invoke());
-    //}
+    public static LLVMValueRef LLVMBuildSelect(LLVMBuilderRef B, LLVMValueRef If, LLVMValueRef Then, LLVMValueRef Else, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildSelect.handle()
+                    .invoke(B.value(), If.value(), Then.value(), Else.value(), c_Name.nativeAddress())));
+        }
+    }
+
     //LLVMValueRef LLVMBuildVAArg(LLVMBuilderRef B, LLVMValueRef List, LLVMTypeRef Ty, String Name) {
     //    return nothrows_run(() -> Function.LLVMBuildVAArg.handle().invoke());
     //}
@@ -5112,49 +5132,64 @@ public class Core {
      * @defgroup LLVMCCorePassManagers Pass Managers
      */
 
-    ///** Constructs a new whole-module pass pipeline. This type of pipeline is
-    //    suitable for link-time optimization and whole-module transformations.
-    //    @see llvm::PassManager::PassManager */
-    //LLVMPassManagerRef LLVMCreatePassManager() {
-    //    return nothrows_run(() -> Function.LLVMCreatePassManager.handle().invoke());
-    //}
-    ///** Constructs a new function-by-function pass pipeline over the module
-    //    provider. It does not take ownership of the module provider. This type of
-    //    pipeline is suitable for code generation and JIT compilation tasks.
-    //    @see llvm::FunctionPassManager::FunctionPassManager */
-    //LLVMPassManagerRef LLVMCreateFunctionPassManagerForModule(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMCreateFunctionPassManagerForModule.handle().invoke());
-    //}
-    ///** Deprecated: Use LLVMCreateFunctionPassManagerForModule instead. */
-    //LLVMPassManagerRef LLVMCreateFunctionPassManager(LLVMModuleProviderRef MP) {
-    //    return nothrows_run(() -> Function.LLVMCreateFunctionPassManager.handle().invoke());
-    //}
-    ///** Initializes, executes on the provided module, and finalizes all of the
-    //    passes scheduled in the pass manager. Returns 1 if any of the passes
-    //    modified the module, 0 otherwise.
-    //    @see llvm::PassManager::run(Module&) */
-    //boolean LLVMRunPassManager(LLVMPassManagerRef PM, LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMRunPassManager.handle().invoke());
-    //}
-    ///** Initializes all of the function passes scheduled in the function pass
-    //    manager. Returns 1 if any of the passes modified the module, 0 otherwise.
-    //    @see llvm::FunctionPassManager::doInitialization */
-    //boolean LLVMInitializeFunctionPassManager(LLVMPassManagerRef FPM) {
-    //    return nothrows_run(() -> Function.LLVMInitializeFunctionPassManager.handle().invoke());
-    //}
-    ///** Executes all of the function passes scheduled in the function pass manager
-    //    on the provided function. Returns 1 if any of the passes modified the
-    //    function, false otherwise.
-    //    @see llvm::FunctionPassManager::run(Function&) */
-    //boolean LLVMRunFunctionPassManager(LLVMPassManagerRef FPM, LLVMValueRef F) {
-    //    return nothrows_run(() -> Function.LLVMRunFunctionPassManager.handle().invoke());
-    //}
-    ///** Finalizes all of the function passes scheduled in in the function pass
-    //    manager. Returns 1 if any of the passes modified the module, 0 otherwise.
-    //    @see llvm::FunctionPassManager::doFinalization */
-    //boolean LLVMFinalizeFunctionPassManager(LLVMPassManagerRef FPM) {
-    //    return nothrows_run(() -> Function.LLVMFinalizeFunctionPassManager.handle().invoke());
-    //}
+    /**
+     * Constructs a new whole-module pass pipeline. This type of pipeline is
+     * suitable for link-time optimization and whole-module transformations.
+     */
+    public static LLVMPassManagerRef LLVMCreatePassManager() {
+        return nothrows_run(() -> LLVMPassManagerRef.ofNullable((long) Function.LLVMCreatePassManager.handle().invoke()));
+    }
+
+    /**
+     * Constructs a new function-by-function pass pipeline over the module
+     * provider. It does not take ownership of the module provider. This type of
+     * pipeline is suitable for code generation and JIT compilation tasks.
+     */
+    public static LLVMPassManagerRef LLVMCreateFunctionPassManagerForModule(LLVMModuleRef M) {
+        return nothrows_run(() -> LLVMPassManagerRef.ofNullable((long) Function.LLVMCreateFunctionPassManagerForModule.handle().invoke(M.value())));
+    }
+
+    /**
+     * Deprecated: Use LLVMCreateFunctionPassManagerForModule instead.
+     */
+    @Deprecated
+    public static LLVMPassManagerRef LLVMCreateFunctionPassManager(LLVMModuleProviderRef MP) {
+        return nothrows_run(() -> LLVMPassManagerRef.ofNullable((long) Function.LLVMCreateFunctionPassManager.handle().invoke(MP.value())));
+    }
+
+    /**
+     * Initializes, executes on the provided module, and finalizes all of the
+     * passes scheduled in the pass manager. Returns 1 if any of the passes
+     * modified the module, 0 otherwise.
+     */
+    public static boolean LLVMRunPassManager(LLVMPassManagerRef PM, LLVMModuleRef M) {
+        return nothrows_run(() -> (boolean) Function.LLVMRunPassManager.handle().invoke(PM.value(), M.value()));
+    }
+
+    /**
+     * Initializes all of the function passes scheduled in the function pass
+     * manager. Returns 1 if any of the passes modified the module, 0 otherwise.
+     */
+    public static boolean LLVMInitializeFunctionPassManager(LLVMPassManagerRef FPM) {
+        return nothrows_run(() -> (boolean) Function.LLVMInitializeFunctionPassManager.handle().invoke(FPM.value()));
+    }
+
+    /**
+     * Executes all of the function passes scheduled in the function pass manager
+     * on the provided function. Returns 1 if any of the passes modified the
+     * function, false otherwise.
+     */
+    public static boolean LLVMRunFunctionPassManager(LLVMPassManagerRef FPM, LLVMValueRef F) {
+        return nothrows_run(() -> (boolean) Function.LLVMRunFunctionPassManager.handle().invoke(FPM.value(), F.value()));
+    }
+
+    /**
+     * Finalizes all of the function passes scheduled in in the function pass
+     * manager. Returns 1 if any of the passes modified the module, 0 otherwise.
+     */
+    public static boolean LLVMFinalizeFunctionPassManager(LLVMPassManagerRef FPM) {
+        return nothrows_run(() -> (boolean) Function.LLVMFinalizeFunctionPassManager.handle().invoke(FPM.value()));
+    }
 
     /**
      * Frees the memory of a pass pipeline. For function pipelines, does not free

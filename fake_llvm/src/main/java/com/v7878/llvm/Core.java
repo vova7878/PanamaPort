@@ -13,6 +13,7 @@ import static com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
 import com.v7878.llvm.Types.LLVMModuleProviderRef;
+import com.v7878.llvm.Types.LLVMPassManagerRef;
 
 public class Core {
 
@@ -949,11 +950,31 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMPositionBuilder(LLVMBuilderRef Builder, LLVMBasicBlockRef Block, LLVMValueRef Instr) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMPositionBuilderBefore(LLVMBuilderRef Builder, LLVMValueRef Instr) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMPositionBuilderAtEnd(LLVMBuilderRef Builder, LLVMBasicBlockRef Block) {
         throw new UnsupportedOperationException("Stub!");
     }
 
     public static LLVMBasicBlockRef LLVMGetInsertBlock(LLVMBuilderRef Builder) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMClearInsertionPosition(LLVMBuilderRef Builder) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMInsertIntoBuilder(LLVMBuilderRef Builder, LLVMValueRef Instr) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMInsertIntoBuilderWithName(LLVMBuilderRef Builder, LLVMValueRef Instr, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1113,6 +1134,14 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMBuildMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildArrayMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMBuildAlloca(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1265,6 +1294,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMBuildSelect(LLVMBuilderRef B, LLVMValueRef If, LLVMValueRef Then, LLVMValueRef Else, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMBuildExtractValue(LLVMBuilderRef B, LLVMValueRef AggVal, int /* unsigned */ Index, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1307,7 +1340,36 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static void LLVMDisposePassManager(Types.LLVMPassManagerRef PM) {
+    public static LLVMPassManagerRef LLVMCreatePassManager() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMPassManagerRef LLVMCreateFunctionPassManagerForModule(LLVMModuleRef M) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    @Deprecated
+    public static LLVMPassManagerRef LLVMCreateFunctionPassManager(LLVMModuleProviderRef MP) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMRunPassManager(LLVMPassManagerRef PM, LLVMModuleRef M) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMInitializeFunctionPassManager(LLVMPassManagerRef FPM) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMRunFunctionPassManager(LLVMPassManagerRef FPM, LLVMValueRef F) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMFinalizeFunctionPassManager(LLVMPassManagerRef FPM) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMDisposePassManager(LLVMPassManagerRef PM) {
         throw new UnsupportedOperationException("Stub!");
     }
 }
