@@ -930,6 +930,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMAddIncoming(LLVMValueRef PhiNode, LLVMValueRef IncomingValue, LLVMBasicBlockRef IncomingBlock) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static int /* unsigned */ LLVMCountIncoming(LLVMValueRef PhiNode) {
         throw new UnsupportedOperationException("Stub!");
     }

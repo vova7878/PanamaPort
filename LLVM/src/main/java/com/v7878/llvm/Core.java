@@ -4221,6 +4221,14 @@ public class Core {
     }
 
     /**
+     * Add an incoming value to the end of a PHI list.
+     */
+    // Port-added
+    public static void LLVMAddIncoming(LLVMValueRef PhiNode, LLVMValueRef IncomingValue, LLVMBasicBlockRef IncomingBlock) {
+        LLVMAddIncoming(PhiNode, new LLVMValueRef[]{IncomingValue}, new LLVMBasicBlockRef[]{IncomingBlock});
+    }
+
+    /**
      * Obtain the number of incoming basic blocks to a PHI node.
      */
     public static int /* unsigned */ LLVMCountIncoming(LLVMValueRef PhiNode) {
