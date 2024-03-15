@@ -8,7 +8,7 @@ import com.v7878.unsafe.access.JavaNioAccess;
 import java.io.FileDescriptor;
 import java.util.function.Supplier;
 
-//TODO: refactor all
+// TODO: volatile and atomic access
 final class _ScopedMemoryAccess {
 
     /**
@@ -33,8 +33,6 @@ final class _ScopedMemoryAccess {
             this.runtimeExceptionSupplier = runtimeExceptionSupplier;
         }
 
-        static final long serialVersionUID = 1L;
-
         public RuntimeException newRuntimeException() {
             return runtimeExceptionSupplier.get();
         }
@@ -43,15 +41,23 @@ final class _ScopedMemoryAccess {
     private _ScopedMemoryAccess() {
     }
 
-    private static /*SessionScopedLock*/FineClosable lock(_MemorySessionImpl session) {
-        //TODO
-        //return session == null ? null : session.lock();
+    private static final class SessionScopedLock implements FineClosable {
+        private final _MemorySessionImpl session;
 
-        if (session == null) {
-            return null;
+        public SessionScopedLock(_MemorySessionImpl session) {
+            session.acquire0();
+            this.session = session;
         }
-        session.acquire0();
-        return session::release0;
+
+
+        @Override
+        public void close() {
+            session.release0();
+        }
+    }
+
+    private static SessionScopedLock lock(_MemorySessionImpl session) {
+        return session == null ? null : new SessionScopedLock(session);
     }
 
     public static void copyMemory(_MemorySessionImpl srcSession, _MemorySessionImpl dstSession,
