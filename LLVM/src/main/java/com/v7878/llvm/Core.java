@@ -880,6 +880,8 @@ public class Core {
         // (4294967295 is too large)
         // LLVMAttributeFunctionIndex = ~0U,
         public static final int LLVMAttributeFunctionIndex = -1;
+        // Port-added
+        public static final int LLVMAttributeFirstArgIndex = 1;
     }
 
     //TODO

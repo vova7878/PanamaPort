@@ -397,17 +397,10 @@ public class Core {
         }
     }
 
-    public enum LLVMAttributeIndex {
-        LLVMAttributeReturnIndex,
-        LLVMAttributeFunctionIndex;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMAttributeIndex of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
+    public static class LLVMAttributeIndex {
+        public static final int LLVMAttributeReturnIndex = stub();
+        public static final int LLVMAttributeFunctionIndex = stub();
+        public static final int LLVMAttributeFirstArgIndex = stub();
     }
 
     public static void LLVMInitializeCore(LLVMPassRegistryRef R) {
