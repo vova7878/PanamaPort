@@ -1,6 +1,36 @@
 package com.v7878.unsafe;
 
+import static com.v7878.dex.DexConstants.ACC_NATIVE;
+import static com.v7878.dex.DexConstants.ACC_PUBLIC;
+import static com.v7878.dex.DexConstants.ACC_STATIC;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
+import static com.v7878.llvm.Analysis.LLVMVerifyModule;
+import static com.v7878.llvm.Core.LLVMAddFunction;
+import static com.v7878.llvm.Core.LLVMAddIncoming;
+import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
+import static com.v7878.llvm.Core.LLVMBuildAdd;
+import static com.v7878.llvm.Core.LLVMBuildCondBr;
+import static com.v7878.llvm.Core.LLVMBuildICmp;
+import static com.v7878.llvm.Core.LLVMBuildInBoundsGEP;
+import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
+import static com.v7878.llvm.Core.LLVMBuildNeg;
+import static com.v7878.llvm.Core.LLVMBuildPhi;
+import static com.v7878.llvm.Core.LLVMBuildRetVoid;
+import static com.v7878.llvm.Core.LLVMBuildStore;
+import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
+import static com.v7878.llvm.Core.LLVMConstInt;
+import static com.v7878.llvm.Core.LLVMConstNull;
+import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
+import static com.v7878.llvm.Core.LLVMFunctionType;
+import static com.v7878.llvm.Core.LLVMGetParams;
+import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
+import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
+import static com.v7878.llvm.Core.LLVMPointerType;
+import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
+import static com.v7878.llvm.Core.LLVMSetAlignment;
+import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
+import static com.v7878.llvm.TargetMachine.LLVMCodeGenFileType.LLVMObjectFile;
+import static com.v7878.llvm.TargetMachine.LLVMTargetMachineEmitToMemoryBuffer;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BOOLEAN_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_INDEX_SCALE;
@@ -12,6 +42,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -22,11 +53,24 @@ import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.NativeCodeBlob.processASM;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.ensureClassInitialized;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.Utils.shouldNotHappen;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int8_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.newContext;
+import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
+import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
+import static com.v7878.unsafe.llvm.LLVMUtils.getFunctionsCode;
 
 import androidx.annotation.Keep;
 
+import com.v7878.dex.AnnotationItem;
+import com.v7878.dex.AnnotationSet;
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
 import com.v7878.dex.EncodedMethod;
@@ -35,14 +79,224 @@ import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.Linker;
+import com.v7878.foreign.MemorySegment;
+import com.v7878.llvm.LLVMException;
+import com.v7878.llvm.Types.LLVMBasicBlockRef;
+import com.v7878.llvm.Types.LLVMBuilderRef;
+import com.v7878.llvm.Types.LLVMContextRef;
+import com.v7878.llvm.Types.LLVMMemoryBufferRef;
+import com.v7878.llvm.Types.LLVMModuleRef;
+import com.v7878.llvm.Types.LLVMTypeRef;
+import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.NativeCodeBlob.ASM;
+import com.v7878.unsafe.llvm.LLVMGlobals;
 
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 
 import dalvik.annotation.optimization.CriticalNative;
 import dalvik.system.DexFile;
 
 public class ExtraMemoryAccess {
+
+    private abstract static class Native {
+
+        private static final Arena SCOPE = Arena.ofAuto();
+
+        private static final Class<?> word = IS64BIT ? long.class : int.class;
+        private static final String prefix = "raw_";
+        private static final String suffix = IS64BIT ? "64" : "32";
+
+        @Keep
+        abstract void memset64(Object base, long offset, long bytes, byte value);
+
+        @Keep
+        abstract void memset32(Object base, int offset, int bytes, byte value);
+
+        public static void memset(Object base, long offset, long bytes, byte value) {
+            if (IS64BIT) {
+                INSTANCE.memset64(base, offset, bytes, value);
+            } else {
+                INSTANCE.memset32(base, (int) offset, (int) bytes, value);
+            }
+        }
+
+        private static void generate_memset(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder) {
+            LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), intptr_t(context), int8_t(context)};
+            LLVMTypeRef type = LLVMFunctionType(void_t(context), arg_types, false);
+            LLVMValueRef function = LLVMAddFunction(module, "memset", type);
+            LLVMValueRef[] args = LLVMGetParams(function);
+
+            LLVMBasicBlockRef start = LLVMAppendBasicBlock(function, "");
+            LLVMBasicBlockRef body = LLVMAppendBasicBlock(function, "");
+            LLVMBasicBlockRef end = LLVMAppendBasicBlock(function, "");
+
+            LLVMPositionBuilderAtEnd(builder, start);
+            LLVMValueRef address;
+            {
+                LLVMValueRef base = args[0];
+                LLVMValueRef offset = args[1];
+                if (VM.isPoisonReferences()) {
+                    base = LLVMBuildNeg(builder, base, "");
+                }
+                base = LLVMBuildZExtOrBitCast(builder, base, intptr_t(context), "");
+                base = LLVMBuildAdd(builder, base, offset, "");
+                address = LLVMBuildIntToPtr(builder, base, LLVMPointerType(int8_t(context), 0), "");
+            }
+            LLVMValueRef length = args[2];
+            LLVMValueRef test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, LLVMConstNull(intptr_t(context)), "");
+            LLVMBuildCondBr(builder, test_zero, end, body);
+
+            LLVMPositionBuilderAtEnd(builder, body);
+            LLVMValueRef counter = LLVMBuildPhi(builder, intptr_t(context), "");
+            LLVMAddIncoming(counter, LLVMConstNull(intptr_t(context)), start);
+            LLVMValueRef ptr = LLVMBuildInBoundsGEP(builder, address, new LLVMValueRef[]{counter}, "");
+            LLVMValueRef value = args[3];
+            LLVMValueRef store = LLVMBuildStore(builder, value, ptr);
+            LLVMSetAlignment(store, 1);
+            LLVMValueRef next_counter = LLVMBuildAdd(builder, counter, LLVMConstInt(intptr_t(context), 1, false), "");
+            LLVMAddIncoming(counter, next_counter, body);
+            LLVMValueRef test_length = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
+            LLVMBuildCondBr(builder, test_length, end, body);
+
+            LLVMPositionBuilderAtEnd(builder, end);
+            LLVMBuildRetVoid(builder);
+        }
+
+        private static MethodType type(Class<?> ret, Class<?>... args) {
+            return MethodType.methodType(ret, args);
+        }
+
+        private static MethodType replaceObjects(MethodType stubType) {
+            return MethodType.methodType(stubType.returnType(), stubType.parameterList().stream()
+                    .map(a -> a == Object.class ? int.class : a).toArray(Class[]::new));
+        }
+
+        private interface Generator {
+            void generate(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder);
+        }
+
+        private static class SymbolInfo {
+            public final MethodType type;
+            public final MethodType raw_type;
+            public final Generator generator;
+
+            private SymbolInfo(MethodType type, Generator generator) {
+                this.type = type;
+                this.raw_type = replaceObjects(type);
+                this.generator = generator;
+            }
+
+            static SymbolInfo of(MethodType type, Generator generator) {
+                return new SymbolInfo(type, generator);
+            }
+        }
+
+        @Keep
+        private static final Native INSTANCE = nothrows_run(() -> {
+
+            Map<String, SymbolInfo> functions = Map.of(
+                    "memset", SymbolInfo.of(type(void.class, Object.class, word, word, byte.class), Native::generate_memset)
+            );
+            Map<String, MemorySegment> code = new HashMap<>(functions.size());
+
+            try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
+                 var module = LLVMModuleCreateWithNameInContext("generic", context)) {
+
+                for (var info : functions.values()) {
+                    info.generator.generate(context, module, builder);
+                }
+
+                LLVMVerifyModule(module);
+
+                try (var machine = newDefaultMachine()) {
+                    LLVMMemoryBufferRef buf = LLVMTargetMachineEmitToMemoryBuffer(
+                            machine, module, LLVMObjectFile);
+                    try (var of = LLVMCreateObjectFile(buf)) {
+                        String[] names = functions.keySet().toArray(new String[0]);
+                        MemorySegment[] blob = NativeCodeBlob.makeCodeBlob(
+                                SCOPE, getFunctionsCode(of, names));
+                        for (int i = 0; i < names.length; i++) {
+                            code.put(names[i], blob[i]);
+                        }
+                    }
+                }
+            } catch (LLVMException e) {
+                throw shouldNotHappen(e);
+            }
+
+            String impl_name = Native.class.getName() + "$Impl";
+            TypeId impl_id = TypeId.of(impl_name);
+            ClassDef impl_def = new ClassDef(impl_id);
+            impl_def.setSuperClass(TypeId.of(Native.class));
+
+            for (var entry : functions.entrySet()) {
+                String name = entry.getKey();
+                MethodType type = entry.getValue().type;
+                MethodType rawtype = entry.getValue().raw_type;
+
+                MethodId raw_method_id = new MethodId(impl_id, ProtoId.of(rawtype), prefix + name);
+
+                impl_def.getClassData().getDirectMethods().add(new EncodedMethod(
+                        raw_method_id, ACC_PUBLIC | ACC_STATIC | ACC_NATIVE,
+                        new AnnotationSet(AnnotationItem.CriticalNative()), null, null)
+                );
+
+                MethodId method_id = new MethodId(impl_id, ProtoId.of(type), name + suffix);
+
+                int arg_regs = raw_method_id.getProto().getInputRegistersCount();
+                int ret_regs = raw_method_id.getProto().getReturnType().getRegistersCount();
+
+                // note: it's broken - object is cast to int
+                impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
+                        method_id, ACC_PUBLIC).withCode(ret_regs, b -> {
+                            if (arg_regs == 0) {
+                                b.invoke(STATIC, raw_method_id);
+                            } else {
+                                b.invoke_range(STATIC, raw_method_id, arg_regs, b.p(0));
+                            }
+                            switch (ret_regs) {
+                                case 0 -> b.return_void();
+                                case 1 -> {
+                                    b.move_result(b.l(0));
+                                    b.return_(b.l(0));
+                                }
+                                case 2 -> {
+                                    b.move_result_wide(b.l(0));
+                                    b.return_wide(b.l(0));
+                                }
+                                default -> shouldNotReachHere();
+                            }
+                        }
+                ));
+            }
+
+            DexFile dex = openDexFile(new Dex(impl_def).compile());
+            Class<?> impl = loadClass(dex, impl_name, Native.class.getClassLoader());
+            setClassStatus(impl, ClassStatus.Verified);
+
+            Method[] methods = getDeclaredMethods(impl);
+
+            for (var entry : functions.entrySet()) {
+                String name = entry.getKey();
+                MethodType type = entry.getValue().raw_type;
+                Method method = searchMethod(methods, prefix + name, type.parameterArray());
+                registerNativeMethod(method, code.get(name).nativeAddress());
+            }
+
+            return (Native) allocateInstance(impl);
+        });
+
+        static final boolean inited;
+
+        static {
+            inited = true;
+        }
+    }
 
     @Keep
     private static class Swaps {
@@ -416,7 +670,7 @@ public class ExtraMemoryAccess {
 
             DexFile dex = openDexFile(new Dex(impl_def).compile());
             Class<?> impl = loadClass(dex, impl_name, CopyInvoker.class.getClassLoader());
-            setClassStatus(impl, ClassUtils.ClassStatus.Verified);
+            setClassStatus(impl, ClassStatus.Verified);
 
             return (CopyInvoker) allocateInstance(impl);
         });
@@ -462,8 +716,11 @@ public class ExtraMemoryAccess {
             return;
         }
 
-        //TODO: fast variant
-        AndroidUnsafe.setMemory(base, offset, bytes, value);
+        if (LLVMGlobals.HOST_TARGET != null && Native.inited) {
+            Native.memset(base, offset, bytes, value);
+        } else {
+            AndroidUnsafe.setMemory(base, offset, bytes, value);
+        }
     }
 
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
