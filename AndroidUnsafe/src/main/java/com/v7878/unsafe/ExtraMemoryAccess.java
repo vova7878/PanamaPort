@@ -12,20 +12,19 @@ import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildCondBr;
 import static com.v7878.llvm.Core.LLVMBuildICmp;
 import static com.v7878.llvm.Core.LLVMBuildInBoundsGEP;
-import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
-import static com.v7878.llvm.Core.LLVMBuildNeg;
+import static com.v7878.llvm.Core.LLVMBuildLoad;
 import static com.v7878.llvm.Core.LLVMBuildPhi;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMBuildStore;
-import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
+import static com.v7878.llvm.Core.LLVMBuildSub;
 import static com.v7878.llvm.Core.LLVMConstInt;
 import static com.v7878.llvm.Core.LLVMConstNull;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMGetParams;
 import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
+import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntULT;
 import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
-import static com.v7878.llvm.Core.LLVMPointerType;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Core.LLVMSetAlignment;
 import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
@@ -65,6 +64,7 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.newContext;
 import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
+import static com.v7878.unsafe.llvm.LLVMUtils.buildToJvmPointer;
 import static com.v7878.unsafe.llvm.LLVMUtils.getFunctionsCode;
 
 import androidx.annotation.Keep;
@@ -78,7 +78,6 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.foreign.Arena;
-import com.v7878.foreign.Linker;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.LLVMException;
 import com.v7878.llvm.Types.LLVMBasicBlockRef;
@@ -126,6 +125,9 @@ public class ExtraMemoryAccess {
         }
 
         private static void generate_memset(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder) {
+            LLVMValueRef one = LLVMConstInt(intptr_t(context), 1, false);
+            LLVMValueRef zero = LLVMConstNull(intptr_t(context));
+
             LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), intptr_t(context), int8_t(context)};
             LLVMTypeRef type = LLVMFunctionType(void_t(context), arg_types, false);
             LLVMValueRef function = LLVMAddFunction(module, "memset", type);
@@ -136,32 +138,98 @@ public class ExtraMemoryAccess {
             LLVMBasicBlockRef end = LLVMAppendBasicBlock(function, "");
 
             LLVMPositionBuilderAtEnd(builder, start);
-            LLVMValueRef address;
-            {
-                LLVMValueRef base = args[0];
-                LLVMValueRef offset = args[1];
-                if (VM.isPoisonReferences()) {
-                    base = LLVMBuildNeg(builder, base, "");
-                }
-                base = LLVMBuildZExtOrBitCast(builder, base, intptr_t(context), "");
-                base = LLVMBuildAdd(builder, base, offset, "");
-                address = LLVMBuildIntToPtr(builder, base, LLVMPointerType(int8_t(context), 0), "");
-            }
+            LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], int8_t(context));
             LLVMValueRef length = args[2];
-            LLVMValueRef test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, LLVMConstNull(intptr_t(context)), "");
+            LLVMValueRef test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
             LLVMBuildCondBr(builder, test_zero, end, body);
 
             LLVMPositionBuilderAtEnd(builder, body);
             LLVMValueRef counter = LLVMBuildPhi(builder, intptr_t(context), "");
-            LLVMAddIncoming(counter, LLVMConstNull(intptr_t(context)), start);
-            LLVMValueRef ptr = LLVMBuildInBoundsGEP(builder, address, new LLVMValueRef[]{counter}, "");
+            LLVMAddIncoming(counter, zero, start);
+            LLVMValueRef ptr = LLVMBuildInBoundsGEP(builder, pointer, new LLVMValueRef[]{counter}, "");
             LLVMValueRef value = args[3];
             LLVMValueRef store = LLVMBuildStore(builder, value, ptr);
             LLVMSetAlignment(store, 1);
-            LLVMValueRef next_counter = LLVMBuildAdd(builder, counter, LLVMConstInt(intptr_t(context), 1, false), "");
+            LLVMValueRef next_counter = LLVMBuildAdd(builder, counter, one, "");
             LLVMAddIncoming(counter, next_counter, body);
-            LLVMValueRef test_length = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
-            LLVMBuildCondBr(builder, test_length, end, body);
+            LLVMValueRef test_end = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
+            LLVMBuildCondBr(builder, test_end, end, body);
+
+            LLVMPositionBuilderAtEnd(builder, end);
+            LLVMBuildRetVoid(builder);
+        }
+
+        @Keep
+        abstract void memmove32(Object dst_base, int dst_offset, Object src_base, int src_offset, int count);
+
+        @Keep
+        abstract void memmove64(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
+
+        public static void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count) {
+            if (IS64BIT) {
+                INSTANCE.memmove64(dst_base, dst_offset, src_base, src_offset, count);
+            } else {
+                INSTANCE.memmove32(dst_base, (int) dst_offset, src_base, (int) src_offset, (int) count);
+            }
+        }
+
+        private static void generate_memmove(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder) {
+            LLVMValueRef one = LLVMConstInt(intptr_t(context), 1, false);
+            LLVMValueRef zero = LLVMConstNull(intptr_t(context));
+
+            LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), int32_t(context), intptr_t(context), intptr_t(context)};
+            LLVMTypeRef type = LLVMFunctionType(void_t(context), arg_types, false);
+            LLVMValueRef function = LLVMAddFunction(module, "memmove", type);
+            LLVMValueRef[] args = LLVMGetParams(function);
+
+            LLVMBasicBlockRef start = LLVMAppendBasicBlock(function, "");
+            LLVMBasicBlockRef body = LLVMAppendBasicBlock(function, "");
+            LLVMBasicBlockRef forward = LLVMAppendBasicBlock(function, "");
+            LLVMBasicBlockRef backward = LLVMAppendBasicBlock(function, "");
+            LLVMBasicBlockRef end = LLVMAppendBasicBlock(function, "");
+
+            LLVMPositionBuilderAtEnd(builder, start);
+            LLVMValueRef length = args[4];
+            LLVMValueRef test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
+            LLVMBuildCondBr(builder, test_zero, end, body);
+
+            LLVMPositionBuilderAtEnd(builder, body);
+            LLVMValueRef langth_m1 = LLVMBuildSub(builder, length, one, "");
+            LLVMValueRef dst = buildToJvmPointer(builder, args[0], args[1], int8_t(context));
+            LLVMValueRef src = buildToJvmPointer(builder, args[2], args[3], int8_t(context));
+            LLVMValueRef test_order = LLVMBuildICmp(builder, LLVMIntULT, dst, src, "");
+            LLVMBuildCondBr(builder, test_order, forward, backward);
+
+            {
+                LLVMPositionBuilderAtEnd(builder, forward);
+                LLVMValueRef counter = LLVMBuildPhi(builder, intptr_t(context), "");
+                LLVMAddIncoming(counter, zero, body);
+                LLVMValueRef src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
+                LLVMValueRef dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
+                LLVMValueRef load = LLVMBuildLoad(builder, src_element, "");
+                LLVMSetAlignment(load, 1);
+                LLVMValueRef store = LLVMBuildStore(builder, load, dst_element);
+                LLVMSetAlignment(store, 1);
+                LLVMValueRef next_counter = LLVMBuildAdd(builder, counter, one, "");
+                LLVMAddIncoming(counter, next_counter, forward);
+                LLVMValueRef test_end = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
+                LLVMBuildCondBr(builder, test_end, end, forward);
+            }
+            {
+                LLVMPositionBuilderAtEnd(builder, backward);
+                LLVMValueRef counter = LLVMBuildPhi(builder, intptr_t(context), "");
+                LLVMAddIncoming(counter, langth_m1, body);
+                LLVMValueRef src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
+                LLVMValueRef dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
+                LLVMValueRef load = LLVMBuildLoad(builder, src_element, "");
+                LLVMSetAlignment(load, 1);
+                LLVMValueRef store = LLVMBuildStore(builder, load, dst_element);
+                LLVMSetAlignment(store, 1);
+                LLVMValueRef next_counter = LLVMBuildSub(builder, counter, one, "");
+                LLVMAddIncoming(counter, next_counter, backward);
+                LLVMValueRef test_end = LLVMBuildICmp(builder, LLVMIntEQ, counter, zero, "");
+                LLVMBuildCondBr(builder, test_end, end, backward);
+            }
 
             LLVMPositionBuilderAtEnd(builder, end);
             LLVMBuildRetVoid(builder);
@@ -200,7 +268,8 @@ public class ExtraMemoryAccess {
         private static final Native INSTANCE = nothrows_run(() -> {
 
             Map<String, SymbolInfo> functions = Map.of(
-                    "memset", SymbolInfo.of(type(void.class, Object.class, word, word, byte.class), Native::generate_memset)
+                    "memset", SymbolInfo.of(type(void.class, Object.class, word, word, byte.class), Native::generate_memset),
+                    "memmove", SymbolInfo.of(type(void.class, Object.class, word, Object.class, word, word), Native::generate_memmove)
             );
             Map<String, MemorySegment> code = new HashMap<>(functions.size());
 
@@ -528,8 +597,6 @@ public class ExtraMemoryAccess {
 
     @Keep
     static abstract class CopyInvoker {
-        private static final long MEMCPY = Linker.nativeLinker()
-                .defaultLookup().find("memcpy").get().nativeAddress();
         private static final long COPY_SWAP_SHORTS;
         private static final long COPY_SWAP_INTS;
         private static final long COPY_SWAP_LONGS;
@@ -674,12 +741,6 @@ public class ExtraMemoryAccess {
 
             return (CopyInvoker) allocateInstance(impl);
         });
-
-        static final boolean inited;
-
-        static {
-            inited = true;
-        }
     }
 
     public static void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes) {
@@ -687,8 +748,8 @@ public class ExtraMemoryAccess {
             return;
         }
 
-        if (CopyInvoker.inited) {
-            CopyInvoker.invoke(srcBase, srcOffset, destBase, destOffset, bytes, CopyInvoker.MEMCPY);
+        if (LLVMGlobals.HOST_TARGET != null && Native.inited) {
+            Native.memmove(destBase, destOffset, srcBase, srcOffset, bytes);
         } else {
             AndroidUnsafe.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
         }
