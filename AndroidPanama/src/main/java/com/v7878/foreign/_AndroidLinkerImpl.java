@@ -16,16 +16,12 @@ import static com.v7878.llvm.Core.LLVMArrayType;
 import static com.v7878.llvm.Core.LLVMAttribute.LLVMByValAttribute;
 import static com.v7878.llvm.Core.LLVMAttribute.LLVMStructRetAttribute;
 import static com.v7878.llvm.Core.LLVMAttributeIndex.LLVMAttributeFirstArgIndex;
-import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildCall;
-import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
-import static com.v7878.llvm.Core.LLVMBuildNeg;
 import static com.v7878.llvm.Core.LLVMBuildPointerCast;
 import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMBuildStore;
-import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMGetParams;
@@ -63,6 +59,7 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.newContext;
 import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_ptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
+import static com.v7878.unsafe.llvm.LLVMUtils.buildToJvmPointer;
 import static com.v7878.unsafe.llvm.LLVMUtils.getFunctionCode;
 
 import com.v7878.dex.AnnotationItem;
@@ -89,7 +86,6 @@ import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.unsafe.NativeCodeBlob;
 import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
-import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
@@ -303,6 +299,12 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return stub;
     }
 
+    private static LLVMTypeRef getTargetType(LLVMContextRef context, AddressLayout addressLayout) {
+        return addressLayout.targetLayout()
+                .map(target -> layoutToLLVMType(context, target))
+                .orElse(void_t(context));
+    }
+
     // Note: all layouts already has natural alignment
     private static LLVMTypeRef layoutToLLVMType(LLVMContextRef context, MemoryLayout layout) {
         Objects.requireNonNull(layout);
@@ -322,9 +324,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         } else if (layout instanceof ValueLayout.OfDouble) {
             out = double_t(context);
         } else if (layout instanceof AddressLayout addressLayout) {
-            out = LLVMPointerType(addressLayout.targetLayout()
-                    .map(target -> layoutToLLVMType(context, target))
-                    .orElse(void_t(context)), 0);
+            out = LLVMPointerType(getTargetType(context, addressLayout), 0);
         } else if (layout instanceof UnionLayout) {
             // TODO: it`s ok?
             out = LLVMArrayType(int8_t(context), Math.toIntExact(layout.byteSize()));
@@ -347,14 +347,18 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return out;
     }
 
-    private static LLVMTypeRef getPointerType(LLVMContextRef context, MemoryLayout layout) {
+    private static LLVMTypeRef getPointeeType(LLVMContextRef context, MemoryLayout layout) {
         if (layout instanceof AddressLayout addressLayout) {
-            return layoutToLLVMType(context, addressLayout);
+            return getTargetType(context, addressLayout);
         }
         if (layout instanceof GroupLayout) {
-            return LLVMPointerType(layoutToLLVMType(context, layout), 0);
+            return layoutToLLVMType(context, layout);
         }
         throw shouldNotReachHere();
+    }
+
+    private static LLVMTypeRef getPointerType(LLVMContextRef context, MemoryLayout layout) {
+        return LLVMPointerType(getPointeeType(context, layout), 0);
     }
 
     private static LLVMTypeRef fdToStubLLVMType(LLVMContextRef context, _FunctionDescriptorImpl descriptor,
@@ -448,14 +452,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 int t = 0;
                 for (MemoryLayout layout : stub_descriptor.argumentLayouts()) {
                     if (layout instanceof GroupLayout || layout instanceof AddressLayout) {
-                        LLVMValueRef base = tmp[t++];
-                        LLVMValueRef offset = tmp[t++];
-                        if (VM.isPoisonReferences()) {
-                            base = LLVMBuildNeg(builder, base, "");
-                        }
-                        base = LLVMBuildZExtOrBitCast(builder, base, intptr_t(context), "");
-                        base = LLVMBuildAdd(builder, base, offset, "");
-                        out.add(LLVMBuildIntToPtr(builder, base, getPointerType(context, layout), ""));
+                        out.add(buildToJvmPointer(builder, tmp[t++], tmp[t++], getPointeeType(context, layout)));
                     } else if (layout instanceof ValueLayout) {
                         out.add(tmp[t++]);
                     } else {
