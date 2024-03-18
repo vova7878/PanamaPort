@@ -1,9 +1,14 @@
 package com.v7878.unsafe.llvm;
 
+import static com.v7878.llvm.Core.LLVMBuildAdd;
+import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
+import static com.v7878.llvm.Core.LLVMBuildNeg;
+import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
 import static com.v7878.llvm.Core.LLVMGetBasicBlockParent;
 import static com.v7878.llvm.Core.LLVMGetGlobalParent;
 import static com.v7878.llvm.Core.LLVMGetInsertBlock;
 import static com.v7878.llvm.Core.LLVMGetModuleContext;
+import static com.v7878.llvm.Core.LLVMPointerType;
 import static com.v7878.llvm.ObjectFile.LLVMGetSectionSegment;
 import static com.v7878.llvm.ObjectFile.LLVMGetSections;
 import static com.v7878.llvm.ObjectFile.LLVMGetSymbolAddress;
@@ -13,12 +18,16 @@ import static com.v7878.llvm.ObjectFile.LLVMGetSymbols;
 import static com.v7878.llvm.ObjectFile.LLVMIsSymbolIteratorAtEnd;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToContainingSection;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToNextSymbol;
+import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
 
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.ObjectFile.LLVMObjectFileRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMModuleRef;
+import com.v7878.llvm.Types.LLVMTypeRef;
+import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.unsafe.VM;
 
 import java.util.List;
 import java.util.Objects;
@@ -73,5 +82,17 @@ public class LLVMUtils {
 
     public static LLVMContextRef getBuilderContext(LLVMBuilderRef builder) {
         return LLVMGetModuleContext(getBuilderModule(builder));
+    }
+
+    public static LLVMValueRef buildToJvmAddress(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset) {
+        if (VM.isPoisonReferences()) {
+            base = LLVMBuildNeg(builder, base, "");
+        }
+        base = LLVMBuildZExtOrBitCast(builder, base, intptr_t(getBuilderContext(builder)), "");
+        return LLVMBuildAdd(builder, base, offset, "");
+    }
+
+    public static LLVMValueRef buildToJvmPointer(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset, LLVMTypeRef type) {
+        return LLVMBuildIntToPtr(builder, buildToJvmAddress(builder, base, offset), LLVMPointerType(type, 0), "");
     }
 }
