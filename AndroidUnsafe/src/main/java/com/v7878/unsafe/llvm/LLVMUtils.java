@@ -1,13 +1,16 @@
 package com.v7878.unsafe.llvm;
 
+import static com.v7878.llvm.Analysis.LLVMVerifyModule;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
 import static com.v7878.llvm.Core.LLVMBuildNeg;
 import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
+import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMGetBasicBlockParent;
 import static com.v7878.llvm.Core.LLVMGetGlobalParent;
 import static com.v7878.llvm.Core.LLVMGetInsertBlock;
 import static com.v7878.llvm.Core.LLVMGetModuleContext;
+import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
 import static com.v7878.llvm.Core.LLVMPointerType;
 import static com.v7878.llvm.ObjectFile.LLVMGetSectionSegment;
 import static com.v7878.llvm.ObjectFile.LLVMGetSections;
@@ -18,12 +21,18 @@ import static com.v7878.llvm.ObjectFile.LLVMGetSymbols;
 import static com.v7878.llvm.ObjectFile.LLVMIsSymbolIteratorAtEnd;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToContainingSection;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToNextSymbol;
+import static com.v7878.llvm.TargetMachine.LLVMCodeGenFileType.LLVMObjectFile;
+import static com.v7878.llvm.TargetMachine.LLVMTargetMachineEmitToMemoryBuffer;
 import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.newContext;
+import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
 
 import com.v7878.foreign.MemorySegment;
+import com.v7878.llvm.LLVMException;
 import com.v7878.llvm.ObjectFile.LLVMObjectFileRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
+import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
@@ -94,5 +103,25 @@ public class LLVMUtils {
 
     public static LLVMValueRef buildToJvmPointer(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset, LLVMTypeRef type) {
         return LLVMBuildIntToPtr(builder, buildToJvmAddress(builder, base, offset), LLVMPointerType(type, 0), "");
+    }
+
+    public interface Generator {
+        void generate(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder);
+    }
+
+    public static LLVMMemoryBufferRef generateModuleToBuffer(Generator generator) throws LLVMException {
+        Objects.requireNonNull(generator);
+
+        try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
+             var module = LLVMModuleCreateWithNameInContext("generic", context)) {
+
+            generator.generate(context, module, builder);
+
+            LLVMVerifyModule(module);
+
+            try (var machine = newDefaultMachine()) {
+                return LLVMTargetMachineEmitToMemoryBuffer(machine, module, LLVMObjectFile);
+            }
+        }
     }
 }
