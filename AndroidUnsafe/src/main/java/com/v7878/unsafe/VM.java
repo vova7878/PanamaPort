@@ -95,6 +95,13 @@ public class VM {
             runOnce(() -> unreflect(getDeclaredMethod(vmruntime_class.get(),
                     "getCurrentInstructionSet")));
 
+    private static final Supplier<MethodHandle> isNativeDebuggable =
+            runOnce(() -> unreflect(getDeclaredMethod(vmruntime_class.get(),
+                    "isNativeDebuggable")));
+    private static final Supplier<MethodHandle> isJavaDebuggable =
+            runOnce(() -> unreflect(getDeclaredMethod(vmruntime_class.get(),
+                    "isJavaDebuggable")));
+
     private static final Supplier<MethodHandle> internalClone =
             runOnce(() -> unreflectDirect(getDeclaredMethod(Object.class, "internalClone")));
 
@@ -287,5 +294,25 @@ public class VM {
     @DangerLevel(DangerLevel.GC_COLLISION_MOVABLE_OBJECTS)
     public static Object intToObject(int obj) {
         return rawIntToObject(kPoisonReferences.getAsBoolean() ? -obj : obj);
+    }
+
+    public static boolean isNativeDebuggable() {
+        class Holder {
+            static final boolean isDebuggable = nothrows_run(
+                    () -> (boolean) isNativeDebuggable.get().invoke(vmruntime.get()));
+        }
+        return Holder.isDebuggable;
+    }
+
+    public static boolean isJavaDebuggable() {
+        class Holder {
+            static final boolean isDebuggable = nothrows_run(
+                    () -> (boolean) isJavaDebuggable.get().invoke(vmruntime.get()));
+        }
+        return Holder.isDebuggable;
+    }
+
+    public static boolean isDebuggable() {
+        return isNativeDebuggable() || isJavaDebuggable();
     }
 }
