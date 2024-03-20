@@ -134,6 +134,7 @@ class MappedMemoryUtils {
         registerNativeMethod(searchMethod(tm, "force0", FileDescriptor.class, long.class, long.class),
                 getExecutableData(searchMethod(mm, "force0", FileDescriptor.class, long.class, long.class)));
 
+        // TODO: use BulkLinker
         Class<?> word = IS64BIT ? long.class : int.class;
         String suffix = IS64BIT ? "64" : "32";
 

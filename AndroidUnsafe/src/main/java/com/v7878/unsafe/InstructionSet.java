@@ -1,7 +1,5 @@
 package com.v7878.unsafe;
 
-import static com.v7878.unsafe.VM.getCurrentInstructionSet;
-
 public enum InstructionSet {
     ARM(8),
     ARM64(16),
@@ -12,7 +10,7 @@ public enum InstructionSet {
     public static final InstructionSet CURRENT_INSTRUCTION_SET;
 
     static {
-        String iset = getCurrentInstructionSet();
+        String iset = VM.getCurrentInstructionSet();
         switch (iset) {
             case "arm" -> CURRENT_INSTRUCTION_SET = InstructionSet.ARM;
             case "arm64" -> CURRENT_INSTRUCTION_SET = InstructionSet.ARM64;

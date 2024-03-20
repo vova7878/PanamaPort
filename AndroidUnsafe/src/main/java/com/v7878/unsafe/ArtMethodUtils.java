@@ -14,7 +14,6 @@ import static com.v7878.unsafe.AndroidUnsafe.getWordN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordN;
 import static com.v7878.unsafe.Reflection.getArtMethod;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
 import com.v7878.foreign.GroupLayout;
@@ -86,22 +85,18 @@ public class ArtMethodUtils {
             ).withName("ptr_sized_fields_")
     );
 
-    public static final GroupLayout ARTMETHOD_LAYOUT = nothrows_run(() -> switch (CORRECT_SDK_INT) {
-        case 34, // android 14
-                33, // android 13
-                32, // android 12L
-                31  // android 12
-                -> art_method_14_12_layout;
-        case 30,    // android 11
-                29  // android 10
-                -> art_method_11_10_layout;
-        case 28     // android 9
-                -> art_method_9_layout;
-        case 27,    // android 8.1
-                26  // android 8
-                -> art_method_8xx_layout;
-        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-    });
+    public static final GroupLayout ARTMETHOD_LAYOUT;
+
+    static {
+        ARTMETHOD_LAYOUT = switch (CORRECT_SDK_INT) {
+            case 34 /*android 14*/, 33 /*android 13*/, 32 /*android 12L*/,
+                    31 /*android 12*/ -> art_method_14_12_layout;
+            case 30 /*android 11*/, 29 /*android 10*/ -> art_method_11_10_layout;
+            case 28 /*android 9*/ -> art_method_9_layout;
+            case 27 /*android 8.1*/, 26 /*android 8*/ -> art_method_8xx_layout;
+            default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+        };
+    }
 
     public static MemorySegment getArtMethodSegment(Executable ex) {
         return MemorySegment.ofAddress(getArtMethod(ex)).reinterpret(ARTMETHOD_LAYOUT.byteSize());

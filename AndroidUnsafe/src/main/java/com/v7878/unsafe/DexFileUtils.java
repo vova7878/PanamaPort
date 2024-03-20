@@ -8,6 +8,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.Reflection.arrayCast;
+import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructor;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
@@ -19,14 +20,15 @@ import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.unsafe.Reflection.ClassMirror;
 import com.v7878.unsafe.foreign.ExtraLayouts.std;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
@@ -156,37 +158,31 @@ public class DexFileUtils {
             ADDRESS.withName("oat_dex_file_")
     );
 
-    public static final GroupLayout DEXFILE_LAYOUT = nothrows_run(() -> switch (CORRECT_SDK_INT) {
-        case 34     // android 14
-                -> dex_file_14_layout;
-        case 33,    // android 13
-                32, // android 12L
-                31, // android 12
-                30  // android 11
-                -> dex_file_13_11_layout;
-        case 29     // android 10
-                -> dex_file_10_layout;
-        case 28     // android 9
-                -> dex_file_9_layout;
-        case 27,    // android 8.1
-                26  // android 8
-                -> dex_file_8xx_layout;
-        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-    });
+    public static final GroupLayout DEXFILE_LAYOUT;
 
-    private static final Class<?> dexCacheClass
-            = nothrows_run(() -> Class.forName("java.lang.DexCache"));
-    private static final Field dexFile = nothrows_run(
-            () -> getDeclaredField(dexCacheClass, "dexFile"));
+    static {
+        DEXFILE_LAYOUT = switch (CORRECT_SDK_INT) {
+            case 34 /*android 14*/ -> dex_file_14_layout;
+            case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
+                    30 /*android 11*/ -> dex_file_13_11_layout;
+            case 29 /*android 10*/ -> dex_file_10_layout;
+            case 28 /*android 9*/ -> dex_file_9_layout;
+            case 27 /*android 8.1*/, 26 /*android 8*/ -> dex_file_8xx_layout;
+            default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+        };
+    }
+
+    private static final long dexFileOffset = fieldOffset(nothrows_run(() ->
+            getDeclaredField(Class.forName("java.lang.DexCache"), "dexFile")));
 
     public static Object getDexCache(Class<?> clazz) {
-        Reflection.ClassMirror[] m = arrayCast(Reflection.ClassMirror.class, clazz);
+        ClassMirror[] m = arrayCast(ClassMirror.class, clazz);
         return m[0].dexCache;
     }
 
     public static long getDexFile(Class<?> clazz) {
-        Object dexCache = getDexCache(clazz);
-        long address = nothrows_run(() -> dexFile.getLong(dexCache));
+        Object dexCache = Objects.requireNonNull(getDexCache(clazz));
+        long address = AndroidUnsafe.getLongO(dexCache, dexFileOffset);
         assert_(address != 0, () -> new IllegalStateException("dexFile == 0"));
         return address;
     }
@@ -195,24 +191,28 @@ public class DexFileUtils {
         return MemorySegment.ofAddress(getDexFile(clazz)).reinterpret(DEXFILE_LAYOUT.byteSize());
     }
 
-    private static final Supplier<Constructor<DexFile>> dex_constructor = runOnce(() -> {
-        if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 28) {
-            return getDeclaredConstructor(DexFile.class, ByteBuffer.class);
-        }
-        if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 34) {
-            Class<?> dex_path_list_elements = nothrows_run(
-                    () -> Class.forName("[Ldalvik.system.DexPathList$Element;"));
-            return getDeclaredConstructor(DexFile.class, ByteBuffer[].class,
-                    ClassLoader.class, dex_path_list_elements);
-        }
-        throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-    });
-
     public static DexFile openDexFile(ByteBuffer data) {
+        class Holder {
+            static final Constructor<DexFile> dex_constructor;
+
+            static {
+                if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 28) {
+                    dex_constructor = getDeclaredConstructor(DexFile.class, ByteBuffer.class);
+                } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 34) {
+                    Class<?> dex_path_list_elements = nothrows_run(
+                            () -> Class.forName("[Ldalvik.system.DexPathList$Element;"));
+                    dex_constructor = getDeclaredConstructor(DexFile.class, ByteBuffer[].class,
+                            ClassLoader.class, dex_path_list_elements);
+                } else {
+                    throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+                }
+            }
+        }
+
         if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 28) {
-            return nothrows_run(() -> dex_constructor.get().newInstance(data));
+            return nothrows_run(() -> Holder.dex_constructor.newInstance(data));
         } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 34) {
-            return nothrows_run(() -> dex_constructor.get().newInstance(
+            return nothrows_run(() -> Holder.dex_constructor.newInstance(
                     new ByteBuffer[]{data}, null, null));
         } else {
             throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
@@ -223,26 +223,40 @@ public class DexFileUtils {
         return openDexFile(ByteBuffer.wrap(data));
     }
 
-    private static final Field cookie = nothrows_run(
-            () -> getDeclaredField(DexFile.class, "mCookie"));
+    private static final long cookieOffset = fieldOffset(nothrows_run(() ->
+            getDeclaredField(DexFile.class, "mCookie")));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static long[] getCookie(DexFile dex) {
-        return (long[]) nothrows_run(() -> cookie.get(dex));
+        return (long[]) AndroidUnsafe.getObject(Objects.requireNonNull(dex), cookieOffset);
     }
 
     public static void setTrusted(long dexfile) {
         if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 27) {
             return;
         }
+        class Holder {
+            static final long offset;
+
+            static {
+                if (CORRECT_SDK_INT == 28) {
+                    offset = DEXFILE_LAYOUT.byteOffset(groupElement("is_platform_dex_"));
+                } else {
+                    offset = DEXFILE_LAYOUT.byteOffset(groupElement("hiddenapi_domain_"));
+                }
+            }
+        }
         if (CORRECT_SDK_INT == 28) {
-            final long offset = DEXFILE_LAYOUT.byteOffset(groupElement("is_platform_dex_"));
-            AndroidUnsafe.putBooleanN(dexfile + offset, true);
+            AndroidUnsafe.putBooleanN(dexfile + Holder.offset, true);
             return;
         }
-        if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 34) {
-            final long offset = DEXFILE_LAYOUT.byteOffset(groupElement("hiddenapi_domain_"));
-            AndroidUnsafe.putByteN(dexfile + offset, /*kCorePlatform*/ (byte) 0);
+        final int kCorePlatform = 0;
+        if (CORRECT_SDK_INT == 29) {
+            AndroidUnsafe.putIntN(dexfile + Holder.offset, kCorePlatform);
+            return;
+        }
+        if (CORRECT_SDK_INT >= 30 && CORRECT_SDK_INT <= 34) {
+            AndroidUnsafe.putByteN(dexfile + Holder.offset, (byte) kCorePlatform);
             return;
         }
         throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
@@ -263,6 +277,7 @@ public class DexFileUtils {
         throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
     }
 
+    //TODO: use defineClassNative(String name, ClassLoader loader, Object cookie, DexFile dexFile)
     private static final Supplier<MethodHandle> loadClassBinaryName = runOnce(
             () -> unreflectDirect(getDeclaredMethod(DexFile.class, "loadClassBinaryName",
                     String.class, ClassLoader.class, List.class)));
@@ -280,5 +295,4 @@ public class DexFileUtils {
         }
         return out;
     }
-
 }

@@ -143,8 +143,7 @@ public class Reflection {
         }
     }
 
-    private static final Class<MethodHandle> MethodHandleImplClass
-            = nothrows_run(() -> {
+    private static final Class<MethodHandle> MethodHandleImplClass = nothrows_run(() -> {
         //noinspection unchecked
         return (Class<MethodHandle>) Class.forName(
                 "java.lang.invoke.MethodHandleImpl");

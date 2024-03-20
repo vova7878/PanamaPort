@@ -25,7 +25,6 @@ import static com.v7878.unsafe.Reflection.getDeclaredFields0;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.access.JavaNioAccess.FD_OFFSET;
@@ -394,8 +393,9 @@ public class JavaNioAccess {
 
     public static Object attachment(Buffer buffer) {
         Objects.requireNonNull(buffer);
-        assert_(buffer.isDirect(), () ->
-                new IllegalArgumentException("unable to get indirect buffer attachment"));
+        if (!buffer.isDirect()) {
+            throw new IllegalArgumentException("buffer is not direct");
+        }
         var tmp = AS_BUFFERS.contains(buffer.getClass()) ?
                 getObject(buffer, BB_OFFSET) : buffer;
         return nothrows_run(() -> attachment.invoke(tmp));

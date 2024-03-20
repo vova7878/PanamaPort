@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 
 import dalvik.annotation.optimization.CriticalNative;
 
+// TODO: use BulkLinker
 public class Errno {
 
     static {

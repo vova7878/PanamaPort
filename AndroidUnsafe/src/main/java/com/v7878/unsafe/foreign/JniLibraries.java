@@ -13,8 +13,6 @@ import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.instanceFieldOffset;
-import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.runOnce;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JNI_OBJECT;
 import static com.v7878.unsafe.foreign.LibArt.ART;
 
@@ -29,7 +27,6 @@ import com.v7878.unsafe.JNIUtils;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import dalvik.annotation.optimization.CriticalNative;
 
@@ -84,71 +81,79 @@ public class JniLibraries {
         return tmp3.reinterpret(0);
     }
 
-    private static final long libraries_offset = nothrows_run(() -> switch (CORRECT_SDK_INT) {
-        case 34 /*android 14*/ -> {
-            long tmp = ADDRESS_SIZE * 4L;
-            tmp += 3;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-            tmp += ADDRESS_SIZE * 3L;
+    private static final long libraries_offset;
 
-            //mem_map
-            tmp += ADDRESS_SIZE * 7L;
-            tmp += 6;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-            tmp += ADDRESS_SIZE;
+    static {
+        libraries_offset = switch (CORRECT_SDK_INT) {
+            case 34 /*android 14*/ -> {
+                long tmp = ADDRESS_SIZE * 4L;
+                tmp += 3;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE * 3L;
 
-            tmp += ADDRESS_SIZE;
-            tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-            tmp += ADDRESS_SIZE * 3L;
-            yield tmp;
-        }
-        case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
-                30 /*android 11*/, 29 /*android 10*/ -> {
-            long tmp = ADDRESS_SIZE * 4L;
-            tmp += 3;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-            tmp += ADDRESS_SIZE * 3L;
+                //mem_map
+                tmp += ADDRESS_SIZE * 7L;
+                tmp += 6;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE;
 
-            tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE;
+                tmp += 4;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE * 3L;
+                yield tmp;
+            }
+            case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
+                    30 /*android 11*/, 29 /*android 10*/ -> {
+                long tmp = ADDRESS_SIZE * 4L;
+                tmp += 3;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE * 3L;
 
-            //mem_map
-            tmp += ADDRESS_SIZE * 7L;
-            tmp += 6;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-            tmp += ADDRESS_SIZE;
+                tmp += 4;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
 
-            tmp += ADDRESS_SIZE;
-            tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-            tmp += ADDRESS_SIZE * 2L;
-            tmp += 8;
-            yield tmp;
-        }
-        case 28 /*android 9*/, 27 /*android 8.1*/, 26 /*android 8*/ -> {
-            long tmp = ADDRESS_SIZE * 4L;
-            tmp += 3;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-            tmp += ADDRESS_SIZE * 3L;
+                //mem_map
+                tmp += ADDRESS_SIZE * 7L;
+                tmp += 6;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE;
 
-            tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-            tmp += ADDRESS_SIZE * 2L;
-            tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-            tmp += ADDRESS_SIZE * 2L;
-            tmp += 8;
-            yield tmp;
-        }
-        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-    });
+                tmp += ADDRESS_SIZE;
+                tmp += 4;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE * 2L;
+                tmp += 8;
+                yield tmp;
+            }
+            case 28 /*android 9*/, 27 /*android 8.1*/, 26 /*android 8*/ -> {
+                long tmp = ADDRESS_SIZE * 4L;
+                tmp += 3;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE * 3L;
 
-    private static final Supplier<MemorySegment> libraries = runOnce(() ->
-            unbound(JNIUtils.getJavaVMPtr()).get(ADDRESS, libraries_offset));
+                tmp += 4;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE * 2L;
+                tmp += 4;
+                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+                tmp += ADDRESS_SIZE * 2L;
+                tmp += 8;
+                yield tmp;
+            }
+            default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+        };
+    }
 
     private static MemorySegment getLibraries() {
-        return libraries.get();
+        class Holder {
+            static final MemorySegment libraries;
+
+            static {
+                libraries = unbound(JNIUtils.getJavaVMPtr()).get(ADDRESS, libraries_offset);
+            }
+        }
+        return Holder.libraries;
     }
 
     @Keep
@@ -186,6 +191,7 @@ public class JniLibraries {
     }
 
     static {
+        // TODO: use BulkLinker
         String suffix = IS64BIT ? "64" : "32";
         Class<?> word = IS64BIT ? long.class : int.class;
 

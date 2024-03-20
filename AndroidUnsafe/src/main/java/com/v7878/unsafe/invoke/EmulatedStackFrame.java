@@ -43,8 +43,8 @@ public class EmulatedStackFrame {
         }
     }
 
-    static final Class<?> esf_class = nothrows_run(
-            () -> Class.forName("dalvik.system.EmulatedStackFrame"));
+    static final Class<?> esf_class = nothrows_run(() ->
+            Class.forName("dalvik.system.EmulatedStackFrame"));
 
     @Keep
     public static EmulatedStackFrame wrap(Object esf) {
@@ -53,8 +53,8 @@ public class EmulatedStackFrame {
         return new EmulatedStackFrame(esf);
     }
 
-    private static final MethodHandle esf_create = nothrows_run(
-            () -> unreflect(getDeclaredMethod(esf_class, "create", MethodType.class)));
+    private static final MethodHandle esf_create = nothrows_run(() ->
+            unreflect(getDeclaredMethod(esf_class, "create", MethodType.class)));
 
     public static EmulatedStackFrame create(MethodType frameType) {
         return new EmulatedStackFrame(nothrows_run(() -> esf_create.invoke(frameType)));
@@ -66,8 +66,8 @@ public class EmulatedStackFrame {
         this.esf = esf;
     }
 
-    private static final long references_offset = nothrows_run(
-            () -> objectFieldOffset(getDeclaredField(esf_class, "references")));
+    private static final long references_offset = nothrows_run(() ->
+            objectFieldOffset(getDeclaredField(esf_class, "references")));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public Object[] references() {
@@ -80,8 +80,8 @@ public class EmulatedStackFrame {
         putObject(esf, references_offset, references);
     }
 
-    private static final long stackFrame_offset = nothrows_run(
-            () -> objectFieldOffset(getDeclaredField(esf_class, "stackFrame")));
+    private static final long stackFrame_offset = nothrows_run(() ->
+            objectFieldOffset(getDeclaredField(esf_class, "stackFrame")));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public byte[] stackFrame() {
@@ -94,8 +94,8 @@ public class EmulatedStackFrame {
         putObject(esf, stackFrame_offset, stackFrame);
     }
 
-    private static final long type_offset = nothrows_run(
-            () -> objectFieldOffset(getDeclaredField(esf_class, "type")));
+    private static final long type_offset = nothrows_run(() ->
+            objectFieldOffset(getDeclaredField(esf_class, "type")));
 
     public MethodType type() {
         return (MethodType) getObject(esf, type_offset);

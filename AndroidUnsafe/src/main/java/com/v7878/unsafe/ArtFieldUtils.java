@@ -8,7 +8,6 @@ import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.Reflection.getArtField;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
 import com.v7878.foreign.GroupLayout;
@@ -26,13 +25,15 @@ public class ArtFieldUtils {
             JAVA_INT.withName("offset_")
     );
 
-    public static final GroupLayout ARTFIELD_LAYOUT = nothrows_run(() -> {
+    public static final GroupLayout ARTFIELD_LAYOUT;
+
+    static {
         if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 34) {
-            return art_field_layout;
+            ARTFIELD_LAYOUT = art_field_layout;
         } else {
             throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
         }
-    });
+    }
 
     public static MemorySegment getArtFieldSegment(Field f) {
         return MemorySegment.ofAddress(getArtField(f)).reinterpret(ARTFIELD_LAYOUT.byteSize());

@@ -18,6 +18,7 @@ import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
 import static com.v7878.unsafe.Reflection.ClassMirror;
 import static com.v7878.unsafe.Reflection.arrayCast;
+import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
@@ -35,7 +36,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 public class VM {
     @Keep
@@ -55,7 +55,7 @@ public class VM {
             if (test[0].count == 1) {
                 return false;
             }
-            throw new IllegalStateException("" + test[0].count);
+            throw new IllegalStateException(String.valueOf(test[0].count));
         });
 
         public int count;
@@ -71,82 +71,132 @@ public class VM {
 
     public static final int STRING_HEADER_SIZE = objectSizeField(StringMirror.class);
 
-    private static final Supplier<Field> shadow$_klass_ =
-            runOnce(() -> getDeclaredField(Object.class, "shadow$_klass_"));
-    private static final Supplier<Field> shadow$_monitor_ =
-            runOnce(() -> getDeclaredField(Object.class, "shadow$_monitor_"));
-
-    private static final Supplier<Class<?>> vmruntime_class = runOnce(() ->
-            nothrows_run(() -> Class.forName("dalvik.system.VMRuntime")));
-    private static final Supplier<Object> vmruntime = runOnce(() ->
-            allocateInstance(vmruntime_class.get()));
-
-    private static final Supplier<MethodHandle> newNonMovableArray =
-            runOnce(() -> unreflectDirect(getDeclaredMethod(vmruntime_class.get(),
-                    "newNonMovableArray", Class.class, int.class)));
-    private static final Supplier<MethodHandle> addressOf =
-            runOnce(() -> unreflectDirect(getDeclaredMethod(vmruntime_class.get(),
-                    "addressOf", Object.class)));
-    private static final Supplier<MethodHandle> vmLibrary =
-            runOnce(() -> unreflectDirect(getDeclaredMethod(vmruntime_class.get(),
-                    "vmLibrary")));
-
-    private static final Supplier<MethodHandle> getCurrentInstructionSet =
-            runOnce(() -> unreflect(getDeclaredMethod(vmruntime_class.get(),
-                    "getCurrentInstructionSet")));
-
-    private static final Supplier<MethodHandle> isNativeDebuggable =
-            runOnce(() -> unreflect(getDeclaredMethod(vmruntime_class.get(),
-                    "isNativeDebuggable")));
-    private static final Supplier<MethodHandle> isJavaDebuggable =
-            runOnce(() -> unreflect(getDeclaredMethod(vmruntime_class.get(),
-                    "isJavaDebuggable")));
-
-    private static final Supplier<MethodHandle> internalClone =
-            runOnce(() -> unreflectDirect(getDeclaredMethod(Object.class, "internalClone")));
-
     static {
         assert_(ARRAY_OBJECT_INDEX_SCALE == OBJECT_FIELD_SIZE, AssertionError::new);
         assert_(ARRAY_INT_BASE_OFFSET == 12, AssertionError::new);
         assert_(OBJECT_INSTANCE_SIZE == 8, AssertionError::new);
     }
 
+    private static Class<?> vmruntime_class() {
+        class Holder {
+            static final Class<?> clazz;
+
+            static {
+                clazz = nothrows_run(() -> Class.forName("dalvik.system.VMRuntime"));
+            }
+        }
+        return Holder.clazz;
+    }
+
+    private static Object vmruntime() {
+        class Holder {
+            static final Object vm;
+
+            static {
+                vm = allocateInstance(vmruntime_class());
+            }
+        }
+        return Holder.vm;
+    }
+
     public static String vmLibrary() {
-        return (String) nothrows_run(() -> vmLibrary.get().invoke(vmruntime.get()));
+        class Holder {
+            static final String lib;
+
+            static {
+                MethodHandle vmLibrary = unreflectDirect(getDeclaredMethod(
+                        vmruntime_class(), "vmLibrary"));
+                lib = (String) nothrows_run(() -> vmLibrary.invoke(vmruntime()));
+            }
+        }
+        return Holder.lib;
     }
 
     public static String getCurrentInstructionSet() {
-        return (String) nothrows_run(() -> getCurrentInstructionSet.get().invoke());
+        class Holder {
+            static final String is;
+
+            static {
+                MethodHandle getCurrentInstructionSet = unreflect(getDeclaredMethod(
+                        vmruntime_class(), "getCurrentInstructionSet"));
+                is = (String) nothrows_run(() -> getCurrentInstructionSet.invoke());
+            }
+        }
+        return Holder.is;
     }
 
     public static Field getShadowKlassField() {
-        return shadow$_klass_.get();
+        class Holder {
+            static final Field shadow$_klass_;
+
+            static {
+                shadow$_klass_ = getDeclaredField(Object.class, "shadow$_klass_");
+            }
+        }
+        return Holder.shadow$_klass_;
     }
 
     public static Field getShadowMonitorField() {
-        return shadow$_monitor_.get();
+        class Holder {
+            static final Field shadow$_monitor_;
+
+            static {
+                shadow$_monitor_ = getDeclaredField(Object.class, "shadow$_monitor_");
+            }
+        }
+        return Holder.shadow$_monitor_;
     }
 
     @SuppressWarnings("unchecked")
     public static <T> T internalClone(T obj) {
-        return (T) nothrows_run(() -> internalClone.get().invoke(obj));
+        class Holder {
+            static final MethodHandle internalClone;
+
+            static {
+                internalClone = unreflectDirect(getDeclaredMethod(Object.class, "internalClone"));
+            }
+        }
+        return (T) nothrows_run(() -> Holder.internalClone.invoke(obj));
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     @SuppressWarnings("unchecked")
     public static <T> T setObjectClass(Object obj, Class<T> clazz) {
-        Field sk = getShadowKlassField();
-        nothrows_run(() -> sk.set(obj, clazz));
+        Objects.requireNonNull(obj);
+        class Holder {
+            static final long shadow$_klass_offset;
+
+            static {
+                shadow$_klass_offset = fieldOffset(getShadowKlassField());
+            }
+        }
+        AndroidUnsafe.putObject(obj, Holder.shadow$_klass_offset, clazz);
         return (T) obj;
     }
 
     public static Object newNonMovableArray(Class<?> componentType, int length) {
-        return nothrows_run(() -> newNonMovableArray.get()
-                .invoke(vmruntime.get(), componentType, length));
+        class Holder {
+            static final MethodHandle newNonMovableArray;
+
+            static {
+                newNonMovableArray = unreflectDirect(getDeclaredMethod(vmruntime_class(),
+                        "newNonMovableArray", Class.class, int.class));
+            }
+        }
+        return nothrows_run(() -> Holder.newNonMovableArray
+                .invoke(vmruntime(), componentType, length));
     }
 
     public static long addressOfNonMovableArrayData(Object array) {
-        return (long) nothrows_run(() -> addressOf.get().invoke(vmruntime.get(), array));
+        class Holder {
+            static final MethodHandle addressOf;
+
+            static {
+                addressOf = unreflectDirect(getDeclaredMethod(vmruntime_class(),
+                        "addressOf", Object.class));
+            }
+        }
+        return (long) nothrows_run(() -> Holder.addressOf.invoke(vmruntime(), array));
     }
 
     public static long addressOfNonMovableArray(Object array) {
@@ -298,16 +348,28 @@ public class VM {
 
     public static boolean isNativeDebuggable() {
         class Holder {
-            static final boolean isDebuggable = nothrows_run(
-                    () -> (boolean) isNativeDebuggable.get().invoke(vmruntime.get()));
+            static final boolean isDebuggable;
+
+            static {
+                MethodHandle isNativeDebuggable = unreflect(getDeclaredMethod(
+                        vmruntime_class(), "isNativeDebuggable"));
+                isDebuggable = nothrows_run(() ->
+                        (boolean) isNativeDebuggable.invoke(vmruntime()));
+            }
         }
         return Holder.isDebuggable;
     }
 
     public static boolean isJavaDebuggable() {
         class Holder {
-            static final boolean isDebuggable = nothrows_run(
-                    () -> (boolean) isJavaDebuggable.get().invoke(vmruntime.get()));
+            static final boolean isDebuggable;
+
+            static {
+                MethodHandle isJavaDebuggable = unreflect(getDeclaredMethod(
+                        vmruntime_class(), "isJavaDebuggable"));
+                isDebuggable = nothrows_run(() ->
+                        (boolean) isJavaDebuggable.invoke(vmruntime()));
+            }
         }
         return Holder.isDebuggable;
     }
