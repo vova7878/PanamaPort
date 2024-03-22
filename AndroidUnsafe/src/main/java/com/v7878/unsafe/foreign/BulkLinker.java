@@ -12,9 +12,15 @@ import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
+import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
+import static com.v7878.unsafe.Reflection.unreflect;
+import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static java.lang.annotation.ElementType.METHOD;
+
+import androidx.annotation.Keep;
 
 import com.v7878.dex.AnnotationItem;
 import com.v7878.dex.AnnotationSet;
@@ -25,21 +31,35 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.foreign.Arena;
+import com.v7878.foreign.Linker;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.foreign.SymbolLookup;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
+import com.v7878.unsafe.InstructionSet;
 import com.v7878.unsafe.NativeCodeBlob;
+import com.v7878.unsafe.Reflection;
+import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.VM;
 
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
 
 public class BulkLinker {
-    public enum LinkType {
+    public enum MapType {
         // normal types
         VOID(void.class),
         BYTE(byte.class),
@@ -62,48 +82,52 @@ public class BulkLinker {
         public final Class<?> forStub;
         public final Class<?> forImpl;
 
-        LinkType(Class<?> forStub, Class<?> forImpl) {
+        MapType(Class<?> forStub, Class<?> forImpl) {
             this.forStub = forStub;
             this.forImpl = forImpl;
         }
 
-        LinkType(Class<?> type) {
+        MapType(Class<?> type) {
             this(type, type);
         }
     }
 
-    private static ProtoId stubProto(LinkType ret, LinkType[] args) {
+    private static ProtoId stubProto(MapType ret, MapType[] args) {
         return new ProtoId(TypeId.of(ret.forStub), Arrays.stream(args)
                 .map(lt -> TypeId.of(lt.forStub)).toArray(TypeId[]::new));
     }
 
-    private static ProtoId implProto(LinkType ret, LinkType[] args) {
+    private static ProtoId implProto(MapType ret, MapType[] args) {
         return new ProtoId(TypeId.of(ret.forImpl), Arrays.stream(args)
                 .map(lt -> TypeId.of(lt.forImpl)).toArray(TypeId[]::new));
     }
 
-    private static Class<?>[] stubArgs(LinkType[] args) {
+    private static Class<?>[] stubArgs(MapType[] args) {
         return Arrays.stream(args).map(lt -> lt.forStub).toArray(Class[]::new);
     }
 
-    public abstract static sealed class SymbolSource
-            permits GeneratorSource, SegmentSource {
+    private static Class<?>[] implArgs(MapType[] args) {
+        return Arrays.stream(args).map(lt -> lt.forImpl).toArray(Class[]::new);
     }
 
-    public static final class GeneratorSource extends SymbolSource {
+    private abstract static sealed class SymbolSource
+            permits ASMSource, SegmentSource {
+    }
+
+    private static final class ASMSource extends SymbolSource {
         final Supplier<byte[]> generator;
 
-        private GeneratorSource(Supplier<byte[]> generator) {
+        private ASMSource(Supplier<byte[]> generator) {
             this.generator = generator;
         }
 
-        public static GeneratorSource of(Supplier<byte[]> generator) {
+        public static ASMSource of(Supplier<byte[]> generator) {
             Objects.requireNonNull(generator);
-            return new GeneratorSource(generator);
+            return new ASMSource(generator);
         }
     }
 
-    public static final class SegmentSource extends SymbolSource {
+    private static final class SegmentSource extends SymbolSource {
         final Supplier<MemorySegment> symbol;
 
         private SegmentSource(Supplier<MemorySegment> symbol) {
@@ -136,14 +160,14 @@ public class BulkLinker {
         }
     }
 
-    public static class SymbolInfo {
+    private static class SymbolInfo {
         final String name;
-        final LinkType ret;
-        final LinkType[] args;
+        final MapType ret;
+        final MapType[] args;
         final SymbolSource source;
         final CallType call_type;
 
-        private SymbolInfo(String name, LinkType ret, LinkType[] args,
+        private SymbolInfo(String name, MapType ret, MapType[] args,
                            SymbolSource source, CallType call_type) {
             this.name = name;
             this.ret = ret;
@@ -153,7 +177,7 @@ public class BulkLinker {
         }
 
         public static SymbolInfo of(String name, CallType call_type, SymbolSource source,
-                                    LinkType ret, LinkType... args) {
+                                    MapType ret, MapType... args) {
             Objects.requireNonNull(name);
             Objects.requireNonNull(ret);
             Objects.requireNonNull(args);
@@ -166,11 +190,19 @@ public class BulkLinker {
     private static final String prefix = "raw_";
 
     //TODO: use optimally sized move instructions
-    public static byte[] generateStub(Class<?> parent, SymbolInfo[] infos) {
+    private static byte[] generateStub(Class<?> parent, SymbolInfo[] infos) {
+        if (parent == null) {
+            parent = Object.class;
+        }
         String impl_name = parent.getName() + "$Impl";
         TypeId impl_id = TypeId.of(impl_name);
         ClassDef impl_def = new ClassDef(impl_id);
-        impl_def.setSuperClass(TypeId.of(parent));
+        if (parent.isInterface()) {
+            impl_def.setSuperClass(TypeId.of(Object.class));
+            impl_def.getInterfaces().add(TypeId.of(parent));
+        } else {
+            impl_def.setSuperClass(TypeId.of(parent));
+        }
 
         for (SymbolInfo info : infos) {
             ProtoId raw_proto = stubProto(info.ret, info.args);
@@ -192,7 +224,7 @@ public class BulkLinker {
                 if (!info.call_type.isStatic) {
                     b.move_object_16(b.l(regs[0]++), b.this_());
                 }
-                for (LinkType type : info.args) {
+                for (MapType type : info.args) {
                     switch (type) {
                         case BYTE, BOOL, SHORT, CHAR, INT, FLOAT, BOOL_AS_INT ->
                                 b.move_16(b.l(regs[0]++), b.p(regs[1]++));
@@ -270,8 +302,9 @@ public class BulkLinker {
         return new Dex(impl_def).compile();
     }
 
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static <T> Class<T> processSymbols(Arena scope, Class<T> parent, ClassLoader loader, SymbolInfo[] infos) {
+    private static <T> Class<T> processSymbols(Arena scope, Class<T> parent, ClassLoader loader, SymbolInfo[] infos) {
+        Objects.requireNonNull(scope);
+        Objects.requireNonNull(loader);
         MemorySegment[] symbols = new MemorySegment[infos.length];
         {
             int count = 0;
@@ -279,7 +312,7 @@ public class BulkLinker {
             byte[][] data = new byte[infos.length][];
             for (int i = 0; i < infos.length; i++) {
                 SymbolInfo info = infos[i];
-                if (info.source instanceof GeneratorSource gs) {
+                if (info.source instanceof ASMSource gs) {
                     map[count] = i;
                     data[count] = Objects.requireNonNull(gs.generator.get());
                     count++;
@@ -314,7 +347,202 @@ public class BulkLinker {
         return impl;
     }
 
-    public static <T> Class<T> processSymbols(Arena scope, Class<T> parent, SymbolInfo[] infos) {
-        return processSymbols(scope, parent, parent.getClassLoader(), infos);
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @Repeatable(ASMs.class)
+    @Keep
+    public @interface ASM {
+        InstructionSet iset();
+
+        byte[] code();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @Keep
+    public @interface ASMs {
+        ASM[] value();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @Keep
+    public @interface ASMGenerator {
+        Class<?> clazz() default /*search in current class*/ void.class;
+
+        String method();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @Keep
+    public @interface LibrarySymbol {
+        String value();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @Keep
+    public @interface SymbolGenerator {
+        Class<?> clazz() default /*search in current class*/ void.class;
+
+        String method();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @Keep
+    public @interface CallSignature {
+        CallType type();
+
+        MapType ret();
+
+        MapType[] args();
+    }
+
+    private static void checkSignature(Method method, CallSignature signature) {
+        if (method.getReturnType() == signature.ret().forImpl) {
+            if (Utils.arrayContentsEq(method.getParameterTypes(), implArgs(signature.args()))) {
+                return;
+            }
+        }
+        throw new IllegalStateException(method + " has wrong signature");
+    }
+
+    private static byte[] getCode(ASM asm) {
+        byte[] code = asm.code();
+        if (code.length == 0) {
+            return null;
+        }
+        return code;
+    }
+
+    private static byte[] getCode(ASMGenerator generator, Class<?> clazz, Map<Class<?>, Method[]> cached_methods) {
+        if (generator.clazz() != void.class) {
+            clazz = generator.clazz();
+        }
+        Method method = searchMethod(cached_methods.computeIfAbsent(clazz, Reflection::getDeclaredMethods), generator.method());
+        if (!Modifier.isStatic(method.getModifiers())) {
+            throw new IllegalArgumentException("asm generator method is not static: " + method);
+        }
+        if (method.getReturnType() != byte[].class) {
+            throw new IllegalArgumentException("return type of asm generator method is not byte[]: " + method);
+        }
+        byte[] code = nothrows_run(() -> (byte[]) unreflect(method).invokeExact());
+        if (code == null || code.length == 0) {
+            return null;
+        }
+        return code;
+    }
+
+    private static ASMSource getASMSource(
+            ASM[] asms, ASMGenerator generator, Class<?> clazz,
+            Map<Class<?>, Method[]> cached_methods, Method method) {
+        if (asms.length == 0 && generator == null) {
+            return null;
+        }
+        return ASMSource.of(() -> {
+            byte[] code = null;
+            for (ASM asm : asms) {
+                if (asm.iset() == CURRENT_INSTRUCTION_SET) {
+                    code = getCode(asm);
+                    if (code != null) {
+                        break;
+                    }
+                }
+            }
+            if (generator != null) {
+                code = getCode(generator, clazz, cached_methods);
+            }
+            if (code == null) {
+                throw new IllegalStateException("could not find code for method " + method);
+            }
+            return code;
+        });
+    }
+
+    private static MemorySegment getSymbol(SymbolGenerator generator, Class<?> clazz,
+                                           Map<Class<?>, Method[]> cached_methods) {
+        if (generator.clazz() != void.class) {
+            clazz = generator.clazz();
+        }
+        Method method = searchMethod(cached_methods.computeIfAbsent(clazz, Reflection::getDeclaredMethods), generator.method());
+        if (!Modifier.isStatic(method.getModifiers())) {
+            throw new IllegalArgumentException("symbol generator method is not static: " + method);
+        }
+        if (method.getReturnType() != MemorySegment.class) {
+            throw new IllegalArgumentException("return type of symbol generator method is not MemorySegment: " + method);
+        }
+        return nothrows_run(() -> (MemorySegment) unreflect(method).invokeExact());
+    }
+
+    private static SegmentSource getSegmentSource(
+            LibrarySymbol sym, SymbolGenerator generator, SymbolLookup lookup,
+            Class<?> clazz, Map<Class<?>, Method[]> cached_methods, Method method) {
+        if (sym == null && generator == null) {
+            return null;
+        }
+        return SegmentSource.of(() -> {
+            MemorySegment symbol = sym != null ? lookup.find(sym.value()).orElse(null) : null;
+            if (generator != null) {
+                symbol = getSymbol(generator, clazz, cached_methods);
+            }
+            if (symbol == null) {
+                throw new IllegalStateException("could not find symbol for method " + method);
+            }
+            return symbol;
+        });
+    }
+
+    public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz) {
+        return processSymbols(arena, clazz, Linker.nativeLinker().defaultLookup());
+    }
+
+    public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz, SymbolLookup lookup) {
+        return processSymbols(arena, clazz, clazz.getClassLoader(), lookup);
+    }
+
+    //TODO: add CachedStub annotation
+    public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz, ClassLoader loader, SymbolLookup lookup) {
+        Objects.requireNonNull(arena);
+        Objects.requireNonNull(clazz);
+        Objects.requireNonNull(loader);
+        Objects.requireNonNull(lookup);
+
+        Map<Class<?>, Method[]> cached_methods = new HashMap<>();
+        Method[] clazz_methods = getDeclaredMethods(clazz);
+        cached_methods.put(clazz, clazz_methods);
+        List<SymbolInfo> infos = new ArrayList<>(clazz_methods.length);
+
+        for (Method method : clazz_methods) {
+            CallSignature signature = method.getDeclaredAnnotation(CallSignature.class);
+
+            ASM[] asms = method.getDeclaredAnnotationsByType(ASM.class);
+            ASMGenerator asm_generator = method.getDeclaredAnnotation(ASMGenerator.class);
+            ASMSource asm_source = getASMSource(asms, asm_generator, clazz, cached_methods, method);
+
+            LibrarySymbol sym = method.getDeclaredAnnotation(LibrarySymbol.class);
+            SymbolGenerator sym_generator = method.getDeclaredAnnotation(SymbolGenerator.class);
+            SymbolSource sym_source = getSegmentSource(sym, sym_generator, lookup, clazz, cached_methods, method);
+
+            if (asm_source == null && sym_source == null) {
+                if (signature == null) {
+                    continue; // skip, this method does not require processing
+                } else {
+                    throw new IllegalStateException("Signature is present, but ASM or Symbol sources aren`t for method" + method);
+                }
+            } else if (asm_source != null && sym_source != null) {
+                throw new IllegalStateException("Both ASM and Symbol sources are present for method " + method);
+            } else if (signature == null) {
+                throw new IllegalStateException("ASM or Symbol sources are present, but signeture isn`t for method" + method);
+            }
+
+            checkSignature(method, signature);
+
+            SymbolSource source = asm_source == null ? sym_source : asm_source;
+            infos.add(SymbolInfo.of(method.getName(), signature.type(), source, signature.ret(), signature.args()));
+        }
+
+        return processSymbols(arena, clazz, loader, infos.toArray(new SymbolInfo[0]));
     }
 }
