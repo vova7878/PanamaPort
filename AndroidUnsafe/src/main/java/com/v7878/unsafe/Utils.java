@@ -35,7 +35,7 @@ public class Utils {
         void close();
     }
 
-    private static boolean arrayContentsEq(Object[] a1, Object[] a2) {
+    public static boolean arrayContentsEq(Object[] a1, Object[] a2) {
         if (a1 == null) {
             return a2 == null || a2.length == 0;
         }
