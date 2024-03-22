@@ -30,13 +30,12 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
-import static com.v7878.unsafe.foreign.BulkLinker.LinkType.BYTE;
-import static com.v7878.unsafe.foreign.BulkLinker.LinkType.LONG_AS_WORD;
-import static com.v7878.unsafe.foreign.BulkLinker.LinkType.OBJECT_AS_RAW_INT;
-import static com.v7878.unsafe.foreign.BulkLinker.LinkType.VOID;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.BYTE;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT_AS_RAW_INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int16_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int64_t;
@@ -58,57 +57,75 @@ import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.unsafe.foreign.BulkLinker;
-import com.v7878.unsafe.foreign.BulkLinker.GeneratorSource;
-import com.v7878.unsafe.foreign.BulkLinker.SymbolInfo;
+import com.v7878.unsafe.foreign.BulkLinker.ASMGenerator;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.llvm.LLVMGlobals;
 import com.v7878.unsafe.llvm.LLVMUtils;
 import com.v7878.unsafe.llvm.LLVMUtils.Generator;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class ExtraMemoryAccess {
 
+    //TODO: cache as much as possible
     private abstract static class Native {
 
         private static final Arena SCOPE = Arena.ofAuto();
 
+        private static byte[] gen(Generator generator, String name) {
+            try {
+                var buf = LLVMUtils.generateModuleToBuffer(generator);
+                try (var of = LLVMCreateObjectFile(buf)) {
+                    return getFunctionCode(of, name).toArray(ValueLayout.JAVA_BYTE);
+                }
+            } catch (LLVMException e) {
+                throw shouldNotHappen(e);
+            }
+        }
+
+        @ASMGenerator(method = "generate_memset")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD, BYTE})
         @Keep
         abstract void memset(Object base, long offset, long bytes, byte value);
 
-        private static void generate_memset(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder) {
-            LLVMValueRef one = LLVMConstInt(intptr_t(context), 1, false);
-            LLVMValueRef zero = LLVMConstNull(intptr_t(context));
+        @SuppressWarnings("unused")
+        @Keep
+        private static byte[] generate_memset() {
+            final String name = "memset";
+            return gen((context, module, builder) -> {
+                LLVMValueRef one = LLVMConstInt(intptr_t(context), 1, false);
+                LLVMValueRef zero = LLVMConstNull(intptr_t(context));
 
-            LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), intptr_t(context), int8_t(context)};
-            LLVMTypeRef type = LLVMFunctionType(void_t(context), arg_types, false);
-            LLVMValueRef function = LLVMAddFunction(module, "memset", type);
-            LLVMValueRef[] args = LLVMGetParams(function);
+                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), intptr_t(context), int8_t(context)};
+                LLVMTypeRef type = LLVMFunctionType(void_t(context), arg_types, false);
+                LLVMValueRef function = LLVMAddFunction(module, name, type);
+                LLVMValueRef[] args = LLVMGetParams(function);
 
-            LLVMBasicBlockRef start = LLVMAppendBasicBlock(function, "");
-            LLVMBasicBlockRef body = LLVMAppendBasicBlock(function, "");
-            LLVMBasicBlockRef end = LLVMAppendBasicBlock(function, "");
+                LLVMBasicBlockRef start = LLVMAppendBasicBlock(function, "");
+                LLVMBasicBlockRef body = LLVMAppendBasicBlock(function, "");
+                LLVMBasicBlockRef end = LLVMAppendBasicBlock(function, "");
 
-            LLVMPositionBuilderAtEnd(builder, start);
-            LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], int8_t(context));
-            LLVMValueRef length = args[2];
-            LLVMValueRef test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
-            LLVMBuildCondBr(builder, test_zero, end, body);
+                LLVMPositionBuilderAtEnd(builder, start);
+                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], int8_t(context));
+                LLVMValueRef length = args[2];
+                LLVMValueRef test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
+                LLVMBuildCondBr(builder, test_zero, end, body);
 
-            LLVMPositionBuilderAtEnd(builder, body);
-            LLVMValueRef counter = LLVMBuildPhi(builder, intptr_t(context), "");
-            LLVMAddIncoming(counter, zero, start);
-            LLVMValueRef ptr = LLVMBuildInBoundsGEP(builder, pointer, new LLVMValueRef[]{counter}, "");
-            LLVMValueRef value = args[3];
-            LLVMValueRef store = LLVMBuildStore(builder, value, ptr);
-            LLVMSetAlignment(store, 1);
-            LLVMValueRef next_counter = LLVMBuildAdd(builder, counter, one, "");
-            LLVMAddIncoming(counter, next_counter, body);
-            LLVMValueRef test_end = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
-            LLVMBuildCondBr(builder, test_end, end, body);
+                LLVMPositionBuilderAtEnd(builder, body);
+                LLVMValueRef counter = LLVMBuildPhi(builder, intptr_t(context), "");
+                LLVMAddIncoming(counter, zero, start);
+                LLVMValueRef ptr = LLVMBuildInBoundsGEP(builder, pointer, new LLVMValueRef[]{counter}, "");
+                LLVMValueRef value = args[3];
+                LLVMValueRef store = LLVMBuildStore(builder, value, ptr);
+                LLVMSetAlignment(store, 1);
+                LLVMValueRef next_counter = LLVMBuildAdd(builder, counter, one, "");
+                LLVMAddIncoming(counter, next_counter, body);
+                LLVMValueRef test_end = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
+                LLVMBuildCondBr(builder, test_end, end, body);
 
-            LLVMPositionBuilderAtEnd(builder, end);
-            LLVMBuildRetVoid(builder);
+                LLVMPositionBuilderAtEnd(builder, end);
+                LLVMBuildRetVoid(builder);
+            }, name);
         }
 
         @SuppressWarnings("SameParameterValue")
@@ -178,75 +195,76 @@ public class ExtraMemoryAccess {
             LLVMBuildRetVoid(builder);
         }
 
+        @ASMGenerator(method = "generate_memmove")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         @Keep
         abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        private static void generate_memmove(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder) {
-            generate_memmove_modify(context, module, builder, "memmove", int8_t(context), 1, value -> value);
+        @SuppressWarnings("unused")
+        @Keep
+        private static byte[] generate_memmove() {
+            final String name = "memmove";
+            return gen((context, module, builder) -> generate_memmove_modify(context, module, builder, name, int8_t(context), 1, value -> value), name);
         }
 
+        @ASMGenerator(method = "generate_memmove_swap_shorts")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         @Keep
         abstract void memmove_swap_shorts(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        private static void generate_memmove_swap_shorts(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder) {
-            LLVMTypeRef[] bswap16_args = {int16_t(context)};
-            LLVMTypeRef bswap16_type = LLVMFunctionType(int16_t(context), bswap16_args, false);
-            LLVMValueRef bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
+        @SuppressWarnings("unused")
+        @Keep
+        private static byte[] generate_memmove_swap_shorts() {
+            final String name = "memmove_swap_shorts";
+            return gen((context, module, builder) -> {
+                LLVMTypeRef[] bswap16_args = {int16_t(context)};
+                LLVMTypeRef bswap16_type = LLVMFunctionType(int16_t(context), bswap16_args, false);
+                LLVMValueRef bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
 
-            generate_memmove_modify(context, module, builder, "memmove_swap_shorts", int16_t(context), 1,
-                    value -> LLVMBuildCall(builder, bswap16, new LLVMValueRef[]{value}, ""));
+                generate_memmove_modify(context, module, builder, name, int16_t(context), 1,
+                        value -> LLVMBuildCall(builder, bswap16, new LLVMValueRef[]{value}, ""));
+            }, name);
         }
 
+        @ASMGenerator(method = "generate_memmove_swap_ints")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         @Keep
         abstract void memmove_swap_ints(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        private static void generate_memmove_swap_ints(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder) {
-            LLVMTypeRef[] bswap32_args = {int32_t(context)};
-            LLVMTypeRef bswap32_type = LLVMFunctionType(int32_t(context), bswap32_args, false);
-            LLVMValueRef bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
+        @SuppressWarnings("unused")
+        @Keep
+        private static byte[] generate_memmove_swap_ints() {
+            final String name = "memmove_swap_ints";
+            return gen((context, module, builder) -> {
+                LLVMTypeRef[] bswap32_args = {int32_t(context)};
+                LLVMTypeRef bswap32_type = LLVMFunctionType(int32_t(context), bswap32_args, false);
+                LLVMValueRef bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
 
-            generate_memmove_modify(context, module, builder, "memmove_swap_ints", int32_t(context), 1,
-                    value -> LLVMBuildCall(builder, bswap32, new LLVMValueRef[]{value}, ""));
+                generate_memmove_modify(context, module, builder, name, int32_t(context), 1,
+                        value -> LLVMBuildCall(builder, bswap32, new LLVMValueRef[]{value}, ""));
+            }, name);
         }
 
+        @ASMGenerator(method = "generate_memmove_swap_longs")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         @Keep
         abstract void memmove_swap_longs(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        private static void generate_memmove_swap_longs(LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder) {
-            LLVMTypeRef[] bswap64_args = {int64_t(context)};
-            LLVMTypeRef bswap64_type = LLVMFunctionType(int64_t(context), bswap64_args, false);
-            LLVMValueRef bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
-
-            generate_memmove_modify(context, module, builder, "memmove_swap_longs", int64_t(context), 1,
-                    value -> LLVMBuildCall(builder, bswap64, new LLVMValueRef[]{value}, ""));
-        }
-
-        private static Supplier<byte[]> gen(Generator generator, String name) {
-            return () -> {
-                try {
-                    var buf = LLVMUtils.generateModuleToBuffer(generator);
-                    try (var of = LLVMCreateObjectFile(buf)) {
-                        return getFunctionCode(of, name).toArray(ValueLayout.JAVA_BYTE);
-                    }
-                } catch (LLVMException e) {
-                    throw shouldNotHappen(e);
-                }
-            };
-        }
-
+        @SuppressWarnings("unused")
         @Keep
-        private static final Native INSTANCE = nothrows_run(() -> {
-            SymbolInfo[] functions = new SymbolInfo[]{
-                    SymbolInfo.of("memset", CRITICAL, GeneratorSource.of(gen(Native::generate_memset, "memset")), VOID, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD, BYTE),
-                    SymbolInfo.of("memmove", CRITICAL, GeneratorSource.of(gen(Native::generate_memmove, "memmove")), VOID, OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD),
-                    SymbolInfo.of("memmove_swap_shorts", CRITICAL, GeneratorSource.of(gen(Native::generate_memmove_swap_shorts, "memmove_swap_shorts")), VOID, OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD),
-                    SymbolInfo.of("memmove_swap_ints", CRITICAL, GeneratorSource.of(gen(Native::generate_memmove_swap_ints, "memmove_swap_ints")), VOID, OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD),
-                    SymbolInfo.of("memmove_swap_longs", CRITICAL, GeneratorSource.of(gen(Native::generate_memmove_swap_longs, "memmove_swap_longs")), VOID, OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD)
-            };
+        private static byte[] generate_memmove_swap_longs() {
+            final String name = "memmove_swap_longs";
+            return gen((context, module, builder) -> {
+                LLVMTypeRef[] bswap64_args = {int64_t(context)};
+                LLVMTypeRef bswap64_type = LLVMFunctionType(int64_t(context), bswap64_args, false);
+                LLVMValueRef bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
 
-            Class<Native> impl = BulkLinker.processSymbols(SCOPE, Native.class, functions);
-            return AndroidUnsafe.allocateInstance(impl);
-        });
+                generate_memmove_modify(context, module, builder, name, int64_t(context), 1,
+                        value -> LLVMBuildCall(builder, bswap64, new LLVMValueRef[]{value}, ""));
+            }, name);
+        }
+
+        private static final Native INSTANCE = AndroidUnsafe.allocateInstance(BulkLinker.processSymbols(SCOPE, Native.class));
     }
 
     public static void setMemory(Object base, long offset, long bytes, byte value) {
