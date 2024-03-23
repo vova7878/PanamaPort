@@ -68,6 +68,8 @@ import java.util.function.Function;
 public class ExtraMemoryAccess {
 
     //TODO: cache as much as possible
+    @SuppressWarnings("unused")
+    @Keep
     private abstract static class Native {
 
         private static final Arena SCOPE = Arena.ofAuto();
@@ -85,11 +87,8 @@ public class ExtraMemoryAccess {
 
         @ASMGenerator(method = "generate_memset")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD, BYTE})
-        @Keep
         abstract void memset(Object base, long offset, long bytes, byte value);
 
-        @SuppressWarnings("unused")
-        @Keep
         private static byte[] generate_memset() {
             final String name = "memset";
             return gen((context, module, builder) -> {
@@ -197,11 +196,8 @@ public class ExtraMemoryAccess {
 
         @ASMGenerator(method = "generate_memmove")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
-        @Keep
         abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        @SuppressWarnings("unused")
-        @Keep
         private static byte[] generate_memmove() {
             final String name = "memmove";
             return gen((context, module, builder) -> generate_memmove_modify(context, module, builder, name, int8_t(context), 1, value -> value), name);
@@ -209,11 +205,8 @@ public class ExtraMemoryAccess {
 
         @ASMGenerator(method = "generate_memmove_swap_shorts")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
-        @Keep
         abstract void memmove_swap_shorts(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        @SuppressWarnings("unused")
-        @Keep
         private static byte[] generate_memmove_swap_shorts() {
             final String name = "memmove_swap_shorts";
             return gen((context, module, builder) -> {
@@ -228,11 +221,8 @@ public class ExtraMemoryAccess {
 
         @ASMGenerator(method = "generate_memmove_swap_ints")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
-        @Keep
         abstract void memmove_swap_ints(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        @SuppressWarnings("unused")
-        @Keep
         private static byte[] generate_memmove_swap_ints() {
             final String name = "memmove_swap_ints";
             return gen((context, module, builder) -> {
@@ -247,11 +237,8 @@ public class ExtraMemoryAccess {
 
         @ASMGenerator(method = "generate_memmove_swap_longs")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
-        @Keep
         abstract void memmove_swap_longs(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        @SuppressWarnings("unused")
-        @Keep
         private static byte[] generate_memmove_swap_longs() {
             final String name = "memmove_swap_longs";
             return gen((context, module, builder) -> {
@@ -264,7 +251,8 @@ public class ExtraMemoryAccess {
             }, name);
         }
 
-        private static final Native INSTANCE = AndroidUnsafe.allocateInstance(BulkLinker.processSymbols(SCOPE, Native.class));
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class));
     }
 
     public static void setMemory(Object base, long offset, long bytes, byte value) {

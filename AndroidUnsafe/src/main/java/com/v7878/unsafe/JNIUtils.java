@@ -1,7 +1,5 @@
 package com.v7878.unsafe;
 
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
-import static com.v7878.dex.bytecode.CodeBuilder.UnOp.NEG_INT;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.structLayout;
 import static com.v7878.foreign.MemorySegment.NULL;
@@ -10,13 +8,9 @@ import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
-import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
-import static com.v7878.unsafe.ClassUtils.setClassStatus;
-import static com.v7878.unsafe.DexFileUtils.loadClass;
-import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
@@ -26,22 +20,27 @@ import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_STATIC;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT_AS_ADDRESS;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.LibArt.ART;
 
 import androidx.annotation.Keep;
 
-import com.v7878.dex.ClassDef;
-import com.v7878.dex.Dex;
-import com.v7878.dex.EncodedMethod;
-import com.v7878.dex.MethodId;
-import com.v7878.dex.ProtoId;
-import com.v7878.dex.TypeId;
 import com.v7878.foreign.AddressLayout;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.access.JavaForeignAccess;
+import com.v7878.unsafe.foreign.BulkLinker;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
+import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -52,7 +51,6 @@ import java.util.Objects;
 
 import dalvik.annotation.optimization.CriticalNative;
 import dalvik.annotation.optimization.FastNative;
-import dalvik.system.DexFile;
 
 public class JNIUtils {
     public static final GroupLayout JNI_NATIVE_INTERFACE_LAYOUT = structLayout(
@@ -465,6 +463,62 @@ public class JNIUtils {
                 JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
     }
 
+    //TODO: cache as much as possible
+    @SuppressWarnings("unused")
+    @Keep
+    private abstract static class Native {
+
+        private static final Arena SCOPE = Arena.ofAuto();
+
+        @SymbolGenerator(method = "genDeleteGlobalRef")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract void DeleteGlobalRef(long env, long ref);
+
+        private static MemorySegment genDeleteGlobalRef() {
+            return getJNINativeInterfaceFunction("DeleteGlobalRef");
+        }
+
+        @LibrarySymbol("_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, OBJECT_AS_ADDRESS})
+        abstract long NewLocalRef(long env, Object obj);
+
+        @LibrarySymbol("_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract void DeleteLocalRef(long env, long ref);
+
+        @SuppressWarnings("SameParameterValue")
+        @SymbolGenerator(method = "genPutRef")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG, LONG_AS_WORD})
+        abstract void putRef(Object obj, long offset, long ref);
+
+        private static MemorySegment genPutRef() {
+            Method method = getDeclaredMethod(SunUnsafe.getUnsafeClass(), "putObject",
+                    Object.class, long.class, Object.class);
+            assert Modifier.isNative(method.getModifiers());
+            return MemorySegment.ofAddress(getExecutableData(method));
+        }
+
+        @SymbolGenerator(method = "genPushLocalFrame")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
+        abstract void PushLocalFrame(long env, int capacity);
+
+        private static MemorySegment genPushLocalFrame() {
+            return JNIUtils.getJNINativeInterfaceFunction("PushLocalFrame");
+        }
+
+        @SuppressWarnings({"SameParameterValue", "UnusedReturnValue"})
+        @SymbolGenerator(method = "genPopLocalFrame")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract long PopLocalFrame(long env, long survivor_ref);
+
+        private static MemorySegment genPopLocalFrame() {
+            return JNIUtils.getJNINativeInterfaceFunction("PopLocalFrame");
+        }
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class, ART));
+    }
+
     // TODO: use BulkLinker
     @Keep
     abstract static class RefUtils {
@@ -476,48 +530,6 @@ public class JNIUtils {
         @SuppressWarnings("unused")
         private native long NewGlobalRef64();
 
-        @CriticalNative
-        private static native void DeleteGlobalRef32(int env, int ref);
-
-        @CriticalNative
-        private static native void DeleteGlobalRef64(long env, long ref);
-
-        abstract long NewLocalRef64(long env, Object obj);
-
-        abstract int NewLocalRef32(int env, Object obj);
-
-        @CriticalNative
-        @SuppressWarnings("unused")
-        static native long RawNewLocalRef64(long env, long ref_ptr);
-
-        @CriticalNative
-        @SuppressWarnings("unused")
-        static native int RawNewLocalRef32(int env, int ref_ptr);
-
-        @CriticalNative
-        private static native void DeleteLocalRef64(long env, long ref);
-
-        @CriticalNative
-        private static native void DeleteLocalRef32(int env, int ref);
-
-        @CriticalNative
-        private static native void PushLocalFrame64(long env, int capacity);
-
-        @CriticalNative
-        private static native void PushLocalFrame32(int env, int capacity);
-
-        @CriticalNative
-        private static native void PopLocalFrame64(long env);
-
-        @CriticalNative
-        private static native void PopLocalFrame32(int env);
-
-        @FastNative
-        private static native void putRef64(Object obj, long offset, long ref);
-
-        @FastNative
-        private static native void putRef32(Object obj, long offset, int ref);
-
         public static final MethodHandle newGlobalRef;
 
         static {
@@ -526,125 +538,32 @@ public class JNIUtils {
 
             Method[] methods = getDeclaredMethods(RefUtils.class);
 
-            Method put = getDeclaredMethod(SunUnsafe.getUnsafeClass(), "putObject",
-                    Object.class, long.class, Object.class);
-            assert_(Modifier.isNative(put.getModifiers()), AssertionError::new);
-            registerNativeMethod(searchMethod(methods, "putRef" + suffix,
-                    Object.class, long.class, word), getExecutableData(put));
-
             Method ngr = searchMethod(methods, "NewGlobalRef" + suffix);
             registerNativeMethod(ngr, getJNINativeInterfaceFunction("NewGlobalRef").nativeAddress());
 
             newGlobalRef = unreflectDirect(ngr);
             setMethodType(newGlobalRef, MethodType.methodType(word, Object.class));
-
-            Method dgr = searchMethod(methods, "DeleteGlobalRef" + suffix, word, word);
-            registerNativeMethod(dgr, getJNINativeInterfaceFunction("DeleteGlobalRef").nativeAddress());
-
-            MemorySegment nlr = ART.find("_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE").get();
-            registerNativeMethod(searchMethod(methods, "RawNewLocalRef" + suffix, word, word), nlr.nativeAddress());
-
-            MemorySegment dlr = ART.find("_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject").get();
-            registerNativeMethod(searchMethod(methods, "DeleteLocalRef" + suffix, word, word), dlr.nativeAddress());
-
-            // art.find("_ZN3art9JNIEnvExt9PushFrameEi").get();
-            MemorySegment push = JNIUtils.getJNINativeInterfaceFunction("PushLocalFrame");
-            registerNativeMethod(searchMethod(methods, "PushLocalFrame" + suffix, word, int.class), push.nativeAddress());
-
-            MemorySegment pop = ART.find("_ZN3art9JNIEnvExt8PopFrameEv").get();
-            registerNativeMethod(searchMethod(methods, "PopLocalFrame" + suffix, word), pop.nativeAddress());
         }
-
-        public static final RefUtils INSTANCE = nothrows_run(() -> {
-            //make sure kPoisonReferences is initialized
-            boolean kPoisonReferences = VM.isPoisonReferences();
-
-            Class<?> word = IS64BIT ? long.class : int.class;
-            TypeId word_id = TypeId.of(word);
-            String suffix = IS64BIT ? "64" : "32";
-
-            String impl_name = RefUtils.class.getName() + "$Impl";
-            TypeId impl_id = TypeId.of(impl_name);
-            ClassDef impl_def = new ClassDef(impl_id);
-            impl_def.setSuperClass(TypeId.of(RefUtils.class));
-
-            MethodId raw_nlr_id = new MethodId(TypeId.of(RefUtils.class),
-                    new ProtoId(word_id, word_id, word_id), "RawNewLocalRef" + suffix);
-            MethodId nlr_id = new MethodId(impl_id, new ProtoId(word_id,
-                    word_id, TypeId.of(Object.class)), "NewLocalRef" + suffix);
-
-            // note: it's broken - object is cast to pointer
-            if (IS64BIT) {
-                // pointer 64-bit, object 32-bit -> fill upper 32 bits with zeros (l0 register)
-                impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                        nlr_id, Modifier.PUBLIC).withCode(1, b -> b
-                        .const_4(b.l(0), 0)
-                        .if_(kPoisonReferences,
-                                // TODO: how will GC react to this?
-                                unused -> b.unop(NEG_INT, b.p(2), b.p(2)),
-                                unused -> b.nop()
-                        )
-                        .invoke(STATIC, raw_nlr_id, b.p(0), b.p(1), b.p(2), b.l(0))
-                        .move_result_wide(b.v(0))
-                        .return_wide(b.v(0))
-                ));
-            } else {
-                impl_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                        nlr_id, Modifier.PUBLIC).withCode(0, b -> b
-                        .if_(kPoisonReferences,
-                                // TODO: how will GC react to this?
-                                unused -> b.unop(NEG_INT, b.p(1), b.p(1)),
-                                unused -> b.nop()
-                        )
-                        .invoke(STATIC, raw_nlr_id, b.p(0), b.p(1))
-                        .move_result(b.v(0))
-                        .return_(b.v(0))
-                ));
-            }
-
-            DexFile dex = openDexFile(new Dex(impl_def).compile());
-            Class<?> utils = loadClass(dex, impl_name, RefUtils.class.getClassLoader());
-            setClassStatus(utils, ClassStatus.Verified);
-
-            return (RefUtils) allocateInstance(utils);
-        });
     }
 
     public static long NewLocalRef(Object obj) {
-        RefUtils utils = RefUtils.INSTANCE;
         long env = getCurrentEnvPtr().nativeAddress();
-        if (IS64BIT) {
-            return utils.NewLocalRef64(env, obj);
-        } else {
-            return utils.NewLocalRef32((int) env, obj) & 0xffffffffL;
-        }
+        return Native.INSTANCE.NewLocalRef(env, obj);
     }
 
     public static void DeleteLocalRef(long ref) {
         long env = getCurrentEnvPtr().nativeAddress();
-        if (IS64BIT) {
-            RefUtils.DeleteLocalRef64(env, ref);
-        } else {
-            RefUtils.DeleteLocalRef32((int) env, (int) ref);
-        }
+        Native.INSTANCE.DeleteLocalRef(env, ref);
     }
 
     public static void PushLocalFrame(int capacity) {
         long env = getCurrentEnvPtr().nativeAddress();
-        if (IS64BIT) {
-            RefUtils.PushLocalFrame64(env, capacity);
-        } else {
-            RefUtils.PushLocalFrame32((int) env, capacity);
-        }
+        Native.INSTANCE.PushLocalFrame(env, capacity);
     }
 
     public static void PopLocalFrame() {
         long env = getCurrentEnvPtr().nativeAddress();
-        if (IS64BIT) {
-            RefUtils.PopLocalFrame64(env);
-        } else {
-            RefUtils.PopLocalFrame32((int) env);
-        }
+        Native.INSTANCE.PopLocalFrame(env, 0);
     }
 
     public static long NewGlobalRef(Object obj) {
@@ -660,11 +579,7 @@ public class JNIUtils {
 
     public static void DeleteGlobalRef(long ref) {
         long env = getCurrentEnvPtr().nativeAddress();
-        if (IS64BIT) {
-            RefUtils.DeleteGlobalRef64(env, ref);
-        } else {
-            RefUtils.DeleteGlobalRef32((int) env, (int) ref);
-        }
+        Native.INSTANCE.DeleteGlobalRef(env, ref);
     }
 
     public static long NewGlobalRef(Object obj, Arena arena) {
@@ -676,12 +591,7 @@ public class JNIUtils {
 
     public static Object refToObject(long ref) {
         Object[] arr = new Object[1];
-        final long offset = ARRAY_OBJECT_BASE_OFFSET;
-        if (IS64BIT) {
-            RefUtils.putRef64(arr, offset, ref);
-        } else {
-            RefUtils.putRef32(arr, offset, (int) ref);
-        }
+        Native.INSTANCE.putRef(arr, ARRAY_OBJECT_BASE_OFFSET, ref);
         return arr[0];
     }
 

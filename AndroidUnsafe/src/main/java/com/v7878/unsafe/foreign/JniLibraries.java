@@ -9,27 +9,29 @@ import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
-import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.instanceFieldOffset;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JNI_OBJECT;
 import static com.v7878.unsafe.foreign.LibArt.ART;
 
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.AddressLayout;
+import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.misc.Math;
+import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
-import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.function.Function;
-
-import dalvik.annotation.optimization.CriticalNative;
 
 public class JniLibraries {
 
@@ -158,54 +160,32 @@ public class JniLibraries {
         return Holder.libraries;
     }
 
+    //TODO: cache as much as possible
     @Keep
-    @CriticalNative
-    private static native void MutexLock32(int mutex, int thread);
+    private abstract static class Native {
 
-    @Keep
-    @CriticalNative
-    private static native void MutexLock64(long mutex, long thread);
+        private static final Arena SCOPE = Arena.ofAuto();
+
+        @LibrarySymbol("_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract void ExclusiveLock(long mutex, long thread);
+
+        @LibrarySymbol("_ZN3art5Mutex15ExclusiveUnlockEPNS_6ThreadE")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract void ExclusiveUnlock(long mutex, long thread);
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class, ART));
+    }
 
     @SuppressWarnings("SameParameterValue")
     private static void MutexLock(long mutex, long thread) {
-        if (IS64BIT) {
-            MutexLock64(mutex, thread);
-        } else {
-            MutexLock32((int) mutex, (int) thread);
-        }
+        Native.INSTANCE.ExclusiveLock(mutex, thread);
     }
-
-    @Keep
-    @CriticalNative
-    private static native void MutexUnlock32(int mutex, int thread);
-
-    @Keep
-    @CriticalNative
-    private static native void MutexUnlock64(long mutex, long thread);
 
     @SuppressWarnings("SameParameterValue")
     private static void MutexUnlock(long mutex, long thread) {
-        if (IS64BIT) {
-            MutexUnlock64(mutex, thread);
-        } else {
-            MutexUnlock32((int) mutex, (int) thread);
-        }
-    }
-
-    static {
-        // TODO: use BulkLinker
-        String suffix = IS64BIT ? "64" : "32";
-        Class<?> word = IS64BIT ? long.class : int.class;
-
-        Method symbol = getDeclaredMethod(JniLibraries.class,
-                "MutexLock" + suffix, word, word);
-        registerNativeMethod(symbol, ART.find(
-                "_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE").get().nativeAddress());
-
-        symbol = getDeclaredMethod(JniLibraries.class,
-                "MutexUnlock" + suffix, word, word);
-        registerNativeMethod(symbol, ART.find(
-                "_ZN3art5Mutex15ExclusiveUnlockEPNS_6ThreadE").get().nativeAddress());
+        Native.INSTANCE.ExclusiveUnlock(mutex, thread);
     }
 
     private static final long LIBRARIES_LOCK =

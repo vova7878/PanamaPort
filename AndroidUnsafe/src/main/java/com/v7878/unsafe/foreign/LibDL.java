@@ -4,9 +4,9 @@ import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
-import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.SimpleLinker.WORD_CLASS;
 import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 
@@ -16,6 +16,9 @@ import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.invoke.VarHandle;
+import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
 import com.v7878.unsafe.foreign.ELF.SymTab;
 import com.v7878.unsafe.foreign.MMap.MMapEntry;
 
@@ -23,14 +26,11 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.util.Objects;
 import java.util.function.Supplier;
-
-import dalvik.annotation.optimization.CriticalNative;
 
 public class LibDL {
     public static final int RTLD_LOCAL = 0;
@@ -125,15 +125,66 @@ public class LibDL {
         return ELF.readSymTab(ByteBuffer.wrap(tmp).order(ByteOrder.nativeOrder()), true);
     }
 
-    enum Function {
-        //FIXME!!! (SIGSEGV on api levels [26, 28])
-        //dlopen(s_dlopen, WORD_CLASS, WORD_CLASS, int.class),
-        //dlclose(s_dlclose, int.class, WORD_CLASS),
-        //dlerror(s_dlerror, WORD_CLASS),
-        //dlsym(s_dlsym, WORD_CLASS, WORD_CLASS, WORD_CLASS),
-        dlvsym(s_dlvsym, WORD_CLASS, WORD_CLASS, WORD_CLASS, WORD_CLASS),
-        dladdr(s_dladdr, int.class, WORD_CLASS, WORD_CLASS),
+    @SuppressWarnings("unused")
+    @Keep
+    private abstract static class Native {
 
+        private static final Arena SCOPE = Arena.ofAuto();
+
+        @SymbolGenerator(method = "s_dlopen")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
+        abstract long dlopen(long filename, int flags);
+
+        private static MemorySegment s_dlopen() {
+            return s_dlopen;
+        }
+
+        @SymbolGenerator(method = "s_dlclose")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
+        abstract int dlclose(long handle);
+
+        private static MemorySegment s_dlclose() {
+            return s_dlclose;
+        }
+
+        @SymbolGenerator(method = "s_dlerror")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
+        abstract long dlerror();
+
+        private static MemorySegment s_dlerror() {
+            return s_dlerror;
+        }
+
+        @SymbolGenerator(method = "s_dlsym")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract long dlsym(long handle, long symbol);
+
+        private static MemorySegment s_dlsym() {
+            return s_dlsym;
+        }
+
+        @SymbolGenerator(method = "s_dlvsym")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract long dlvsym(long handle, long symbol, long version);
+
+        private static MemorySegment s_dlvsym() {
+            return s_dlvsym;
+        }
+
+        @SymbolGenerator(method = "s_dladdr")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract int dladdr(long addr, long info);
+
+        private static MemorySegment s_dladdr() {
+            return s_dladdr;
+        }
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class));
+    }
+
+    //TODO: remove
+    enum Function {
         // for LibDLExt
         android_dlopen_ext(s_android_dlopen_ext, WORD_CLASS, WORD_CLASS, int.class, WORD_CLASS);
 
@@ -168,98 +219,11 @@ public class LibDL {
         }
     }
 
-    //FIXME!!! (SIGSEGV on api levels [26, 28])
-    //private static long raw_dlopen(long filename, int flags) {
-    //    return nothrows_run(() -> (long) Function.dlopen.handle().invoke(filename, flags));
-    //}
-    //private static int raw_dlclose(long handle) {
-    //    return nothrows_run(() -> (int) Function.dlclose.handle().invoke(handle));
-    //}
-    //private static long raw_dlerror() {
-    //    return nothrows_run(() -> (long) Function.dlerror.handle().invoke());
-    //}
-    //private static long raw_dlsym(long handle, long symbol) {
-    //    return nothrows_run(() -> (long) Function.dlsym.handle().invokeExact(handle, symbol));
-    //}
-
-    static {
-        String suffix = IS64BIT ? "64" : "32";
-        Class<?> word = IS64BIT ? long.class : int.class;
-
-        Method symbol = getDeclaredMethod(LibDL.class, "raw_dlopen" + suffix, word, int.class);
-        registerNativeMethod(symbol, s_dlopen.nativeAddress());
-
-        symbol = getDeclaredMethod(LibDL.class, "raw_dlerror" + suffix);
-        registerNativeMethod(symbol, s_dlerror.nativeAddress());
-
-        symbol = getDeclaredMethod(LibDL.class, "raw_dlsym" + suffix, word, word);
-        registerNativeMethod(symbol, s_dlsym.nativeAddress());
-
-        symbol = getDeclaredMethod(LibDL.class, "raw_dlclose" + suffix, word);
-        registerNativeMethod(symbol, s_dlclose.nativeAddress());
-    }
-
-    @Keep
-    @CriticalNative
-    private static native long raw_dlopen64(long filename, int flags);
-
-    @Keep
-    @CriticalNative
-    private static native int raw_dlopen32(int filename, int flags);
-
-    public static long raw_dlopen(long filename, int flags) {
-        return IS64BIT ? raw_dlopen64(filename, flags) : raw_dlopen32((int) filename, flags) & 0xffffffffL;
-    }
-
-    @Keep
-    @CriticalNative
-    private static native long raw_dlerror64();
-
-    @Keep
-    @CriticalNative
-    private static native int raw_dlerror32();
-
-    public static long raw_dlerror() {
-        return IS64BIT ? raw_dlerror64() : raw_dlerror32() & 0xffffffffL;
-    }
-
-    @Keep
-    @CriticalNative
-    private static native long raw_dlsym64(long handle, long symbol);
-
-    @Keep
-    @CriticalNative
-    private static native int raw_dlsym32(int handle, int symbol);
-
-    public static long raw_dlsym(long handle, long symbol) {
-        return IS64BIT ? raw_dlsym64(handle, symbol) : raw_dlsym32((int) handle, (int) symbol) & 0xffffffffL;
-    }
-
-    @Keep
-    @CriticalNative
-    private static native int raw_dlclose64(long handle);
-
-    @Keep
-    @CriticalNative
-    private static native int raw_dlclose32(int handle);
-
-    public static int raw_dlclose(long handle) {
-        return IS64BIT ? raw_dlclose64(handle) : raw_dlclose32((int) handle);
-    }
-
-    private static long raw_dlvsym(long handle, long symbol, long version) {
-        return nothrows_run(() -> (long) Function.dlvsym.handle().invokeExact(handle, symbol, version));
-    }
-
-    private static int raw_dladdr(long addr, long info) {
-        return nothrows_run(() -> (int) Function.dladdr.handle().invokeExact(addr, info));
-    }
-
     public static long dlopen(String filename, int flags) {
         Objects.requireNonNull(filename);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_filename = arena.allocateFrom(filename);
-            return raw_dlopen(c_filename.nativeAddress(), flags);
+            return Native.INSTANCE.dlopen(c_filename.nativeAddress(), flags);
         }
     }
 
@@ -269,11 +233,11 @@ public class LibDL {
 
     public static void dlclose(long handle) {
         //TODO: check result?
-        int ignore = raw_dlclose(handle);
+        int ignore = Native.INSTANCE.dlclose(handle);
     }
 
     public static String dlerror() {
-        long msg = raw_dlerror();
+        long msg = Native.INSTANCE.dlerror();
         if (msg == 0) return null;
         return MemorySegment.ofAddress(msg).reinterpret(Long.MAX_VALUE).getString(0);
     }
@@ -281,7 +245,7 @@ public class LibDL {
     static long dlsym_nochecks(long handle, String symbol) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_symbol = arena.allocateFrom(symbol);
-            return raw_dlsym(handle, c_symbol.nativeAddress());
+            return Native.INSTANCE.dlsym(handle, c_symbol.nativeAddress());
         }
     }
 
@@ -296,7 +260,7 @@ public class LibDL {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_symbol = arena.allocateFrom(symbol);
             MemorySegment c_version = arena.allocateFrom(version);
-            return raw_dlvsym(handle, c_symbol.nativeAddress(), c_version.nativeAddress());
+            return Native.INSTANCE.dlvsym(handle, c_symbol.nativeAddress(), c_version.nativeAddress());
         }
     }
 
@@ -315,7 +279,7 @@ public class LibDL {
             MemorySegment info = arena.allocate(dlinfo_layout);
 
             //TODO: check result?
-            int ignore = raw_dladdr(addr, info.nativeAddress());
+            int ignore = Native.INSTANCE.dladdr(addr, info.nativeAddress());
 
             return new DLInfo(segmentToString((MemorySegment) fname_handle.get(info, 0)),
                     ((MemorySegment) fbase_handle.get(info, 0)).nativeAddress(),
