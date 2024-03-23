@@ -73,6 +73,8 @@ public class BulkLinker {
         LONG(long.class),
         DOUBLE(double.class),
 
+        OBJECT(Object.class),
+
         // extra types
         LONG_AS_WORD(IS64BIT ? long.class : int.class, long.class),
         BOOL_AS_INT(int.class, boolean.class),
@@ -239,17 +241,33 @@ public class BulkLinker {
                             if (IS64BIT) {
                                 b.move_wide_16(b.l(regs[0]), b.p(regs[1]));
                                 regs[0] += 2;
-                                regs[1] += 2;
                             } else {
                                 b.move_wide_16(b.l(0), b.p(regs[1]));
                                 b.unop(LONG_TO_INT, b.l(0), b.l(0));
                                 b.move_16(b.l(regs[0]), b.l(0));
                                 regs[0] += 1;
-                                regs[1] += 2;
                             }
+                            regs[1] += 2;
                         }
-                        case OBJECT_AS_RAW_INT -> b.move_object_16(b.l(regs[0]++), b.p(regs[1]++));
-                        /*TODO: case OBJECT_AS_ADDRESS -> { }*/
+                        case OBJECT, OBJECT_AS_RAW_INT ->
+                                b.move_object_16(b.l(regs[0]++), b.p(regs[1]++));
+                        case OBJECT_AS_ADDRESS -> {
+                            // note: it's broken - object is cast to pointer
+                            // TODO: check how will GC react to this?
+                            b.move_object_16(b.l(0), b.p(regs[1]));
+                            if (VM.isPoisonReferences()) {
+                                b.unop(NEG_INT, b.l(0), b.l(0));
+                            }
+                            if (IS64BIT) {
+                                b.const_4(b.l(1), 0);
+                                b.move_wide_16(b.l(regs[0]), b.l(0));
+                                regs[0] += 2;
+                            } else {
+                                b.move_16(b.l(regs[0]), b.l(0));
+                                regs[0] += 1;
+                            }
+                            regs[1] += 1;
+                        }
                         default -> throw shouldNotReachHere();
                     }
                 }
@@ -282,7 +300,7 @@ public class BulkLinker {
                             b.return_wide(b.l(0));
                         }
                     }
-                    case OBJECT_AS_RAW_INT -> {
+                    case OBJECT, OBJECT_AS_RAW_INT -> {
                         b.move_result_object(b.l(0));
                         b.return_object(b.l(0));
                     }
