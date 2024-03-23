@@ -7,6 +7,7 @@ import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.VIRTUAL;
 import static com.v7878.dex.bytecode.CodeBuilder.UnOp.LONG_TO_INT;
 import static com.v7878.dex.bytecode.CodeBuilder.UnOp.NEG_INT;
+import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
@@ -347,12 +348,22 @@ public class BulkLinker {
         return impl;
     }
 
+    @Keep
+    public @interface ASMConditions {
+        InstructionSet iset();
+
+        int[] apis() default {26, 27, 28, 29, 30, 31, 32, 33, 34};
+
+        // negative value means it doesn't matter, zero is false, positive is true.
+        int kPoisonReferences() default -1;
+    }
+
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
     @Repeatable(ASMs.class)
     @Keep
     public @interface ASM {
-        InstructionSet iset();
+        ASMConditions conditions();
 
         byte[] code();
     }
@@ -435,6 +446,16 @@ public class BulkLinker {
         return code;
     }
 
+    @SuppressWarnings("SameParameterValue")
+    private static boolean contains(int[] array, int value) {
+        for (int j : array) if (j == value) return true;
+        return false;
+    }
+
+    private static boolean equals(int tristate, boolean value) {
+        return tristate < 0 || ((tristate != 0) == value);
+    }
+
     private static ASMSource getASMSource(
             ASM[] asms, ASMGenerator generator, Class<?> clazz,
             Map<Class<?>, Method[]> cached_methods, Method method) {
@@ -444,7 +465,10 @@ public class BulkLinker {
         return ASMSource.of(() -> {
             byte[] code = null;
             for (ASM asm : asms) {
-                if (asm.iset() == CURRENT_INSTRUCTION_SET) {
+                ASMConditions cond = asm.conditions();
+                if (cond.iset() == CURRENT_INSTRUCTION_SET &&
+                        contains(cond.apis(), CORRECT_SDK_INT) &&
+                        equals(cond.kPoisonReferences(), VM.isPoisonReferences())) {
                     code = getCode(asm);
                     if (code != null) {
                         break;
