@@ -35,6 +35,7 @@ import com.v7878.foreign.Arena;
 import com.v7878.foreign.Linker;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
+import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.InstructionSet;
@@ -352,7 +353,8 @@ public class BulkLinker {
     public @interface ASMConditions {
         InstructionSet iset();
 
-        int[] apis() default {26, 27, 28, 29, 30, 31, 32, 33, 34};
+        @ApiSensitive
+        int[] apis() default {26, 27, 28, 29, 30, 31, 32, 33, 34, 35};
 
         // negative value means it doesn't matter, zero is false, positive is true.
         int kPoisonReferences() default -1;

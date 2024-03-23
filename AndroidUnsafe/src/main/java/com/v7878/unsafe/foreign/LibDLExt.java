@@ -21,6 +21,7 @@ import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
 import com.v7878.invoke.VarHandle;
+import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.io.IOUtils;
 
@@ -33,6 +34,7 @@ import java.util.function.Supplier;
 public class LibDLExt {
 
     public static final Arena DLEXT_SCOPE = JavaForeignAccess.createImplicitHeapArena(LibDLExt.class);
+    @ApiSensitive
     public static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
             CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", DLEXT_SCOPE);
 

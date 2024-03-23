@@ -39,7 +39,7 @@ public class DexFileUtils {
             ADDRESS.withName("array_"),
             WORD.withName("size_")
     );
-    private static final GroupLayout dex_file_14_layout = paddedStructLayout(
+    private static final GroupLayout dex_file_14_15_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
             WORD.withName("size_"),
@@ -158,11 +158,12 @@ public class DexFileUtils {
             ADDRESS.withName("oat_dex_file_")
     );
 
+    @ApiSensitive
     public static final GroupLayout DEXFILE_LAYOUT;
 
     static {
         DEXFILE_LAYOUT = switch (CORRECT_SDK_INT) {
-            case 34 /*android 14*/ -> dex_file_14_layout;
+            case 35 /*android 15*/, 34 /*android 14*/ -> dex_file_14_15_layout;
             case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
                     30 /*android 11*/ -> dex_file_13_11_layout;
             case 29 /*android 10*/ -> dex_file_10_layout;
@@ -191,6 +192,7 @@ public class DexFileUtils {
         return MemorySegment.ofAddress(getDexFile(clazz)).reinterpret(DEXFILE_LAYOUT.byteSize());
     }
 
+    @ApiSensitive
     public static DexFile openDexFile(ByteBuffer data) {
         class Holder {
             static final Constructor<DexFile> dex_constructor;
@@ -198,7 +200,7 @@ public class DexFileUtils {
             static {
                 if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 28) {
                     dex_constructor = getDeclaredConstructor(DexFile.class, ByteBuffer.class);
-                } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 34) {
+                } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 35) {
                     Class<?> dex_path_list_elements = nothrows_run(
                             () -> Class.forName("[Ldalvik.system.DexPathList$Element;"));
                     dex_constructor = getDeclaredConstructor(DexFile.class, ByteBuffer[].class,
@@ -211,7 +213,7 @@ public class DexFileUtils {
 
         if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 28) {
             return nothrows_run(() -> Holder.dex_constructor.newInstance(data));
-        } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 34) {
+        } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 35) {
             return nothrows_run(() -> Holder.dex_constructor.newInstance(
                     new ByteBuffer[]{data}, null, null));
         } else {
@@ -231,6 +233,7 @@ public class DexFileUtils {
         return (long[]) AndroidUnsafe.getObject(Objects.requireNonNull(dex), cookieOffset);
     }
 
+    @ApiSensitive
     public static void setTrusted(long dexfile) {
         if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 27) {
             return;
@@ -255,18 +258,19 @@ public class DexFileUtils {
             AndroidUnsafe.putIntN(dexfile + Holder.offset, kCorePlatform);
             return;
         }
-        if (CORRECT_SDK_INT >= 30 && CORRECT_SDK_INT <= 34) {
+        if (CORRECT_SDK_INT >= 30 && CORRECT_SDK_INT <= 35) {
             AndroidUnsafe.putByteN(dexfile + Holder.offset, (byte) kCorePlatform);
             return;
         }
         throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
     }
 
+    @ApiSensitive
     public static void setTrusted(DexFile dex) {
         if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 27) {
             return;
         }
-        if (CORRECT_SDK_INT >= 28 && CORRECT_SDK_INT <= 34) {
+        if (CORRECT_SDK_INT >= 28 && CORRECT_SDK_INT <= 35) {
             long[] cookie = getCookie(dex);
             final int start = 1;
             for (int i = start; i < cookie.length; i++) {

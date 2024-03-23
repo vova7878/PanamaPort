@@ -308,9 +308,16 @@ public class JNIUtils {
             = ADDRESS.withTargetLayout(JNI_INVOKE_INTERFACE_LAYOUT);
 
     // TODO: get env from native and compute offset heuristically
+    @ApiSensitive
     private static final long env_offset = nothrows_run(() -> {
         long tmp;
         switch (CORRECT_SDK_INT) {
+            case 35 /*android 15*/ -> {
+                tmp = 20 * 4; // tls32_
+                tmp += 8 * 8; // tls64_
+                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
+                return tmp;
+            }
             case 34 /*android 14*/ -> {
                 tmp = 21 * 4; // tls32_
                 tmp += 4; // padding
@@ -394,22 +401,9 @@ public class JNIUtils {
         class Holder {
             static final MemorySegment jni_interface;
 
-            @Keep
-            @CriticalNative
-            public static native int GetJniNativeInterface32();
-
-            @Keep
-            @CriticalNative
-            public static native long GetJniNativeInterface64();
-
             static {
-                String suffix = IS64BIT ? "64" : "32";
-                String name = "GetJniNativeInterface";
-
-                Method get_jni = getDeclaredMethod(Holder.class, name + suffix);
-                registerNativeMethod(get_jni, ART.find("_ZN3art21GetJniNativeInterfaceEv").get().nativeAddress());
-                long ptr = IS64BIT ? GetJniNativeInterface64() : GetJniNativeInterface32() & 0xffffffffL;
-                jni_interface = MemorySegment.ofAddress(ptr).reinterpret(JNI_NATIVE_INTERFACE_LAYOUT.byteSize());
+                //TODO: get unchecked functions?
+                jni_interface = getCurrentEnvPtr().get(JNIEnv_LAYOUT, 0);
             }
         }
         return Holder.jni_interface;

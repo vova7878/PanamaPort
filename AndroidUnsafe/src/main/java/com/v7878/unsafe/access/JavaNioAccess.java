@@ -38,6 +38,7 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
+import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
@@ -101,6 +102,7 @@ class SegmentBufferAccess {
     }
 }
 
+@ApiSensitive
 public class JavaNioAccess {
 
     public interface UnmapperProxy {

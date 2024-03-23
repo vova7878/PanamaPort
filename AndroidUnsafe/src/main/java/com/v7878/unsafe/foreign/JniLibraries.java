@@ -22,6 +22,7 @@ import com.v7878.foreign.AddressLayout;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.misc.Math;
+import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
 
 import java.lang.reflect.Method;
@@ -81,11 +82,12 @@ public class JniLibraries {
         return tmp3.reinterpret(0);
     }
 
+    @ApiSensitive
     private static final long libraries_offset;
 
     static {
         libraries_offset = switch (CORRECT_SDK_INT) {
-            case 34 /*android 14*/ -> {
+            case 35 /*android 15*/, 34 /*android 14*/ -> {
                 long tmp = ADDRESS_SIZE * 4L;
                 tmp += 3;
                 tmp = Math.roundUpL(tmp, ADDRESS_SIZE);

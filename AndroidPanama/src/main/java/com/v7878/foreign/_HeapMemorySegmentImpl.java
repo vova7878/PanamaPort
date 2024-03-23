@@ -318,5 +318,4 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
             return offset - _Utils.BaseAndScale.DOUBLE.base();
         }
     }
-
 }

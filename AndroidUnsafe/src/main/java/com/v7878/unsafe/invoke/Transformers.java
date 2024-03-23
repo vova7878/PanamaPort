@@ -39,6 +39,7 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.dex.bytecode.CodeBuilder;
+import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
 
@@ -52,6 +53,7 @@ import java.util.function.Consumer;
 
 import dalvik.system.DexFile;
 
+@ApiSensitive
 public class Transformers {
 
     public static final Class<?> INVOKE_TRANSFORMER = nothrows_run(
@@ -368,12 +370,13 @@ public class Transformers {
                 .getDeclaredConstructor(MethodType.class, int.class, TransformerImpl.class));
     }
 
+    @ApiSensitive
     private static MethodHandle makeTransformer(
             MethodType fixed, TransformerImpl impl, boolean variadic) {
         final int INVOKE_CALLSITE_TRANSFORM_26_32 = 6;
-        final int INVOKE_TRANSFORM_26_34 = 5;
+        final int INVOKE_TRANSFORM_26_35 = 5;
         int kind = variadic && CORRECT_SDK_INT < 33 ?
-                INVOKE_CALLSITE_TRANSFORM_26_32 : INVOKE_TRANSFORM_26_34;
+                INVOKE_CALLSITE_TRANSFORM_26_32 : INVOKE_TRANSFORM_26_35;
         return nothrows_run(() -> transformer_constructor.newInstance(fixed, kind, impl));
     }
 
@@ -511,6 +514,7 @@ public class Transformers {
         abstract String toString(MethodHandle thiz);
     }
 
+    @ApiSensitive
     public static void invokeExactWithFrameNoChecks(
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
         if (INVOKE_TRANSFORMER.isInstance(target)) {

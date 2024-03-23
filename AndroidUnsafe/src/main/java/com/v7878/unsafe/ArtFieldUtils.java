@@ -25,10 +25,11 @@ public class ArtFieldUtils {
             JAVA_INT.withName("offset_")
     );
 
+    @ApiSensitive
     public static final GroupLayout ARTFIELD_LAYOUT;
 
     static {
-        if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 34) {
+        if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 35) {
             ARTFIELD_LAYOUT = art_field_layout;
         } else {
             throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);

@@ -10,6 +10,7 @@ import java.lang.reflect.Modifier;
 
 public class ClassUtils {
     //TODO: add all statuses
+    @ApiSensitive
     public enum ClassStatus {
         NotReady,  // Zero-initialized Class object starts in this state.
         Retired,  // Retired, should not be used. Use the newly cloned one instead.
@@ -27,8 +28,8 @@ public class ClassUtils {
 
         static {
             switch (CORRECT_SDK_INT) {
-                case 34 /*android 14*/, 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
-                        30 /*android 11*/, 29 /*android 10*/, 28  /*android 9*/ -> {
+                case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/, 32 /*android 12L*/,
+                        31 /*android 12*/, 30 /*android 11*/, 29 /*android 10*/, 28  /*android 9*/ -> {
                     NotReady.value = 0;
                     Retired.value = 1;
                     ErrorResolved.value = 2;
@@ -84,6 +85,7 @@ public class ClassUtils {
         }
     }
 
+    @ApiSensitive
     public static int getRawClassStatus(Class<?> clazz) {
         ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
         return CORRECT_SDK_INT <= 27 ? mirror[0].status : (mirror[0].status >>> 32 - 4);
@@ -100,6 +102,7 @@ public class ClassUtils {
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
+    @ApiSensitive
     public static void setRawClassStatus(Class<?> clazz, int status) {
         ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
         if (CORRECT_SDK_INT <= 27) {

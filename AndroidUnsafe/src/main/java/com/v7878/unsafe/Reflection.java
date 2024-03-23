@@ -33,10 +33,11 @@ import java.util.Objects;
 public class Reflection {
     static {
         // SDK version checks
-        assert_(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 34, AssertionError::new);
+        assert_(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 35, AssertionError::new);
     }
 
     @Keep
+    @ApiSensitive
     public static class ClassMirror {
 
         public ClassLoader classLoader;
@@ -68,12 +69,14 @@ public class Reflection {
     }
 
     @Keep
+    @ApiSensitive
     public static class AccessibleObjectMirror {
 
         public boolean override;
     }
 
     @Keep
+    @ApiSensitive
     public static class FieldMirror extends AccessibleObjectMirror {
 
         public int accessFlags;
@@ -84,6 +87,7 @@ public class Reflection {
     }
 
     @Keep
+    @ApiSensitive
     public static class ExecutableMirror extends AccessibleObjectMirror {
 
         public volatile boolean hasRealParameterData;
@@ -97,6 +101,7 @@ public class Reflection {
     }
 
     @Keep
+    @ApiSensitive
     public static class MethodHandleMirror {
 
         public MethodType type;
@@ -107,12 +112,14 @@ public class Reflection {
     }
 
     @Keep
+    @ApiSensitive
     public static final class MethodHandleImplMirror extends MethodHandleMirror {
 
         public HandleInfoMirror info;
     }
 
     @Keep
+    @ApiSensitive
     public static final class HandleInfoMirror {
 
         public Member member;
