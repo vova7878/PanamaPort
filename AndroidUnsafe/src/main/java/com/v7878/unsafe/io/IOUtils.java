@@ -1,16 +1,16 @@
 package com.v7878.unsafe.io;
 
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntO;
-import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.runOnce;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 
 import android.system.ErrnoException;
 import android.system.Os;
@@ -21,40 +21,37 @@ import androidx.annotation.Keep;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
+import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
+import com.v7878.unsafe.foreign.BulkLinker;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.foreign.LibDLExt;
 
 import java.io.FileDescriptor;
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import java.util.Objects;
-import java.util.function.Supplier;
-
-import dalvik.annotation.optimization.CriticalNative;
 
 public class IOUtils {
-    public static final Arena CUTILS_SCOPE = JavaForeignAccess.createImplicitHeapArena(IOUtils.class);
-    public static final SymbolLookup CUTILS = LibDLExt.systemLibraryLookup("libcutils.so", CUTILS_SCOPE);
-
     private static final int file_descriptor_offset = nothrows_run(
             () -> fieldOffset(getDeclaredField(FileDescriptor.class, "descriptor")));
-
-    private static final Supplier<Class<?>> file_channel_impl_class = runOnce(() ->
-            nothrows_run(() -> Class.forName("sun.nio.ch.FileChannelImpl")));
-
-    private static final Supplier<MethodHandle> file_channel_open =
-            runOnce(() -> unreflect(getDeclaredMethod(file_channel_impl_class.get(),
-                    "open", FileDescriptor.class, String.class, boolean.class,
-                    boolean.class, boolean.class, Object.class)));
 
     public static FileChannel openFileChannel(FileDescriptor fd, String path,
                                               boolean readable, boolean writable,
                                               boolean append, Object parent) {
-        return nothrows_run(() -> (FileChannel) file_channel_open.get()
+        class Holder {
+            static final Class<?> file_channel_impl_class =
+                    nothrows_run(() -> Class.forName("sun.nio.ch.FileChannelImpl"));
+            static final MethodHandle file_channel_open =
+                    unreflect(getDeclaredMethod(file_channel_impl_class,
+                            "open", FileDescriptor.class, String.class, boolean.class,
+                            boolean.class, boolean.class, Object.class));
+        }
+        return nothrows_run(() -> (FileChannel) Holder.file_channel_open
                 .invokeExact(fd, path, readable, writable, append, parent));
     }
 
@@ -75,26 +72,46 @@ public class IOUtils {
         return out;
     }
 
-    static {
-        Class<?> word = IS64BIT ? long.class : int.class;
-        String suffix = IS64BIT ? "64" : "32";
-        MemorySegment ashmem_create_region = CUTILS.find("ashmem_create_region").get();
-        Method ashmem_create_region_m = getDeclaredMethod(IOUtils.class,
-                "raw_ashmem_create_region" + suffix, word, word);
-        registerNativeMethod(ashmem_create_region_m, ashmem_create_region.nativeAddress());
+    @SuppressWarnings("unused")
+    @Keep
+    private abstract static class Native {
+        private static final Arena SCOPE = Arena.ofAuto();
+        public static final SymbolLookup CUTILS =
+                LibDLExt.systemLibraryLookup("libcutils.so", SCOPE);
+
+        @LibrarySymbol("ashmem_valid")
+        @CallSignature(type = CRITICAL, ret = INT, args = {INT})
+        abstract int ashmem_valid(int fd);
+
+        @LibrarySymbol("ashmem_create_region")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract int ashmem_create_region(long name, long size);
+
+        @LibrarySymbol("ashmem_set_prot_region")
+        @CallSignature(type = CRITICAL, ret = INT, args = {INT, INT})
+        abstract int ashmem_set_prot_region(int fd, int prot);
+
+        @LibrarySymbol("ashmem_pin_region")
+        @CallSignature(type = CRITICAL, ret = INT, args = {INT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract int ashmem_pin_region(int fd, long offset, long len);
+
+        @LibrarySymbol("ashmem_unpin_region")
+        @CallSignature(type = CRITICAL, ret = INT, args = {INT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract int ashmem_unpin_region(int fd, long offset, long len);
+
+        @LibrarySymbol("ashmem_get_size_region")
+        @CallSignature(type = CRITICAL, ret = INT, args = {INT})
+        abstract int ashmem_get_size_region(int fd);
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class, CUTILS));
     }
 
-    @Keep
-    @CriticalNative
-    private static native int raw_ashmem_create_region64(long name, long size);
-
-    @Keep
-    @CriticalNative
-    private static native int raw_ashmem_create_region32(int name, int size);
-
-    private static int raw_ashmem_create_region(long name, long size) {
-        return IS64BIT ? raw_ashmem_create_region64(name, size) :
-                raw_ashmem_create_region32((int) name, (int) size);
+    public static void ashmem_valid(FileDescriptor fd) throws ErrnoException {
+        int value = Native.INSTANCE.ashmem_valid(getDescriptorValue(fd));
+        if (value < 0) {
+            throw new ErrnoException("ashmem_valid", Errno.errno());
+        }
     }
 
     public static FileDescriptor ashmem_create_region(String name, long size) throws ErrnoException {
@@ -103,19 +120,42 @@ public class IOUtils {
         }
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_name = arena.allocateFrom(name);
-            int value = raw_ashmem_create_region(c_name.address(), size);
+            int value = Native.INSTANCE.ashmem_create_region(c_name.address(), size);
             if (value == -1) {
-                throw new ErrnoException("memfd_create", Errno.errno());
+                throw new ErrnoException("ashmem_create_region", Errno.errno());
             }
             return newFileDescriptor(value);
         }
     }
 
-    //TODO
-    //int ashmem_set_prot_region(int fd, int prot);
-    //int ashmem_pin_region(int fd, size_t offset, size_t len);
-    //int ashmem_unpin_region(int fd, size_t offset, size_t len);
-    //int ashmem_get_size_region(int fd);
+    public static void ashmem_set_prot_region(FileDescriptor fd, int prot) throws ErrnoException {
+        int value = Native.INSTANCE.ashmem_set_prot_region(getDescriptorValue(fd), prot);
+        if (value < 0) {
+            throw new ErrnoException("ashmem_set_prot_region", Errno.errno());
+        }
+    }
+
+    public static void ashmem_pin_region(FileDescriptor fd, long offset, long len) throws ErrnoException {
+        int value = Native.INSTANCE.ashmem_pin_region(getDescriptorValue(fd), offset, len);
+        if (value < 0) {
+            throw new ErrnoException("ashmem_pin_region", Errno.errno());
+        }
+    }
+
+    public static void ashmem_unpin_region(FileDescriptor fd, long offset, long len) throws ErrnoException {
+        int value = Native.INSTANCE.ashmem_unpin_region(getDescriptorValue(fd), offset, len);
+        if (value < 0) {
+            throw new ErrnoException("ashmem_unpin_region", Errno.errno());
+        }
+    }
+
+    public static int ashmem_get_size_region(FileDescriptor fd) throws ErrnoException {
+        int value = Native.INSTANCE.ashmem_get_size_region(getDescriptorValue(fd));
+        if (value < 0) {
+            throw new ErrnoException("ashmem_get_size_region", Errno.errno());
+        }
+        return value;
+    }
 
     public static final int MAP_ANONYMOUS = 0x20;
 
