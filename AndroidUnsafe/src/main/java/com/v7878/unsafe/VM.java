@@ -27,6 +27,9 @@ import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.runOnce;
 
+import android.annotation.TargetApi;
+import android.os.Build;
+
 import androidx.annotation.Keep;
 
 import com.v7878.misc.Checks;
@@ -360,6 +363,7 @@ public class VM {
         return Holder.isDebuggable;
     }
 
+    @TargetApi(Build.VERSION_CODES.P)
     public static boolean isJavaDebuggable() {
         class Holder {
             static final boolean isDebuggable;
@@ -374,6 +378,7 @@ public class VM {
         return Holder.isDebuggable;
     }
 
+    @TargetApi(Build.VERSION_CODES.P)
     public static boolean isDebuggable() {
         return isNativeDebuggable() || isJavaDebuggable();
     }
