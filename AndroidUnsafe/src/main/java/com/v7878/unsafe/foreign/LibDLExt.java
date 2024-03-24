@@ -14,6 +14,7 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
+import static com.v7878.unsafe.foreign.LibDL.RTLD_NOW;
 import static com.v7878.unsafe.io.IOUtils.getDescriptorValue;
 
 import android.system.ErrnoException;
@@ -322,6 +323,10 @@ public class LibDLExt {
 
     public static long android_dlopen_ext(String filename, AndroidNamespace namespace, int flags) {
         return android_dlopen_ext(filename, namespace, flags, false);
+    }
+
+    public static long android_dlopen_ext(String filename, AndroidNamespace namespace) {
+        return android_dlopen_ext(filename, namespace, RTLD_NOW);
     }
 
     public static long android_dlopen_force(String filename, int flags) {

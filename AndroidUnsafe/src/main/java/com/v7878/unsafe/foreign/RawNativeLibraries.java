@@ -6,8 +6,10 @@ import static com.v7878.unsafe.foreign.LibDL.dlerror;
 import static com.v7878.unsafe.foreign.LibDL.dlopen;
 import static com.v7878.unsafe.foreign.LibDL.dlsym;
 import static com.v7878.unsafe.foreign.LibDL.dlsym_nochecks;
+import static com.v7878.unsafe.foreign.LibDLExt.android_dlopen_ext;
 
 import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.foreign.LibDLExt.AndroidNamespace;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -55,13 +57,17 @@ public class RawNativeLibraries {
     }
 
     public static NativeLibrary load(String pathname) {
+        return load(pathname, null);
+    }
+
+    public static NativeLibrary load(String pathname, AndroidNamespace namespace) {
         if (Utils.containsNullChars(pathname)) {
             throw new IllegalArgumentException("Cannot open library: " + pathname);
         }
 
         dlerror(); // clear dlerror state before loading
 
-        long handle = dlopen(pathname);
+        long handle = namespace == null ? dlopen(pathname) : android_dlopen_ext(pathname, namespace);
 
         if (handle == 0) {
             throw new IllegalArgumentException(format_dlerror("Cannot open library: " + pathname));
