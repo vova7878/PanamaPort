@@ -8,15 +8,20 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.Utils.shouldNotHappen;
 
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.ValueLayout;
 import com.v7878.unsafe.DangerLevel;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Objects;
 
 // see elf.h
@@ -24,6 +29,7 @@ class ELF {
     private static final int EI_NIDENT = 16;
     private static final byte[] ELFMAG = {0x7f, 'E', 'L', 'F'};
 
+    private static final int STT_OBJECT = 1;
     private static final int STT_FUNC = 2;
 
     private static final ValueLayout Elf32_Addr = JAVA_INT;
@@ -117,18 +123,30 @@ class ELF {
 
     public static class Element {
 
-        public final String name;
         public final ByteBuffer data;
 
-        public Element(String name, ByteBuffer data) {
-            this.name = name;
+        private final ByteBuffer strings;
+        private final int name_offset;
+
+        private String cached_name;
+
+        public Element(ByteBuffer data, ByteBuffer strings, int name_offset) {
             this.data = data;
+            this.strings = strings;
+            this.name_offset = name_offset;
+        }
+
+        public String getName() {
+            if (cached_name != null) {
+                return cached_name;
+            }
+            return cached_name = getCString(strings, name_offset);
         }
 
         @Override
         public String toString() {
             return "Element{" +
-                    "name='" + name + '\'' +
+                    "name='" + getName() + '\'' +
                     ", data=" + data +
                     '}';
         }
@@ -195,6 +213,24 @@ class ELF {
         return new String(data);
     }
 
+    private static boolean equalsCString(ByteBuffer bb, int pos, byte[] data) {
+        if (bb.remaining() < data.length) {
+            return false;
+        }
+        int old_pos = bb.position();
+        try {
+            for (int i = 0; i < data.length; i++) {
+                byte value = bb.get(i + pos);
+                if (value == 0 || value != data[i]) {
+                    return false;
+                }
+            }
+            return true;
+        } finally {
+            bb.position(old_pos);
+        }
+    }
+
     private static ByteBuffer getRawSegmentData(ByteBuffer in, ByteBuffer segment) {
         long off = getWord(segment, sh_offset);
         long size = getWord(segment, sh_size);
@@ -203,14 +239,21 @@ class ELF {
 
     public static class SymTab {
 
-        public final Map<String, Element> dyn = new HashMap<>();
-        public final Map<String, Element> sym = new HashMap<>();
+        private final Element[] symbols;
+
+        SymTab(Element[] symbols) {
+            this.symbols = symbols;
+        }
 
         public Element find(String name) {
             Objects.requireNonNull(name);
-            Element out = dyn.get(name);
-            if (out == null) {
-                out = sym.get(name);
+            byte[] cname = name.getBytes(StandardCharsets.UTF_8);
+            Element out = null;
+            for (Element tmp : symbols) {
+                if (equalsCString(tmp.strings, tmp.name_offset, cname)) {
+                    out = tmp;
+                    break;
+                }
             }
             if (out == null) {
                 throw new IllegalArgumentException("symbol '" + name + "' not found");
@@ -219,10 +262,10 @@ class ELF {
         }
 
         @DangerLevel(DangerLevel.VERY_CAREFUL)
-        public MemorySegment findFunction(String name, long bias) {
+        private MemorySegment findSymbol(String name, long bias, int expected_type) {
             ByteBuffer symbol = find(name).data;
             int type = symbol.get(st_info) & 0xf;
-            if (type != STT_FUNC) {
+            if (type != expected_type) {
                 throw new IllegalArgumentException("unknown symbol type: " + type);
             }
             long value = getWord(symbol, st_value);
@@ -230,17 +273,25 @@ class ELF {
             return MemorySegment.ofAddress(bias + value).reinterpret(size);
         }
 
+        @DangerLevel(DangerLevel.VERY_CAREFUL)
+        public MemorySegment findFunction(String name, long bias) {
+            return findSymbol(name, bias, STT_FUNC);
+        }
+
+        @DangerLevel(DangerLevel.VERY_CAREFUL)
+        public MemorySegment findObject(String name, long bias) {
+            return findSymbol(name, bias, STT_OBJECT);
+        }
+
         @Override
         public String toString() {
             return "SymTab{" +
-                    "dyn=" + dyn +
-                    ", sym=" + sym +
+                    "symbols=" + Arrays.toString(symbols) +
                     '}';
         }
     }
 
-    private static void readSymbols(ByteBuffer in, ByteBuffer symtab, ByteBuffer strtab,
-                                    Map<String, Element> out) {
+    private static Element[] readSymbols(ByteBuffer in, ByteBuffer symtab, ByteBuffer strtab) {
 
         symtab = getRawSegmentData(in, symtab);
         strtab = getRawSegmentData(in, strtab);
@@ -250,12 +301,13 @@ class ELF {
         }
         int sym_size = Math.toIntExact(Elf_Sym.byteSize());
         int num = symtab.capacity() / sym_size;
+        Element[] out = new Element[num];
         for (int i = 0; i < num; i++) {
             ByteBuffer symbol = slice(symtab, i * sym_size, sym_size);
             int name_off = symbol.getInt(st_name);
-            String name = getCString(strtab, name_off);
-            out.put(name, new Element(name, symbol));
+            out[i] = new Element(symbol, strtab, name_off);
         }
+        return out;
     }
 
     private static Element[] readSections(ByteBuffer in) {
@@ -280,70 +332,71 @@ class ELF {
         for (int i = 0; i < shnum; i++) {
             ByteBuffer segment = slice(all_sh, i * shentsize, shentsize);
             int name_off = segment.getInt(sh_name);
-            String name = getCString(strings, name_off);
-            segments[i] = new Element(name, segment);
+            segments[i] = new Element(segment, strings, name_off);
         }
         return segments;
     }
 
-    public static SymTab readSymTab(ByteBuffer in) {
-        return readSymTab(in, false);
-    }
+    private static final byte[] strtab_name = ".strtab".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] symtab_name = ".symtab".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] dynstr_name = ".dynstr".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] dynsym_name = ".dynsym".getBytes(StandardCharsets.UTF_8);
 
-    public static SymTab readSymTab(ByteBuffer in, boolean only_dyn) {
+    public static SymTab readSymTab(ByteBuffer in, boolean dyn_or_sym) {
         Element[] sections = readSections(in);
 
-        Element symtab = null;
-        Element strtab = null;
-        Element dynsym = null;
-        Element dynstr = null;
-
-        for (Element section : sections) {
-            switch (section.name) {
-                case ".strtab" -> {
-                    if (!only_dyn) {
-                        if (strtab != null) {
-                            throw new IllegalArgumentException(
-                                    "too many string tables");
-                        }
-                        strtab = section;
-                    }
-                }
-                case ".symtab" -> {
-                    if (!only_dyn) {
-                        if (symtab != null) {
-                            throw new IllegalArgumentException(
-                                    "too many symbol tables");
-                        }
-                        symtab = section;
-                    }
-                }
-                case ".dynstr" -> {
-                    if (dynstr != null) {
-                        throw new IllegalArgumentException(
-                                "too many string tables");
-                    }
+        if (dyn_or_sym) {
+            Element dynsym = null;
+            Element dynstr = null;
+            for (Element section : sections) {
+                if (equalsCString(section.strings, section.name_offset, dynstr_name)) {
                     dynstr = section;
                 }
-                case ".dynsym" -> {
-                    if (dynsym != null) {
-                        throw new IllegalArgumentException(
-                                "too many symbol tables");
-                    }
+                if (equalsCString(section.strings, section.name_offset, dynsym_name)) {
                     dynsym = section;
                 }
+                if (dynstr != null && dynsym != null) {
+                    break;
+                }
             }
+            Element[] dyn;
+            if ((dynsym != null) && (dynstr != null)) {
+                dyn = readSymbols(in, dynsym.data, dynstr.data);
+            } else {
+                dyn = new Element[0];
+            }
+            return new SymTab(dyn);
+        } else {
+            Element symtab = null;
+            Element strtab = null;
+            for (Element section : sections) {
+                if (equalsCString(section.strings, section.name_offset, strtab_name)) {
+                    strtab = section;
+                }
+                if (equalsCString(section.strings, section.name_offset, symtab_name)) {
+                    symtab = section;
+                }
+                if (symtab != null && strtab != null) {
+                    break;
+                }
+            }
+            Element[] sym;
+            if ((symtab != null) && (strtab != null)) {
+                sym = readSymbols(in, symtab.data, strtab.data);
+            } else {
+                sym = new Element[0];
+            }
+            return new SymTab(sym);
         }
+    }
 
-        SymTab out = new SymTab();
-
-        if ((symtab != null) && (strtab != null)) {
-            readSymbols(in, symtab.data, strtab.data, out.sym);
+    public static SymTab readSymTab(String path, boolean dyn_or_sym) {
+        byte[] tmp;
+        try {
+            tmp = Files.readAllBytes(new File(path).toPath());
+        } catch (IOException ex) {
+            throw shouldNotHappen(ex);
         }
-        if ((dynsym != null) && (dynstr != null)) {
-            readSymbols(in, dynsym.data, dynstr.data, out.dyn);
-        }
-
-        return out;
+        return readSymTab(ByteBuffer.wrap(tmp).order(ByteOrder.nativeOrder()), dyn_or_sym);
     }
 }
