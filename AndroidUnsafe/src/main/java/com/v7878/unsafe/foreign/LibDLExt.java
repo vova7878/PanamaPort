@@ -7,32 +7,39 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
-import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
-import static com.v7878.unsafe.foreign.SimpleLinker.WORD_CLASS;
-import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 import static com.v7878.unsafe.io.IOUtils.getDescriptorValue;
 
 import android.system.ErrnoException;
 import android.system.Os;
+
+import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
 import com.v7878.invoke.VarHandle;
+import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.access.JavaForeignAccess;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
+import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
+import com.v7878.unsafe.foreign.ELF.SymTab;
+import com.v7878.unsafe.foreign.MMap.MMapEntry;
 import com.v7878.unsafe.io.IOUtils;
 
 import java.io.FileDescriptor;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 public class LibDLExt {
-
     public static final Arena DLEXT_SCOPE = JavaForeignAccess.createImplicitHeapArena(LibDLExt.class);
     @ApiSensitive
     public static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
@@ -62,6 +69,7 @@ public class LibDLExt {
     /**
      * Bitfield definitions for `android_dlextinfo::flags`.
      */
+    @SuppressWarnings("unused")
     private static class dlextinfo_flags {
         /**
          * When set, the `reserved_addr` and `reserved_size` fields must point to an
@@ -150,18 +158,6 @@ public class LibDLExt {
          * This is mainly useful for the system WebView implementation.
          */
         public static final long ANDROID_DLEXT_RESERVED_ADDRESS_RECURSIVE = 0x400;
-        /**
-         * Mask of valid bits.
-         */
-        public static final long ANDROID_DLEXT_VALID_FLAG_BITS = ANDROID_DLEXT_RESERVED_ADDRESS |
-                ANDROID_DLEXT_RESERVED_ADDRESS_HINT |
-                ANDROID_DLEXT_WRITE_RELRO |
-                ANDROID_DLEXT_USE_RELRO |
-                ANDROID_DLEXT_USE_LIBRARY_FD |
-                ANDROID_DLEXT_USE_LIBRARY_FD_OFFSET |
-                ANDROID_DLEXT_FORCE_LOAD |
-                ANDROID_DLEXT_USE_NAMESPACE |
-                ANDROID_DLEXT_RESERVED_ADDRESS_RECURSIVE;
     }
 
     public static class NamespaceType {
@@ -189,7 +185,7 @@ public class LibDLExt {
         public static final long SHARED = 2;
         /**
          * This flag instructs linker to enable exempt-list workaround for the namespace.
-         * See http://b/26394120 for details.
+         * See b/26394120 for details.
          */
         public static final long EXEMPT_LIST_ENABLED = 0x08000000;
         /**
@@ -228,36 +224,51 @@ public class LibDLExt {
         }
     }
 
-    private enum Function {
-        android_get_LD_LIBRARY_PATH(void.class, WORD_CLASS, WORD_CLASS),
-        android_update_LD_LIBRARY_PATH(void.class, WORD_CLASS),
-        android_init_anonymous_namespace(boolean.class, WORD_CLASS, WORD_CLASS),
-        android_create_namespace(WORD_CLASS, WORD_CLASS, WORD_CLASS, WORD_CLASS, long.class, WORD_CLASS, WORD_CLASS),
-        android_link_namespaces(boolean.class, WORD_CLASS, WORD_CLASS, WORD_CLASS),
-        android_get_exported_namespace(WORD_CLASS, WORD_CLASS);
+    @SuppressWarnings("unused")
+    @Keep
+    private abstract static class Native {
 
-        private final MethodType type;
-        private final Supplier<MethodHandle> handle;
+        private static final Arena SCOPE = Arena.ofAuto();
 
-        Function(Class<?> rtype, Class<?>... atypes) {
-            this.type = MethodType.methodType(rtype, atypes);
-            this.handle = processSymbol(DLEXT, DLEXT_SCOPE, name(), type());
+        @SymbolGenerator(method = "s_android_dlopen_ext")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
+        abstract long android_dlopen_ext(long filename, int flags, long info);
+
+        private static MemorySegment s_android_dlopen_ext() {
+            return LibDL.s_android_dlopen_ext;
         }
 
-        public MethodType type() {
-            return type;
-        }
+        @LibrarySymbol("android_get_LD_LIBRARY_PATH")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract void android_get_LD_LIBRARY_PATH(long buffer, long buffer_size);
 
-        public MethodHandle handle() {
-            return Objects.requireNonNull(handle.get());
-        }
+        @LibrarySymbol("android_update_LD_LIBRARY_PATH")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void android_update_LD_LIBRARY_PATH(long ld_library_path);
 
-        @Override
-        public String toString() {
-            return name() + "{" +
-                    "type=" + type +
-                    ", handle=" + handle() + '}';
-        }
+        @LibrarySymbol("android_init_anonymous_namespace")
+        @CallSignature(type = CRITICAL, ret = BOOL, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract boolean android_init_anonymous_namespace(
+                long shared_libs_sonames, long library_search_path);
+
+        @LibrarySymbol("android_create_namespace")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {
+                LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG, LONG_AS_WORD, LONG_AS_WORD})
+        abstract long android_create_namespace(
+                long name, long ld_library_path, long default_library_path,
+                long type, long permitted_when_isolated_path, long parent);
+
+        @LibrarySymbol("android_link_namespaces")
+        @CallSignature(type = CRITICAL, ret = BOOL, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract boolean android_link_namespaces(
+                long namespace_from, long namespace_to, long shared_libs_sonames);
+
+        @LibrarySymbol("android_get_exported_namespace")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long android_get_exported_namespace(long name);
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class, DLEXT));
     }
 
     // TODO: void android_get_LD_LIBRARY_PATH(char* buffer, size_t buffer_size)
@@ -266,7 +277,7 @@ public class LibDLExt {
         Objects.requireNonNull(ld_library_path);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ld_library_path = arena.allocateFrom(ld_library_path);
-            nothrows_run(() -> Function.android_update_LD_LIBRARY_PATH.handle().invoke(c_ld_library_path.nativeAddress()));
+            Native.INSTANCE.android_update_LD_LIBRARY_PATH(c_ld_library_path.nativeAddress());
         }
     }
 
@@ -285,8 +296,7 @@ public class LibDLExt {
             fd_handle.set(c_extinfo, 0, extinfo.library_fd);
             fd_offset_handle.set(c_extinfo, 0, extinfo.library_fd_offset);
             namespace_handle.set(c_extinfo, 0, MemorySegment.ofAddress(extinfo.library_namespace));
-            return nothrows_run(() -> (long) LibDL.Function.android_dlopen_ext.handle()
-                    .invokeExact(c_filename.nativeAddress(), flags, c_extinfo.nativeAddress()));
+            return Native.INSTANCE.android_dlopen_ext(c_filename.nativeAddress(), flags, c_extinfo.nativeAddress());
         }
     }
 
@@ -329,8 +339,8 @@ public class LibDLExt {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_shared_libs_sonames = arena.allocateFrom(shared_libs_sonames);
             MemorySegment c_library_search_path = arena.allocateFrom(library_search_path);
-            return nothrows_run(() -> (boolean) Function.android_init_anonymous_namespace.handle()
-                    .invoke(c_shared_libs_sonames.nativeAddress(), c_library_search_path.nativeAddress()));
+            return Native.INSTANCE.android_init_anonymous_namespace(
+                    c_shared_libs_sonames.nativeAddress(), c_library_search_path.nativeAddress());
         }
     }
 
@@ -347,9 +357,9 @@ public class LibDLExt {
             MemorySegment c_ld_library_path = arena.allocateFrom(ld_library_path);
             MemorySegment c_default_library_path = arena.allocateFrom(default_library_path);
             MemorySegment c_permitted_when_isolated_path = arena.allocateFrom(permitted_when_isolated_path);
-            return nothrows_run(() -> new AndroidNamespace((long) Function.android_create_namespace.handle()
-                    .invoke(c_name.nativeAddress(), c_ld_library_path.nativeAddress(), c_default_library_path.nativeAddress(),
-                            type, c_permitted_when_isolated_path.nativeAddress(), parent.value())));
+            return new AndroidNamespace((long) Native.INSTANCE.android_create_namespace(
+                    c_name.nativeAddress(), c_ld_library_path.nativeAddress(), c_default_library_path.nativeAddress(),
+                    type, c_permitted_when_isolated_path.nativeAddress(), parent.value()));
         }
     }
 
@@ -359,8 +369,8 @@ public class LibDLExt {
         Objects.requireNonNull(shared_libs_sonames);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_shared_libs_sonames = arena.allocateFrom(shared_libs_sonames);
-            return nothrows_run(() -> (boolean) Function.android_link_namespaces.handle().invoke(
-                    namespace_from.value(), namespace_to.value(), c_shared_libs_sonames.nativeAddress()));
+            return Native.INSTANCE.android_link_namespaces(namespace_from.value(),
+                    namespace_to.value(), c_shared_libs_sonames.nativeAddress());
         }
     }
 
@@ -368,8 +378,7 @@ public class LibDLExt {
         Objects.requireNonNull(name);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_name = arena.allocateFrom(name);
-            long value = nothrows_run(() -> (long) Function
-                    .android_get_exported_namespace.handle().invoke(c_name.nativeAddress()));
+            long value = Native.INSTANCE.android_get_exported_namespace(c_name.nativeAddress());
             return value == 0 ? null : new AndroidNamespace(value);
         }
     }
@@ -394,8 +403,19 @@ public class LibDLExt {
         }
     }
 
-    //TODO
-    //public static final AndroidNamespace DEFAULT_NAMESPACE = ...;
+    public static AndroidNamespace defaultNamespace() {
+        class Holder {
+            static final AndroidNamespace g_default_namespace;
+
+            static {
+                MMapEntry linker = MMap.findFirstByPath("/\\S+/linker" + (IS64BIT ? "64" : ""));
+                SymTab symbols = ELF.readSymTab(linker.path, false);
+                MemorySegment tmp = symbols.findObject("__dl_g_default_namespace", linker.start);
+                g_default_namespace = new AndroidNamespace(tmp.nativeAddress());
+            }
+        }
+        return Holder.g_default_namespace;
+    }
 
     //TODO: open with system namespace via android_dlopen_ext
     public static SymbolLookup systemLibraryLookup(String name, Arena arena) {

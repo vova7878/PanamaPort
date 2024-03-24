@@ -7,8 +7,6 @@ import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
-import static com.v7878.unsafe.foreign.SimpleLinker.WORD_CLASS;
-import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 
 import androidx.annotation.Keep;
 
@@ -22,15 +20,7 @@ import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
 import com.v7878.unsafe.foreign.ELF.SymTab;
 import com.v7878.unsafe.foreign.MMap.MMapEntry;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.file.Files;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 public class LibDL {
     public static final int RTLD_LOCAL = 0;
@@ -94,11 +84,11 @@ public class LibDL {
     private static final MemorySegment s_dlsym;
 
     // for LibDLExt
-    private static final MemorySegment s_android_dlopen_ext;
+    static final MemorySegment s_android_dlopen_ext;
 
     static {
-        MMapEntry libdl = findLibDLEntry();
-        SymTab symbols = getSymTab(libdl);
+        MMapEntry libdl = MMap.findFirstByPath("/\\S+/libdl.so");
+        SymTab symbols = ELF.readSymTab(libdl.path, true);
 
         s_dladdr = symbols.findFunction("dladdr", libdl.start);
         s_dlclose = symbols.findFunction("dlclose", libdl.start);
@@ -109,20 +99,6 @@ public class LibDL {
 
         // for LibDLExt
         s_android_dlopen_ext = symbols.findFunction("android_dlopen_ext", libdl.start);
-    }
-
-    private static MMapEntry findLibDLEntry() {
-        return MMap.findFirstByPath("/\\S+/libdl.so");
-    }
-
-    private static SymTab getSymTab(MMapEntry libdl) {
-        byte[] tmp;
-        try {
-            tmp = Files.readAllBytes(new File(libdl.path).toPath());
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
-        return ELF.readSymTab(ByteBuffer.wrap(tmp).order(ByteOrder.nativeOrder()), true);
     }
 
     @SuppressWarnings("unused")
@@ -181,42 +157,6 @@ public class LibDL {
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class));
-    }
-
-    //TODO: remove
-    enum Function {
-        // for LibDLExt
-        android_dlopen_ext(s_android_dlopen_ext, WORD_CLASS, WORD_CLASS, int.class, WORD_CLASS);
-
-        private final MemorySegment symbol;
-        private final MethodType type;
-        private final Supplier<MethodHandle> handle;
-
-        Function(MemorySegment symbol, Class<?> rtype, Class<?>... atypes) {
-            this.symbol = symbol;
-            this.type = MethodType.methodType(rtype, atypes);
-            this.handle = processSymbol(Arena.global(), symbol(), name(), type());
-        }
-
-        public MethodType type() {
-            return type;
-        }
-
-        public long symbol() {
-            return symbol.nativeAddress();
-        }
-
-        public MethodHandle handle() {
-            return Objects.requireNonNull(handle.get());
-        }
-
-        @Override
-        public String toString() {
-            return name() + "{" +
-                    "type=" + type +
-                    ", symbol=" + symbol() +
-                    ", handle=" + handle() + '}';
-        }
     }
 
     public static long dlopen(String filename, int flags) {
