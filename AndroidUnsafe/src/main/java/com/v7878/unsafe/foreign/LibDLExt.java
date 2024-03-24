@@ -422,8 +422,7 @@ public class LibDLExt {
         return Holder.g_default_namespace;
     }
 
-    //TODO: open with system namespace via android_dlopen_ext
     public static SymbolLookup systemLibraryLookup(String name, Arena arena) {
-        return SymbolLookup.libraryLookup("/system/lib" + (IS64BIT ? "64" : "") + "/" + name, arena);
+        return JavaForeignAccess.libraryLookup(RawNativeLibraries.load(name, defaultNamespace()), arena);
     }
 }
