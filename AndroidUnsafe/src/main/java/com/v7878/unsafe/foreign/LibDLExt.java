@@ -41,10 +41,20 @@ import java.io.FileDescriptor;
 import java.util.Objects;
 
 public class LibDLExt {
-    public static final Arena DLEXT_SCOPE = JavaForeignAccess.createImplicitHeapArena(LibDLExt.class);
-    @ApiSensitive
-    public static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
-            CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", DLEXT_SCOPE);
+    private static final GroupLayout dlextinfo_layout = paddedStructLayout(
+            JAVA_LONG.withName("flags"),
+            ADDRESS.withName("reserved_addr"),
+            WORD.withName("reserved_size"),
+            JAVA_INT.withName("relro_fd"),
+            JAVA_INT.withName("library_fd"),
+            JAVA_LONG.withName("library_fd_offset"),
+            ADDRESS.withName("library_namespace")
+    );
+
+    private static final VarHandle VH_FLAGS = dlextinfo_layout.varHandle(groupElement("flags"));
+    private static final VarHandle VH_LIBRARY_FD = dlextinfo_layout.varHandle(groupElement("library_fd"));
+    private static final VarHandle VH_FD_OFFSET = dlextinfo_layout.varHandle(groupElement("library_fd_offset"));
+    private static final VarHandle VH_NAMESPACE = dlextinfo_layout.varHandle(groupElement("library_namespace"));
 
     public static class Namespace {
         public static final Namespace NULL = new Namespace(0);
@@ -200,16 +210,6 @@ public class LibDLExt {
         public static final long TYPE_SHARED_ISOLATED = SHARED | ISOLATED;
     }
 
-    private static final GroupLayout dlextinfo_layout = paddedStructLayout(
-            JAVA_LONG.withName("flags"),
-            ADDRESS.withName("reserved_addr"),
-            WORD.withName("reserved_size"),
-            JAVA_INT.withName("relro_fd"),
-            JAVA_INT.withName("library_fd"),
-            JAVA_LONG.withName("library_fd_offset"),
-            ADDRESS.withName("library_namespace")
-    );
-
     private static class dlextinfo {
         final long flags;
         final int library_fd;
@@ -228,8 +228,10 @@ public class LibDLExt {
     @SuppressWarnings("unused")
     @Keep
     private abstract static class Native {
-
         private static final Arena SCOPE = Arena.ofAuto();
+        @ApiSensitive
+        public static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
+                CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", SCOPE);
 
         @SymbolGenerator(method = "s_android_dlopen_ext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
@@ -281,11 +283,6 @@ public class LibDLExt {
             Native.INSTANCE.update_LD_LIBRARY_PATH(c_ld_library_path.nativeAddress());
         }
     }
-
-    private static final VarHandle VH_FLAGS = dlextinfo_layout.varHandle(groupElement("flags"));
-    private static final VarHandle VH_LIBRARY_FD = dlextinfo_layout.varHandle(groupElement("library_fd"));
-    private static final VarHandle VH_FD_OFFSET = dlextinfo_layout.varHandle(groupElement("library_fd_offset"));
-    private static final VarHandle VH_NAMESPACE = dlextinfo_layout.varHandle(groupElement("library_namespace"));
 
     // TODO: make it public api
     private static long dlopen_ext(String filename, int flags, dlextinfo extinfo) {
