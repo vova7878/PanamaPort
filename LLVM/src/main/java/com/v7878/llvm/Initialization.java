@@ -1,54 +1,76 @@
 package com.v7878.llvm;
 
 import static com.v7878.llvm.LibLLVM.LLVM;
-import static com.v7878.llvm.LibLLVM.LLVM_SCOPE;
 import static com.v7878.llvm.Types.LLVMPassRegistryRef;
-import static com.v7878.llvm.Types.cLLVMPassRegistryRef;
-import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.util.Objects;
-import java.util.function.Supplier;
+import androidx.annotation.Keep;
+
+import com.v7878.foreign.Arena;
+import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.foreign.BulkLinker;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
 public class Initialization {
-    private enum Function {
-        LLVMInitializeCore(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeTransformUtils(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeScalarOpts(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeObjCARCOpts(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeVectorization(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeInstCombine(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeIPO(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeInstrumentation(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeAnalysis(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeIPA(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeCodeGen(void.class, cLLVMPassRegistryRef),
-        LLVMInitializeTarget(void.class, cLLVMPassRegistryRef);
+    @SuppressWarnings("unused")
+    @Keep
+    private abstract static class Native {
 
-        private final MethodType type;
-        private final Supplier<MethodHandle> handle;
+        private static final Arena SCOPE = Arena.ofAuto();
 
-        Function(Class<?> rtype, Class<?>... atypes) {
-            this.type = MethodType.methodType(rtype, atypes);
-            this.handle = processSymbol(LLVM, LLVM_SCOPE, name(), type());
-        }
+        @LibrarySymbol("LLVMInitializeCore")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeCore(long R);
 
-        public MethodType type() {
-            return type;
-        }
+        @LibrarySymbol("LLVMInitializeTransformUtils")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeTransformUtils(long R);
 
-        public MethodHandle handle() {
-            return Objects.requireNonNull(handle.get());
-        }
+        @LibrarySymbol("LLVMInitializeScalarOpts")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeScalarOpts(long R);
 
-        @Override
-        public String toString() {
-            return name() + "{" +
-                    "type=" + type +
-                    ", handle=" + handle() + '}';
-        }
+        @LibrarySymbol("LLVMInitializeObjCARCOpts")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeObjCARCOpts(long R);
+
+        @LibrarySymbol("LLVMInitializeVectorization")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeVectorization(long R);
+
+        @LibrarySymbol("LLVMInitializeInstCombine")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeInstCombine(long R);
+
+        @LibrarySymbol("LLVMInitializeIPO")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeIPO(long R);
+
+        @LibrarySymbol("LLVMInitializeInstrumentation")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeInstrumentation(long R);
+
+        @LibrarySymbol("LLVMInitializeAnalysis")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeAnalysis(long R);
+
+        @LibrarySymbol("LLVMInitializeIPA")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeIPA(long R);
+
+        @LibrarySymbol("LLVMInitializeCodeGen")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeCodeGen(long R);
+
+        @LibrarySymbol("LLVMInitializeTarget")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMInitializeTarget(long R);
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class, LLVM));
     }
 
     /*
@@ -59,50 +81,50 @@ public class Initialization {
      */
 
     public static void LLVMInitializeCore(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeCore.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeCore(R.value());
     }
 
     public static void LLVMInitializeTransformUtils(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeTransformUtils.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeTransformUtils(R.value());
     }
 
     public static void LLVMInitializeScalarOpts(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeScalarOpts.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeScalarOpts(R.value());
     }
 
     public static void LLVMInitializeObjCARCOpts(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeObjCARCOpts.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeObjCARCOpts(R.value());
     }
 
     public static void LLVMInitializeVectorization(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeVectorization.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeVectorization(R.value());
     }
 
     public static void LLVMInitializeInstCombine(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeInstCombine.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeInstCombine(R.value());
     }
 
     public static void LLVMInitializeIPO(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeIPO.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeIPO(R.value());
     }
 
     public static void LLVMInitializeInstrumentation(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeInstrumentation.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeInstrumentation(R.value());
     }
 
     public static void LLVMInitializeAnalysis(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeAnalysis.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeAnalysis(R.value());
     }
 
     public static void LLVMInitializeIPA(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeIPA.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeIPA(R.value());
     }
 
     public static void LLVMInitializeCodeGen(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeCodeGen.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeCodeGen(R.value());
     }
 
     public static void LLVMInitializeTarget(LLVMPassRegistryRef R) {
-        nothrows_run(() -> Function.LLVMInitializeTarget.handle().invoke(R.value()));
+        Native.INSTANCE.LLVMInitializeTarget(R.value());
     }
 }
