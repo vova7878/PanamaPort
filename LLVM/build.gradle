@@ -26,6 +26,8 @@ android {
 }
 
 dependencies {
+    compileOnly 'com.github.vova7878:KeepAnnotation:v0.0.1'
+
     api project(':AndroidPanama')
 
     implementation project(':AndroidUnsafe')
