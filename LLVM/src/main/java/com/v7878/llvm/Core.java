@@ -12,7 +12,6 @@ import static com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassRegistryRef;
 import static com.v7878.llvm.Types.LLVMTypeRef;
-import static com.v7878.llvm.Types.LLVMValueRef;
 import static com.v7878.llvm.Types.cLLVMAttributeRef;
 import static com.v7878.llvm.Types.cLLVMBasicBlockRef;
 import static com.v7878.llvm.Types.cLLVMBuilderRef;
@@ -56,6 +55,7 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
 import com.v7878.llvm.Types.LLVMModuleProviderRef;
 import com.v7878.llvm.Types.LLVMPassManagerRef;
+import com.v7878.llvm.Types.LLVMValueRef;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -1001,86 +1001,84 @@ public class Core {
         LLVMLabelType(cLLVMTypeRef),
         LLVMX86MMXType(cLLVMTypeRef),
 
-        //TODO:
-        //#define LLVM_FOR_EACH_VALUE_SUBCLASS(macro) \
-        //  macro(Argument)                           \
-        //  macro(BasicBlock)                         \
-        //  macro(InlineAsm)                          \
-        //  macro(User)                               \
-        //    macro(Constant)                         \
-        //      macro(BlockAddress)                   \
-        //      macro(ConstantAggregateZero)          \
-        //      macro(ConstantArray)                  \
-        //      macro(ConstantDataSequential)         \
-        //        macro(ConstantDataArray)            \
-        //        macro(ConstantDataVector)           \
-        //      macro(ConstantExpr)                   \
-        //      macro(ConstantFP)                     \
-        //      macro(ConstantInt)                    \
-        //      macro(ConstantPointerNull)            \
-        //      macro(ConstantStruct)                 \
-        //      macro(ConstantTokenNone)              \
-        //      macro(ConstantVector)                 \
-        //      macro(GlobalValue)                    \
-        //        macro(GlobalAlias)                  \
-        //        macro(GlobalObject)                 \
-        //          macro(Function)                   \
-        //          macro(GlobalVariable)             \
-        //      macro(UndefValue)                     \
-        //    macro(Instruction)                      \
-        //      macro(BinaryOperator)                 \
-        //      macro(CallInst)                       \
-        //        macro(IntrinsicInst)                \
-        //          macro(DbgInfoIntrinsic)           \
-        //            macro(DbgDeclareInst)           \
-        //          macro(MemIntrinsic)               \
-        //            macro(MemCpyInst)               \
-        //            macro(MemMoveInst)              \
-        //            macro(MemSetInst)               \
-        //      macro(CmpInst)                        \
-        //        macro(FCmpInst)                     \
-        //        macro(ICmpInst)                     \
-        //      macro(ExtractElementInst)             \
-        //      macro(GetElementPtrInst)              \
-        //      macro(InsertElementInst)              \
-        //      macro(InsertValueInst)                \
-        //      macro(LandingPadInst)                 \
-        //      macro(PHINode)                        \
-        //      macro(SelectInst)                     \
-        //      macro(ShuffleVectorInst)              \
-        //      macro(StoreInst)                      \
-        //      macro(TerminatorInst)                 \
-        //        macro(BranchInst)                   \
-        //        macro(IndirectBrInst)               \
-        //        macro(InvokeInst)                   \
-        //        macro(ReturnInst)                   \
-        //        macro(SwitchInst)                   \
-        //        macro(UnreachableInst)              \
-        //        macro(ResumeInst)                   \
-        //        macro(CleanupReturnInst)            \
-        //        macro(CatchReturnInst)              \
-        //      macro(FuncletPadInst)                 \
-        //        macro(CatchPadInst)                 \
-        //        macro(CleanupPadInst)               \
-        //      macro(UnaryInstruction)               \
-        //        macro(AllocaInst)                   \
-        //        macro(CastInst)                     \
-        //          macro(AddrSpaceCastInst)          \
-        //          macro(BitCastInst)                \
-        //          macro(FPExtInst)                  \
-        //          macro(FPToSIInst)                 \
-        //          macro(FPToUIInst)                 \
-        //          macro(FPTruncInst)                \
-        //          macro(IntToPtrInst)               \
-        //          macro(PtrToIntInst)               \
-        //          macro(SExtInst)                   \
-        //          macro(SIToFPInst)                 \
-        //          macro(TruncInst)                  \
-        //          macro(UIToFPInst)                 \
-        //          macro(ZExtInst)                   \
-        //        macro(ExtractValueInst)             \
-        //        macro(LoadInst)                     \
-        //        macro(VAArgInst)
+        LLVMIsAArgument(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsABasicBlock(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAInlineAsm(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAUser(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstant(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsABlockAddress(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantAggregateZero(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantArray(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantDataSequential(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantDataArray(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantDataVector(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantExpr(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantFP(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantInt(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantPointerNull(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantStruct(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantTokenNone(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAConstantVector(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAGlobalValue(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAGlobalAlias(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAGlobalObject(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAFunction(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAGlobalVariable(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAUndefValue(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAInstruction(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsABinaryOperator(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsACallInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAIntrinsicInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsADbgInfoIntrinsic(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsADbgDeclareInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAMemIntrinsic(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAMemCpyInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAMemMoveInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAMemSetInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsACmpInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAFCmpInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAICmpInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAExtractElementInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAGetElementPtrInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAInsertElementInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAInsertValueInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsALandingPadInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAPHINode(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsASelectInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAShuffleVectorInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAStoreInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsATerminatorInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsABranchInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAIndirectBrInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAInvokeInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAReturnInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsASwitchInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAUnreachableInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAResumeInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsACleanupReturnInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsACatchReturnInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAFuncletPadInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsACatchPadInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsACleanupPadInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAUnaryInstruction(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAAllocaInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsACastInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAAddrSpaceCastInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsABitCastInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAFPExtInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAFPToSIInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAFPToUIInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAFPTruncInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAIntToPtrInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAPtrToIntInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsASExtInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsASIToFPInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsATruncInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAUIToFPInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAZExtInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAExtractValueInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsALoadInst(cLLVMValueRef, cLLVMValueRef),
+        LLVMIsAVAArgInst(cLLVMValueRef, cLLVMValueRef),
 
         LLVMTypeOf(cLLVMTypeRef, cLLVMValueRef),
         LLVMGetValueKind(cLLVMValueKind, cLLVMValueRef),
@@ -1091,11 +1089,6 @@ public class Core {
         LLVMReplaceAllUsesWith(void.class, cLLVMValueRef, cLLVMValueRef),
         LLVMIsConstant(LLVMBool, cLLVMValueRef),
         LLVMIsUndef(LLVMBool, cLLVMValueRef),
-
-        //TODO:
-        //#define LLVM_DECLARE_VALUE_CAST(name) \
-        //  LLVMValueRef LLVMIsA##name(LLVMValueRef Val);
-        //LLVM_FOR_EACH_VALUE_SUBCLASS(LLVM_DECLARE_VALUE_CAST)
 
         LLVMIsAMDNode(cLLVMValueRef, cLLVMValueRef),
         LLVMIsAMDString(cLLVMValueRef, cLLVMValueRef),
