@@ -29,12 +29,9 @@ import com.v7878.foreign.SymbolLookup;
 import com.v7878.invoke.VarHandle;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
-import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
-import com.v7878.unsafe.foreign.ELF.SymTab;
-import com.v7878.unsafe.foreign.MMap.MMapEntry;
 import com.v7878.unsafe.io.IOUtils;
 
 import java.io.FileDescriptor;
@@ -405,7 +402,8 @@ public class LibDLExt {
         }
     }
 
-    public static Namespace defaultNamespace() {
+    //TODO
+    /*public static Namespace defaultNamespace() {
         class Holder {
             static final Namespace g_default_namespace;
 
@@ -417,9 +415,11 @@ public class LibDLExt {
             }
         }
         return Holder.g_default_namespace;
-    }
+    }*/
 
+    //TODO: open with system namespace via dlopen_ext
     public static SymbolLookup systemLibraryLookup(String name, Arena arena) {
-        return JavaForeignAccess.libraryLookup(RawNativeLibraries.load(name, defaultNamespace()), arena);
+        return SymbolLookup.libraryLookup("/system/lib" + (IS64BIT ? "64" : "") + "/" + name, arena);
+        //return JavaForeignAccess.libraryLookup(RawNativeLibraries.load(name, defaultNamespace()), arena);
     }
 }
