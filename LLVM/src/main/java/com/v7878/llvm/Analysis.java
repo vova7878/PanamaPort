@@ -2,27 +2,25 @@ package com.v7878.llvm;
 
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.llvm.LibLLVM.LLVM;
-import static com.v7878.llvm.LibLLVM.LLVM_SCOPE;
-import static com.v7878.llvm.Types.LLVMBool;
-import static com.v7878.llvm.Types.cLLVMModuleRef;
-import static com.v7878.llvm.Types.cLLVMValueRef;
-import static com.v7878.llvm._Utils.CHAR_PTR;
-import static com.v7878.llvm._Utils.ENUM;
 import static com.v7878.llvm._Utils.addressToLLVMString;
-import static com.v7878.llvm._Utils.ptr;
-import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL_AS_INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
+
+import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.foreign.BulkLinker;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class Analysis {
 
@@ -30,8 +28,6 @@ public class Analysis {
      * @defgroup LLVMCAnalysis Analysis
      * @ingroup LLVMC
      */
-
-    static final Class<?> cLLVMVerifierFailureAction = ENUM;
 
     public enum LLVMVerifierFailureAction {
 
@@ -62,36 +58,31 @@ public class Analysis {
         }
     }
 
-    private enum Function {
-        LLVMVerifyModule(LLVMBool, cLLVMModuleRef, cLLVMVerifierFailureAction, ptr(CHAR_PTR)),
-        LLVMVerifyFunction(LLVMBool, cLLVMValueRef, cLLVMVerifierFailureAction),
-        LLVMViewFunctionCFG(void.class, cLLVMValueRef),
-        LLVMViewFunctionCFGOnly(void.class, cLLVMValueRef);
+    @SuppressWarnings("unused")
+    @Keep
+    private abstract static class Native {
 
-        private final MethodType type;
-        private final Supplier<MethodHandle> handle;
+        private static final Arena SCOPE = Arena.ofAuto();
 
-        Function(Class<?> rtype, Class<?>... atypes) {
-            this.type = MethodType.methodType(rtype, atypes);
-            this.handle = processSymbol(LLVM, LLVM_SCOPE, name(), type());
-        }
+        @LibrarySymbol("LLVMVerifyModule")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
+        abstract boolean LLVMVerifyModule(long M, int Action, long OutMessage);
 
-        public MethodType type() {
-            return type;
-        }
+        @LibrarySymbol("LLVMVerifyFunction")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, INT})
+        abstract boolean LLVMVerifyFunction(long M, int Action);
 
-        public MethodHandle handle() {
-            return Objects.requireNonNull(handle.get());
-        }
+        @LibrarySymbol("LLVMViewFunctionCFG")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMViewFunctionCFG(long V);
 
-        @Override
-        public String toString() {
-            return name() + "{" +
-                    "type=" + type +
-                    ", handle=" + handle() + '}';
-        }
+        @LibrarySymbol("LLVMViewFunctionCFGOnly")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMViewFunctionCFGOnly(long V);
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class, LLVM));
     }
-
 
     /**
      * Verifies that a module is valid, taking the specified action if not.
@@ -100,8 +91,7 @@ public class Analysis {
     public static boolean LLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action, Consumer<String> OutMessage) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutMessage = arena.allocate(ADDRESS);
-            boolean err = nothrows_run(() -> (boolean) Function.LLVMVerifyModule.handle()
-                    .invoke(M.value(), Action.value(), c_OutMessage.nativeAddress()));
+            boolean err = Native.INSTANCE.LLVMVerifyModule(M.value(), Action.value(), c_OutMessage.nativeAddress());
             if (err) {
                 OutMessage.accept(addressToLLVMString(c_OutMessage.get(ADDRESS, 0).nativeAddress()));
             }
@@ -133,7 +123,7 @@ public class Analysis {
      * for debugging.
      */
     public static boolean nLLVMVerifyFunction(LLVMValueRef Fn, LLVMVerifierFailureAction Action) {
-        return nothrows_run(() -> (boolean) Function.LLVMVerifyFunction.handle().invoke(Fn.value(), Action.value()));
+        return Native.INSTANCE.LLVMVerifyFunction(Fn.value(), Action.value());
     }
 
     /**
@@ -160,10 +150,10 @@ public class Analysis {
      * Useful for debugging.
      */
     public static void LLVMViewFunctionCFG(LLVMValueRef Fn) {
-        nothrows_run(() -> Function.LLVMViewFunctionCFG.handle().invoke(Fn.value()));
+        Native.INSTANCE.LLVMViewFunctionCFG(Fn.value());
     }
 
     public static void LLVMViewFunctionCFGOnly(LLVMValueRef Fn) {
-        nothrows_run(() -> Function.LLVMViewFunctionCFGOnly.handle().invoke(Fn.value()));
+        Native.INSTANCE.LLVMViewFunctionCFGOnly(Fn.value());
     }
 }
