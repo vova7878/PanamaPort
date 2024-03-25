@@ -2,41 +2,35 @@ package com.v7878.llvm;
 
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.llvm.LibLLVM.LLVM;
-import static com.v7878.llvm.LibLLVM.LLVM_SCOPE;
-import static com.v7878.llvm.Target.cLLVMTargetDataRef;
-import static com.v7878.llvm.Types.LLVMBool;
 import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassManagerRef;
-import static com.v7878.llvm.Types.cLLVMMemoryBufferRef;
-import static com.v7878.llvm.Types.cLLVMModuleRef;
-import static com.v7878.llvm.Types.cLLVMPassManagerRef;
-import static com.v7878.llvm._Utils.CHAR_PTR;
-import static com.v7878.llvm._Utils.CONST_CHAR_PTR;
-import static com.v7878.llvm._Utils.ENUM;
 import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.llvm._Utils.allocString;
-import static com.v7878.llvm._Utils.ptr;
-import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL_AS_INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
+
+import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Target.LLVMTargetDataRef;
 import com.v7878.llvm.Types.AddressValue;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
+import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.Utils.FineClosable;
+import com.v7878.unsafe.foreign.BulkLinker;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class TargetMachine {
     static final Class<?> cLLVMTargetMachineRef = VOID_PTR;
-    static final Class<?> cLLVMTargetRef = VOID_PTR;
 
     public static final class LLVMTargetMachineRef extends AddressValue implements FineClosable {
 
@@ -79,8 +73,6 @@ public class TargetMachine {
         }
     }
 
-    static final Class<?> cLLVMCodeGenOptLevel = ENUM;
-
     public enum LLVMCodeGenOptLevel {
 
         LLVMCodeGenLevelNone,
@@ -102,8 +94,6 @@ public class TargetMachine {
         }
     }
 
-    static final Class<?> cLLVMRelocMode = ENUM;
-
     public enum LLVMRelocMode {
 
         LLVMRelocDefault,
@@ -124,8 +114,6 @@ public class TargetMachine {
             throw new IllegalArgumentException("value: " + value + " is not found");
         }
     }
-
-    static final Class<?> cLLVMCodeModel = ENUM;
 
     public enum LLVMCodeModel {
 
@@ -150,8 +138,6 @@ public class TargetMachine {
         }
     }
 
-    static final Class<?> cLLVMCodeGenFileType = ENUM;
-
     public enum LLVMCodeGenFileType {
 
         LLVMAssemblyFile,
@@ -171,65 +157,112 @@ public class TargetMachine {
         }
     }
 
-    private enum Function {
-        LLVMGetFirstTarget(cLLVMTargetRef),
-        LLVMGetNextTarget(cLLVMTargetRef, cLLVMTargetRef),
-        LLVMGetTargetFromName(cLLVMTargetRef, CONST_CHAR_PTR),
-        LLVMGetTargetFromTriple(LLVMBool, CONST_CHAR_PTR, ptr(cLLVMTargetRef), ptr(CHAR_PTR)),
-        LLVMGetTargetName(CONST_CHAR_PTR, cLLVMTargetRef),
-        LLVMGetTargetDescription(CONST_CHAR_PTR, cLLVMTargetRef),
-        LLVMTargetHasJIT(LLVMBool, cLLVMTargetRef),
-        LLVMTargetHasTargetMachine(LLVMBool, cLLVMTargetRef),
-        LLVMTargetHasAsmBackend(LLVMBool, cLLVMTargetRef),
-        LLVMCreateTargetMachine(cLLVMTargetMachineRef, cLLVMTargetRef, CONST_CHAR_PTR, CONST_CHAR_PTR, CONST_CHAR_PTR, cLLVMCodeGenOptLevel, cLLVMRelocMode, cLLVMCodeModel),
-        LLVMDisposeTargetMachine(void.class, cLLVMTargetMachineRef),
-        LLVMGetTargetMachineTarget(cLLVMTargetRef, cLLVMTargetMachineRef),
-        LLVMGetTargetMachineTriple(CHAR_PTR, cLLVMTargetMachineRef),
-        LLVMGetTargetMachineCPU(CHAR_PTR, cLLVMTargetMachineRef),
-        LLVMGetTargetMachineFeatureString(CHAR_PTR, cLLVMTargetMachineRef),
-        LLVMCreateTargetDataLayout(cLLVMTargetDataRef, cLLVMTargetMachineRef),
-        LLVMSetTargetMachineAsmVerbosity(void.class, cLLVMTargetMachineRef, LLVMBool),
-        LLVMTargetMachineEmitToFile(LLVMBool, cLLVMTargetMachineRef, cLLVMModuleRef, CHAR_PTR, cLLVMCodeGenFileType, ptr(CHAR_PTR)),
-        LLVMTargetMachineEmitToMemoryBuffer(LLVMBool, cLLVMTargetMachineRef, cLLVMModuleRef, cLLVMCodeGenFileType, ptr(CHAR_PTR), ptr(cLLVMMemoryBufferRef)),
-        LLVMGetDefaultTargetTriple(CHAR_PTR),
-        LLVMAddAnalysisPasses(void.class, cLLVMTargetMachineRef, cLLVMPassManagerRef);
+    @SuppressWarnings("unused")
+    @Keep
+    private abstract static class Native {
 
-        private final MethodType type;
-        private final Supplier<MethodHandle> handle;
+        private static final Arena SCOPE = Arena.ofAuto();
 
-        Function(Class<?> rtype, Class<?>... atypes) {
-            this.type = MethodType.methodType(rtype, atypes);
-            this.handle = processSymbol(LLVM, LLVM_SCOPE, name(), type());
-        }
+        @LibrarySymbol("LLVMGetFirstTarget")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
+        abstract long LLVMGetFirstTarget();
 
-        public MethodType type() {
-            return type;
-        }
+        @LibrarySymbol("LLVMGetNextTarget")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetNextTarget(long T);
 
-        public MethodHandle handle() {
-            return Objects.requireNonNull(handle.get());
-        }
+        @LibrarySymbol("LLVMGetTargetFromName")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetTargetFromName(long Name);
 
-        @Override
-        public String toString() {
-            return name() + "{" +
-                    "type=" + type +
-                    ", handle=" + handle() + '}';
-        }
+        @LibrarySymbol("LLVMGetTargetFromTriple")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract boolean LLVMGetTargetFromTriple(long Triple, long T, long ErrorMessage);
+
+        @LibrarySymbol("LLVMGetTargetName")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetTargetName(long T);
+
+        @LibrarySymbol("LLVMGetTargetDescription")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetTargetDescription(long T);
+
+        @LibrarySymbol("LLVMTargetHasJIT")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
+        abstract boolean LLVMTargetHasJIT(long T);
+
+        @LibrarySymbol("LLVMTargetHasTargetMachine")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
+        abstract boolean LLVMTargetHasTargetMachine(long T);
+
+        @LibrarySymbol("LLVMTargetHasAsmBackend")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
+        abstract boolean LLVMTargetHasAsmBackend(long T);
+
+        @LibrarySymbol("LLVMCreateTargetMachine")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, INT, INT})
+        abstract long LLVMCreateTargetMachine(long T, long Triple, long CPU, long Features, int Level, int Reloc, int CodeModel);
+
+        @LibrarySymbol("LLVMDisposeTargetMachine")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMDisposeTargetMachine(long T);
+
+        @LibrarySymbol("LLVMGetTargetMachineTarget")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetTargetMachineTarget(long T);
+
+        @LibrarySymbol("LLVMGetTargetMachineTriple")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetTargetMachineTriple(long T);
+
+        @LibrarySymbol("LLVMGetTargetMachineCPU")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetTargetMachineCPU(long T);
+
+        @LibrarySymbol("LLVMGetTargetMachineFeatureString")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetTargetMachineFeatureString(long T);
+
+        @LibrarySymbol("LLVMCreateTargetDataLayout")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMCreateTargetDataLayout(long T);
+
+        @LibrarySymbol("LLVMSetTargetMachineAsmVerbosity")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
+        abstract void LLVMSetTargetMachineAsmVerbosity(long T, boolean VerboseAsm);
+
+        @LibrarySymbol("LLVMTargetMachineEmitToFile")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
+        abstract boolean LLVMTargetMachineEmitToFile(long T, long M, long Filename, int codegen, long ErrorMessage);
+
+        @LibrarySymbol("LLVMTargetMachineEmitToMemoryBuffer")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract boolean LLVMTargetMachineEmitToMemoryBuffer(long T, long M, int codegen, long ErrorMessage, long OutMemBuf);
+
+        @LibrarySymbol("LLVMGetDefaultTargetTriple")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
+        abstract long LLVMGetDefaultTargetTriple();
+
+        @LibrarySymbol("LLVMAddAnalysisPasses")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract void LLVMAddAnalysisPasses(long T, long P);
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class, LLVM));
     }
 
     /**
      * Returns the first llvm::Target in the registered targets list.
      */
     public static LLVMTargetRef LLVMGetFirstTarget() {
-        return nothrows_run(() -> LLVMTargetRef.ofNullable((long) Function.LLVMGetFirstTarget.handle().invoke()));
+        return LLVMTargetRef.ofNullable(Native.INSTANCE.LLVMGetFirstTarget());
     }
 
     /**
      * Returns the next llvm::Target given a previous one (or null if there's none)
      */
     public static LLVMTargetRef LLVMGetNextTarget(LLVMTargetRef T) {
-        return nothrows_run(() -> LLVMTargetRef.ofNullable((long) Function.LLVMGetNextTarget.handle().invoke(T.value())));
+        return LLVMTargetRef.ofNullable(Native.INSTANCE.LLVMGetNextTarget(T.value()));
     }
 
     /*===-- Target ------------------------------------------------------------===*/
@@ -241,7 +274,7 @@ public class TargetMachine {
     public static LLVMTargetRef LLVMGetTargetFromName(String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMTargetRef.ofNullable((long) Function.LLVMGetTargetFromName.handle().invoke(c_Name.nativeAddress())));
+            return LLVMTargetRef.ofNullable(Native.INSTANCE.LLVMGetTargetFromName(c_Name.nativeAddress()));
         }
     }
 
@@ -254,8 +287,8 @@ public class TargetMachine {
             MemorySegment c_Triple = allocString(arena, Triple);
             MemorySegment c_T = arena.allocate(ADDRESS);
             MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
-            boolean err = nothrows_run(() -> (boolean) Function.LLVMGetTargetFromTriple.handle()
-                    .invoke(c_Triple.nativeAddress(), c_T.nativeAddress(), c_ErrorMessage.nativeAddress()));
+            boolean err = Native.INSTANCE.LLVMGetTargetFromTriple(
+                    c_Triple.nativeAddress(), c_T.nativeAddress(), c_ErrorMessage.nativeAddress());
             if (!err) {
                 T.accept(LLVMTargetRef.ofNullable(c_T.get(ADDRESS, 0).nativeAddress()));
             } else {
@@ -282,35 +315,35 @@ public class TargetMachine {
      * Returns the name of a target. See llvm::Target::getName
      */
     public static String LLVMGetTargetName(LLVMTargetRef T) {
-        return nothrows_run(() -> addressToString((long) Function.LLVMGetTargetName.handle().invoke(T.value())));
+        return addressToString(Native.INSTANCE.LLVMGetTargetName(T.value()));
     }
 
     /**
      * Returns the description  of a target. See llvm::Target::getDescription
      */
     public static String LLVMGetTargetDescription(LLVMTargetRef T) {
-        return nothrows_run(() -> addressToString((long) Function.LLVMGetTargetDescription.handle().invoke(T.value())));
+        return addressToString(Native.INSTANCE.LLVMGetTargetDescription(T.value()));
     }
 
     /**
      * Returns if the target has a JIT
      */
     public static boolean LLVMTargetHasJIT(LLVMTargetRef T) {
-        return nothrows_run(() -> (boolean) Function.LLVMTargetHasJIT.handle().invoke(T.value()));
+        return Native.INSTANCE.LLVMTargetHasJIT(T.value());
     }
 
     /**
      * Returns if the target has a TargetMachine associated
      */
     public static boolean LLVMTargetHasTargetMachine(LLVMTargetRef T) {
-        return nothrows_run(() -> (boolean) Function.LLVMTargetHasTargetMachine.handle().invoke(T.value()));
+        return Native.INSTANCE.LLVMTargetHasTargetMachine(T.value());
     }
 
     /**
      * Returns if the target as an ASM backend (required for emitting output)
      */
     public static boolean LLVMTargetHasAsmBackend(LLVMTargetRef T) {
-        return nothrows_run(() -> (boolean) Function.LLVMTargetHasAsmBackend.handle().invoke(T.value()));
+        return Native.INSTANCE.LLVMTargetHasAsmBackend(T.value());
     }
 
     /*===-- Target Machine ----------------------------------------------------===*/
@@ -325,9 +358,9 @@ public class TargetMachine {
             MemorySegment c_Triple = allocString(arena, Triple);
             MemorySegment c_CPU = allocString(arena, CPU);
             MemorySegment c_Features = allocString(arena, Features);
-            return nothrows_run(() -> LLVMTargetMachineRef.ofNullable((long) Function.LLVMCreateTargetMachine.handle()
-                    .invoke(T.value(), c_Triple.nativeAddress(), c_CPU.nativeAddress(), c_Features.nativeAddress(),
-                            Level.value(), Reloc.value(), CodeModel.value())));
+            return LLVMTargetMachineRef.ofNullable(Native.INSTANCE.LLVMCreateTargetMachine(
+                    T.value(), c_Triple.nativeAddress(), c_CPU.nativeAddress(), c_Features.nativeAddress(),
+                    Level.value(), Reloc.value(), CodeModel.value()));
         }
     }
 
@@ -336,14 +369,14 @@ public class TargetMachine {
      * LLVMCreateTargetMachine.
      */
     public static void LLVMDisposeTargetMachine(LLVMTargetMachineRef T) {
-        nothrows_run(() -> Function.LLVMDisposeTargetMachine.handle().invoke(T.value()));
+        Native.INSTANCE.LLVMDisposeTargetMachine(T.value());
     }
 
     /**
      * Returns the Target used in a TargetMachine
      */
     public static LLVMTargetRef LLVMGetTargetMachineTarget(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> LLVMTargetRef.ofNullable((long) Function.LLVMGetTargetMachineTarget.handle().invoke(T.value())));
+        return LLVMTargetRef.ofNullable(Native.INSTANCE.LLVMGetTargetMachineTarget(T.value()));
     }
 
     /**
@@ -351,7 +384,7 @@ public class TargetMachine {
      * llvm::TargetMachine::getTriple.
      */
     public static String LLVMGetTargetMachineTriple(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetTargetMachineTriple.handle().invoke(T.value())));
+        return addressToLLVMString(Native.INSTANCE.LLVMGetTargetMachineTriple(T.value()));
     }
 
     /**
@@ -359,7 +392,7 @@ public class TargetMachine {
      * llvm::TargetMachine::getCPU.
      */
     public static String LLVMGetTargetMachineCPU(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetTargetMachineCPU.handle().invoke(T.value())));
+        return addressToLLVMString(Native.INSTANCE.LLVMGetTargetMachineCPU(T.value()));
     }
 
     /**
@@ -367,21 +400,21 @@ public class TargetMachine {
      * llvm::TargetMachine::getFeatureString.
      */
     public static String LLVMGetTargetMachineFeatureString(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetTargetMachineFeatureString.handle().invoke(T.value())));
+        return addressToLLVMString(Native.INSTANCE.LLVMGetTargetMachineFeatureString(T.value()));
     }
 
     /**
      * Create a DataLayout based on the targetMachine.
      */
     public static LLVMTargetDataRef LLVMCreateTargetDataLayout(LLVMTargetMachineRef T) {
-        return nothrows_run(() -> LLVMTargetDataRef.ofNullable((long) Function.LLVMCreateTargetDataLayout.handle().invoke(T.value())));
+        return LLVMTargetDataRef.ofNullable(Native.INSTANCE.LLVMCreateTargetDataLayout(T.value()));
     }
 
     /**
      * Set the target machine's ASM verbosity.
      */
     public static void LLVMSetTargetMachineAsmVerbosity(LLVMTargetMachineRef T, boolean VerboseAsm) {
-        nothrows_run(() -> Function.LLVMSetTargetMachineAsmVerbosity.handle().invoke(T.value(), VerboseAsm));
+        Native.INSTANCE.LLVMSetTargetMachineAsmVerbosity(T.value(), VerboseAsm);
     }
 
     /**
@@ -395,8 +428,8 @@ public class TargetMachine {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Filename = allocString(arena, Filename);
             MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
-            boolean err = nothrows_run(() -> (boolean) Function.LLVMTargetMachineEmitToFile.handle()
-                    .invoke(T.value(), M.value(), c_Filename.nativeAddress(), codegen.value(), c_ErrorMessage.nativeAddress()));
+            boolean err = Native.INSTANCE.LLVMTargetMachineEmitToFile(T.value(), M.value(),
+                    c_Filename.nativeAddress(), codegen.value(), c_ErrorMessage.nativeAddress());
             if (err) {
                 ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
             }
@@ -427,8 +460,8 @@ public class TargetMachine {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
             MemorySegment c_OutMemBuf = arena.allocate(ADDRESS);
-            boolean err = nothrows_run(() -> (boolean) Function.LLVMTargetMachineEmitToMemoryBuffer.handle()
-                    .invoke(T.value(), M.value(), codegen.value(), c_ErrorMessage.nativeAddress(), c_OutMemBuf.nativeAddress()));
+            boolean err = Native.INSTANCE.LLVMTargetMachineEmitToMemoryBuffer(T.value(), M.value(),
+                    codegen.value(), c_ErrorMessage.nativeAddress(), c_OutMemBuf.nativeAddress());
             if (!err) {
                 OutMemBuf.accept(LLVMMemoryBufferRef.ofNullable(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
             } else {
@@ -459,13 +492,13 @@ public class TargetMachine {
      */
     @Deprecated // on Android it always returns "i386-unknown-linux"
     public static String LLVMGetDefaultTargetTriple() {
-        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMGetDefaultTargetTriple.handle().invoke()));
+        return addressToLLVMString(Native.INSTANCE.LLVMGetDefaultTargetTriple());
     }
 
     /**
      * Adds the target-specific analysis passes to the pass manager.
      */
     public static void LLVMAddAnalysisPasses(LLVMTargetMachineRef T, LLVMPassManagerRef PM) {
-        nothrows_run(() -> Function.LLVMAddAnalysisPasses.handle().invoke(T.value(), PM.value()));
+        Native.INSTANCE.LLVMAddAnalysisPasses(T.value(), PM.value());
     }
 }
