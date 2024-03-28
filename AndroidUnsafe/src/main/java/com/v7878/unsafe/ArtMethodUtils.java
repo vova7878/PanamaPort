@@ -130,7 +130,7 @@ public class ArtMethodUtils {
         if (!Modifier.isNative(m.getModifiers())) {
             throw new IllegalArgumentException("only native methods allowed");
         }
-        Utils.ensureClassInitialized(m.getDeclaringClass());
+        ClassUtils.ensureClassInitialized(m.getDeclaringClass());
         setExecutableData(m, data);
     }
 

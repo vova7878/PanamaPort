@@ -37,7 +37,7 @@ import com.v7878.foreign._HeapMemorySegmentImpl.OfObject;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfShort;
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import com.v7878.unsafe.AndroidUnsafe;
-import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
@@ -204,6 +204,6 @@ class _SegmentFactories {
     // the MemorySegment.NULL field) while another thread is attempting to initialize
     // NativeMemorySegmentImpl (and then MemorySegment, the super-interface).
     private static void ensureInitialized() {
-        Utils.ensureClassInitialized(MemorySegment.class);
+        ClassUtils.ensureClassInitialized(MemorySegment.class);
     }
 }

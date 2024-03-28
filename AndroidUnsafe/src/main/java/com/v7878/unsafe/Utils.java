@@ -460,14 +460,6 @@ public class Utils {
         };
     }
 
-    @Keep
-    public static void ensureClassInitialized(Class<?> clazz) {
-        try {
-            Class.forName(clazz.getName(), true, clazz.getClassLoader());
-        } catch (ClassNotFoundException ignored) {
-        }
-    }
-
     public static class Lock<T> implements FineClosable {
         private final T value;
         private final Consumer<T> action;

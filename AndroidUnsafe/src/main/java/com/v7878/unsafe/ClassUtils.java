@@ -80,7 +80,7 @@ public class ClassUtils {
 
         private int value;
 
-        public int getValue() {
+        public int rawValue() {
             return value;
         }
     }
@@ -139,5 +139,16 @@ public class ClassUtils {
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void makeClassPublicNonFinal(Class<?> clazz) {
         changeClassFlags(clazz, Modifier.FINAL | Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE, Modifier.PUBLIC);
+    }
+
+    public static void ensureClassInitialized(Class<?> clazz) {
+        try {
+            Class.forName(clazz.getName(), true, clazz.getClassLoader());
+        } catch (ClassNotFoundException ignored) {
+        }
+    }
+
+    public static boolean isClassInitialized(Class<?> clazz) {
+        return getRawClassStatus(clazz) >= ClassStatus.Initialized.rawValue();
     }
 }
