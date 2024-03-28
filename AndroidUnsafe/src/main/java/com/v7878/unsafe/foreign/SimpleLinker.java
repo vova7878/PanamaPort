@@ -80,14 +80,6 @@ public class SimpleLinker {
         return processSymbol(scope, new SymbolInfo(name, stub_type, handle_type, symbol));
     }
 
-    public static Supplier<MethodHandle> processSymbol(Arena scope, long symbol, String name, MethodType type) {
-        Objects.requireNonNull(scope);
-        Objects.requireNonNull(type);
-        MethodType stub_type = stubType(type);
-        MethodType handle_type = handleType(type);
-        return processSymbol(scope, new SymbolInfo(name, stub_type, handle_type, () -> symbol));
-    }
-
     private static Supplier<MethodHandle> processSymbol(Arena scope, SymbolInfo info) {
         return runOnce(() -> {
             long symbol = info.symbol.getAsLong();
