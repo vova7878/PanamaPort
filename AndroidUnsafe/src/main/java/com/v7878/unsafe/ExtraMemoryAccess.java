@@ -59,7 +59,6 @@ import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.ASMGenerator;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
-import com.v7878.unsafe.llvm.LLVMGlobals;
 import com.v7878.unsafe.llvm.LLVMUtils;
 import com.v7878.unsafe.llvm.LLVMUtils.Generator;
 
@@ -260,7 +259,8 @@ public class ExtraMemoryAccess {
             return;
         }
 
-        if (LLVMGlobals.HOST_TARGET != null && Native.INSTANCE != null) {
+        //FIXME!!!
+        if (false /*LLVMGlobals.HOST_TARGET != null && Native.INSTANCE != null*/) {
             Native.INSTANCE.memset(base, offset, bytes, value);
         } else {
             AndroidUnsafe.setMemory(base, offset, bytes, value);
@@ -272,7 +272,8 @@ public class ExtraMemoryAccess {
             return;
         }
 
-        if (LLVMGlobals.HOST_TARGET != null && Native.INSTANCE != null) {
+        //FIXME!!!
+        if (false /*LLVMGlobals.HOST_TARGET != null && Native.INSTANCE != null*/) {
             Native.INSTANCE.memmove(destBase, destOffset, srcBase, srcOffset, bytes);
         } else {
             AndroidUnsafe.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
