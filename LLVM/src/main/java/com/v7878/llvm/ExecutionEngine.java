@@ -127,10 +127,6 @@ public class ExecutionEngine {
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMLinkInMCJIT();
 
-        @LibrarySymbol("LLVMLinkInInterpreter")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {})
-        abstract void LLVMLinkInInterpreter();
-
         @LibrarySymbol("LLVMCreateGenericValueOfInt")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG, BOOL_AS_INT})
         abstract long LLVMCreateGenericValueOfInt(long Ty, long N, boolean IsSigned);
@@ -264,7 +260,7 @@ public class ExecutionEngine {
     }
 
     public static void LLVMLinkInInterpreter() {
-        Native.INSTANCE.LLVMLinkInInterpreter();
+        throw new UnsupportedOperationException("LLVMLinkInInterpreter does not exist in android LLVM");
     }
 
     /*===-- Operations on generic values --------------------------------------===*/
