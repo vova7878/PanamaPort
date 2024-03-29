@@ -8,7 +8,10 @@ import static com.v7878.llvm.Types.LLVMTypeRef;
 import static com.v7878.llvm.Types.LLVMValueRef;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.allocString;
-import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
+import static com.v7878.unsafe.InstructionSet.ARM;
+import static com.v7878.unsafe.InstructionSet.ARM64;
+import static com.v7878.unsafe.InstructionSet.X86;
+import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
@@ -21,12 +24,11 @@ import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.AddressValue;
 import com.v7878.unsafe.AndroidUnsafe;
-import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.Conditions;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
-import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
 
 public class Target {
 
@@ -103,70 +105,49 @@ public class Target {
     @Keep
     private abstract static class Native {
 
-        private static final String Arch = switch (CURRENT_INSTRUCTION_SET) {
-            case X86, X86_64 -> "X86";
-            case ARM64 -> "AArch64";
-            case ARM -> "ARM";
-            //TODO: RISCV64
-            default -> throw new IllegalStateException(
-                    "unsupported instruction set: " + CURRENT_INSTRUCTION_SET);
-        };
-
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @SymbolGenerator(method = "genLLVMInitializeTargetInfo")
+        @LibrarySymbol(conditions = @Conditions(arch = {X86, X86_64}), name = "LLVMInitializeX86TargetInfo")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM}), name = "LLVMInitializeARMTargetInfo")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM64}), name = "LLVMInitializeAArch64TargetInfo")
+        //TODO: @LibrarySymbol(conditions = @Conditions(arch = {RISCV64}), name = "")
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeTargetInfo();
 
-        @SuppressWarnings("unused")
-        private static MemorySegment genLLVMInitializeTargetInfo() {
-            return LLVM.find("LLVMInitialize" + Arch + "TargetInfo").orElseThrow(Utils::shouldNotReachHere);
-        }
-
-        @SymbolGenerator(method = "genLLVMInitializeTargetMC")
+        @LibrarySymbol(conditions = @Conditions(arch = {X86, X86_64}), name = "LLVMInitializeX86TargetMC")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM}), name = "LLVMInitializeARMTargetMC")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM64}), name = "LLVMInitializeAArch64TargetMC")
+        //TODO: @LibrarySymbol(conditions = @Conditions(arch = {RISCV64}), name = "")
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeTargetMC();
 
-        @SuppressWarnings("unused")
-        private static MemorySegment genLLVMInitializeTargetMC() {
-            return LLVM.find("LLVMInitialize" + Arch + "TargetMC").orElseThrow(Utils::shouldNotReachHere);
-        }
-
-        @SymbolGenerator(method = "genLLVMInitializeTarget")
+        @LibrarySymbol(conditions = @Conditions(arch = {X86, X86_64}), name = "LLVMInitializeX86Target")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM}), name = "LLVMInitializeARMTarget")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM64}), name = "LLVMInitializeAArch64Target")
+        //TODO: @LibrarySymbol(conditions = @Conditions(arch = {RISCV64}), name = "")
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeTarget();
 
-        @SuppressWarnings("unused")
-        private static MemorySegment genLLVMInitializeTarget() {
-            return LLVM.find("LLVMInitialize" + Arch + "Target").orElseThrow(Utils::shouldNotReachHere);
-        }
-
-        @SymbolGenerator(method = "genLLVMInitializeDisassembler")
+        @LibrarySymbol(conditions = @Conditions(arch = {X86, X86_64}), name = "LLVMInitializeX86Disassembler")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM}), name = "LLVMInitializeARMDisassembler")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM64}), name = "LLVMInitializeAArch64Disassembler")
+        //TODO: @LibrarySymbol(conditions = @Conditions(arch = {RISCV64}), name = "")
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeDisassembler();
 
-        @SuppressWarnings("unused")
-        private static MemorySegment genLLVMInitializeDisassembler() {
-            return LLVM.find("LLVMInitialize" + Arch + "Disassembler").orElseThrow(Utils::shouldNotReachHere);
-        }
-
-        @SymbolGenerator(method = "genLLVMInitializeAsmParser")
+        @LibrarySymbol(conditions = @Conditions(arch = {X86, X86_64}), name = "LLVMInitializeX86AsmParser")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM}), name = "LLVMInitializeARMAsmParser")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM64}), name = "LLVMInitializeAArch64AsmParser")
+        //TODO: @LibrarySymbol(conditions = @Conditions(arch = {RISCV64}), name = "")
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeAsmParser();
 
-        @SuppressWarnings("unused")
-        private static MemorySegment genLLVMInitializeAsmParser() {
-            return LLVM.find("LLVMInitialize" + Arch + "AsmParser").orElseThrow(Utils::shouldNotReachHere);
-        }
-
-        @SymbolGenerator(method = "genLLVMInitializeAsmPrinter")
+        @LibrarySymbol(conditions = @Conditions(arch = {X86, X86_64}), name = "LLVMInitializeX86AsmPrinter")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM}), name = "LLVMInitializeARMAsmPrinter")
+        @LibrarySymbol(conditions = @Conditions(arch = {ARM64}), name = "LLVMInitializeAArch64AsmPrinter")
+        //TODO: @LibrarySymbol(conditions = @Conditions(arch = {RISCV64}), name = "")
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeAsmPrinter();
-
-        @SuppressWarnings("unused")
-        private static MemorySegment genLLVMInitializeAsmPrinter() {
-            return LLVM.find("LLVMInitialize" + Arch + "AsmPrinter").orElseThrow(Utils::shouldNotReachHere);
-        }
 
         @LibrarySymbol(name = "LLVMGetModuleDataLayout")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
