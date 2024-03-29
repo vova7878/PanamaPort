@@ -2,32 +2,21 @@ package com.v7878.llvm;
 
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.llvm.LibLLVM.LLVM;
-import static com.v7878.llvm.LibLLVM.LLVM_SCOPE;
-import static com.v7878.llvm.Target.cLLVMTargetDataRef;
-import static com.v7878.llvm.TargetMachine.cLLVMTargetMachineRef;
-import static com.v7878.llvm.Types.LLVMBool;
-import static com.v7878.llvm.Types.cLLVMModuleRef;
-import static com.v7878.llvm.Types.cLLVMTypeRef;
-import static com.v7878.llvm.Types.cLLVMValueRef;
-import static com.v7878.llvm._Utils.CHAR_PTR;
-import static com.v7878.llvm._Utils.CONST_CHAR_PTR;
-import static com.v7878.llvm._Utils.DOUBLE;
-import static com.v7878.llvm._Utils.INT;
-import static com.v7878.llvm._Utils.SIZE_T;
-import static com.v7878.llvm._Utils.UINT64_T;
-import static com.v7878.llvm._Utils.UNSIGNED_INT;
-import static com.v7878.llvm._Utils.UNSIGNED_LONG_LONG;
-import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.allocArray;
 import static com.v7878.llvm._Utils.arrayLength;
-import static com.v7878.llvm._Utils.const_ptr;
-import static com.v7878.llvm._Utils.ptr;
-import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL_AS_INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.DOUBLE;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
 import android.annotation.TargetApi;
 import android.os.Build;
+
+import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
@@ -35,13 +24,13 @@ import com.v7878.llvm.Types.AddressValue;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.Utils.FineClosable;
+import com.v7878.unsafe.foreign.BulkLinker;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 @TargetApi(Build.VERSION_CODES.O_MR1)
 public class ExecutionEngine {
@@ -50,10 +39,6 @@ public class ExecutionEngine {
      * @defgroup LLVMCExecutionEngine Execution Engine
      * @ingroup LLVMC
      */
-
-    static final Class<?> cLLVMGenericValueRef = VOID_PTR;
-    static final Class<?> cLLVMExecutionEngineRef = VOID_PTR;
-    static final Class<?> cLLVMMCJITMemoryManagerRef = VOID_PTR;
 
     public static final class LLVMGenericValueRef extends AddressValue implements FineClosable {
 
@@ -132,91 +117,165 @@ public class ExecutionEngine {
     //    LLVMBool EnableFastISel;
     //    LLVMMCJITMemoryManagerRef MCJMM;
     //};
-    static final Class<?> LLVMMCJITCompilerOptions_PTR = VOID_PTR;
 
-    //TODO
-    static final Class<?> LLVMMemoryManagerAllocateCodeSectionCallback = VOID_PTR; // uint8_t *(*LLVMMemoryManagerAllocateCodeSectionCallback)(void *Opaque, uintptr_t Size, unsigned Alignment, unsigned SectionID, const char *SectionName);
-    static final Class<?> LLVMMemoryManagerAllocateDataSectionCallback = VOID_PTR; // uint8_t *(*LLVMMemoryManagerAllocateDataSectionCallback)(void *Opaque, uintptr_t Size, unsigned Alignment, unsigned SectionID, const char *SectionName, LLVMBool IsReadOnly);
-    static final Class<?> LLVMMemoryManagerFinalizeMemoryCallback = VOID_PTR; // LLVMBool (*LLVMMemoryManagerFinalizeMemoryCallback)(void *Opaque, char **ErrMsg);
-    static final Class<?> LLVMMemoryManagerDestroyCallback = VOID_PTR; // void (*LLVMMemoryManagerDestroyCallback)(void *Opaque);
+    @Keep
+    private abstract static class Native {
 
-    private enum Function {
-        LLVMLinkInMCJIT(void.class),
-        LLVMLinkInInterpreter(void.class),
-        LLVMCreateGenericValueOfInt(cLLVMGenericValueRef, cLLVMTypeRef, UNSIGNED_LONG_LONG, LLVMBool),
-        LLVMCreateGenericValueOfPointer(cLLVMGenericValueRef, VOID_PTR),
-        LLVMCreateGenericValueOfFloat(cLLVMGenericValueRef, cLLVMTypeRef, DOUBLE),
-        LLVMGenericValueIntWidth(UNSIGNED_INT, cLLVMGenericValueRef),
-        LLVMGenericValueToInt(UNSIGNED_LONG_LONG, cLLVMGenericValueRef, LLVMBool),
-        LLVMGenericValueToPointer(VOID_PTR, cLLVMGenericValueRef),
-        LLVMGenericValueToFloat(DOUBLE, cLLVMTypeRef, cLLVMGenericValueRef),
-        LLVMDisposeGenericValue(void.class, cLLVMGenericValueRef),
-        LLVMCreateExecutionEngineForModule(LLVMBool, ptr(cLLVMExecutionEngineRef), cLLVMModuleRef, ptr(CHAR_PTR)),
-        LLVMCreateInterpreterForModule(LLVMBool, ptr(cLLVMExecutionEngineRef), cLLVMModuleRef, ptr(CHAR_PTR)),
-        LLVMCreateJITCompilerForModule(LLVMBool, ptr(cLLVMExecutionEngineRef), cLLVMModuleRef, UNSIGNED_INT, ptr(CHAR_PTR)),
-        LLVMInitializeMCJITCompilerOptions(void.class, LLVMMCJITCompilerOptions_PTR, SIZE_T),
-        LLVMCreateMCJITCompilerForModule(LLVMBool, ptr(cLLVMExecutionEngineRef), cLLVMModuleRef, LLVMMCJITCompilerOptions_PTR, SIZE_T, ptr(CHAR_PTR)),
-        LLVMDisposeExecutionEngine(void.class, cLLVMExecutionEngineRef),
-        LLVMRunStaticConstructors(void.class, cLLVMExecutionEngineRef),
-        LLVMRunStaticDestructors(void.class, cLLVMExecutionEngineRef),
-        LLVMRunFunctionAsMain(INT, cLLVMExecutionEngineRef, cLLVMValueRef, UNSIGNED_INT, const_ptr(CONST_CHAR_PTR), const_ptr(CONST_CHAR_PTR)),
-        LLVMRunFunction(cLLVMGenericValueRef, cLLVMExecutionEngineRef, cLLVMValueRef, UNSIGNED_INT, ptr(cLLVMGenericValueRef)),
-        LLVMFreeMachineCodeForFunction(void.class, cLLVMExecutionEngineRef, cLLVMValueRef),
-        LLVMAddModule(void.class, cLLVMExecutionEngineRef, cLLVMModuleRef),
-        LLVMRemoveModule(LLVMBool, cLLVMExecutionEngineRef, cLLVMModuleRef, ptr(cLLVMModuleRef), ptr(CHAR_PTR)),
-        LLVMFindFunction(LLVMBool, cLLVMExecutionEngineRef, CONST_CHAR_PTR, ptr(cLLVMValueRef)),
-        LLVMRecompileAndRelinkFunction(VOID_PTR, cLLVMExecutionEngineRef, cLLVMValueRef),
-        LLVMGetExecutionEngineTargetData(cLLVMTargetDataRef, cLLVMExecutionEngineRef),
-        LLVMGetExecutionEngineTargetMachine(cLLVMTargetMachineRef, cLLVMExecutionEngineRef),
-        LLVMAddGlobalMapping(void.class, cLLVMExecutionEngineRef, cLLVMValueRef, VOID_PTR),
-        LLVMGetPointerToGlobal(VOID_PTR, cLLVMExecutionEngineRef, cLLVMValueRef),
-        LLVMGetGlobalValueAddress(UINT64_T, cLLVMExecutionEngineRef, CONST_CHAR_PTR),
-        LLVMGetFunctionAddress(UINT64_T, cLLVMExecutionEngineRef, CONST_CHAR_PTR),
-        LLVMCreateSimpleMCJITMemoryManager(cLLVMMCJITMemoryManagerRef, VOID_PTR, LLVMMemoryManagerAllocateCodeSectionCallback,
-                LLVMMemoryManagerAllocateDataSectionCallback, LLVMMemoryManagerFinalizeMemoryCallback, LLVMMemoryManagerDestroyCallback),
-        LLVMDisposeMCJITMemoryManager(void.class, cLLVMMCJITMemoryManagerRef);
+        private static final Arena SCOPE = Arena.ofAuto();
 
-        private final MethodType type;
-        private final Supplier<MethodHandle> handle;
+        @LibrarySymbol("LLVMLinkInMCJIT")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {})
+        abstract void LLVMLinkInMCJIT();
 
-        Function(Class<?> rtype, Class<?>... atypes) {
-            this.type = MethodType.methodType(rtype, atypes);
-            this.handle = processSymbol(LLVM, LLVM_SCOPE, name(), type());
-        }
+        @LibrarySymbol("LLVMLinkInInterpreter")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {})
+        abstract void LLVMLinkInInterpreter();
 
-        public MethodType type() {
-            return type;
-        }
+        @LibrarySymbol("LLVMCreateGenericValueOfInt")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG, BOOL_AS_INT})
+        abstract long LLVMCreateGenericValueOfInt(long Ty, long N, boolean IsSigned);
 
-        public MethodHandle handle() {
-            return Objects.requireNonNull(handle.get());
-        }
+        @LibrarySymbol("LLVMCreateGenericValueOfPointer")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMCreateGenericValueOfPointer(long P);
 
-        @Override
-        public String toString() {
-            return name() + "{" +
-                    "type=" + type +
-                    ", handle=" + handle() + '}';
-        }
+        @LibrarySymbol("LLVMCreateGenericValueOfFloat")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, DOUBLE})
+        abstract long LLVMCreateGenericValueOfFloat(long Ty, double N);
+
+        @LibrarySymbol("LLVMGenericValueIntWidth")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
+        abstract int LLVMGenericValueIntWidth(long GenVal);
+
+        @LibrarySymbol("LLVMGenericValueToInt")
+        @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD, BOOL_AS_INT})
+        abstract long LLVMGenericValueToInt(long GenVal, boolean IsSigned);
+
+        @LibrarySymbol("LLVMGenericValueToPointer")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGenericValueToPointer(long GenVal);
+
+        @LibrarySymbol("LLVMGenericValueToFloat")
+        @CallSignature(type = CRITICAL, ret = DOUBLE, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract double LLVMGenericValueToFloat(long Ty, long GenVal);
+
+        @LibrarySymbol("LLVMDisposeGenericValue")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMDisposeGenericValue(long GenVal);
+
+        @LibrarySymbol("LLVMCreateExecutionEngineForModule")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract boolean LLVMCreateExecutionEngineForModule(long OutEE, long M, long OutError);
+
+        @LibrarySymbol("LLVMCreateInterpreterForModule")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract boolean LLVMCreateInterpreterForModule(long OutInterp, long M, long OutError);
+
+        @LibrarySymbol("LLVMCreateJITCompilerForModule")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
+        abstract boolean LLVMCreateJITCompilerForModule(long OutJIT, long M, int OptLevel, long OutError);
+
+        /*@LibrarySymbol("LLVMInitializeMCJITCompilerOptions")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract void LLVMInitializeMCJITCompilerOptions(long, long);
+
+        @LibrarySymbol("LLVMCreateMCJITCompilerForModule")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract boolean LLVMCreateMCJITCompilerForModule(long, long, long, long, long);*/
+
+        @LibrarySymbol("LLVMDisposeExecutionEngine")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMDisposeExecutionEngine(long EE);
+
+        @LibrarySymbol("LLVMRunStaticConstructors")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMRunStaticConstructors(long EE);
+
+        @LibrarySymbol("LLVMRunStaticDestructors")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMRunStaticDestructors(long EE);
+
+        /*@LibrarySymbol("LLVMRunFunctionAsMain")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract int LLVMRunFunctionAsMain(long, long, int, long, long);*/
+
+        @LibrarySymbol("LLVMRunFunction")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
+        abstract long LLVMRunFunction(long EE, long F, int NumArgs, long Args);
+
+        /*@LibrarySymbol("LLVMFreeMachineCodeForFunction")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract void LLVMFreeMachineCodeForFunction(long, long);
+
+        @LibrarySymbol("LLVMAddModule")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract void LLVMAddModule(long, long);
+
+        @LibrarySymbol("LLVMRemoveModule")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract boolean LLVMRemoveModule(long, long, long, long);
+
+        @LibrarySymbol("LLVMFindFunction")
+        @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract boolean LLVMFindFunction(long, long, long);
+
+        @LibrarySymbol("LLVMRecompileAndRelinkFunction")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract long LLVMRecompileAndRelinkFunction(long, long);
+
+        @LibrarySymbol("LLVMGetExecutionEngineTargetData")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetExecutionEngineTargetData(long);
+
+        @LibrarySymbol("LLVMGetExecutionEngineTargetMachine")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetExecutionEngineTargetMachine(long);
+
+        @LibrarySymbol("LLVMAddGlobalMapping")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract void LLVMAddGlobalMapping(long, long, long);
+
+        @LibrarySymbol("LLVMGetPointerToGlobal")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract long LLVMGetPointerToGlobal(long, long);
+
+        @LibrarySymbol("LLVMGetGlobalValueAddress")
+        @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract long LLVMGetGlobalValueAddress(long, long);
+
+        @LibrarySymbol("LLVMGetFunctionAddress")
+        @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract long LLVMGetFunctionAddress(long, long);
+
+        @LibrarySymbol("LLVMCreateSimpleMCJITMemoryManager")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract long LLVMCreateSimpleMCJITMemoryManager(long, long, long, long, long);*/
+
+        @LibrarySymbol("LLVMDisposeMCJITMemoryManager")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
+        abstract void LLVMDisposeMCJITMemoryManager(long MM);
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class, LLVM));
     }
 
     public static void LLVMLinkInMCJIT() {
-        nothrows_run(() -> Function.LLVMLinkInMCJIT.handle().invoke());
+        Native.INSTANCE.LLVMLinkInMCJIT();
     }
 
     public static void LLVMLinkInInterpreter() {
-        nothrows_run(() -> Function.LLVMLinkInInterpreter.handle().invoke());
+        Native.INSTANCE.LLVMLinkInInterpreter();
     }
 
     /*===-- Operations on generic values --------------------------------------===*/
 
     public static LLVMGenericValueRef LLVMCreateGenericValueOfInt(LLVMTypeRef Ty, long /* unsigned long long */ N, boolean IsSigned) {
-        return nothrows_run(() -> LLVMGenericValueRef.ofNullable((long) Function.LLVMCreateGenericValueOfInt.handle().invoke(Ty.value(), N, IsSigned)));
+        return LLVMGenericValueRef.ofNullable(Native.INSTANCE.LLVMCreateGenericValueOfInt(Ty.value(), N, IsSigned));
     }
 
     /* package-private */
     static LLVMGenericValueRef LLVMCreateGenericValueOfPointer(long P) {
-        return nothrows_run(() -> LLVMGenericValueRef.ofNullable((long) Function.LLVMCreateGenericValueOfPointer.handle().invoke(P)));
+        return LLVMGenericValueRef.ofNullable(Native.INSTANCE.LLVMCreateGenericValueOfPointer(P));
     }
 
     // Port-added
@@ -225,20 +284,20 @@ public class ExecutionEngine {
     }
 
     public static LLVMGenericValueRef LLVMCreateGenericValueOfFloat(LLVMTypeRef Ty, double N) {
-        return nothrows_run(() -> LLVMGenericValueRef.ofNullable((long) Function.LLVMCreateGenericValueOfFloat.handle().invoke(Ty.value(), N)));
+        return LLVMGenericValueRef.ofNullable(Native.INSTANCE.LLVMCreateGenericValueOfFloat(Ty.value(), N));
     }
 
     public static int /* unsigned */ LLVMGenericValueIntWidth(LLVMGenericValueRef GenVal) {
-        return nothrows_run(() -> (int) Function.LLVMGenericValueIntWidth.handle().invoke(GenVal.value()));
+        return Native.INSTANCE.LLVMGenericValueIntWidth(GenVal.value());
     }
 
     public static long /* unsigned long long */ LLVMGenericValueToInt(LLVMGenericValueRef GenVal, boolean IsSigned) {
-        return nothrows_run(() -> (long) Function.LLVMGenericValueToInt.handle().invoke(GenVal.value(), IsSigned));
+        return Native.INSTANCE.LLVMGenericValueToInt(GenVal.value(), IsSigned);
     }
 
     /* package-private */
     static long LLVMGenericValueToPointer(LLVMGenericValueRef GenVal) {
-        return nothrows_run(() -> (long) Function.LLVMGenericValueToPointer.handle().invoke(GenVal.value()));
+        return Native.INSTANCE.LLVMGenericValueToPointer(GenVal.value());
     }
 
     // Port-added
@@ -247,21 +306,20 @@ public class ExecutionEngine {
     }
 
     public static double LLVMGenericValueToFloat(LLVMTypeRef Ty, LLVMGenericValueRef GenVal) {
-        return nothrows_run(() -> (double) Function.LLVMGenericValueToFloat.handle().invoke(Ty.value(), GenVal.value()));
+        return Native.INSTANCE.LLVMGenericValueToFloat(Ty.value(), GenVal.value());
     }
 
     public static void LLVMDisposeGenericValue(LLVMGenericValueRef GenVal) {
-        nothrows_run(() -> Function.LLVMDisposeGenericValue.handle().invoke(GenVal.value()));
+        Native.INSTANCE.LLVMDisposeGenericValue(GenVal.value());
     }
 
-    ///*===-- Operations on execution engines -----------------------------------===*/
+    /*===-- Operations on execution engines -----------------------------------===*/
 
     public static boolean LLVMCreateExecutionEngineForModule(Consumer<LLVMExecutionEngineRef> OutEE, LLVMModuleRef M, Consumer<String> OutError) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutEE = arena.allocate(ADDRESS);
             MemorySegment c_OutError = arena.allocate(ADDRESS);
-            boolean err = nothrows_run(() -> (boolean) Function.LLVMCreateExecutionEngineForModule.handle()
-                    .invoke(c_OutEE.nativeAddress(), M.value(), c_OutError.nativeAddress()));
+            boolean err = Native.INSTANCE.LLVMCreateExecutionEngineForModule(c_OutEE.nativeAddress(), M.value(), c_OutError.nativeAddress());
             if (!err) {
                 OutEE.accept(LLVMExecutionEngineRef.ofNullable(c_OutEE.get(ADDRESS, 0).nativeAddress()));
             } else {
@@ -285,8 +343,7 @@ public class ExecutionEngine {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutInterp = arena.allocate(ADDRESS);
             MemorySegment c_OutError = arena.allocate(ADDRESS);
-            boolean err = nothrows_run(() -> (boolean) Function.LLVMCreateInterpreterForModule.handle()
-                    .invoke(c_OutInterp.nativeAddress(), M.value(), c_OutError.nativeAddress()));
+            boolean err = Native.INSTANCE.LLVMCreateInterpreterForModule(c_OutInterp.nativeAddress(), M.value(), c_OutError.nativeAddress());
             if (!err) {
                 OutInterp.accept(LLVMExecutionEngineRef.ofNullable(c_OutInterp.get(ADDRESS, 0).nativeAddress()));
             } else {
@@ -310,8 +367,7 @@ public class ExecutionEngine {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutJIT = arena.allocate(ADDRESS);
             MemorySegment c_OutError = arena.allocate(ADDRESS);
-            boolean err = nothrows_run(() -> (boolean) Function.LLVMCreateJITCompilerForModule.handle()
-                    .invoke(c_OutJIT.nativeAddress(), M.value(), OptLevel, c_OutError.nativeAddress()));
+            boolean err = Native.INSTANCE.LLVMCreateJITCompilerForModule(c_OutJIT.nativeAddress(), M.value(), OptLevel, c_OutError.nativeAddress());
             if (!err) {
                 OutJIT.accept(LLVMExecutionEngineRef.ofNullable(c_OutJIT.get(ADDRESS, 0).nativeAddress()));
             } else {
@@ -332,7 +388,7 @@ public class ExecutionEngine {
     }
 
     //void LLVMInitializeMCJITCompilerOptions(struct LLVMMCJITCompilerOptions *Options, size_t SizeOfOptions) {
-    //    return nothrows_run(() -> Function.LLVMInitializeMCJITCompilerOptions.handle().invoke());
+    //    return Native.INSTANCE.LLVMInitializeMCJITCompilerOptions();
     //}
     ///**
     // * Create an MCJIT execution engine for a module, with the given options. It is
@@ -352,70 +408,69 @@ public class ExecutionEngine {
     // * LLVMCreateMCJITCompilerForModule(&jit, mod, 0, 0, &error);
     // */
     //LLVMBool LLVMCreateMCJITCompilerForModule(LLVMExecutionEngineRef *OutJIT, LLVMModuleRef M, struct LLVMMCJITCompilerOptions *Options, size_t SizeOfOptions, char **OutError) {
-    //    return nothrows_run(() -> Function.LLVMCreateMCJITCompilerForModule.handle().invoke());
+    //    return Native.INSTANCE.LLVMCreateMCJITCompilerForModule();
     //}
 
     public static void LLVMDisposeExecutionEngine(LLVMExecutionEngineRef EE) {
-        nothrows_run(() -> Function.LLVMDisposeExecutionEngine.handle().invoke(EE.value()));
+        Native.INSTANCE.LLVMDisposeExecutionEngine(EE.value());
     }
 
     public static void LLVMRunStaticConstructors(LLVMExecutionEngineRef EE) {
-        nothrows_run(() -> Function.LLVMRunStaticConstructors.handle().invoke(EE.value()));
+        Native.INSTANCE.LLVMRunStaticConstructors(EE.value());
     }
 
     public static void LLVMRunStaticDestructors(LLVMExecutionEngineRef EE) {
-        nothrows_run(() -> Function.LLVMRunStaticDestructors.handle().invoke(EE.value()));
+        Native.INSTANCE.LLVMRunStaticDestructors(EE.value());
     }
 
     //int LLVMRunFunctionAsMain(LLVMExecutionEngineRef EE, LLVMValueRef F, unsigned ArgC, const char * const *ArgV, const char * const *EnvP) {
-    //    return nothrows_run(() -> Function.LLVMRunFunctionAsMain.handle().invoke());
+    //    return Native.INSTANCE.LLVMRunFunctionAsMain();
     //}
 
     public static LLVMGenericValueRef LLVMRunFunction(LLVMExecutionEngineRef EE, LLVMValueRef F, LLVMGenericValueRef[] Args) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Args = allocArray(arena, Args);
             int /* unsigned */ NumArgs = arrayLength(Args);
-            return nothrows_run(() -> LLVMGenericValueRef.ofNullable((long) Function.LLVMRunFunction.handle()
-                    .invoke(EE.value(), F.value(), NumArgs, c_Args.nativeAddress())));
+            return LLVMGenericValueRef.ofNullable(Native.INSTANCE.LLVMRunFunction(EE.value(), F.value(), NumArgs, c_Args.nativeAddress()));
         }
     }
 
     //void LLVMFreeMachineCodeForFunction(LLVMExecutionEngineRef EE, LLVMValueRef F) {
-    //    return nothrows_run(() -> Function.LLVMFreeMachineCodeForFunction.handle().invoke());
+    //    return Native.INSTANCE.LLVMFreeMachineCodeForFunction();
     //}
     //void LLVMAddModule(LLVMExecutionEngineRef EE, LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMAddModule.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddModule();
     //}
     //LLVMBool LLVMRemoveModule(LLVMExecutionEngineRef EE, LLVMModuleRef M, LLVMModuleRef *OutMod, char **OutError) {
-    //    return nothrows_run(() -> Function.LLVMRemoveModule.handle().invoke());
+    //    return Native.INSTANCE.LLVMRemoveModule();
     //}
     //LLVMBool LLVMFindFunction(LLVMExecutionEngineRef EE, const char *Name, LLVMValueRef *OutFn) {
-    //    return nothrows_run(() -> Function.LLVMFindFunction.handle().invoke());
+    //    return Native.INSTANCE.LLVMFindFunction();
     //}
     //void *LLVMRecompileAndRelinkFunction(LLVMExecutionEngineRef EE, LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.*LLVMRecompileAndRelinkFunction.handle().invoke());
+    //    return Native.INSTANCE.*LLVMRecompileAndRelinkFunction();
     //}
     //LLVMTargetDataRef LLVMGetExecutionEngineTargetData(LLVMExecutionEngineRef EE) {
-    //    return nothrows_run(() -> Function.LLVMGetExecutionEngineTargetData.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetExecutionEngineTargetData();
     //}
     //LLVMTargetMachineRef LLVMGetExecutionEngineTargetMachine(LLVMExecutionEngineRef EE) {
-    //    return nothrows_run(() -> Function.LLVMGetExecutionEngineTargetMachine.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetExecutionEngineTargetMachine();
     //}
     //void LLVMAddGlobalMapping(LLVMExecutionEngineRef EE, LLVMValueRef Global, void* Addr) {
-    //    return nothrows_run(() -> Function.LLVMAddGlobalMapping.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddGlobalMapping();
     //}
     //void *LLVMGetPointerToGlobal(LLVMExecutionEngineRef EE, LLVMValueRef Global) {
-    //    return nothrows_run(() -> Function.*LLVMGetPointerToGlobal.handle().invoke());
+    //    return Native.INSTANCE.*LLVMGetPointerToGlobal();
     //}
     //uint64_t LLVMGetGlobalValueAddress(LLVMExecutionEngineRef EE, const char *Name) {
-    //    return nothrows_run(() -> Function.LLVMGetGlobalValueAddress.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetGlobalValueAddress();
     //}
     //uint64_t LLVMGetFunctionAddress(LLVMExecutionEngineRef EE, const char *Name) {
-    //    return nothrows_run(() -> Function.LLVMGetFunctionAddress.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetFunctionAddress();
     //}
 
-    //TODO
-    ///*===-- Operations on memory managers -------------------------------------===*/
+    /*===-- Operations on memory managers -------------------------------------===*/
+
     ///**
     // * Create a simple custom MCJIT memory manager. This memory manager can
     // * intercept allocations in a module-oblivious way. This will return NULL
@@ -428,10 +483,10 @@ public class ExecutionEngine {
     // *   success, 1 on error.
     // */
     //LLVMMCJITMemoryManagerRef LLVMCreateSimpleMCJITMemoryManager(void *Opaque, LLVMMemoryManagerAllocateCodeSectionCallback AllocateCodeSection, LLVMMemoryManagerAllocateDataSectionCallback AllocateDataSection, LLVMMemoryManagerFinalizeMemoryCallback FinalizeMemory, LLVMMemoryManagerDestroyCallback Destroy) {
-    //    return nothrows_run(() -> Function.LLVMCreateSimpleMCJITMemoryManager.handle().invoke());
+    //    return Native.INSTANCE.LLVMCreateSimpleMCJITMemoryManager();
     //}
 
     public static void LLVMDisposeMCJITMemoryManager(LLVMMCJITMemoryManagerRef MM) {
-        nothrows_run(() -> Function.LLVMDisposeMCJITMemoryManager.handle().invoke(MM.value()));
+        Native.INSTANCE.LLVMDisposeMCJITMemoryManager(MM.value());
     }
 }
