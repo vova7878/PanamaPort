@@ -4,7 +4,6 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.llvm.LibLLVM.LLVM;
 import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassManagerRef;
-import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.llvm._Utils.allocString;
@@ -30,7 +29,6 @@ import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import java.util.function.Consumer;
 
 public class TargetMachine {
-    static final Class<?> cLLVMTargetMachineRef = VOID_PTR;
 
     public static final class LLVMTargetMachineRef extends AddressValue implements FineClosable {
 
@@ -157,7 +155,6 @@ public class TargetMachine {
         }
     }
 
-    @SuppressWarnings("unused")
     @Keep
     private abstract static class Native {
 

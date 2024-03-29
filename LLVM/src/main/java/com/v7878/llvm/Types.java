@@ -6,9 +6,7 @@ import static com.v7878.llvm.Core.LLVMDisposeMemoryBuffer;
 import static com.v7878.llvm.Core.LLVMDisposeModule;
 import static com.v7878.llvm.Core.LLVMDisposeModuleProvider;
 import static com.v7878.llvm.Core.LLVMDisposePassManager;
-import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
-import static com.v7878.unsafe.foreign.SimpleLinker.BOOL_AS_INT_CLASS;
 
 import com.v7878.unsafe.Utils.FineClosable;
 
@@ -52,21 +50,6 @@ public final class Types {
             return Objects.hash(getClass(), value);
         }
     }
-
-    static final Class<?> LLVMBool = BOOL_AS_INT_CLASS;
-    static final Class<?> cLLVMMemoryBufferRef = VOID_PTR;
-    static final Class<?> cLLVMContextRef = VOID_PTR;
-    static final Class<?> cLLVMModuleRef = VOID_PTR;
-    static final Class<?> cLLVMTypeRef = VOID_PTR;
-    static final Class<?> cLLVMValueRef = VOID_PTR;
-    static final Class<?> cLLVMBasicBlockRef = VOID_PTR;
-    static final Class<?> cLLVMBuilderRef = VOID_PTR;
-    static final Class<?> cLLVMModuleProviderRef = VOID_PTR;
-    static final Class<?> cLLVMPassManagerRef = VOID_PTR;
-    static final Class<?> cLLVMPassRegistryRef = VOID_PTR;
-    static final Class<?> cLLVMUseRef = VOID_PTR;
-    static final Class<?> cLLVMAttributeRef = VOID_PTR;
-    static final Class<?> cLLVMDiagnosticInfoRef = VOID_PTR;
 
     public static final class LLVMMemoryBufferRef extends AddressValue implements FineClosable {
 

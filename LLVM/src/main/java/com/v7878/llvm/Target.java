@@ -6,7 +6,6 @@ import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassManagerRef;
 import static com.v7878.llvm.Types.LLVMTypeRef;
 import static com.v7878.llvm.Types.LLVMValueRef;
-import static com.v7878.llvm._Utils.VOID_PTR;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
@@ -34,8 +33,6 @@ public class Target {
     /*
      * @defgroup LLVMCTarget Target information
      */
-
-    static final Class<?> cLLVMTargetDataRef = VOID_PTR;
 
     public static final class LLVMTargetDataRef extends AddressValue implements FineClosable {
 
@@ -103,7 +100,6 @@ public class Target {
         }
     }
 
-    @SuppressWarnings("unused")
     @Keep
     private abstract static class Native {
 
@@ -122,6 +118,7 @@ public class Target {
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeTargetInfo();
 
+        @SuppressWarnings("unused")
         private static MemorySegment genLLVMInitializeTargetInfo() {
             return LLVM.find("LLVMInitialize" + Arch + "TargetInfo").orElseThrow(Utils::shouldNotReachHere);
         }
@@ -130,6 +127,7 @@ public class Target {
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeTargetMC();
 
+        @SuppressWarnings("unused")
         private static MemorySegment genLLVMInitializeTargetMC() {
             return LLVM.find("LLVMInitialize" + Arch + "TargetMC").orElseThrow(Utils::shouldNotReachHere);
         }
@@ -138,6 +136,7 @@ public class Target {
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeTarget();
 
+        @SuppressWarnings("unused")
         private static MemorySegment genLLVMInitializeTarget() {
             return LLVM.find("LLVMInitialize" + Arch + "Target").orElseThrow(Utils::shouldNotReachHere);
         }
@@ -146,6 +145,7 @@ public class Target {
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeDisassembler();
 
+        @SuppressWarnings("unused")
         private static MemorySegment genLLVMInitializeDisassembler() {
             return LLVM.find("LLVMInitialize" + Arch + "Disassembler").orElseThrow(Utils::shouldNotReachHere);
         }
@@ -154,6 +154,7 @@ public class Target {
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeAsmParser();
 
+        @SuppressWarnings("unused")
         private static MemorySegment genLLVMInitializeAsmParser() {
             return LLVM.find("LLVMInitialize" + Arch + "AsmParser").orElseThrow(Utils::shouldNotReachHere);
         }
@@ -162,6 +163,7 @@ public class Target {
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMInitializeAsmPrinter();
 
+        @SuppressWarnings("unused")
         private static MemorySegment genLLVMInitializeAsmPrinter() {
             return LLVM.find("LLVMInitialize" + Arch + "AsmPrinter").orElseThrow(Utils::shouldNotReachHere);
         }

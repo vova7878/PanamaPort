@@ -120,7 +120,6 @@ public class ObjectFile {
         }
     }
 
-    @SuppressWarnings("unused")
     @Keep
     private abstract static class Native {
 

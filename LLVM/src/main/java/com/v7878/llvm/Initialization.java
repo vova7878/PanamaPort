@@ -15,7 +15,7 @@ import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
 public class Initialization {
-    @SuppressWarnings("unused")
+
     @Keep
     private abstract static class Native {
 

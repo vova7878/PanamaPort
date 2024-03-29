@@ -58,7 +58,6 @@ public class Analysis {
         }
     }
 
-    @SuppressWarnings("unused")
     @Keep
     private abstract static class Native {
 
