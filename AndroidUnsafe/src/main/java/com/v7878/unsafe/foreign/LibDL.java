@@ -101,7 +101,6 @@ public class LibDL {
         s_android_dlopen_ext = symbols.findFunction("android_dlopen_ext", libdl.start);
     }
 
-    @SuppressWarnings("unused")
     @Keep
     private abstract static class Native {
 
@@ -111,6 +110,7 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long dlopen(long filename, int flags);
 
+        @SuppressWarnings("unused")
         private static MemorySegment s_dlopen() {
             return s_dlopen;
         }
@@ -119,6 +119,7 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int dlclose(long handle);
 
+        @SuppressWarnings("unused")
         private static MemorySegment s_dlclose() {
             return s_dlclose;
         }
@@ -127,6 +128,7 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long dlerror();
 
+        @SuppressWarnings("unused")
         private static MemorySegment s_dlerror() {
             return s_dlerror;
         }
@@ -135,6 +137,7 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long dlsym(long handle, long symbol);
 
+        @SuppressWarnings("unused")
         private static MemorySegment s_dlsym() {
             return s_dlsym;
         }
@@ -143,6 +146,7 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long dlvsym(long handle, long symbol, long version);
 
+        @SuppressWarnings("unused")
         private static MemorySegment s_dlvsym() {
             return s_dlvsym;
         }
@@ -151,6 +155,7 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract int dladdr(long addr, long info);
 
+        @SuppressWarnings("unused")
         private static MemorySegment s_dladdr() {
             return s_dladdr;
         }

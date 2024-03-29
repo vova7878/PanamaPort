@@ -463,8 +463,6 @@ public class JNIUtils {
                 JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
     }
 
-    //TODO: cache as much as possible
-    @SuppressWarnings("unused")
     @Keep
     private abstract static class Native {
 
@@ -474,6 +472,7 @@ public class JNIUtils {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void DeleteGlobalRef(long env, long ref);
 
+        @SuppressWarnings("unused")
         private static MemorySegment genDeleteGlobalRef() {
             return getJNINativeInterfaceFunction("DeleteGlobalRef");
         }
@@ -491,6 +490,7 @@ public class JNIUtils {
         @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG, LONG_AS_WORD})
         abstract void putRef(Object obj, long offset, long ref);
 
+        @SuppressWarnings("unused")
         private static MemorySegment genPutRef() {
             Method method = getDeclaredMethod(SunUnsafe.getUnsafeClass(), "putObject",
                     Object.class, long.class, Object.class);
@@ -511,6 +511,7 @@ public class JNIUtils {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long PopLocalFrame(long env, long survivor_ref);
 
+        @SuppressWarnings("unused")
         private static MemorySegment genPopLocalFrame() {
             return JNIUtils.getJNINativeInterfaceFunction("PopLocalFrame");
         }
@@ -664,7 +665,7 @@ public class JNIUtils {
             static final MemorySegment ptr;
 
             static {
-                ptr = ART.find("_ZN3art7Runtime9instance_E").get()
+                ptr = ART.find("_ZN3art7Runtime9instance_E").orElseThrow(Utils::shouldNotReachHere)
                         .reinterpret(ADDRESS_SIZE).get(ADDRESS, 0);
             }
         }

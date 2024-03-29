@@ -72,7 +72,6 @@ public class IOUtils {
         return out;
     }
 
-    @SuppressWarnings("unused")
     @Keep
     private abstract static class Native {
         private static final Arena SCOPE = Arena.ofAuto();

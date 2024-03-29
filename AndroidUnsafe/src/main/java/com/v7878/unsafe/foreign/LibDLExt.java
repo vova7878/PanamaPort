@@ -222,7 +222,6 @@ public class LibDLExt {
         }
     }
 
-    @SuppressWarnings("unused")
     @Keep
     private abstract static class Native {
         private static final Arena SCOPE = Arena.ofAuto();
@@ -234,6 +233,7 @@ public class LibDLExt {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long dlopen_ext(long filename, int flags, long info);
 
+        @SuppressWarnings("unused")
         private static MemorySegment s_android_dlopen_ext() {
             return LibDL.s_android_dlopen_ext;
         }
@@ -356,7 +356,7 @@ public class LibDLExt {
             MemorySegment c_ld_library_path = arena.allocateFrom(ld_library_path);
             MemorySegment c_default_library_path = arena.allocateFrom(default_library_path);
             MemorySegment c_permitted_when_isolated_path = arena.allocateFrom(permitted_when_isolated_path);
-            return new Namespace((long) Native.INSTANCE.create_namespace(
+            return new Namespace(Native.INSTANCE.create_namespace(
                     c_name.nativeAddress(), c_ld_library_path.nativeAddress(), c_default_library_path.nativeAddress(),
                     type, c_permitted_when_isolated_path.nativeAddress(), parent.value()));
         }

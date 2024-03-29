@@ -27,6 +27,7 @@ import com.v7878.misc.Math;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
+import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
@@ -160,7 +161,6 @@ public class JniLibraries {
         return Holder.libraries;
     }
 
-    //TODO: cache as much as possible
     @Keep
     private abstract static class Native {
 
@@ -189,8 +189,8 @@ public class JniLibraries {
     }
 
     private static final long LIBRARIES_LOCK =
-            ART.find("_ZN3art5Locks19jni_libraries_lock_E")
-                    .get().reinterpret(ADDRESS_SIZE).get(ADDRESS, 0).nativeAddress();
+            ART.find("_ZN3art5Locks19jni_libraries_lock_E").orElseThrow(Utils::shouldNotReachHere)
+                    .reinterpret(ADDRESS_SIZE).get(ADDRESS, 0).nativeAddress();
 
     public static void forEachLibraries(Function<MemorySegment, Boolean> consumer) {
         Objects.requireNonNull(consumer);
