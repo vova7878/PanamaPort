@@ -166,11 +166,11 @@ public class JniLibraries {
 
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @LibrarySymbol("_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE")
+        @LibrarySymbol(name = "_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void ExclusiveLock(long mutex, long thread);
 
-        @LibrarySymbol("_ZN3art5Mutex15ExclusiveUnlockEPNS_6ThreadE")
+        @LibrarySymbol(name = "_ZN3art5Mutex15ExclusiveUnlockEPNS_6ThreadE")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void ExclusiveUnlock(long mutex, long thread);
 

@@ -477,11 +477,11 @@ public class JNIUtils {
             return getJNINativeInterfaceFunction("DeleteGlobalRef");
         }
 
-        @LibrarySymbol("_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE")
+        @LibrarySymbol(name = "_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, OBJECT_AS_ADDRESS})
         abstract long NewLocalRef(long env, Object obj);
 
-        @LibrarySymbol("_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject")
+        @LibrarySymbol(name = "_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void DeleteLocalRef(long env, long ref);
 

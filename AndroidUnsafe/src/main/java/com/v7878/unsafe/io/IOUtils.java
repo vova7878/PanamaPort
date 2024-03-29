@@ -78,27 +78,27 @@ public class IOUtils {
         public static final SymbolLookup CUTILS =
                 LibDLExt.systemLibraryLookup("libcutils.so", SCOPE);
 
-        @LibrarySymbol("ashmem_valid")
+        @LibrarySymbol(name = "ashmem_valid")
         @CallSignature(type = CRITICAL, ret = INT, args = {INT})
         abstract int ashmem_valid(int fd);
 
-        @LibrarySymbol("ashmem_create_region")
+        @LibrarySymbol(name = "ashmem_create_region")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract int ashmem_create_region(long name, long size);
 
-        @LibrarySymbol("ashmem_set_prot_region")
+        @LibrarySymbol(name = "ashmem_set_prot_region")
         @CallSignature(type = CRITICAL, ret = INT, args = {INT, INT})
         abstract int ashmem_set_prot_region(int fd, int prot);
 
-        @LibrarySymbol("ashmem_pin_region")
+        @LibrarySymbol(name = "ashmem_pin_region")
         @CallSignature(type = CRITICAL, ret = INT, args = {INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract int ashmem_pin_region(int fd, long offset, long len);
 
-        @LibrarySymbol("ashmem_unpin_region")
+        @LibrarySymbol(name = "ashmem_unpin_region")
         @CallSignature(type = CRITICAL, ret = INT, args = {INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract int ashmem_unpin_region(int fd, long offset, long len);
 
-        @LibrarySymbol("ashmem_get_size_region")
+        @LibrarySymbol(name = "ashmem_get_size_region")
         @CallSignature(type = CRITICAL, ret = INT, args = {INT})
         abstract int ashmem_get_size_region(int fd);
 

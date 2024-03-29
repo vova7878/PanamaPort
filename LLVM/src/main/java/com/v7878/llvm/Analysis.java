@@ -63,19 +63,19 @@ public class Analysis {
 
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @LibrarySymbol("LLVMVerifyModule")
+        @LibrarySymbol(name = "LLVMVerifyModule")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract boolean LLVMVerifyModule(long M, int Action, long OutMessage);
 
-        @LibrarySymbol("LLVMVerifyFunction")
+        @LibrarySymbol(name = "LLVMVerifyFunction")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, INT})
         abstract boolean LLVMVerifyFunction(long M, int Action);
 
-        @LibrarySymbol("LLVMViewFunctionCFG")
+        @LibrarySymbol(name = "LLVMViewFunctionCFG")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMViewFunctionCFG(long V);
 
-        @LibrarySymbol("LLVMViewFunctionCFGOnly")
+        @LibrarySymbol(name = "LLVMViewFunctionCFGOnly")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMViewFunctionCFGOnly(long V);
 

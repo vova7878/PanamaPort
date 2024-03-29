@@ -123,51 +123,51 @@ public class ExecutionEngine {
 
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @LibrarySymbol("LLVMLinkInMCJIT")
+        @LibrarySymbol(name = "LLVMLinkInMCJIT")
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMLinkInMCJIT();
 
-        @LibrarySymbol("LLVMCreateGenericValueOfInt")
+        @LibrarySymbol(name = "LLVMCreateGenericValueOfInt")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG, BOOL_AS_INT})
         abstract long LLVMCreateGenericValueOfInt(long Ty, long N, boolean IsSigned);
 
-        @LibrarySymbol("LLVMCreateGenericValueOfPointer")
+        @LibrarySymbol(name = "LLVMCreateGenericValueOfPointer")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMCreateGenericValueOfPointer(long P);
 
-        @LibrarySymbol("LLVMCreateGenericValueOfFloat")
+        @LibrarySymbol(name = "LLVMCreateGenericValueOfFloat")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, DOUBLE})
         abstract long LLVMCreateGenericValueOfFloat(long Ty, double N);
 
-        @LibrarySymbol("LLVMGenericValueIntWidth")
+        @LibrarySymbol(name = "LLVMGenericValueIntWidth")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGenericValueIntWidth(long GenVal);
 
-        @LibrarySymbol("LLVMGenericValueToInt")
+        @LibrarySymbol(name = "LLVMGenericValueToInt")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD, BOOL_AS_INT})
         abstract long LLVMGenericValueToInt(long GenVal, boolean IsSigned);
 
-        @LibrarySymbol("LLVMGenericValueToPointer")
+        @LibrarySymbol(name = "LLVMGenericValueToPointer")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGenericValueToPointer(long GenVal);
 
-        @LibrarySymbol("LLVMGenericValueToFloat")
+        @LibrarySymbol(name = "LLVMGenericValueToFloat")
         @CallSignature(type = CRITICAL, ret = DOUBLE, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract double LLVMGenericValueToFloat(long Ty, long GenVal);
 
-        @LibrarySymbol("LLVMDisposeGenericValue")
+        @LibrarySymbol(name = "LLVMDisposeGenericValue")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeGenericValue(long GenVal);
 
-        @LibrarySymbol("LLVMCreateExecutionEngineForModule")
+        @LibrarySymbol(name = "LLVMCreateExecutionEngineForModule")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMCreateExecutionEngineForModule(long OutEE, long M, long OutError);
 
-        @LibrarySymbol("LLVMCreateInterpreterForModule")
+        @LibrarySymbol(name = "LLVMCreateInterpreterForModule")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMCreateInterpreterForModule(long OutInterp, long M, long OutError);
 
-        @LibrarySymbol("LLVMCreateJITCompilerForModule")
+        @LibrarySymbol(name = "LLVMCreateJITCompilerForModule")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract boolean LLVMCreateJITCompilerForModule(long OutJIT, long M, int OptLevel, long OutError);
 
@@ -179,15 +179,15 @@ public class ExecutionEngine {
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMCreateMCJITCompilerForModule(long, long, long, long, long);*/
 
-        @LibrarySymbol("LLVMDisposeExecutionEngine")
+        @LibrarySymbol(name = "LLVMDisposeExecutionEngine")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeExecutionEngine(long EE);
 
-        @LibrarySymbol("LLVMRunStaticConstructors")
+        @LibrarySymbol(name = "LLVMRunStaticConstructors")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMRunStaticConstructors(long EE);
 
-        @LibrarySymbol("LLVMRunStaticDestructors")
+        @LibrarySymbol(name = "LLVMRunStaticDestructors")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMRunStaticDestructors(long EE);
 
@@ -195,7 +195,7 @@ public class ExecutionEngine {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract int LLVMRunFunctionAsMain(long, long, int, long, long);*/
 
-        @LibrarySymbol("LLVMRunFunction")
+        @LibrarySymbol(name = "LLVMRunFunction")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMRunFunction(long EE, long F, int NumArgs, long Args);
 
@@ -247,7 +247,7 @@ public class ExecutionEngine {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMCreateSimpleMCJITMemoryManager(long, long, long, long, long);*/
 
-        @LibrarySymbol("LLVMDisposeMCJITMemoryManager")
+        @LibrarySymbol(name = "LLVMDisposeMCJITMemoryManager")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeMCJITMemoryManager(long MM);
 

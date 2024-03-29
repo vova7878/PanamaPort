@@ -833,27 +833,27 @@ public class Core {
 
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @LibrarySymbol("LLVMInitializeCore")
+        @LibrarySymbol(name = "LLVMInitializeCore")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeCore(long R);
 
-        @LibrarySymbol("LLVMShutdown")
+        @LibrarySymbol(name = "LLVMShutdown")
         @CallSignature(type = CRITICAL, ret = VOID, args = {})
         abstract void LLVMShutdown();
 
-        @LibrarySymbol("LLVMCreateMessage")
+        @LibrarySymbol(name = "LLVMCreateMessage")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMCreateMessage(long Message);
 
-        @LibrarySymbol("LLVMDisposeMessage")
+        @LibrarySymbol(name = "LLVMDisposeMessage")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeMessage(long Message);
 
-        @LibrarySymbol("LLVMContextCreate")
+        @LibrarySymbol(name = "LLVMContextCreate")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMContextCreate();
 
-        @LibrarySymbol("LLVMGetGlobalContext")
+        @LibrarySymbol(name = "LLVMGetGlobalContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMGetGlobalContext();
 
@@ -873,79 +873,79 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMContextSetYieldCallback(long, long, long);*/
 
-        @LibrarySymbol("LLVMContextDispose")
+        @LibrarySymbol(name = "LLVMContextDispose")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMContextDispose(long C);
 
-        @LibrarySymbol("LLVMGetDiagInfoDescription")
+        @LibrarySymbol(name = "LLVMGetDiagInfoDescription")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetDiagInfoDescription(long DI);
 
-        @LibrarySymbol("LLVMGetDiagInfoSeverity")
+        @LibrarySymbol(name = "LLVMGetDiagInfoSeverity")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetDiagInfoSeverity(long DI);
 
-        @LibrarySymbol("LLVMGetMDKindIDInContext")
+        @LibrarySymbol(name = "LLVMGetMDKindIDInContext")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
         abstract int LLVMGetMDKindIDInContext(long C, long Name, int SLen);
 
-        @LibrarySymbol("LLVMGetMDKindID")
+        @LibrarySymbol(name = "LLVMGetMDKindID")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, INT})
         abstract int LLVMGetMDKindID(long Name, int SLen);
 
-        @LibrarySymbol("LLVMGetEnumAttributeKindForName")
+        @LibrarySymbol(name = "LLVMGetEnumAttributeKindForName")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract int LLVMGetEnumAttributeKindForName(long Name, long SLen);
 
-        @LibrarySymbol("LLVMGetLastEnumAttributeKind")
+        @LibrarySymbol(name = "LLVMGetLastEnumAttributeKind")
         @CallSignature(type = CRITICAL, ret = INT, args = {})
         abstract int LLVMGetLastEnumAttributeKind();
 
-        @LibrarySymbol("LLVMCreateEnumAttribute")
+        @LibrarySymbol(name = "LLVMCreateEnumAttribute")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG})
         abstract long LLVMCreateEnumAttribute(long C, int KindID, long Val);
 
-        @LibrarySymbol("LLVMGetEnumAttributeKind")
+        @LibrarySymbol(name = "LLVMGetEnumAttributeKind")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetEnumAttributeKind(long A);
 
-        @LibrarySymbol("LLVMGetEnumAttributeValue")
+        @LibrarySymbol(name = "LLVMGetEnumAttributeValue")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
         abstract long LLVMGetEnumAttributeValue(long A);
 
-        @LibrarySymbol("LLVMCreateStringAttribute")
+        @LibrarySymbol(name = "LLVMCreateStringAttribute")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD, INT})
         abstract long LLVMCreateStringAttribute(long C, long K, int KLength, long V, int VLength);
 
-        @LibrarySymbol("LLVMGetStringAttributeKind")
+        @LibrarySymbol(name = "LLVMGetStringAttributeKind")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMGetStringAttributeKind(long A, long Length);
 
-        @LibrarySymbol("LLVMGetStringAttributeValue")
+        @LibrarySymbol(name = "LLVMGetStringAttributeValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMGetStringAttributeValue(long A, long Length);
 
-        @LibrarySymbol("LLVMIsEnumAttribute")
+        @LibrarySymbol(name = "LLVMIsEnumAttribute")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMIsEnumAttribute(long A);
 
-        @LibrarySymbol("LLVMIsStringAttribute")
+        @LibrarySymbol(name = "LLVMIsStringAttribute")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMIsStringAttribute(long A);
 
-        @LibrarySymbol("LLVMModuleCreateWithName")
+        @LibrarySymbol(name = "LLVMModuleCreateWithName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMModuleCreateWithName(long ModuleID);
 
-        @LibrarySymbol("LLVMModuleCreateWithNameInContext")
+        @LibrarySymbol(name = "LLVMModuleCreateWithNameInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMModuleCreateWithNameInContext(long ModuleID, long C);
 
-        @LibrarySymbol("LLVMCloneModule")
+        @LibrarySymbol(name = "LLVMCloneModule")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMCloneModule(long M);
 
-        @LibrarySymbol("LLVMDisposeModule")
+        @LibrarySymbol(name = "LLVMDisposeModule")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeModule(long M);
 
@@ -953,31 +953,31 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMGetModuleIdentifier(long, long);*/
 
-        @LibrarySymbol("LLVMSetModuleIdentifier")
+        @LibrarySymbol(name = "LLVMSetModuleIdentifier")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetModuleIdentifier(long M, long Ident, long Len);
 
-        @LibrarySymbol("LLVMGetDataLayoutStr")
+        @LibrarySymbol(name = "LLVMGetDataLayoutStr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetDataLayoutStr(long M);
 
-        @LibrarySymbol("LLVMGetDataLayout")
+        @LibrarySymbol(name = "LLVMGetDataLayout")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetDataLayout(long M);
 
-        @LibrarySymbol("LLVMSetDataLayout")
+        @LibrarySymbol(name = "LLVMSetDataLayout")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetDataLayout(long M, long DataLayoutStr);
 
-        @LibrarySymbol("LLVMGetTarget")
+        @LibrarySymbol(name = "LLVMGetTarget")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetTarget(long M);
 
-        @LibrarySymbol("LLVMSetTarget")
+        @LibrarySymbol(name = "LLVMSetTarget")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetTarget(long M, long Triple);
 
-        @LibrarySymbol("LLVMDumpModule")
+        @LibrarySymbol(name = "LLVMDumpModule")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDumpModule(long M);
 
@@ -985,7 +985,7 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMPrintModuleToFile(long, long, long);*/
 
-        @LibrarySymbol("LLVMPrintModuleToString")
+        @LibrarySymbol(name = "LLVMPrintModuleToString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMPrintModuleToString(long M);
 
@@ -993,7 +993,7 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetModuleInlineAsm(long, long);*/
 
-        @LibrarySymbol("LLVMGetModuleContext")
+        @LibrarySymbol(name = "LLVMGetModuleContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetModuleContext(long M);
 
@@ -1013,11 +1013,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMAddNamedMetadataOperand(long, long, long);*/
 
-        @LibrarySymbol("LLVMAddFunction")
+        @LibrarySymbol(name = "LLVMAddFunction")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMAddFunction(long M, long Name, long FunctionTy);
 
-        @LibrarySymbol("LLVMGetNamedFunction")
+        @LibrarySymbol(name = "LLVMGetNamedFunction")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMGetNamedFunction(long M, long Name);
 
@@ -1037,143 +1037,143 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetPreviousFunction(long);*/
 
-        @LibrarySymbol("LLVMGetTypeKind")
+        @LibrarySymbol(name = "LLVMGetTypeKind")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetTypeKind(long Ty);
 
-        @LibrarySymbol("LLVMTypeIsSized")
+        @LibrarySymbol(name = "LLVMTypeIsSized")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMTypeIsSized(long Ty);
 
-        @LibrarySymbol("LLVMGetTypeContext")
+        @LibrarySymbol(name = "LLVMGetTypeContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetTypeContext(long Ty);
 
-        @LibrarySymbol("LLVMDumpType")
+        @LibrarySymbol(name = "LLVMDumpType")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDumpType(long Val);
 
-        @LibrarySymbol("LLVMPrintTypeToString")
+        @LibrarySymbol(name = "LLVMPrintTypeToString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMPrintTypeToString(long Val);
 
-        @LibrarySymbol("LLVMInt1TypeInContext")
+        @LibrarySymbol(name = "LLVMInt1TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMInt1TypeInContext(long C);
 
-        @LibrarySymbol("LLVMInt8TypeInContext")
+        @LibrarySymbol(name = "LLVMInt8TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMInt8TypeInContext(long C);
 
-        @LibrarySymbol("LLVMInt16TypeInContext")
+        @LibrarySymbol(name = "LLVMInt16TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMInt16TypeInContext(long C);
 
-        @LibrarySymbol("LLVMInt32TypeInContext")
+        @LibrarySymbol(name = "LLVMInt32TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMInt32TypeInContext(long C);
 
-        @LibrarySymbol("LLVMInt64TypeInContext")
+        @LibrarySymbol(name = "LLVMInt64TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMInt64TypeInContext(long C);
 
-        @LibrarySymbol("LLVMInt128TypeInContext")
+        @LibrarySymbol(name = "LLVMInt128TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMInt128TypeInContext(long C);
 
-        @LibrarySymbol("LLVMIntTypeInContext")
+        @LibrarySymbol(name = "LLVMIntTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long LLVMIntTypeInContext(long C, int NumBits);
 
-        @LibrarySymbol("LLVMInt1Type")
+        @LibrarySymbol(name = "LLVMInt1Type")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMInt1Type();
 
-        @LibrarySymbol("LLVMInt8Type")
+        @LibrarySymbol(name = "LLVMInt8Type")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMInt8Type();
 
-        @LibrarySymbol("LLVMInt16Type")
+        @LibrarySymbol(name = "LLVMInt16Type")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMInt16Type();
 
-        @LibrarySymbol("LLVMInt32Type")
+        @LibrarySymbol(name = "LLVMInt32Type")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMInt32Type();
 
-        @LibrarySymbol("LLVMInt64Type")
+        @LibrarySymbol(name = "LLVMInt64Type")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMInt64Type();
 
-        @LibrarySymbol("LLVMInt128Type")
+        @LibrarySymbol(name = "LLVMInt128Type")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMInt128Type();
 
-        @LibrarySymbol("LLVMIntType")
+        @LibrarySymbol(name = "LLVMIntType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {INT})
         abstract long LLVMIntType(int NumBits);
 
-        @LibrarySymbol("LLVMGetIntTypeWidth")
+        @LibrarySymbol(name = "LLVMGetIntTypeWidth")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetIntTypeWidth(long IntegerTy);
 
-        @LibrarySymbol("LLVMHalfTypeInContext")
+        @LibrarySymbol(name = "LLVMHalfTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMHalfTypeInContext(long C);
 
-        @LibrarySymbol("LLVMFloatTypeInContext")
+        @LibrarySymbol(name = "LLVMFloatTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMFloatTypeInContext(long C);
 
-        @LibrarySymbol("LLVMDoubleTypeInContext")
+        @LibrarySymbol(name = "LLVMDoubleTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMDoubleTypeInContext(long C);
 
-        @LibrarySymbol("LLVMX86FP80TypeInContext")
+        @LibrarySymbol(name = "LLVMX86FP80TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMX86FP80TypeInContext(long C);
 
-        @LibrarySymbol("LLVMFP128TypeInContext")
+        @LibrarySymbol(name = "LLVMFP128TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMFP128TypeInContext(long C);
 
-        @LibrarySymbol("LLVMPPCFP128TypeInContext")
+        @LibrarySymbol(name = "LLVMPPCFP128TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMPPCFP128TypeInContext(long C);
 
-        @LibrarySymbol("LLVMHalfType")
+        @LibrarySymbol(name = "LLVMHalfType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMHalfType();
 
-        @LibrarySymbol("LLVMFloatType")
+        @LibrarySymbol(name = "LLVMFloatType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMFloatType();
 
-        @LibrarySymbol("LLVMDoubleType")
+        @LibrarySymbol(name = "LLVMDoubleType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMDoubleType();
 
-        @LibrarySymbol("LLVMX86FP80Type")
+        @LibrarySymbol(name = "LLVMX86FP80Type")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMX86FP80Type();
 
-        @LibrarySymbol("LLVMFP128Type")
+        @LibrarySymbol(name = "LLVMFP128Type")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMFP128Type();
 
-        @LibrarySymbol("LLVMPPCFP128Type")
+        @LibrarySymbol(name = "LLVMPPCFP128Type")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMPPCFP128Type();
 
-        @LibrarySymbol("LLVMFunctionType")
+        @LibrarySymbol(name = "LLVMFunctionType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
         abstract long LLVMFunctionType(long ReturnType, long ParamTypes, int ParamCount, boolean IsVarArg);
 
-        @LibrarySymbol("LLVMIsFunctionVarArg")
+        @LibrarySymbol(name = "LLVMIsFunctionVarArg")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMIsFunctionVarArg(long FunctionTy);
 
-        @LibrarySymbol("LLVMGetReturnType")
+        @LibrarySymbol(name = "LLVMGetReturnType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetReturnType(long FunctionTy);
 
@@ -1185,23 +1185,23 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMGetParamTypes(long, long);*/
 
-        @LibrarySymbol("LLVMStructTypeInContext")
+        @LibrarySymbol(name = "LLVMStructTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
         abstract long LLVMStructTypeInContext(long C, long ElementTypes, int ElementCount, boolean Packed);
 
-        @LibrarySymbol("LLVMStructType")
+        @LibrarySymbol(name = "LLVMStructType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, BOOL_AS_INT})
         abstract long LLVMStructType(long ElementTypes, int ElementCount, boolean Packed);
 
-        @LibrarySymbol("LLVMStructCreateNamed")
+        @LibrarySymbol(name = "LLVMStructCreateNamed")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMStructCreateNamed(long C, long Name);
 
-        @LibrarySymbol("LLVMGetStructName")
+        @LibrarySymbol(name = "LLVMGetStructName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetStructName(long Ty);
 
-        @LibrarySymbol("LLVMStructSetBody")
+        @LibrarySymbol(name = "LLVMStructSetBody")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
         abstract void LLVMStructSetBody(long StructTy, long ElementTypes, int ElementCount, boolean Packed);
 
@@ -1217,63 +1217,63 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long LLVMStructGetTypeAtIndex(long, int);*/
 
-        @LibrarySymbol("LLVMIsPackedStruct")
+        @LibrarySymbol(name = "LLVMIsPackedStruct")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMIsPackedStruct(long StructTy);
 
-        @LibrarySymbol("LLVMIsOpaqueStruct")
+        @LibrarySymbol(name = "LLVMIsOpaqueStruct")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMIsOpaqueStruct(long StructTy);
 
-        @LibrarySymbol("LLVMGetElementType")
+        @LibrarySymbol(name = "LLVMGetElementType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetElementType(long Ty);
 
-        @LibrarySymbol("LLVMArrayType")
+        @LibrarySymbol(name = "LLVMArrayType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long LLVMArrayType(long ElementType, int ElementCount);
 
-        @LibrarySymbol("LLVMGetArrayLength")
+        @LibrarySymbol(name = "LLVMGetArrayLength")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetArrayLength(long ArrayTy);
 
-        @LibrarySymbol("LLVMPointerType")
+        @LibrarySymbol(name = "LLVMPointerType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long LLVMPointerType(long ElementType, int AddressSpace);
 
-        @LibrarySymbol("LLVMGetPointerAddressSpace")
+        @LibrarySymbol(name = "LLVMGetPointerAddressSpace")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetPointerAddressSpace(long PointerTy);
 
-        @LibrarySymbol("LLVMVectorType")
+        @LibrarySymbol(name = "LLVMVectorType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long LLVMVectorType(long ElementType, int ElementCount);
 
-        @LibrarySymbol("LLVMGetVectorSize")
+        @LibrarySymbol(name = "LLVMGetVectorSize")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetVectorSize(long VectorTy);
 
-        @LibrarySymbol("LLVMVoidTypeInContext")
+        @LibrarySymbol(name = "LLVMVoidTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMVoidTypeInContext(long C);
 
-        @LibrarySymbol("LLVMLabelTypeInContext")
+        @LibrarySymbol(name = "LLVMLabelTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMLabelTypeInContext(long C);
 
-        @LibrarySymbol("LLVMX86MMXTypeInContext")
+        @LibrarySymbol(name = "LLVMX86MMXTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMX86MMXTypeInContext(long C);
 
-        @LibrarySymbol("LLVMVoidType")
+        @LibrarySymbol(name = "LLVMVoidType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMVoidType();
 
-        @LibrarySymbol("LLVMLabelType")
+        @LibrarySymbol(name = "LLVMLabelType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMLabelType();
 
-        @LibrarySymbol("LLVMX86MMXType")
+        @LibrarySymbol(name = "LLVMX86MMXType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMX86MMXType();
 
@@ -1609,7 +1609,7 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDumpValue(long);*/
 
-        @LibrarySymbol("LLVMPrintValueToString")
+        @LibrarySymbol(name = "LLVMPrintValueToString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMPrintValueToString(long Val);
 
@@ -1665,15 +1665,15 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetNumOperands(long);*/
 
-        @LibrarySymbol("LLVMConstNull")
+        @LibrarySymbol(name = "LLVMConstNull")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMConstNull(long Ty);
 
-        @LibrarySymbol("LLVMConstAllOnes")
+        @LibrarySymbol(name = "LLVMConstAllOnes")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMConstAllOnes(long Ty);
 
-        @LibrarySymbol("LLVMGetUndef")
+        @LibrarySymbol(name = "LLVMGetUndef")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetUndef(long Ty);
 
@@ -1685,11 +1685,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMConstPointerNull(long);*/
 
-        @LibrarySymbol("LLVMConstInt")
+        @LibrarySymbol(name = "LLVMConstInt")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG, BOOL_AS_INT})
         abstract long LLVMConstInt(long IntTy, long N, boolean SignExtend);
 
-        @LibrarySymbol("LLVMConstIntOfArbitraryPrecision")
+        @LibrarySymbol(name = "LLVMConstIntOfArbitraryPrecision")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMConstIntOfArbitraryPrecision(long IntTy, int NumWords, long Words);
 
@@ -1725,11 +1725,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = DOUBLE, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract double LLVMConstRealGetDouble(long, long);*/
 
-        @LibrarySymbol("LLVMConstStringInContext")
+        @LibrarySymbol(name = "LLVMConstStringInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
         abstract long LLVMConstStringInContext(long C, long Str, int Length, boolean DontNullTerminate);
 
-        @LibrarySymbol("LLVMConstString")
+        @LibrarySymbol(name = "LLVMConstString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, BOOL_AS_INT})
         abstract long LLVMConstString(long Str, int Length, boolean DontNullTerminate);
 
@@ -2021,43 +2021,43 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBlockAddress(long, long);*/
 
-        @LibrarySymbol("LLVMGetGlobalParent")
+        @LibrarySymbol(name = "LLVMGetGlobalParent")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetGlobalParent(long Global);
 
-        @LibrarySymbol("LLVMIsDeclaration")
+        @LibrarySymbol(name = "LLVMIsDeclaration")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMIsDeclaration(long Global);
 
-        @LibrarySymbol("LLVMGetLinkage")
+        @LibrarySymbol(name = "LLVMGetLinkage")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetLinkage(long Global);
 
-        @LibrarySymbol("LLVMSetLinkage")
+        @LibrarySymbol(name = "LLVMSetLinkage")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMSetLinkage(long Global, int Linkage);
 
-        @LibrarySymbol("LLVMGetSection")
+        @LibrarySymbol(name = "LLVMGetSection")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetSection(long Global);
 
-        @LibrarySymbol("LLVMSetSection")
+        @LibrarySymbol(name = "LLVMSetSection")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetSection(long Global, long Section);
 
-        @LibrarySymbol("LLVMGetVisibility")
+        @LibrarySymbol(name = "LLVMGetVisibility")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetVisibility(long Global);
 
-        @LibrarySymbol("LLVMSetVisibility")
+        @LibrarySymbol(name = "LLVMSetVisibility")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMSetVisibility(long Global, int Viz);
 
-        @LibrarySymbol("LLVMGetDLLStorageClass")
+        @LibrarySymbol(name = "LLVMGetDLLStorageClass")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetDLLStorageClass(long Global);
 
-        @LibrarySymbol("LLVMSetDLLStorageClass")
+        @LibrarySymbol(name = "LLVMSetDLLStorageClass")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMSetDLLStorageClass(long Global, int Class);
 
@@ -2069,11 +2069,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
         abstract void LLVMSetUnnamedAddr(long, boolean);*/
 
-        @LibrarySymbol("LLVMGetAlignment")
+        @LibrarySymbol(name = "LLVMGetAlignment")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetAlignment(long V);
 
-        @LibrarySymbol("LLVMSetAlignment")
+        @LibrarySymbol(name = "LLVMSetAlignment")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMSetAlignment(long V, int Bytes);
 
@@ -2173,11 +2173,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetIntrinsicID(long);*/
 
-        @LibrarySymbol("LLVMGetFunctionCallConv")
+        @LibrarySymbol(name = "LLVMGetFunctionCallConv")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetFunctionCallConv(long Fn);
 
-        @LibrarySymbol("LLVMSetFunctionCallConv")
+        @LibrarySymbol(name = "LLVMSetFunctionCallConv")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMSetFunctionCallConv(long Fn, int CC);
 
@@ -2189,11 +2189,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetGC(long, long);*/
 
-        @LibrarySymbol("LLVMAddFunctionAttr")
+        @LibrarySymbol(name = "LLVMAddFunctionAttr")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMAddFunctionAttr(long Fn, int PA);
 
-        @LibrarySymbol("LLVMAddAttributeAtIndex")
+        @LibrarySymbol(name = "LLVMAddAttributeAtIndex")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract void LLVMAddAttributeAtIndex(long F, int Idx, long A);
 
@@ -2225,15 +2225,15 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMRemoveFunctionAttr(long, int);*/
 
-        @LibrarySymbol("LLVMCountParams")
+        @LibrarySymbol(name = "LLVMCountParams")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMCountParams(long Fn);
 
-        @LibrarySymbol("LLVMGetParams")
+        @LibrarySymbol(name = "LLVMGetParams")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMGetParams(long Fn, long Params);
 
-        @LibrarySymbol("LLVMGetParam")
+        @LibrarySymbol(name = "LLVMGetParam")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long LLVMGetParam(long Fn, int Index);
 
@@ -2257,7 +2257,7 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetPreviousParam(long);*/
 
-        @LibrarySymbol("LLVMAddAttribute")
+        @LibrarySymbol(name = "LLVMAddAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMAddAttribute(long Arg, int PA);
 
@@ -2265,11 +2265,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMRemoveAttribute(long, int);*/
 
-        @LibrarySymbol("LLVMGetAttribute")
+        @LibrarySymbol(name = "LLVMGetAttribute")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetAttribute(long Arg);
 
-        @LibrarySymbol("LLVMSetParamAlignment")
+        @LibrarySymbol(name = "LLVMSetParamAlignment")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMSetParamAlignment(long Arg, int Align);
 
@@ -2317,7 +2317,7 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetBasicBlockName(long);*/
 
-        @LibrarySymbol("LLVMGetBasicBlockParent")
+        @LibrarySymbol(name = "LLVMGetBasicBlockParent")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetBasicBlockParent(long BB);
 
@@ -2349,15 +2349,15 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetPreviousBasicBlock(long);*/
 
-        @LibrarySymbol("LLVMGetEntryBasicBlock")
+        @LibrarySymbol(name = "LLVMGetEntryBasicBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetEntryBasicBlock(long Fn);
 
-        @LibrarySymbol("LLVMAppendBasicBlockInContext")
+        @LibrarySymbol(name = "LLVMAppendBasicBlockInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMAppendBasicBlockInContext(long C, long Fn, long Name);
 
-        @LibrarySymbol("LLVMAppendBasicBlock")
+        @LibrarySymbol(name = "LLVMAppendBasicBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMAppendBasicBlock(long Fn, long Name);
 
@@ -2453,15 +2453,15 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetInstructionCallConv(long);*/
 
-        @LibrarySymbol("LLVMAddInstrAttribute")
+        @LibrarySymbol(name = "LLVMAddInstrAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
         abstract void LLVMAddInstrAttribute(long Instr, int index, int PA);
 
-        @LibrarySymbol("LLVMRemoveInstrAttribute")
+        @LibrarySymbol(name = "LLVMRemoveInstrAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
         abstract void LLVMRemoveInstrAttribute(long Instr, int index, int PA);
 
-        @LibrarySymbol("LLVMSetInstrParamAlignment")
+        @LibrarySymbol(name = "LLVMSetInstrParamAlignment")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
         abstract void LLVMSetInstrParamAlignment(long Instr, int index, int Align);
 
@@ -2541,31 +2541,31 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetSwitchDefaultDest(long);*/
 
-        @LibrarySymbol("LLVMGetAllocatedType")
+        @LibrarySymbol(name = "LLVMGetAllocatedType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetAllocatedType(long Alloca);
 
-        @LibrarySymbol("LLVMIsInBounds")
+        @LibrarySymbol(name = "LLVMIsInBounds")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMIsInBounds(long GEP);
 
-        @LibrarySymbol("LLVMSetIsInBounds")
+        @LibrarySymbol(name = "LLVMSetIsInBounds")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
         abstract void LLVMSetIsInBounds(long GEP, boolean InBounds);
 
-        @LibrarySymbol("LLVMAddIncoming")
+        @LibrarySymbol(name = "LLVMAddIncoming")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT})
         abstract void LLVMAddIncoming(long PhiNode, long IncomingValues, long IncomingBlocks, int Count);
 
-        @LibrarySymbol("LLVMCountIncoming")
+        @LibrarySymbol(name = "LLVMCountIncoming")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMCountIncoming(long PhiNode);
 
-        @LibrarySymbol("LLVMGetIncomingValue")
+        @LibrarySymbol(name = "LLVMGetIncomingValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long LLVMGetIncomingValue(long PhiNode, int Index);
 
-        @LibrarySymbol("LLVMGetIncomingBlock")
+        @LibrarySymbol(name = "LLVMGetIncomingBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long LLVMGetIncomingBlock(long PhiNode, int Index);
 
@@ -2577,63 +2577,63 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetIndices(long);*/
 
-        @LibrarySymbol("LLVMCreateBuilderInContext")
+        @LibrarySymbol(name = "LLVMCreateBuilderInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMCreateBuilderInContext(long C);
 
-        @LibrarySymbol("LLVMCreateBuilder")
+        @LibrarySymbol(name = "LLVMCreateBuilder")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMCreateBuilder();
 
-        @LibrarySymbol("LLVMPositionBuilder")
+        @LibrarySymbol(name = "LLVMPositionBuilder")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMPositionBuilder(long Builder, long Block, long Instr);
 
-        @LibrarySymbol("LLVMPositionBuilderBefore")
+        @LibrarySymbol(name = "LLVMPositionBuilderBefore")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMPositionBuilderBefore(long Builder, long Block);
 
-        @LibrarySymbol("LLVMPositionBuilderAtEnd")
+        @LibrarySymbol(name = "LLVMPositionBuilderAtEnd")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMPositionBuilderAtEnd(long Builder, long Block);
 
-        @LibrarySymbol("LLVMGetInsertBlock")
+        @LibrarySymbol(name = "LLVMGetInsertBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetInsertBlock(long Builder);
 
-        @LibrarySymbol("LLVMClearInsertionPosition")
+        @LibrarySymbol(name = "LLVMClearInsertionPosition")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMClearInsertionPosition(long Builder);
 
-        @LibrarySymbol("LLVMInsertIntoBuilder")
+        @LibrarySymbol(name = "LLVMInsertIntoBuilder")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMInsertIntoBuilder(long Builder, long Instr);
 
-        @LibrarySymbol("LLVMInsertIntoBuilderWithName")
+        @LibrarySymbol(name = "LLVMInsertIntoBuilderWithName")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMInsertIntoBuilderWithName(long Builder, long Instr, long Name);
 
-        @LibrarySymbol("LLVMDisposeBuilder")
+        @LibrarySymbol(name = "LLVMDisposeBuilder")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeBuilder(long Builder);
 
-        @LibrarySymbol("LLVMSetCurrentDebugLocation")
+        @LibrarySymbol(name = "LLVMSetCurrentDebugLocation")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetCurrentDebugLocation(long Builder, long L);
 
-        @LibrarySymbol("LLVMGetCurrentDebugLocation")
+        @LibrarySymbol(name = "LLVMGetCurrentDebugLocation")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetCurrentDebugLocation(long Builder);
 
-        @LibrarySymbol("LLVMSetInstDebugLocation")
+        @LibrarySymbol(name = "LLVMSetInstDebugLocation")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetInstDebugLocation(long Builder, long Inst);
 
-        @LibrarySymbol("LLVMBuildRetVoid")
+        @LibrarySymbol(name = "LLVMBuildRetVoid")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMBuildRetVoid(long Builder);
 
-        @LibrarySymbol("LLVMBuildRet")
+        @LibrarySymbol(name = "LLVMBuildRet")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildRet(long Builder, long V);
 
@@ -2641,11 +2641,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
         abstract long LLVMBuildAggregateRet(long, long, int);*/
 
-        @LibrarySymbol("LLVMBuildBr")
+        @LibrarySymbol(name = "LLVMBuildBr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildBr(long B, long Dest);
 
-        @LibrarySymbol("LLVMBuildCondBr")
+        @LibrarySymbol(name = "LLVMBuildCondBr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildCondBr(long B, long If, long Then, long Else);
 
@@ -2701,291 +2701,291 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
         abstract void LLVMSetCleanup(long, boolean);*/
 
-        @LibrarySymbol("LLVMBuildAdd")
+        @LibrarySymbol(name = "LLVMBuildAdd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildAdd(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildNSWAdd")
+        @LibrarySymbol(name = "LLVMBuildNSWAdd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNSWAdd(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildNUWAdd")
+        @LibrarySymbol(name = "LLVMBuildNUWAdd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNUWAdd(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildFAdd")
+        @LibrarySymbol(name = "LLVMBuildFAdd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFAdd(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildSub")
+        @LibrarySymbol(name = "LLVMBuildSub")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildSub(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildNSWSub")
+        @LibrarySymbol(name = "LLVMBuildNSWSub")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNSWSub(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildNUWSub")
+        @LibrarySymbol(name = "LLVMBuildNUWSub")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNUWSub(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildFSub")
+        @LibrarySymbol(name = "LLVMBuildFSub")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFSub(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildMul")
+        @LibrarySymbol(name = "LLVMBuildMul")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildMul(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildNSWMul")
+        @LibrarySymbol(name = "LLVMBuildNSWMul")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNSWMul(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildNUWMul")
+        @LibrarySymbol(name = "LLVMBuildNUWMul")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNUWMul(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildFMul")
+        @LibrarySymbol(name = "LLVMBuildFMul")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFMul(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildUDiv")
+        @LibrarySymbol(name = "LLVMBuildUDiv")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildUDiv(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildSDiv")
+        @LibrarySymbol(name = "LLVMBuildSDiv")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildSDiv(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildExactSDiv")
+        @LibrarySymbol(name = "LLVMBuildExactSDiv")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildExactSDiv(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildFDiv")
+        @LibrarySymbol(name = "LLVMBuildFDiv")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFDiv(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildURem")
+        @LibrarySymbol(name = "LLVMBuildURem")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildURem(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildSRem")
+        @LibrarySymbol(name = "LLVMBuildSRem")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildSRem(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildFRem")
+        @LibrarySymbol(name = "LLVMBuildFRem")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFRem(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildShl")
+        @LibrarySymbol(name = "LLVMBuildShl")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildShl(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildLShr")
+        @LibrarySymbol(name = "LLVMBuildLShr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildLShr(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildAShr")
+        @LibrarySymbol(name = "LLVMBuildAShr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildAShr(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildAnd")
+        @LibrarySymbol(name = "LLVMBuildAnd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildAnd(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildOr")
+        @LibrarySymbol(name = "LLVMBuildOr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildOr(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildXor")
+        @LibrarySymbol(name = "LLVMBuildXor")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildXor(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildBinOp")
+        @LibrarySymbol(name = "LLVMBuildBinOp")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildBinOp(long B, int Op, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildNeg")
+        @LibrarySymbol(name = "LLVMBuildNeg")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNeg(long B, long V, long Name);
 
-        @LibrarySymbol("LLVMBuildNSWNeg")
+        @LibrarySymbol(name = "LLVMBuildNSWNeg")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNSWNeg(long B, long V, long Name);
 
-        @LibrarySymbol("LLVMBuildNUWNeg")
+        @LibrarySymbol(name = "LLVMBuildNUWNeg")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNUWNeg(long B, long V, long Name);
 
-        @LibrarySymbol("LLVMBuildFNeg")
+        @LibrarySymbol(name = "LLVMBuildFNeg")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFNeg(long B, long V, long Name);
 
-        @LibrarySymbol("LLVMBuildNot")
+        @LibrarySymbol(name = "LLVMBuildNot")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNot(long B, long V, long Name);
 
-        @LibrarySymbol("LLVMBuildMalloc")
+        @LibrarySymbol(name = "LLVMBuildMalloc")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildMalloc(long B, long Ty, long Name);
 
-        @LibrarySymbol("LLVMBuildArrayMalloc")
+        @LibrarySymbol(name = "LLVMBuildArrayMalloc")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildArrayMalloc(long B, long Ty, long Val, long Name);
 
-        @LibrarySymbol("LLVMBuildAlloca")
+        @LibrarySymbol(name = "LLVMBuildAlloca")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildAlloca(long B, long Ty, long Name);
 
-        @LibrarySymbol("LLVMBuildArrayAlloca")
+        @LibrarySymbol(name = "LLVMBuildArrayAlloca")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildArrayAlloca(long B, long Ty, long Val, long Name);
 
-        @LibrarySymbol("LLVMBuildFree")
+        @LibrarySymbol(name = "LLVMBuildFree")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFree(long B, long Ptr);
 
-        @LibrarySymbol("LLVMBuildLoad")
+        @LibrarySymbol(name = "LLVMBuildLoad")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildLoad(long B, long Ptr, long Name);
 
-        @LibrarySymbol("LLVMBuildStore")
+        @LibrarySymbol(name = "LLVMBuildStore")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildStore(long B, long Val, long Ptr);
 
-        @LibrarySymbol("LLVMBuildGEP")
+        @LibrarySymbol(name = "LLVMBuildGEP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMBuildGEP(long B, long Pointer, long Indices, int NumIndices, long Name);
 
-        @LibrarySymbol("LLVMBuildInBoundsGEP")
+        @LibrarySymbol(name = "LLVMBuildInBoundsGEP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMBuildInBoundsGEP(long B, long Pointer, long Indices, int NumIndices, long Name);
 
-        @LibrarySymbol("LLVMBuildStructGEP")
+        @LibrarySymbol(name = "LLVMBuildStructGEP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMBuildStructGEP(long B, long Pointer, int Idx, long Name);
 
-        @LibrarySymbol("LLVMBuildGlobalString")
+        @LibrarySymbol(name = "LLVMBuildGlobalString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildGlobalString(long B, long Str, long Name);
 
-        @LibrarySymbol("LLVMBuildGlobalStringPtr")
+        @LibrarySymbol(name = "LLVMBuildGlobalStringPtr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildGlobalStringPtr(long B, long Str, long Name);
 
-        @LibrarySymbol("LLVMGetVolatile")
+        @LibrarySymbol(name = "LLVMGetVolatile")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMGetVolatile(long MemoryAccessInst);
 
-        @LibrarySymbol("LLVMSetVolatile")
+        @LibrarySymbol(name = "LLVMSetVolatile")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
         abstract void LLVMSetVolatile(long MemoryAccessInst, boolean IsVolatile);
 
-        @LibrarySymbol("LLVMGetOrdering")
+        @LibrarySymbol(name = "LLVMGetOrdering")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetOrdering(long MemoryAccessInst);
 
-        @LibrarySymbol("LLVMSetOrdering")
+        @LibrarySymbol(name = "LLVMSetOrdering")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMSetOrdering(long MemoryAccessInst, int Ordering);
 
-        @LibrarySymbol("LLVMBuildTrunc")
+        @LibrarySymbol(name = "LLVMBuildTrunc")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildTrunc(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildZExt")
+        @LibrarySymbol(name = "LLVMBuildZExt")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildZExt(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildSExt")
+        @LibrarySymbol(name = "LLVMBuildSExt")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildSExt(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildFPToUI")
+        @LibrarySymbol(name = "LLVMBuildFPToUI")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFPToUI(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildFPToSI")
+        @LibrarySymbol(name = "LLVMBuildFPToSI")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFPToSI(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildUIToFP")
+        @LibrarySymbol(name = "LLVMBuildUIToFP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildUIToFP(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildSIToFP")
+        @LibrarySymbol(name = "LLVMBuildSIToFP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildSIToFP(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildFPTrunc")
+        @LibrarySymbol(name = "LLVMBuildFPTrunc")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFPTrunc(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildFPExt")
+        @LibrarySymbol(name = "LLVMBuildFPExt")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFPExt(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildPtrToInt")
+        @LibrarySymbol(name = "LLVMBuildPtrToInt")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildPtrToInt(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildIntToPtr")
+        @LibrarySymbol(name = "LLVMBuildIntToPtr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildIntToPtr(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildBitCast")
+        @LibrarySymbol(name = "LLVMBuildBitCast")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildBitCast(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildAddrSpaceCast")
+        @LibrarySymbol(name = "LLVMBuildAddrSpaceCast")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildAddrSpaceCast(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildZExtOrBitCast")
+        @LibrarySymbol(name = "LLVMBuildZExtOrBitCast")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildZExtOrBitCast(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildSExtOrBitCast")
+        @LibrarySymbol(name = "LLVMBuildSExtOrBitCast")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildSExtOrBitCast(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildTruncOrBitCast")
+        @LibrarySymbol(name = "LLVMBuildTruncOrBitCast")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildTruncOrBitCast(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildCast")
+        @LibrarySymbol(name = "LLVMBuildCast")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildCast(long B, int Op, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildPointerCast")
+        @LibrarySymbol(name = "LLVMBuildPointerCast")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildPointerCast(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildIntCast")
+        @LibrarySymbol(name = "LLVMBuildIntCast")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildIntCast(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildFPCast")
+        @LibrarySymbol(name = "LLVMBuildFPCast")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFPCast(long B, long Val, long DestTy, long Name);
 
-        @LibrarySymbol("LLVMBuildICmp")
+        @LibrarySymbol(name = "LLVMBuildICmp")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildICmp(long B, int Op, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildFCmp")
+        @LibrarySymbol(name = "LLVMBuildFCmp")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildFCmp(long B, int Op, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildPhi")
+        @LibrarySymbol(name = "LLVMBuildPhi")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildPhi(long B, long Ty, long Name);
 
-        @LibrarySymbol("LLVMBuildCall")
+        @LibrarySymbol(name = "LLVMBuildCall")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMBuildCall(long B, long Fn, long Args, int NumArgs, long Name);
 
-        @LibrarySymbol("LLVMBuildSelect")
+        @LibrarySymbol(name = "LLVMBuildSelect")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildSelect(long B, long If, long Then, long Else, long Name);
 
@@ -3005,11 +3005,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildShuffleVector(long, long, long, long, long);*/
 
-        @LibrarySymbol("LLVMBuildExtractValue")
+        @LibrarySymbol(name = "LLVMBuildExtractValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMBuildExtractValue(long B, long AggVal, int Index, long Name);
 
-        @LibrarySymbol("LLVMBuildInsertValue")
+        @LibrarySymbol(name = "LLVMBuildInsertValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMBuildInsertValue(long B, long AggVal, long EltVal, int Index, long Name);
 
@@ -3061,11 +3061,11 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMSetCmpXchgFailureOrdering(long, int);*/
 
-        @LibrarySymbol("LLVMCreateModuleProviderForExistingModule")
+        @LibrarySymbol(name = "LLVMCreateModuleProviderForExistingModule")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMCreateModuleProviderForExistingModule(long M);
 
-        @LibrarySymbol("LLVMDisposeModuleProvider")
+        @LibrarySymbol(name = "LLVMDisposeModuleProvider")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeModuleProvider(long M);
 
@@ -3077,59 +3077,59 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMCreateMemoryBufferWithSTDIN(long, long);*/
 
-        @LibrarySymbol("LLVMCreateMemoryBufferWithMemoryRange")
+        @LibrarySymbol(name = "LLVMCreateMemoryBufferWithMemoryRange")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, BOOL_AS_INT})
         abstract long LLVMCreateMemoryBufferWithMemoryRange(long InputData, long InputDataLength, long BufferName, boolean RequiresNullTerminator);
 
-        @LibrarySymbol("LLVMCreateMemoryBufferWithMemoryRangeCopy")
+        @LibrarySymbol(name = "LLVMCreateMemoryBufferWithMemoryRangeCopy")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMCreateMemoryBufferWithMemoryRangeCopy(long InputData, long InputDataLength, long BufferName);
 
-        @LibrarySymbol("LLVMGetBufferStart")
+        @LibrarySymbol(name = "LLVMGetBufferStart")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetBufferStart(long MemBuf);
 
-        @LibrarySymbol("LLVMGetBufferSize")
+        @LibrarySymbol(name = "LLVMGetBufferSize")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetBufferSize(long MemBuf);
 
-        @LibrarySymbol("LLVMDisposeMemoryBuffer")
+        @LibrarySymbol(name = "LLVMDisposeMemoryBuffer")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeMemoryBuffer(long MemBuf);
 
-        @LibrarySymbol("LLVMGetGlobalPassRegistry")
+        @LibrarySymbol(name = "LLVMGetGlobalPassRegistry")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMGetGlobalPassRegistry();
 
-        @LibrarySymbol("LLVMCreatePassManager")
+        @LibrarySymbol(name = "LLVMCreatePassManager")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMCreatePassManager();
 
-        @LibrarySymbol("LLVMCreateFunctionPassManagerForModule")
+        @LibrarySymbol(name = "LLVMCreateFunctionPassManagerForModule")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMCreateFunctionPassManagerForModule(long M);
 
-        @LibrarySymbol("LLVMCreateFunctionPassManager")
+        @LibrarySymbol(name = "LLVMCreateFunctionPassManager")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMCreateFunctionPassManager(long MP);
 
-        @LibrarySymbol("LLVMRunPassManager")
+        @LibrarySymbol(name = "LLVMRunPassManager")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMRunPassManager(long PM, long M);
 
-        @LibrarySymbol("LLVMInitializeFunctionPassManager")
+        @LibrarySymbol(name = "LLVMInitializeFunctionPassManager")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMInitializeFunctionPassManager(long FPM);
 
-        @LibrarySymbol("LLVMRunFunctionPassManager")
+        @LibrarySymbol(name = "LLVMRunFunctionPassManager")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMRunFunctionPassManager(long FPM, long F);
 
-        @LibrarySymbol("LLVMFinalizeFunctionPassManager")
+        @LibrarySymbol(name = "LLVMFinalizeFunctionPassManager")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMFinalizeFunctionPassManager(long FPM);
 
-        @LibrarySymbol("LLVMDisposePassManager")
+        @LibrarySymbol(name = "LLVMDisposePassManager")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposePassManager(long PM);
 

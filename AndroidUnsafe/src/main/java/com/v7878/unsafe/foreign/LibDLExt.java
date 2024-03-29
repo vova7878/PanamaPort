@@ -238,32 +238,32 @@ public class LibDLExt {
             return LibDL.s_android_dlopen_ext;
         }
 
-        @LibrarySymbol("android_get_LD_LIBRARY_PATH")
+        @LibrarySymbol(name = "android_get_LD_LIBRARY_PATH")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void get_LD_LIBRARY_PATH(long buffer, long buffer_size);
 
-        @LibrarySymbol("android_update_LD_LIBRARY_PATH")
+        @LibrarySymbol(name = "android_update_LD_LIBRARY_PATH")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void update_LD_LIBRARY_PATH(long ld_library_path);
 
-        @LibrarySymbol("android_init_anonymous_namespace")
+        @LibrarySymbol(name = "android_init_anonymous_namespace")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean init_anonymous_namespace(
                 long shared_libs_sonames, long library_search_path);
 
-        @LibrarySymbol("android_create_namespace")
+        @LibrarySymbol(name = "android_create_namespace")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {
                 LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG, LONG_AS_WORD, LONG_AS_WORD})
         abstract long create_namespace(
                 long name, long ld_library_path, long default_library_path,
                 long type, long permitted_when_isolated_path, long parent);
 
-        @LibrarySymbol("android_link_namespaces")
+        @LibrarySymbol(name = "android_link_namespaces")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean link_namespaces(
                 long namespace_from, long namespace_to, long shared_libs_sonames);
 
-        @LibrarySymbol("android_get_exported_namespace")
+        @LibrarySymbol(name = "android_get_exported_namespace")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long get_exported_namespace(long name);
 

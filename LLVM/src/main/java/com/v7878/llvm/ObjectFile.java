@@ -125,115 +125,115 @@ public class ObjectFile {
 
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @LibrarySymbol("LLVMCreateObjectFile")
+        @LibrarySymbol(name = "LLVMCreateObjectFile")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMCreateObjectFile(long MemBuf);
 
-        @LibrarySymbol("LLVMDisposeObjectFile")
+        @LibrarySymbol(name = "LLVMDisposeObjectFile")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeObjectFile(long ObjectFile);
 
-        @LibrarySymbol("LLVMGetSections")
+        @LibrarySymbol(name = "LLVMGetSections")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetSections(long ObjectFile);
 
-        @LibrarySymbol("LLVMDisposeSectionIterator")
+        @LibrarySymbol(name = "LLVMDisposeSectionIterator")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeSectionIterator(long SI);
 
-        @LibrarySymbol("LLVMIsSectionIteratorAtEnd")
+        @LibrarySymbol(name = "LLVMIsSectionIteratorAtEnd")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMIsSectionIteratorAtEnd(long ObjectFile, long SI);
 
-        @LibrarySymbol("LLVMMoveToNextSection")
+        @LibrarySymbol(name = "LLVMMoveToNextSection")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMMoveToNextSection(long SI);
 
-        @LibrarySymbol("LLVMMoveToContainingSection")
+        @LibrarySymbol(name = "LLVMMoveToContainingSection")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMMoveToContainingSection(long Sect, long Sym);
 
-        @LibrarySymbol("LLVMGetSymbols")
+        @LibrarySymbol(name = "LLVMGetSymbols")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetSymbols(long ObjectFile);
 
-        @LibrarySymbol("LLVMDisposeSymbolIterator")
+        @LibrarySymbol(name = "LLVMDisposeSymbolIterator")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeSymbolIterator(long SI);
 
-        @LibrarySymbol("LLVMIsSymbolIteratorAtEnd")
+        @LibrarySymbol(name = "LLVMIsSymbolIteratorAtEnd")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMIsSymbolIteratorAtEnd(long ObjectFile, long SI);
 
-        @LibrarySymbol("LLVMMoveToNextSymbol")
+        @LibrarySymbol(name = "LLVMMoveToNextSymbol")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMMoveToNextSymbol(long SI);
 
-        @LibrarySymbol("LLVMGetSectionName")
+        @LibrarySymbol(name = "LLVMGetSectionName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetSectionName(long SI);
 
-        @LibrarySymbol("LLVMGetSectionSize")
+        @LibrarySymbol(name = "LLVMGetSectionSize")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
         abstract long LLVMGetSectionSize(long SI);
 
-        @LibrarySymbol("LLVMGetSectionContents")
+        @LibrarySymbol(name = "LLVMGetSectionContents")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetSectionContents(long SI);
 
-        @LibrarySymbol("LLVMGetSectionAddress")
+        @LibrarySymbol(name = "LLVMGetSectionAddress")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
         abstract long LLVMGetSectionAddress(long SI);
 
-        @LibrarySymbol("LLVMGetSectionContainsSymbol")
+        @LibrarySymbol(name = "LLVMGetSectionContainsSymbol")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMGetSectionContainsSymbol(long SI, long Sym);
 
-        @LibrarySymbol("LLVMGetRelocations")
+        @LibrarySymbol(name = "LLVMGetRelocations")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetRelocations(long Section);
 
-        @LibrarySymbol("LLVMDisposeRelocationIterator")
+        @LibrarySymbol(name = "LLVMDisposeRelocationIterator")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeRelocationIterator(long RI);
 
-        @LibrarySymbol("LLVMIsRelocationIteratorAtEnd")
+        @LibrarySymbol(name = "LLVMIsRelocationIteratorAtEnd")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMIsRelocationIteratorAtEnd(long Section, long RI);
 
-        @LibrarySymbol("LLVMMoveToNextRelocation")
+        @LibrarySymbol(name = "LLVMMoveToNextRelocation")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMMoveToNextRelocation(long RI);
 
-        @LibrarySymbol("LLVMGetSymbolName")
+        @LibrarySymbol(name = "LLVMGetSymbolName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetSymbolName(long SI);
 
-        @LibrarySymbol("LLVMGetSymbolAddress")
+        @LibrarySymbol(name = "LLVMGetSymbolAddress")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
         abstract long LLVMGetSymbolAddress(long SI);
 
-        @LibrarySymbol("LLVMGetSymbolSize")
+        @LibrarySymbol(name = "LLVMGetSymbolSize")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
         abstract long LLVMGetSymbolSize(long SI);
 
-        @LibrarySymbol("LLVMGetRelocationOffset")
+        @LibrarySymbol(name = "LLVMGetRelocationOffset")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
         abstract long LLVMGetRelocationOffset(long RI);
 
-        @LibrarySymbol("LLVMGetRelocationSymbol")
+        @LibrarySymbol(name = "LLVMGetRelocationSymbol")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetRelocationSymbol(long RI);
 
-        @LibrarySymbol("LLVMGetRelocationType")
+        @LibrarySymbol(name = "LLVMGetRelocationType")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
         abstract long LLVMGetRelocationType(long RI);
 
-        @LibrarySymbol("LLVMGetRelocationTypeName")
+        @LibrarySymbol(name = "LLVMGetRelocationTypeName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetRelocationTypeName(long RI);
 
-        @LibrarySymbol("LLVMGetRelocationValueString")
+        @LibrarySymbol(name = "LLVMGetRelocationValueString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetRelocationValueString(long RI);
 

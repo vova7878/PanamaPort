@@ -160,87 +160,87 @@ public class TargetMachine {
 
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @LibrarySymbol("LLVMGetFirstTarget")
+        @LibrarySymbol(name = "LLVMGetFirstTarget")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMGetFirstTarget();
 
-        @LibrarySymbol("LLVMGetNextTarget")
+        @LibrarySymbol(name = "LLVMGetNextTarget")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetNextTarget(long T);
 
-        @LibrarySymbol("LLVMGetTargetFromName")
+        @LibrarySymbol(name = "LLVMGetTargetFromName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetTargetFromName(long Name);
 
-        @LibrarySymbol("LLVMGetTargetFromTriple")
+        @LibrarySymbol(name = "LLVMGetTargetFromTriple")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMGetTargetFromTriple(long Triple, long T, long ErrorMessage);
 
-        @LibrarySymbol("LLVMGetTargetName")
+        @LibrarySymbol(name = "LLVMGetTargetName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetTargetName(long T);
 
-        @LibrarySymbol("LLVMGetTargetDescription")
+        @LibrarySymbol(name = "LLVMGetTargetDescription")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetTargetDescription(long T);
 
-        @LibrarySymbol("LLVMTargetHasJIT")
+        @LibrarySymbol(name = "LLVMTargetHasJIT")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMTargetHasJIT(long T);
 
-        @LibrarySymbol("LLVMTargetHasTargetMachine")
+        @LibrarySymbol(name = "LLVMTargetHasTargetMachine")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMTargetHasTargetMachine(long T);
 
-        @LibrarySymbol("LLVMTargetHasAsmBackend")
+        @LibrarySymbol(name = "LLVMTargetHasAsmBackend")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMTargetHasAsmBackend(long T);
 
-        @LibrarySymbol("LLVMCreateTargetMachine")
+        @LibrarySymbol(name = "LLVMCreateTargetMachine")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, INT, INT})
         abstract long LLVMCreateTargetMachine(long T, long Triple, long CPU, long Features, int Level, int Reloc, int CodeModel);
 
-        @LibrarySymbol("LLVMDisposeTargetMachine")
+        @LibrarySymbol(name = "LLVMDisposeTargetMachine")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeTargetMachine(long T);
 
-        @LibrarySymbol("LLVMGetTargetMachineTarget")
+        @LibrarySymbol(name = "LLVMGetTargetMachineTarget")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetTargetMachineTarget(long T);
 
-        @LibrarySymbol("LLVMGetTargetMachineTriple")
+        @LibrarySymbol(name = "LLVMGetTargetMachineTriple")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetTargetMachineTriple(long T);
 
-        @LibrarySymbol("LLVMGetTargetMachineCPU")
+        @LibrarySymbol(name = "LLVMGetTargetMachineCPU")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetTargetMachineCPU(long T);
 
-        @LibrarySymbol("LLVMGetTargetMachineFeatureString")
+        @LibrarySymbol(name = "LLVMGetTargetMachineFeatureString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetTargetMachineFeatureString(long T);
 
-        @LibrarySymbol("LLVMCreateTargetDataLayout")
+        @LibrarySymbol(name = "LLVMCreateTargetDataLayout")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMCreateTargetDataLayout(long T);
 
-        @LibrarySymbol("LLVMSetTargetMachineAsmVerbosity")
+        @LibrarySymbol(name = "LLVMSetTargetMachineAsmVerbosity")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
         abstract void LLVMSetTargetMachineAsmVerbosity(long T, boolean VerboseAsm);
 
-        @LibrarySymbol("LLVMTargetMachineEmitToFile")
+        @LibrarySymbol(name = "LLVMTargetMachineEmitToFile")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract boolean LLVMTargetMachineEmitToFile(long T, long M, long Filename, int codegen, long ErrorMessage);
 
-        @LibrarySymbol("LLVMTargetMachineEmitToMemoryBuffer")
+        @LibrarySymbol(name = "LLVMTargetMachineEmitToMemoryBuffer")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMTargetMachineEmitToMemoryBuffer(long T, long M, int codegen, long ErrorMessage, long OutMemBuf);
 
-        @LibrarySymbol("LLVMGetDefaultTargetTriple")
+        @LibrarySymbol(name = "LLVMGetDefaultTargetTriple")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMGetDefaultTargetTriple();
 
-        @LibrarySymbol("LLVMAddAnalysisPasses")
+        @LibrarySymbol(name = "LLVMAddAnalysisPasses")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMAddAnalysisPasses(long T, long P);
 

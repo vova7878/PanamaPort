@@ -13,7 +13,12 @@ import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
+import static com.v7878.unsafe.InstructionSet.ARM;
+import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
+import static com.v7878.unsafe.InstructionSet.RISCV64;
+import static com.v7878.unsafe.InstructionSet.X86;
+import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -367,15 +372,18 @@ public class BulkLinker {
         return impl;
     }
 
+    public enum HeapPoisoning {
+        ENABLED, DISABLED, NO_MATTER
+    }
+
     @Keep
-    public @interface ASMConditions {
-        InstructionSet iset();
+    public @interface Conditions {
+        InstructionSet[] arch() default {ARM, ARM64, X86, X86_64, RISCV64};
 
         @ApiSensitive
-        int[] apis() default {26, 27, 28, 29, 30, 31, 32, 33, 34, 35};
+        int[] api() default {26, 27, 28, 29, 30, 31, 32, 33, 34, 35};
 
-        // negative value means it doesn't matter, zero is false, positive is true.
-        int kPoisonReferences() default -1;
+        HeapPoisoning poisoning() default HeapPoisoning.NO_MATTER;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -383,7 +391,7 @@ public class BulkLinker {
     @Repeatable(ASMs.class)
     @Keep
     public @interface ASM {
-        ASMConditions conditions();
+        Conditions conditions() default @Conditions();
 
         byte[] code();
     }
@@ -406,9 +414,19 @@ public class BulkLinker {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
+    @Repeatable(LibrarySymbols.class)
     @Keep
     public @interface LibrarySymbol {
-        String value();
+        Conditions conditions() default @Conditions();
+
+        String name();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @Keep
+    public @interface LibrarySymbols {
+        LibrarySymbol[] value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -472,8 +490,21 @@ public class BulkLinker {
         return false;
     }
 
-    private static boolean equals(int tristate, boolean value) {
-        return tristate < 0 || ((tristate != 0) == value);
+    @SuppressWarnings("SameParameterValue")
+    private static <T> boolean contains(T[] array, T value) {
+        for (T j : array) if (j == value) return true;
+        return false;
+    }
+
+    private static boolean checkPoisoning(HeapPoisoning poisoning) {
+        return poisoning == HeapPoisoning.NO_MATTER ||
+                ((poisoning == HeapPoisoning.ENABLED) == VM.isPoisonReferences());
+    }
+
+    private static boolean checkConditions(Conditions cond) {
+        return contains(cond.arch(), CURRENT_INSTRUCTION_SET) &&
+                contains(cond.api(), CORRECT_SDK_INT) &&
+                checkPoisoning(cond.poisoning());
     }
 
     private static ASMSource getASMSource(
@@ -485,10 +516,8 @@ public class BulkLinker {
         return ASMSource.of(() -> {
             byte[] code = null;
             for (ASM asm : asms) {
-                ASMConditions cond = asm.conditions();
-                if (cond.iset() == CURRENT_INSTRUCTION_SET &&
-                        contains(cond.apis(), CORRECT_SDK_INT) &&
-                        equals(cond.kPoisonReferences(), VM.isPoisonReferences())) {
+                Conditions cond = asm.conditions();
+                if (checkConditions(cond)) {
                     code = getCode(asm);
                     if (code != null) {
                         break;
@@ -521,13 +550,22 @@ public class BulkLinker {
     }
 
     private static SegmentSource getSegmentSource(
-            LibrarySymbol sym, SymbolGenerator generator, SymbolLookup lookup,
+            LibrarySymbol[] syms, SymbolGenerator generator, SymbolLookup lookup,
             Class<?> clazz, Map<Class<?>, Method[]> cached_methods, Method method) {
-        if (sym == null && generator == null) {
+        if (syms.length == 0 && generator == null) {
             return null;
         }
         return SegmentSource.of(() -> {
-            MemorySegment symbol = sym != null ? lookup.find(sym.value()).orElse(null) : null;
+            MemorySegment symbol = null;
+            for (LibrarySymbol sym : syms) {
+                Conditions cond = sym.conditions();
+                if (checkConditions(cond)) {
+                    symbol = lookup.find(sym.name()).orElse(null);
+                    if (symbol != null) {
+                        break;
+                    }
+                }
+            }
             if (generator != null) {
                 symbol = getSymbol(generator, clazz, cached_methods);
             }
@@ -565,9 +603,9 @@ public class BulkLinker {
             ASMGenerator asm_generator = method.getDeclaredAnnotation(ASMGenerator.class);
             ASMSource asm_source = getASMSource(asms, asm_generator, clazz, cached_methods, method);
 
-            LibrarySymbol sym = method.getDeclaredAnnotation(LibrarySymbol.class);
+            LibrarySymbol[] syms = method.getDeclaredAnnotationsByType(LibrarySymbol.class);
             SymbolGenerator sym_generator = method.getDeclaredAnnotation(SymbolGenerator.class);
-            SymbolSource sym_source = getSegmentSource(sym, sym_generator, lookup, clazz, cached_methods, method);
+            SymbolSource sym_source = getSegmentSource(syms, sym_generator, lookup, clazz, cached_methods, method);
 
             if (asm_source == null && sym_source == null) {
                 if (signature == null) {

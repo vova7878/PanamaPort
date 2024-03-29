@@ -21,51 +21,51 @@ public class Initialization {
 
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @LibrarySymbol("LLVMInitializeCore")
+        @LibrarySymbol(name = "LLVMInitializeCore")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeCore(long R);
 
-        @LibrarySymbol("LLVMInitializeTransformUtils")
+        @LibrarySymbol(name = "LLVMInitializeTransformUtils")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeTransformUtils(long R);
 
-        @LibrarySymbol("LLVMInitializeScalarOpts")
+        @LibrarySymbol(name = "LLVMInitializeScalarOpts")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeScalarOpts(long R);
 
-        @LibrarySymbol("LLVMInitializeObjCARCOpts")
+        @LibrarySymbol(name = "LLVMInitializeObjCARCOpts")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeObjCARCOpts(long R);
 
-        @LibrarySymbol("LLVMInitializeVectorization")
+        @LibrarySymbol(name = "LLVMInitializeVectorization")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeVectorization(long R);
 
-        @LibrarySymbol("LLVMInitializeInstCombine")
+        @LibrarySymbol(name = "LLVMInitializeInstCombine")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeInstCombine(long R);
 
-        @LibrarySymbol("LLVMInitializeIPO")
+        @LibrarySymbol(name = "LLVMInitializeIPO")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeIPO(long R);
 
-        @LibrarySymbol("LLVMInitializeInstrumentation")
+        @LibrarySymbol(name = "LLVMInitializeInstrumentation")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeInstrumentation(long R);
 
-        @LibrarySymbol("LLVMInitializeAnalysis")
+        @LibrarySymbol(name = "LLVMInitializeAnalysis")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeAnalysis(long R);
 
-        @LibrarySymbol("LLVMInitializeIPA")
+        @LibrarySymbol(name = "LLVMInitializeIPA")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeIPA(long R);
 
-        @LibrarySymbol("LLVMInitializeCodeGen")
+        @LibrarySymbol(name = "LLVMInitializeCodeGen")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeCodeGen(long R);
 
-        @LibrarySymbol("LLVMInitializeTarget")
+        @LibrarySymbol(name = "LLVMInitializeTarget")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMInitializeTarget(long R);
 
