@@ -2,51 +2,28 @@ package com.v7878.llvm;
 
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.llvm.LibLLVM.LLVM;
-import static com.v7878.llvm.LibLLVM.LLVM_SCOPE;
 import static com.v7878.llvm.Types.LLVMAttributeRef;
 import static com.v7878.llvm.Types.LLVMBasicBlockRef;
-import static com.v7878.llvm.Types.LLVMBool;
 import static com.v7878.llvm.Types.LLVMBuilderRef;
 import static com.v7878.llvm.Types.LLVMContextRef;
 import static com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassRegistryRef;
 import static com.v7878.llvm.Types.LLVMTypeRef;
-import static com.v7878.llvm.Types.cLLVMAttributeRef;
-import static com.v7878.llvm.Types.cLLVMBasicBlockRef;
-import static com.v7878.llvm.Types.cLLVMBuilderRef;
-import static com.v7878.llvm.Types.cLLVMContextRef;
-import static com.v7878.llvm.Types.cLLVMDiagnosticInfoRef;
-import static com.v7878.llvm.Types.cLLVMMemoryBufferRef;
-import static com.v7878.llvm.Types.cLLVMModuleProviderRef;
-import static com.v7878.llvm.Types.cLLVMModuleRef;
-import static com.v7878.llvm.Types.cLLVMPassManagerRef;
-import static com.v7878.llvm.Types.cLLVMPassRegistryRef;
-import static com.v7878.llvm.Types.cLLVMTypeRef;
-import static com.v7878.llvm.Types.cLLVMValueRef;
-import static com.v7878.llvm._Utils.CHAR_PTR;
-import static com.v7878.llvm._Utils.CONST_CHAR_PTR;
-import static com.v7878.llvm._Utils.ENUM;
-import static com.v7878.llvm._Utils.SIZE_T;
-import static com.v7878.llvm._Utils.UINT64_T;
-import static com.v7878.llvm._Utils.UNSIGNED_INT;
-import static com.v7878.llvm._Utils.UNSIGNED_LONG_LONG;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.llvm._Utils.allocArray;
 import static com.v7878.llvm._Utils.allocPointerArray;
 import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.llvm._Utils.arrayLength;
-import static com.v7878.llvm._Utils.const_ptr;
-import static com.v7878.llvm._Utils.ptr;
 import static com.v7878.llvm._Utils.readPointerArray;
 import static com.v7878.llvm._Utils.stringLength;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL_AS_INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
-import static com.v7878.unsafe.foreign.SimpleLinker.processSymbol;
 
 import androidx.annotation.Keep;
 
@@ -61,14 +38,7 @@ import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.util.Objects;
-import java.util.function.Supplier;
-
 public class Core {
-
-    static final Class<?> cLLVMAttribute = ENUM;
 
     public static class LLVMAttribute {
         public static final int LLVMZExtAttribute = 1;
@@ -210,8 +180,6 @@ public class Core {
         }
     }
 
-    static final Class<?> cLLVMTypeKind = ENUM;
-
     public enum LLVMTypeKind {
         /**
          * < type with no size
@@ -295,8 +263,6 @@ public class Core {
             throw new IllegalArgumentException("value: " + value + " is not found");
         }
     }
-
-    static final Class<?> cLLVMLinkage = ENUM;
 
     public enum LLVMLinkage {
         /**
@@ -382,8 +348,6 @@ public class Core {
         }
     }
 
-    static final Class<?> cLLVMVisibility = ENUM;
-
     public enum LLVMVisibility {
         /**
          * < The GV is visible
@@ -411,8 +375,6 @@ public class Core {
             throw new IllegalArgumentException("value: " + value + " is not found");
         }
     }
-
-    static final Class<?> cLLVMDLLStorageClass = ENUM;
 
     public enum LLVMDLLStorageClass {
         LLVMDefaultStorageClass(0),
@@ -697,8 +659,6 @@ public class Core {
         }
     }
 
-    static final Class<?> cLLVMAtomicOrdering = ENUM;
-
     public enum LLVMAtomicOrdering {
         /**
          * < A load or store which is not atomic
@@ -834,8 +794,6 @@ public class Core {
         }
     }
 
-    static final Class<?> cLLVMDiagnosticSeverity = ENUM;
-
     public enum LLVMDiagnosticSeverity {
         LLVMDSError,
         LLVMDSWarning,
@@ -855,8 +813,6 @@ public class Core {
             throw new IllegalArgumentException("value: " + value + " is not found");
         }
     }
-
-    static final Class<?> cLLVMAttributeIndex = UNSIGNED_INT;
 
     /**
      * Attribute index are either LLVMAttributeReturnIndex,
@@ -925,21 +881,21 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetDiagInfoDescription(long DI);
 
-        /*@LibrarySymbol("LLVMGetDiagInfoSeverity")
+        @LibrarySymbol("LLVMGetDiagInfoSeverity")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetDiagInfoSeverity(long);
+        abstract int LLVMGetDiagInfoSeverity(long DI);
 
         @LibrarySymbol("LLVMGetMDKindIDInContext")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract int LLVMGetMDKindIDInContext(long, long, int);
+        abstract int LLVMGetMDKindIDInContext(long C, long Name, int SLen);
 
         @LibrarySymbol("LLVMGetMDKindID")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, INT})
-        abstract int LLVMGetMDKindID(long, int);
+        abstract int LLVMGetMDKindID(long Name, int SLen);
 
         @LibrarySymbol("LLVMGetEnumAttributeKindForName")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract int LLVMGetEnumAttributeKindForName(long, long);
+        abstract int LLVMGetEnumAttributeKindForName(long Name, long SLen);
 
         @LibrarySymbol("LLVMGetLastEnumAttributeKind")
         @CallSignature(type = CRITICAL, ret = INT, args = {})
@@ -947,101 +903,101 @@ public class Core {
 
         @LibrarySymbol("LLVMCreateEnumAttribute")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG})
-        abstract long LLVMCreateEnumAttribute(long, int, long);
+        abstract long LLVMCreateEnumAttribute(long C, int KindID, long Val);
 
         @LibrarySymbol("LLVMGetEnumAttributeKind")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetEnumAttributeKind(long);
+        abstract int LLVMGetEnumAttributeKind(long A);
 
         @LibrarySymbol("LLVMGetEnumAttributeValue")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
-        abstract long LLVMGetEnumAttributeValue(long);
+        abstract long LLVMGetEnumAttributeValue(long A);
 
         @LibrarySymbol("LLVMCreateStringAttribute")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD, INT})
-        abstract long LLVMCreateStringAttribute(long, long, int, long, int);
+        abstract long LLVMCreateStringAttribute(long C, long K, int KLength, long V, int VLength);
 
         @LibrarySymbol("LLVMGetStringAttributeKind")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMGetStringAttributeKind(long, long);
+        abstract long LLVMGetStringAttributeKind(long A, long Length);
 
         @LibrarySymbol("LLVMGetStringAttributeValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMGetStringAttributeValue(long, long);
+        abstract long LLVMGetStringAttributeValue(long A, long Length);
 
         @LibrarySymbol("LLVMIsEnumAttribute")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsEnumAttribute(long);
+        abstract boolean LLVMIsEnumAttribute(long A);
 
         @LibrarySymbol("LLVMIsStringAttribute")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsStringAttribute(long);
+        abstract boolean LLVMIsStringAttribute(long A);
 
         @LibrarySymbol("LLVMModuleCreateWithName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMModuleCreateWithName(long);
+        abstract long LLVMModuleCreateWithName(long ModuleID);
 
         @LibrarySymbol("LLVMModuleCreateWithNameInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMModuleCreateWithNameInContext(long, long);
+        abstract long LLVMModuleCreateWithNameInContext(long ModuleID, long C);
 
         @LibrarySymbol("LLVMCloneModule")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMCloneModule(long);
+        abstract long LLVMCloneModule(long M);
 
         @LibrarySymbol("LLVMDisposeModule")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMDisposeModule(long);
+        abstract void LLVMDisposeModule(long M);
 
-        @LibrarySymbol("LLVMGetModuleIdentifier")
+        /*@LibrarySymbol("LLVMGetModuleIdentifier")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMGetModuleIdentifier(long, long);
+        abstract long LLVMGetModuleIdentifier(long, long);*/
 
         @LibrarySymbol("LLVMSetModuleIdentifier")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMSetModuleIdentifier(long, long, long);
+        abstract void LLVMSetModuleIdentifier(long M, long Ident, long Len);
 
         @LibrarySymbol("LLVMGetDataLayoutStr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetDataLayoutStr(long);
+        abstract long LLVMGetDataLayoutStr(long M);
 
         @LibrarySymbol("LLVMGetDataLayout")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetDataLayout(long);
+        abstract long LLVMGetDataLayout(long M);
 
         @LibrarySymbol("LLVMSetDataLayout")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMSetDataLayout(long, long);
+        abstract void LLVMSetDataLayout(long M, long DataLayoutStr);
 
         @LibrarySymbol("LLVMGetTarget")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetTarget(long);
+        abstract long LLVMGetTarget(long M);
 
         @LibrarySymbol("LLVMSetTarget")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMSetTarget(long, long);
+        abstract void LLVMSetTarget(long M, long Triple);
 
         @LibrarySymbol("LLVMDumpModule")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMDumpModule(long);
+        abstract void LLVMDumpModule(long M);
 
-        @LibrarySymbol("LLVMPrintModuleToFile")
+        /*@LibrarySymbol("LLVMPrintModuleToFile")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract boolean LLVMPrintModuleToFile(long, long, long);
+        abstract boolean LLVMPrintModuleToFile(long, long, long);*/
 
         @LibrarySymbol("LLVMPrintModuleToString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMPrintModuleToString(long);
+        abstract long LLVMPrintModuleToString(long M);
 
-        @LibrarySymbol("LLVMSetModuleInlineAsm")
+        /*@LibrarySymbol("LLVMSetModuleInlineAsm")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMSetModuleInlineAsm(long, long);
+        abstract void LLVMSetModuleInlineAsm(long, long);*/
 
         @LibrarySymbol("LLVMGetModuleContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetModuleContext(long);
+        abstract long LLVMGetModuleContext(long M);
 
-        @LibrarySymbol("LLVMGetTypeByName")
+        /*@LibrarySymbol("LLVMGetTypeByName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMGetTypeByName(long, long);
 
@@ -1055,17 +1011,17 @@ public class Core {
 
         @LibrarySymbol("LLVMAddNamedMetadataOperand")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMAddNamedMetadataOperand(long, long, long);
+        abstract void LLVMAddNamedMetadataOperand(long, long, long);*/
 
         @LibrarySymbol("LLVMAddFunction")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMAddFunction(long, long, long);
+        abstract long LLVMAddFunction(long M, long Name, long FunctionTy);
 
         @LibrarySymbol("LLVMGetNamedFunction")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMGetNamedFunction(long, long);
+        abstract long LLVMGetNamedFunction(long M, long Name);
 
-        @LibrarySymbol("LLVMGetFirstFunction")
+        /*@LibrarySymbol("LLVMGetFirstFunction")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetFirstFunction(long);
 
@@ -1079,27 +1035,27 @@ public class Core {
 
         @LibrarySymbol("LLVMGetPreviousFunction")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetPreviousFunction(long);
+        abstract long LLVMGetPreviousFunction(long);*/
 
         @LibrarySymbol("LLVMGetTypeKind")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetTypeKind(long);
+        abstract int LLVMGetTypeKind(long Ty);
 
         @LibrarySymbol("LLVMTypeIsSized")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMTypeIsSized(long);
+        abstract boolean LLVMTypeIsSized(long Ty);
 
         @LibrarySymbol("LLVMGetTypeContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetTypeContext(long);
+        abstract long LLVMGetTypeContext(long Ty);
 
         @LibrarySymbol("LLVMDumpType")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMDumpType(long);
+        abstract void LLVMDumpType(long Val);
 
         @LibrarySymbol("LLVMPrintTypeToString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMPrintTypeToString(long);*/
+        abstract long LLVMPrintTypeToString(long Val);
 
         @LibrarySymbol("LLVMInt1TypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
@@ -1209,47 +1165,47 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMPPCFP128Type();
 
-        /*@LibrarySymbol("LLVMFunctionType")
+        @LibrarySymbol("LLVMFunctionType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
-        abstract long LLVMFunctionType(long, long, int, boolean);
+        abstract long LLVMFunctionType(long ReturnType, long ParamTypes, int ParamCount, boolean IsVarArg);
 
         @LibrarySymbol("LLVMIsFunctionVarArg")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsFunctionVarArg(long);
+        abstract boolean LLVMIsFunctionVarArg(long FunctionTy);
 
         @LibrarySymbol("LLVMGetReturnType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetReturnType(long);
+        abstract long LLVMGetReturnType(long FunctionTy);
 
-        @LibrarySymbol("LLVMCountParamTypes")
+        /*@LibrarySymbol("LLVMCountParamTypes")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMCountParamTypes(long);
 
         @LibrarySymbol("LLVMGetParamTypes")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMGetParamTypes(long, long);
+        abstract void LLVMGetParamTypes(long, long);*/
 
         @LibrarySymbol("LLVMStructTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
-        abstract long LLVMStructTypeInContext(long, long, int, boolean);
+        abstract long LLVMStructTypeInContext(long C, long ElementTypes, int ElementCount, boolean Packed);
 
         @LibrarySymbol("LLVMStructType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, BOOL_AS_INT})
-        abstract long LLVMStructType(long, int, boolean);
+        abstract long LLVMStructType(long ElementTypes, int ElementCount, boolean Packed);
 
         @LibrarySymbol("LLVMStructCreateNamed")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMStructCreateNamed(long, long);
+        abstract long LLVMStructCreateNamed(long C, long Name);
 
         @LibrarySymbol("LLVMGetStructName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetStructName(long);
+        abstract long LLVMGetStructName(long Ty);
 
         @LibrarySymbol("LLVMStructSetBody")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
-        abstract void LLVMStructSetBody(long, long, int, boolean);
+        abstract void LLVMStructSetBody(long StructTy, long ElementTypes, int ElementCount, boolean Packed);
 
-        @LibrarySymbol("LLVMCountStructElementTypes")
+        /*@LibrarySymbol("LLVMCountStructElementTypes")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMCountStructElementTypes(long);
 
@@ -1259,55 +1215,55 @@ public class Core {
 
         @LibrarySymbol("LLVMStructGetTypeAtIndex")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMStructGetTypeAtIndex(long, int);
+        abstract long LLVMStructGetTypeAtIndex(long, int);*/
 
         @LibrarySymbol("LLVMIsPackedStruct")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsPackedStruct(long);
+        abstract boolean LLVMIsPackedStruct(long StructTy);
 
         @LibrarySymbol("LLVMIsOpaqueStruct")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsOpaqueStruct(long);
+        abstract boolean LLVMIsOpaqueStruct(long StructTy);
 
         @LibrarySymbol("LLVMGetElementType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetElementType(long);
+        abstract long LLVMGetElementType(long Ty);
 
         @LibrarySymbol("LLVMArrayType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMArrayType(long, int);
+        abstract long LLVMArrayType(long ElementType, int ElementCount);
 
         @LibrarySymbol("LLVMGetArrayLength")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetArrayLength(long);
+        abstract int LLVMGetArrayLength(long ArrayTy);
 
         @LibrarySymbol("LLVMPointerType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMPointerType(long, int);
+        abstract long LLVMPointerType(long ElementType, int AddressSpace);
 
         @LibrarySymbol("LLVMGetPointerAddressSpace")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetPointerAddressSpace(long);
+        abstract int LLVMGetPointerAddressSpace(long PointerTy);
 
         @LibrarySymbol("LLVMVectorType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMVectorType(long, int);
+        abstract long LLVMVectorType(long ElementType, int ElementCount);
 
         @LibrarySymbol("LLVMGetVectorSize")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetVectorSize(long);
+        abstract int LLVMGetVectorSize(long VectorTy);
 
         @LibrarySymbol("LLVMVoidTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMVoidTypeInContext(long);
+        abstract long LLVMVoidTypeInContext(long C);
 
         @LibrarySymbol("LLVMLabelTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMLabelTypeInContext(long);
+        abstract long LLVMLabelTypeInContext(long C);
 
         @LibrarySymbol("LLVMX86MMXTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMX86MMXTypeInContext(long);
+        abstract long LLVMX86MMXTypeInContext(long C);
 
         @LibrarySymbol("LLVMVoidType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
@@ -1321,7 +1277,7 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMX86MMXType();
 
-        @LibrarySymbol("LLVMIsAArgument")
+        /*@LibrarySymbol("LLVMIsAArgument")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMIsAArgument(long);
 
@@ -1651,13 +1607,13 @@ public class Core {
 
         @LibrarySymbol("LLVMDumpValue")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMDumpValue(long);
+        abstract void LLVMDumpValue(long);*/
 
         @LibrarySymbol("LLVMPrintValueToString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMPrintValueToString(long);
+        abstract long LLVMPrintValueToString(long Val);
 
-        @LibrarySymbol("LLVMReplaceAllUsesWith")
+        /*@LibrarySymbol("LLVMReplaceAllUsesWith")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMReplaceAllUsesWith(long, long);
 
@@ -1707,37 +1663,37 @@ public class Core {
 
         @LibrarySymbol("LLVMGetNumOperands")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetNumOperands(long);
+        abstract int LLVMGetNumOperands(long);*/
 
         @LibrarySymbol("LLVMConstNull")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMConstNull(long);
+        abstract long LLVMConstNull(long Ty);
 
         @LibrarySymbol("LLVMConstAllOnes")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMConstAllOnes(long);
+        abstract long LLVMConstAllOnes(long Ty);
 
         @LibrarySymbol("LLVMGetUndef")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetUndef(long);
+        abstract long LLVMGetUndef(long Ty);
 
-        @LibrarySymbol("LLVMIsNull")
+        /*@LibrarySymbol("LLVMIsNull")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMIsNull(long);
 
         @LibrarySymbol("LLVMConstPointerNull")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMConstPointerNull(long);
+        abstract long LLVMConstPointerNull(long);*/
 
         @LibrarySymbol("LLVMConstInt")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG, BOOL_AS_INT})
-        abstract long LLVMConstInt(long, long, boolean);
+        abstract long LLVMConstInt(long IntTy, long N, boolean SignExtend);
 
         @LibrarySymbol("LLVMConstIntOfArbitraryPrecision")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract long LLVMConstIntOfArbitraryPrecision(long, int, long);
+        abstract long LLVMConstIntOfArbitraryPrecision(long IntTy, int NumWords, long Words);
 
-        @LibrarySymbol("LLVMConstIntOfString")
+        /*@LibrarySymbol("LLVMConstIntOfString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, BYTE})
         abstract long LLVMConstIntOfString(long, long, byte);
 
@@ -1767,17 +1723,17 @@ public class Core {
 
         @LibrarySymbol("LLVMConstRealGetDouble")
         @CallSignature(type = CRITICAL, ret = DOUBLE, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract double LLVMConstRealGetDouble(long, long);
+        abstract double LLVMConstRealGetDouble(long, long);*/
 
         @LibrarySymbol("LLVMConstStringInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
-        abstract long LLVMConstStringInContext(long, long, int, boolean);
+        abstract long LLVMConstStringInContext(long C, long Str, int Length, boolean DontNullTerminate);
 
         @LibrarySymbol("LLVMConstString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, BOOL_AS_INT})
-        abstract long LLVMConstString(long, int, boolean);
+        abstract long LLVMConstString(long Str, int Length, boolean DontNullTerminate);
 
-        @LibrarySymbol("LLVMIsConstantString")
+        /*@LibrarySymbol("LLVMIsConstantString")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMIsConstantString(long);
 
@@ -2063,65 +2019,65 @@ public class Core {
 
         @LibrarySymbol("LLVMBlockAddress")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBlockAddress(long, long);
+        abstract long LLVMBlockAddress(long, long);*/
 
         @LibrarySymbol("LLVMGetGlobalParent")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetGlobalParent(long);
+        abstract long LLVMGetGlobalParent(long Global);
 
         @LibrarySymbol("LLVMIsDeclaration")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsDeclaration(long);
+        abstract boolean LLVMIsDeclaration(long Global);
 
         @LibrarySymbol("LLVMGetLinkage")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetLinkage(long);
+        abstract int LLVMGetLinkage(long Global);
 
         @LibrarySymbol("LLVMSetLinkage")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetLinkage(long, int);
+        abstract void LLVMSetLinkage(long Global, int Linkage);
 
         @LibrarySymbol("LLVMGetSection")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetSection(long);
+        abstract long LLVMGetSection(long Global);
 
         @LibrarySymbol("LLVMSetSection")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMSetSection(long, long);
+        abstract void LLVMSetSection(long Global, long Section);
 
         @LibrarySymbol("LLVMGetVisibility")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetVisibility(long);
+        abstract int LLVMGetVisibility(long Global);
 
         @LibrarySymbol("LLVMSetVisibility")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetVisibility(long, int);
+        abstract void LLVMSetVisibility(long Global, int Viz);
 
         @LibrarySymbol("LLVMGetDLLStorageClass")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetDLLStorageClass(long);
+        abstract int LLVMGetDLLStorageClass(long Global);
 
         @LibrarySymbol("LLVMSetDLLStorageClass")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetDLLStorageClass(long, int);
+        abstract void LLVMSetDLLStorageClass(long Global, int Class);
 
-        @LibrarySymbol("LLVMHasUnnamedAddr")
+        /*@LibrarySymbol("LLVMHasUnnamedAddr")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
         abstract boolean LLVMHasUnnamedAddr(long);
 
         @LibrarySymbol("LLVMSetUnnamedAddr")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
-        abstract void LLVMSetUnnamedAddr(long, boolean);
+        abstract void LLVMSetUnnamedAddr(long, boolean);*/
 
         @LibrarySymbol("LLVMGetAlignment")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetAlignment(long);
+        abstract int LLVMGetAlignment(long V);
 
         @LibrarySymbol("LLVMSetAlignment")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetAlignment(long, int);
+        abstract void LLVMSetAlignment(long V, int Bytes);
 
-        @LibrarySymbol("LLVMAddGlobal")
+        /*@LibrarySymbol("LLVMAddGlobal")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMAddGlobal(long, long, long);
 
@@ -2215,33 +2171,33 @@ public class Core {
 
         @LibrarySymbol("LLVMGetIntrinsicID")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetIntrinsicID(long);
+        abstract int LLVMGetIntrinsicID(long);*/
 
         @LibrarySymbol("LLVMGetFunctionCallConv")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetFunctionCallConv(long);
+        abstract int LLVMGetFunctionCallConv(long Fn);
 
         @LibrarySymbol("LLVMSetFunctionCallConv")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetFunctionCallConv(long, int);
+        abstract void LLVMSetFunctionCallConv(long Fn, int CC);
 
-        @LibrarySymbol("LLVMGetGC")
+        /*@LibrarySymbol("LLVMGetGC")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetGC(long);
 
         @LibrarySymbol("LLVMSetGC")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMSetGC(long, long);
+        abstract void LLVMSetGC(long, long);*/
 
         @LibrarySymbol("LLVMAddFunctionAttr")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMAddFunctionAttr(long, int);
+        abstract void LLVMAddFunctionAttr(long Fn, int PA);
 
         @LibrarySymbol("LLVMAddAttributeAtIndex")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract void LLVMAddAttributeAtIndex(long, int, long);
+        abstract void LLVMAddAttributeAtIndex(long F, int Idx, long A);
 
-        @LibrarySymbol("LLVMGetEnumAttributeAtIndex")
+        /*@LibrarySymbol("LLVMGetEnumAttributeAtIndex")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, INT})
         abstract long LLVMGetEnumAttributeAtIndex(long, int, int);
 
@@ -2267,21 +2223,21 @@ public class Core {
 
         @LibrarySymbol("LLVMRemoveFunctionAttr")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMRemoveFunctionAttr(long, int);
+        abstract void LLVMRemoveFunctionAttr(long, int);*/
 
         @LibrarySymbol("LLVMCountParams")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMCountParams(long);
+        abstract int LLVMCountParams(long Fn);
 
         @LibrarySymbol("LLVMGetParams")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMGetParams(long, long);
+        abstract void LLVMGetParams(long Fn, long Params);
 
         @LibrarySymbol("LLVMGetParam")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMGetParam(long, int);
+        abstract long LLVMGetParam(long Fn, int Index);
 
-        @LibrarySymbol("LLVMGetParamParent")
+        /*@LibrarySymbol("LLVMGetParamParent")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetParamParent(long);
 
@@ -2299,25 +2255,25 @@ public class Core {
 
         @LibrarySymbol("LLVMGetPreviousParam")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetPreviousParam(long);
+        abstract long LLVMGetPreviousParam(long);*/
 
         @LibrarySymbol("LLVMAddAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMAddAttribute(long, int);
+        abstract void LLVMAddAttribute(long Arg, int PA);
 
-        @LibrarySymbol("LLVMRemoveAttribute")
+        /*@LibrarySymbol("LLVMRemoveAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMRemoveAttribute(long, int);
+        abstract void LLVMRemoveAttribute(long, int);*/
 
         @LibrarySymbol("LLVMGetAttribute")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetAttribute(long);
+        abstract int LLVMGetAttribute(long Arg);
 
         @LibrarySymbol("LLVMSetParamAlignment")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetParamAlignment(long, int);
+        abstract void LLVMSetParamAlignment(long Arg, int Align);
 
-        @LibrarySymbol("LLVMMDStringInContext")
+        /*@LibrarySymbol("LLVMMDStringInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
         abstract long LLVMMDStringInContext(long, long, int);
 
@@ -2359,13 +2315,13 @@ public class Core {
 
         @LibrarySymbol("LLVMGetBasicBlockName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetBasicBlockName(long);
+        abstract long LLVMGetBasicBlockName(long);*/
 
         @LibrarySymbol("LLVMGetBasicBlockParent")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetBasicBlockParent(long);
+        abstract long LLVMGetBasicBlockParent(long BB);
 
-        @LibrarySymbol("LLVMGetBasicBlockTerminator")
+        /*@LibrarySymbol("LLVMGetBasicBlockTerminator")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetBasicBlockTerminator(long);
 
@@ -2391,21 +2347,21 @@ public class Core {
 
         @LibrarySymbol("LLVMGetPreviousBasicBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetPreviousBasicBlock(long);
+        abstract long LLVMGetPreviousBasicBlock(long);*/
 
         @LibrarySymbol("LLVMGetEntryBasicBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetEntryBasicBlock(long);
+        abstract long LLVMGetEntryBasicBlock(long Fn);
 
         @LibrarySymbol("LLVMAppendBasicBlockInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMAppendBasicBlockInContext(long, long, long);
+        abstract long LLVMAppendBasicBlockInContext(long C, long Fn, long Name);
 
         @LibrarySymbol("LLVMAppendBasicBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMAppendBasicBlock(long, long);
+        abstract long LLVMAppendBasicBlock(long Fn, long Name);
 
-        @LibrarySymbol("LLVMInsertBasicBlockInContext")
+        /*@LibrarySymbol("LLVMInsertBasicBlockInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMInsertBasicBlockInContext(long, long, long);
 
@@ -2495,21 +2451,21 @@ public class Core {
 
         @LibrarySymbol("LLVMGetInstructionCallConv")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetInstructionCallConv(long);
+        abstract int LLVMGetInstructionCallConv(long);*/
 
         @LibrarySymbol("LLVMAddInstrAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
-        abstract void LLVMAddInstrAttribute(long, int, int);
+        abstract void LLVMAddInstrAttribute(long Instr, int index, int PA);
 
         @LibrarySymbol("LLVMRemoveInstrAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
-        abstract void LLVMRemoveInstrAttribute(long, int, int);
+        abstract void LLVMRemoveInstrAttribute(long Instr, int index, int PA);
 
         @LibrarySymbol("LLVMSetInstrParamAlignment")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
-        abstract void LLVMSetInstrParamAlignment(long, int, int);
+        abstract void LLVMSetInstrParamAlignment(long Instr, int index, int Align);
 
-        @LibrarySymbol("LLVMAddCallSiteAttribute")
+        /*@LibrarySymbol("LLVMAddCallSiteAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract void LLVMAddCallSiteAttribute(long, int, long);
 
@@ -2583,47 +2539,47 @@ public class Core {
 
         @LibrarySymbol("LLVMGetSwitchDefaultDest")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetSwitchDefaultDest(long);
+        abstract long LLVMGetSwitchDefaultDest(long);*/
 
         @LibrarySymbol("LLVMGetAllocatedType")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetAllocatedType(long);
+        abstract long LLVMGetAllocatedType(long Alloca);
 
         @LibrarySymbol("LLVMIsInBounds")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsInBounds(long);
+        abstract boolean LLVMIsInBounds(long GEP);
 
         @LibrarySymbol("LLVMSetIsInBounds")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
-        abstract void LLVMSetIsInBounds(long, boolean);
+        abstract void LLVMSetIsInBounds(long GEP, boolean InBounds);
 
         @LibrarySymbol("LLVMAddIncoming")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract void LLVMAddIncoming(long, long, long, int);
+        abstract void LLVMAddIncoming(long PhiNode, long IncomingValues, long IncomingBlocks, int Count);
 
         @LibrarySymbol("LLVMCountIncoming")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMCountIncoming(long);
+        abstract int LLVMCountIncoming(long PhiNode);
 
         @LibrarySymbol("LLVMGetIncomingValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMGetIncomingValue(long, int);
+        abstract long LLVMGetIncomingValue(long PhiNode, int Index);
 
         @LibrarySymbol("LLVMGetIncomingBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMGetIncomingBlock(long, int);
+        abstract long LLVMGetIncomingBlock(long PhiNode, int Index);
 
-        @LibrarySymbol("LLVMGetNumIndices")
+        /*@LibrarySymbol("LLVMGetNumIndices")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetNumIndices(long);
 
         @LibrarySymbol("LLVMGetIndices")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetIndices(long);
+        abstract long LLVMGetIndices(long);*/
 
         @LibrarySymbol("LLVMCreateBuilderInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMCreateBuilderInContext(long);
+        abstract long LLVMCreateBuilderInContext(long C);
 
         @LibrarySymbol("LLVMCreateBuilder")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
@@ -2631,69 +2587,69 @@ public class Core {
 
         @LibrarySymbol("LLVMPositionBuilder")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMPositionBuilder(long, long, long);
+        abstract void LLVMPositionBuilder(long Builder, long Block, long Instr);
 
         @LibrarySymbol("LLVMPositionBuilderBefore")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMPositionBuilderBefore(long, long);
+        abstract void LLVMPositionBuilderBefore(long Builder, long Block);
 
         @LibrarySymbol("LLVMPositionBuilderAtEnd")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMPositionBuilderAtEnd(long, long);
+        abstract void LLVMPositionBuilderAtEnd(long Builder, long Block);
 
         @LibrarySymbol("LLVMGetInsertBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetInsertBlock(long);
+        abstract long LLVMGetInsertBlock(long Builder);
 
         @LibrarySymbol("LLVMClearInsertionPosition")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMClearInsertionPosition(long);
+        abstract void LLVMClearInsertionPosition(long Builder);
 
         @LibrarySymbol("LLVMInsertIntoBuilder")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMInsertIntoBuilder(long, long);
+        abstract void LLVMInsertIntoBuilder(long Builder, long Instr);
 
         @LibrarySymbol("LLVMInsertIntoBuilderWithName")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMInsertIntoBuilderWithName(long, long, long);
+        abstract void LLVMInsertIntoBuilderWithName(long Builder, long Instr, long Name);
 
         @LibrarySymbol("LLVMDisposeBuilder")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMDisposeBuilder(long);
+        abstract void LLVMDisposeBuilder(long Builder);
 
         @LibrarySymbol("LLVMSetCurrentDebugLocation")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMSetCurrentDebugLocation(long, long);
+        abstract void LLVMSetCurrentDebugLocation(long Builder, long L);
 
         @LibrarySymbol("LLVMGetCurrentDebugLocation")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetCurrentDebugLocation(long);
+        abstract long LLVMGetCurrentDebugLocation(long Builder);
 
         @LibrarySymbol("LLVMSetInstDebugLocation")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMSetInstDebugLocation(long, long);
+        abstract void LLVMSetInstDebugLocation(long Builder, long Inst);
 
         @LibrarySymbol("LLVMBuildRetVoid")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMBuildRetVoid(long);
+        abstract long LLVMBuildRetVoid(long Builder);
 
         @LibrarySymbol("LLVMBuildRet")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildRet(long, long);
+        abstract long LLVMBuildRet(long Builder, long V);
 
-        @LibrarySymbol("LLVMBuildAggregateRet")
+        /*@LibrarySymbol("LLVMBuildAggregateRet")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMBuildAggregateRet(long, long, int);
+        abstract long LLVMBuildAggregateRet(long, long, int);*/
 
         @LibrarySymbol("LLVMBuildBr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildBr(long, long);
+        abstract long LLVMBuildBr(long B, long Dest);
 
         @LibrarySymbol("LLVMBuildCondBr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildCondBr(long, long, long, long);
+        abstract long LLVMBuildCondBr(long B, long If, long Then, long Else);
 
-        @LibrarySymbol("LLVMBuildSwitch")
+        /*@LibrarySymbol("LLVMBuildSwitch")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT})
         abstract long LLVMBuildSwitch(long, long, long, int);
 
@@ -2869,69 +2825,69 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildNot(long B, long V, long Name);
 
-        /*@LibrarySymbol("LLVMBuildMalloc")
+        @LibrarySymbol("LLVMBuildMalloc")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildMalloc(long, long, long);
+        abstract long LLVMBuildMalloc(long B, long Ty, long Name);
 
         @LibrarySymbol("LLVMBuildArrayMalloc")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildArrayMalloc(long, long, long, long);
+        abstract long LLVMBuildArrayMalloc(long B, long Ty, long Val, long Name);
 
         @LibrarySymbol("LLVMBuildAlloca")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildAlloca(long, long, long);
+        abstract long LLVMBuildAlloca(long B, long Ty, long Name);
 
         @LibrarySymbol("LLVMBuildArrayAlloca")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildArrayAlloca(long, long, long, long);
+        abstract long LLVMBuildArrayAlloca(long B, long Ty, long Val, long Name);
 
         @LibrarySymbol("LLVMBuildFree")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildFree(long, long);
+        abstract long LLVMBuildFree(long B, long Ptr);
 
         @LibrarySymbol("LLVMBuildLoad")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildLoad(long, long, long);
+        abstract long LLVMBuildLoad(long B, long Ptr, long Name);
 
         @LibrarySymbol("LLVMBuildStore")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildStore(long, long, long);
+        abstract long LLVMBuildStore(long B, long Val, long Ptr);
 
         @LibrarySymbol("LLVMBuildGEP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract long LLVMBuildGEP(long, long, long, int, long);
+        abstract long LLVMBuildGEP(long B, long Pointer, long Indices, int NumIndices, long Name);
 
         @LibrarySymbol("LLVMBuildInBoundsGEP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract long LLVMBuildInBoundsGEP(long, long, long, int, long);
+        abstract long LLVMBuildInBoundsGEP(long B, long Pointer, long Indices, int NumIndices, long Name);
 
         @LibrarySymbol("LLVMBuildStructGEP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract long LLVMBuildStructGEP(long, long, int, long);
+        abstract long LLVMBuildStructGEP(long B, long Pointer, int Idx, long Name);
 
         @LibrarySymbol("LLVMBuildGlobalString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildGlobalString(long, long, long);
+        abstract long LLVMBuildGlobalString(long B, long Str, long Name);
 
         @LibrarySymbol("LLVMBuildGlobalStringPtr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildGlobalStringPtr(long, long, long);
+        abstract long LLVMBuildGlobalStringPtr(long B, long Str, long Name);
 
         @LibrarySymbol("LLVMGetVolatile")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMGetVolatile(long);
+        abstract boolean LLVMGetVolatile(long MemoryAccessInst);
 
         @LibrarySymbol("LLVMSetVolatile")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
-        abstract void LLVMSetVolatile(long, boolean);
+        abstract void LLVMSetVolatile(long MemoryAccessInst, boolean IsVolatile);
 
         @LibrarySymbol("LLVMGetOrdering")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetOrdering(long);
+        abstract int LLVMGetOrdering(long MemoryAccessInst);
 
         @LibrarySymbol("LLVMSetOrdering")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetOrdering(long, int);*/
+        abstract void LLVMSetOrdering(long MemoryAccessInst, int Ordering);
 
         @LibrarySymbol("LLVMBuildTrunc")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
@@ -3047,17 +3003,17 @@ public class Core {
 
         @LibrarySymbol("LLVMBuildShuffleVector")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildShuffleVector(long, long, long, long, long);
+        abstract long LLVMBuildShuffleVector(long, long, long, long, long);*/
 
         @LibrarySymbol("LLVMBuildExtractValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract long LLVMBuildExtractValue(long, long, int, long);
+        abstract long LLVMBuildExtractValue(long B, long AggVal, int Index, long Name);
 
         @LibrarySymbol("LLVMBuildInsertValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract long LLVMBuildInsertValue(long, long, long, int, long);
+        abstract long LLVMBuildInsertValue(long B, long AggVal, long EltVal, int Index, long Name);
 
-        @LibrarySymbol("LLVMBuildIsNull")
+        /*@LibrarySymbol("LLVMBuildIsNull")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMBuildIsNull(long, long, long);
 
@@ -3103,43 +3059,43 @@ public class Core {
 
         @LibrarySymbol("LLVMSetCmpXchgFailureOrdering")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetCmpXchgFailureOrdering(long, int);
+        abstract void LLVMSetCmpXchgFailureOrdering(long, int);*/
 
         @LibrarySymbol("LLVMCreateModuleProviderForExistingModule")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMCreateModuleProviderForExistingModule(long);
+        abstract long LLVMCreateModuleProviderForExistingModule(long M);
 
         @LibrarySymbol("LLVMDisposeModuleProvider")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMDisposeModuleProvider(long);
+        abstract void LLVMDisposeModuleProvider(long M);
 
-        @LibrarySymbol("LLVMCreateMemoryBufferWithContentsOfFile")
+        /*@LibrarySymbol("LLVMCreateMemoryBufferWithContentsOfFile")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMCreateMemoryBufferWithContentsOfFile(long, long, long);
 
         @LibrarySymbol("LLVMCreateMemoryBufferWithSTDIN")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract boolean LLVMCreateMemoryBufferWithSTDIN(long, long);
+        abstract boolean LLVMCreateMemoryBufferWithSTDIN(long, long);*/
 
         @LibrarySymbol("LLVMCreateMemoryBufferWithMemoryRange")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, BOOL_AS_INT})
-        abstract long LLVMCreateMemoryBufferWithMemoryRange(long, long, long, boolean);
+        abstract long LLVMCreateMemoryBufferWithMemoryRange(long InputData, long InputDataLength, long BufferName, boolean RequiresNullTerminator);
 
         @LibrarySymbol("LLVMCreateMemoryBufferWithMemoryRangeCopy")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMCreateMemoryBufferWithMemoryRangeCopy(long, long, long);
+        abstract long LLVMCreateMemoryBufferWithMemoryRangeCopy(long InputData, long InputDataLength, long BufferName);
 
         @LibrarySymbol("LLVMGetBufferStart")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetBufferStart(long);
+        abstract long LLVMGetBufferStart(long MemBuf);
 
         @LibrarySymbol("LLVMGetBufferSize")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetBufferSize(long);
+        abstract long LLVMGetBufferSize(long MemBuf);
 
         @LibrarySymbol("LLVMDisposeMemoryBuffer")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMDisposeMemoryBuffer(long);
+        abstract void LLVMDisposeMemoryBuffer(long MemBuf);
 
         @LibrarySymbol("LLVMGetGlobalPassRegistry")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
@@ -3151,33 +3107,33 @@ public class Core {
 
         @LibrarySymbol("LLVMCreateFunctionPassManagerForModule")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMCreateFunctionPassManagerForModule(long);
+        abstract long LLVMCreateFunctionPassManagerForModule(long M);
 
         @LibrarySymbol("LLVMCreateFunctionPassManager")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMCreateFunctionPassManager(long);
+        abstract long LLVMCreateFunctionPassManager(long MP);
 
         @LibrarySymbol("LLVMRunPassManager")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract boolean LLVMRunPassManager(long, long);
+        abstract boolean LLVMRunPassManager(long PM, long M);
 
         @LibrarySymbol("LLVMInitializeFunctionPassManager")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMInitializeFunctionPassManager(long);
+        abstract boolean LLVMInitializeFunctionPassManager(long FPM);
 
         @LibrarySymbol("LLVMRunFunctionPassManager")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract boolean LLVMRunFunctionPassManager(long, long);
+        abstract boolean LLVMRunFunctionPassManager(long FPM, long F);
 
         @LibrarySymbol("LLVMFinalizeFunctionPassManager")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMFinalizeFunctionPassManager(long);
+        abstract boolean LLVMFinalizeFunctionPassManager(long FPM);
 
         @LibrarySymbol("LLVMDisposePassManager")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMDisposePassManager(long);
+        abstract void LLVMDisposePassManager(long PM);
 
-        @LibrarySymbol("LLVMStartMultithreaded")
+        /*@LibrarySymbol("LLVMStartMultithreaded")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {})
         abstract boolean LLVMStartMultithreaded();
 
@@ -3191,183 +3147,6 @@ public class Core {
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class, LLVM));
-    }
-
-    private enum Function {
-        LLVMGetDiagInfoSeverity(cLLVMDiagnosticSeverity, cLLVMDiagnosticInfoRef),
-        LLVMGetMDKindIDInContext(UNSIGNED_INT, cLLVMContextRef, CONST_CHAR_PTR, UNSIGNED_INT),
-        LLVMGetMDKindID(UNSIGNED_INT, CONST_CHAR_PTR, UNSIGNED_INT),
-        LLVMGetEnumAttributeKindForName(UNSIGNED_INT, CONST_CHAR_PTR, SIZE_T),
-        LLVMGetLastEnumAttributeKind(UNSIGNED_INT),
-        LLVMCreateEnumAttribute(cLLVMAttributeRef, cLLVMContextRef, UNSIGNED_INT, UINT64_T),
-        LLVMGetEnumAttributeKind(UNSIGNED_INT, cLLVMAttributeRef),
-        LLVMGetEnumAttributeValue(UINT64_T, cLLVMAttributeRef),
-        LLVMCreateStringAttribute(cLLVMAttributeRef, cLLVMContextRef, CONST_CHAR_PTR, UNSIGNED_INT, CONST_CHAR_PTR, UNSIGNED_INT),
-        LLVMGetStringAttributeKind(CONST_CHAR_PTR, cLLVMAttributeRef, ptr(UNSIGNED_INT)),
-        LLVMGetStringAttributeValue(CONST_CHAR_PTR, cLLVMAttributeRef, ptr(UNSIGNED_INT)),
-        LLVMIsEnumAttribute(LLVMBool, cLLVMAttributeRef),
-        LLVMIsStringAttribute(LLVMBool, cLLVMAttributeRef),
-        LLVMModuleCreateWithName(cLLVMModuleRef, CONST_CHAR_PTR),
-        LLVMModuleCreateWithNameInContext(cLLVMModuleRef, CONST_CHAR_PTR, cLLVMContextRef),
-        LLVMCloneModule(cLLVMModuleRef, cLLVMModuleRef),
-        LLVMDisposeModule(void.class, cLLVMModuleRef),
-        LLVMSetModuleIdentifier(void.class, cLLVMModuleRef, CONST_CHAR_PTR, SIZE_T),
-        LLVMGetDataLayoutStr(CONST_CHAR_PTR, cLLVMModuleRef),
-        LLVMGetDataLayout(CONST_CHAR_PTR, cLLVMModuleRef),
-        LLVMSetDataLayout(void.class, cLLVMModuleRef, CONST_CHAR_PTR),
-        LLVMGetTarget(CONST_CHAR_PTR, cLLVMModuleRef),
-        LLVMSetTarget(void.class, cLLVMModuleRef, CONST_CHAR_PTR),
-        LLVMDumpModule(void.class, cLLVMModuleRef),
-        LLVMPrintModuleToString(CHAR_PTR, cLLVMModuleRef),
-        LLVMGetModuleContext(cLLVMContextRef, cLLVMModuleRef),
-        LLVMAddFunction(cLLVMValueRef, cLLVMModuleRef, CONST_CHAR_PTR, cLLVMTypeRef),
-        LLVMGetNamedFunction(cLLVMValueRef, cLLVMModuleRef, CONST_CHAR_PTR),
-        LLVMGetTypeKind(cLLVMTypeKind, cLLVMTypeRef),
-        LLVMTypeIsSized(LLVMBool, cLLVMTypeRef),
-        LLVMGetTypeContext(cLLVMContextRef, cLLVMTypeRef),
-        LLVMDumpType(void.class, cLLVMTypeRef),
-        LLVMPrintTypeToString(CHAR_PTR, cLLVMTypeRef),
-        LLVMFunctionType(cLLVMTypeRef, cLLVMTypeRef, ptr(cLLVMTypeRef), UNSIGNED_INT, LLVMBool),
-        LLVMIsFunctionVarArg(LLVMBool, cLLVMTypeRef),
-        LLVMGetReturnType(cLLVMTypeRef, cLLVMTypeRef),
-        LLVMStructTypeInContext(cLLVMTypeRef, cLLVMContextRef, ptr(cLLVMTypeRef), UNSIGNED_INT, LLVMBool),
-        LLVMStructType(cLLVMTypeRef, ptr(cLLVMTypeRef), UNSIGNED_INT, LLVMBool),
-        LLVMStructCreateNamed(cLLVMTypeRef, cLLVMContextRef, CONST_CHAR_PTR),
-        LLVMGetStructName(CONST_CHAR_PTR, cLLVMTypeRef),
-        LLVMStructSetBody(void.class, cLLVMTypeRef, ptr(cLLVMTypeRef), UNSIGNED_INT, LLVMBool),
-        LLVMIsPackedStruct(LLVMBool, cLLVMTypeRef),
-        LLVMIsOpaqueStruct(LLVMBool, cLLVMTypeRef),
-        LLVMGetElementType(cLLVMTypeRef, cLLVMTypeRef),
-        LLVMArrayType(cLLVMTypeRef, cLLVMTypeRef, UNSIGNED_INT),
-        LLVMGetArrayLength(UNSIGNED_INT, cLLVMTypeRef),
-        LLVMPointerType(cLLVMTypeRef, cLLVMTypeRef, UNSIGNED_INT),
-        LLVMGetPointerAddressSpace(UNSIGNED_INT, cLLVMTypeRef),
-        LLVMVectorType(cLLVMTypeRef, cLLVMTypeRef, UNSIGNED_INT),
-        LLVMGetVectorSize(UNSIGNED_INT, cLLVMTypeRef),
-        LLVMVoidTypeInContext(cLLVMTypeRef, cLLVMContextRef),
-        LLVMLabelTypeInContext(cLLVMTypeRef, cLLVMContextRef),
-        LLVMX86MMXTypeInContext(cLLVMTypeRef, cLLVMContextRef),
-        LLVMVoidType(cLLVMTypeRef),
-        LLVMLabelType(cLLVMTypeRef),
-        LLVMX86MMXType(cLLVMTypeRef),
-        LLVMPrintValueToString(CHAR_PTR, cLLVMValueRef),
-        LLVMConstNull(cLLVMValueRef, cLLVMTypeRef),
-        LLVMConstAllOnes(cLLVMValueRef, cLLVMTypeRef),
-        LLVMGetUndef(cLLVMValueRef, cLLVMTypeRef),
-        LLVMConstInt(cLLVMValueRef, cLLVMTypeRef, UNSIGNED_LONG_LONG, LLVMBool),
-        LLVMConstIntOfArbitraryPrecision(cLLVMValueRef, cLLVMTypeRef, UNSIGNED_INT, const_ptr(UINT64_T)),
-        LLVMConstStringInContext(cLLVMValueRef, cLLVMContextRef, CONST_CHAR_PTR, UNSIGNED_INT, LLVMBool),
-        LLVMConstString(cLLVMValueRef, CONST_CHAR_PTR, UNSIGNED_INT, LLVMBool),
-        LLVMGetGlobalParent(cLLVMModuleRef, cLLVMValueRef),
-        LLVMIsDeclaration(LLVMBool, cLLVMValueRef),
-        LLVMGetLinkage(cLLVMLinkage, cLLVMValueRef),
-        LLVMSetLinkage(void.class, cLLVMValueRef, cLLVMLinkage),
-        LLVMGetSection(CONST_CHAR_PTR, cLLVMValueRef),
-        LLVMSetSection(void.class, cLLVMValueRef, CONST_CHAR_PTR),
-        LLVMGetVisibility(cLLVMVisibility, cLLVMValueRef),
-        LLVMSetVisibility(void.class, cLLVMValueRef, cLLVMVisibility),
-        LLVMGetDLLStorageClass(cLLVMDLLStorageClass, cLLVMValueRef),
-        LLVMSetDLLStorageClass(void.class, cLLVMValueRef, cLLVMDLLStorageClass),
-        LLVMGetAlignment(UNSIGNED_INT, cLLVMValueRef),
-        LLVMSetAlignment(void.class, cLLVMValueRef, UNSIGNED_INT),
-        LLVMGetFunctionCallConv(UNSIGNED_INT, cLLVMValueRef),
-        LLVMSetFunctionCallConv(void.class, cLLVMValueRef, UNSIGNED_INT),
-        LLVMAddFunctionAttr(void.class, cLLVMValueRef, cLLVMAttribute),
-        LLVMAddAttributeAtIndex(void.class, cLLVMValueRef, cLLVMAttributeIndex, cLLVMAttributeRef),
-        LLVMCountParams(UNSIGNED_INT, cLLVMValueRef),
-        LLVMGetParams(void.class, cLLVMValueRef, ptr(cLLVMValueRef)),
-        LLVMGetParam(cLLVMValueRef, cLLVMValueRef, UNSIGNED_INT),
-        LLVMAddAttribute(void.class, cLLVMValueRef, cLLVMAttribute),
-        LLVMGetAttribute(cLLVMAttribute, cLLVMValueRef),
-        LLVMSetParamAlignment(void.class, cLLVMValueRef, UNSIGNED_INT),
-        LLVMGetBasicBlockParent(cLLVMValueRef, cLLVMBasicBlockRef),
-        LLVMGetEntryBasicBlock(cLLVMBasicBlockRef, cLLVMValueRef),
-        LLVMAppendBasicBlockInContext(cLLVMBasicBlockRef, cLLVMContextRef, cLLVMValueRef, CONST_CHAR_PTR),
-        LLVMAppendBasicBlock(cLLVMBasicBlockRef, cLLVMValueRef, CONST_CHAR_PTR),
-        LLVMAddInstrAttribute(void.class, cLLVMValueRef, UNSIGNED_INT, cLLVMAttribute),
-        LLVMRemoveInstrAttribute(void.class, cLLVMValueRef, UNSIGNED_INT, cLLVMAttribute),
-        LLVMSetInstrParamAlignment(void.class, cLLVMValueRef, UNSIGNED_INT, UNSIGNED_INT),
-        LLVMGetAllocatedType(cLLVMTypeRef, cLLVMValueRef),
-        LLVMIsInBounds(LLVMBool, cLLVMValueRef),
-        LLVMSetIsInBounds(void.class, cLLVMValueRef, LLVMBool),
-        LLVMAddIncoming(void.class, cLLVMValueRef, ptr(cLLVMValueRef), ptr(cLLVMBasicBlockRef), UNSIGNED_INT),
-        LLVMCountIncoming(UNSIGNED_INT, cLLVMValueRef),
-        LLVMGetIncomingValue(cLLVMValueRef, cLLVMValueRef, UNSIGNED_INT),
-        LLVMGetIncomingBlock(cLLVMBasicBlockRef, cLLVMValueRef, UNSIGNED_INT),
-        LLVMCreateBuilderInContext(cLLVMBuilderRef, cLLVMContextRef),
-        LLVMCreateBuilder(cLLVMBuilderRef),
-        LLVMPositionBuilder(void.class, cLLVMBuilderRef, cLLVMBasicBlockRef, cLLVMValueRef),
-        LLVMPositionBuilderBefore(void.class, cLLVMBuilderRef, cLLVMValueRef),
-        LLVMPositionBuilderAtEnd(void.class, cLLVMBuilderRef, cLLVMBasicBlockRef),
-        LLVMGetInsertBlock(cLLVMBasicBlockRef, cLLVMBuilderRef),
-        LLVMClearInsertionPosition(void.class, cLLVMBuilderRef),
-        LLVMInsertIntoBuilder(void.class, cLLVMBuilderRef, cLLVMValueRef),
-        LLVMInsertIntoBuilderWithName(void.class, cLLVMBuilderRef, cLLVMValueRef, CONST_CHAR_PTR),
-        LLVMDisposeBuilder(void.class, cLLVMBuilderRef),
-        LLVMSetCurrentDebugLocation(void.class, cLLVMBuilderRef, cLLVMValueRef),
-        LLVMGetCurrentDebugLocation(cLLVMValueRef, cLLVMBuilderRef),
-        LLVMSetInstDebugLocation(void.class, cLLVMBuilderRef, cLLVMValueRef),
-        LLVMBuildRetVoid(cLLVMValueRef, cLLVMBuilderRef),
-        LLVMBuildRet(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef),
-        LLVMBuildBr(cLLVMValueRef, cLLVMBuilderRef, cLLVMBasicBlockRef),
-        LLVMBuildCondBr(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef, cLLVMBasicBlockRef, cLLVMBasicBlockRef),
-        LLVMBuildMalloc(cLLVMValueRef, cLLVMBuilderRef, cLLVMTypeRef, CONST_CHAR_PTR),
-        LLVMBuildArrayMalloc(cLLVMValueRef, cLLVMBuilderRef, cLLVMTypeRef, cLLVMValueRef, CONST_CHAR_PTR),
-        LLVMBuildAlloca(cLLVMValueRef, cLLVMBuilderRef, cLLVMTypeRef, CONST_CHAR_PTR),
-        LLVMBuildArrayAlloca(cLLVMValueRef, cLLVMBuilderRef, cLLVMTypeRef, cLLVMValueRef, CONST_CHAR_PTR),
-        LLVMBuildFree(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef),
-        LLVMBuildLoad(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef, CONST_CHAR_PTR),
-        LLVMBuildStore(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef, cLLVMValueRef),
-        LLVMBuildGEP(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef, ptr(cLLVMValueRef), UNSIGNED_INT, CONST_CHAR_PTR),
-        LLVMBuildInBoundsGEP(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef, ptr(cLLVMValueRef), UNSIGNED_INT, CONST_CHAR_PTR),
-        LLVMBuildStructGEP(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef, UNSIGNED_INT, CONST_CHAR_PTR),
-        LLVMBuildGlobalString(cLLVMValueRef, cLLVMBuilderRef, CONST_CHAR_PTR, CONST_CHAR_PTR),
-        LLVMBuildGlobalStringPtr(cLLVMValueRef, cLLVMBuilderRef, CONST_CHAR_PTR, CONST_CHAR_PTR),
-        LLVMGetVolatile(LLVMBool, cLLVMValueRef),
-        LLVMSetVolatile(void.class, cLLVMValueRef, LLVMBool),
-        LLVMGetOrdering(cLLVMAtomicOrdering, cLLVMValueRef),
-        LLVMSetOrdering(void.class, cLLVMValueRef, cLLVMAtomicOrdering),
-        LLVMBuildExtractValue(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef, UNSIGNED_INT, CONST_CHAR_PTR),
-        LLVMBuildInsertValue(cLLVMValueRef, cLLVMBuilderRef, cLLVMValueRef, cLLVMValueRef, UNSIGNED_INT, CONST_CHAR_PTR),
-        LLVMCreateModuleProviderForExistingModule(cLLVMModuleProviderRef, cLLVMModuleRef),
-        LLVMDisposeModuleProvider(void.class, cLLVMModuleProviderRef),
-        LLVMCreateMemoryBufferWithMemoryRange(cLLVMMemoryBufferRef, CONST_CHAR_PTR, SIZE_T, CONST_CHAR_PTR, LLVMBool),
-        LLVMCreateMemoryBufferWithMemoryRangeCopy(cLLVMMemoryBufferRef, CONST_CHAR_PTR, SIZE_T, CONST_CHAR_PTR),
-        LLVMGetBufferStart(CONST_CHAR_PTR, cLLVMMemoryBufferRef),
-        LLVMGetBufferSize(SIZE_T, cLLVMMemoryBufferRef),
-        LLVMDisposeMemoryBuffer(void.class, cLLVMMemoryBufferRef),
-        LLVMGetGlobalPassRegistry(cLLVMPassRegistryRef),
-        LLVMCreatePassManager(cLLVMPassManagerRef),
-        LLVMCreateFunctionPassManagerForModule(cLLVMPassManagerRef, cLLVMModuleRef),
-        LLVMCreateFunctionPassManager(cLLVMPassManagerRef, cLLVMModuleProviderRef),
-        LLVMRunPassManager(LLVMBool, cLLVMPassManagerRef, cLLVMModuleRef),
-        LLVMInitializeFunctionPassManager(LLVMBool, cLLVMPassManagerRef),
-        LLVMRunFunctionPassManager(LLVMBool, cLLVMPassManagerRef, cLLVMValueRef),
-        LLVMFinalizeFunctionPassManager(LLVMBool, cLLVMPassManagerRef),
-        LLVMDisposePassManager(void.class, cLLVMPassManagerRef);
-
-        private final MethodType type;
-        private final Supplier<MethodHandle> handle;
-
-        Function(Class<?> rtype, Class<?>... atypes) {
-            this.type = MethodType.methodType(rtype, atypes);
-            this.handle = processSymbol(LLVM, LLVM_SCOPE, name(), type());
-        }
-
-        public MethodType type() {
-            return type;
-        }
-
-        public MethodHandle handle() {
-            return Objects.requireNonNull(handle.get());
-        }
-
-        @Override
-        public String toString() {
-            return name() + "{" +
-                    "type=" + type +
-                    ", handle=" + handle() + '}';
-        }
     }
 
     public static void LLVMInitializeCore(LLVMPassRegistryRef R) {
@@ -3464,14 +3243,14 @@ public class Core {
      * Return an enum LLVMDiagnosticSeverity.
      */
     public static LLVMDiagnosticSeverity LLVMGetDiagInfoSeverity(LLVMDiagnosticInfoRef DI) {
-        return nothrows_run(() -> LLVMDiagnosticSeverity.of((int) Function.LLVMGetDiagInfoSeverity.handle().invoke(DI.value())));
+        return LLVMDiagnosticSeverity.of(Native.INSTANCE.LLVMGetDiagInfoSeverity(DI.value()));
     }
 
     public static int /* unsigned */ LLVMGetMDKindIDInContext(LLVMContextRef C, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             int /* unsigned */ SLen = Math.toIntExact(stringLength(c_Name));
-            return nothrows_run(() -> (int) Function.LLVMGetMDKindIDInContext.handle().invoke(C.value(), c_Name.nativeAddress(), SLen));
+            return Native.INSTANCE.LLVMGetMDKindIDInContext(C.value(), c_Name.nativeAddress(), SLen);
         }
     }
 
@@ -3479,7 +3258,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             int /* unsigned */ SLen = Math.toIntExact(stringLength(c_Name));
-            return nothrows_run(() -> (int) Function.LLVMGetMDKindID.handle().invoke(c_Name.nativeAddress(), SLen));
+            return Native.INSTANCE.LLVMGetMDKindID(c_Name.nativeAddress(), SLen);
         }
     }
 
@@ -3498,19 +3277,19 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             long /* size_t */ SLen = stringLength(c_Name);
-            return nothrows_run(() -> (int) Function.LLVMGetEnumAttributeKindForName.handle().invoke(c_Name.nativeAddress(), SLen));
+            return Native.INSTANCE.LLVMGetEnumAttributeKindForName(c_Name.nativeAddress(), SLen);
         }
     }
 
     public static int /* unsigned */ LLVMGetLastEnumAttributeKind() {
-        return nothrows_run(() -> (int) Function.LLVMGetLastEnumAttributeKind.handle().invoke());
+        return Native.INSTANCE.LLVMGetLastEnumAttributeKind();
     }
 
     /**
      * Create an enum attribute.
      */
     public static LLVMAttributeRef LLVMCreateEnumAttribute(LLVMContextRef C, int /* unsigned */ KindID, long /* uint64_t */ Val) {
-        return nothrows_run(() -> LLVMAttributeRef.ofNullable((long) Function.LLVMCreateEnumAttribute.handle().invoke(C.value(), KindID, Val)));
+        return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMCreateEnumAttribute(C.value(), KindID, Val));
     }
 
     /**
@@ -3518,14 +3297,14 @@ public class Core {
      * passed as argument.
      */
     public static int /* unsigned */ LLVMGetEnumAttributeKind(LLVMAttributeRef A) {
-        return nothrows_run(() -> (int) Function.LLVMGetEnumAttributeKind.handle().invoke(A.value()));
+        return Native.INSTANCE.LLVMGetEnumAttributeKind(A.value());
     }
 
     /**
      * Get the enum attribute's value. 0 is returned if none exists.
      */
     public static long /* uint64_t */ LLVMGetEnumAttributeValue(LLVMAttributeRef A) {
-        return nothrows_run(() -> (int) Function.LLVMGetEnumAttributeValue.handle().invoke(A.value()));
+        return (int) Native.INSTANCE.LLVMGetEnumAttributeValue(A.value());
     }
 
     /**
@@ -3537,8 +3316,8 @@ public class Core {
             int /* unsigned */ KLength = Math.toIntExact(stringLength(c_K));
             MemorySegment c_V = allocString(arena, V);
             int /* unsigned */ VLength = Math.toIntExact(stringLength(c_V));
-            return nothrows_run(() -> LLVMAttributeRef.ofNullable((long) Function.LLVMCreateStringAttribute.handle()
-                    .invoke(C.value(), c_K.nativeAddress(), KLength, c_V.nativeAddress(), VLength)));
+            return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMCreateStringAttribute(
+                    C.value(), c_K.nativeAddress(), KLength, c_V.nativeAddress(), VLength));
         }
     }
 
@@ -3548,7 +3327,7 @@ public class Core {
     public static String LLVMGetStringAttributeKind(LLVMAttributeRef A) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Length = arena.allocate(JAVA_INT);
-            long ptr = nothrows_run(() -> (long) Function.LLVMGetStringAttributeKind.handle().invoke(A.value(), c_Length.nativeAddress()));
+            long ptr = Native.INSTANCE.LLVMGetStringAttributeKind(A.value(), c_Length.nativeAddress());
             int /* unsigned */ Length = c_Length.get(JAVA_INT, 0);
             return addressToString(ptr, Length);
         }
@@ -3560,7 +3339,7 @@ public class Core {
     public static String LLVMGetStringAttributeValue(LLVMAttributeRef A) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Length = arena.allocate(JAVA_INT);
-            long ptr = nothrows_run(() -> (long) Function.LLVMGetStringAttributeValue.handle().invoke(A.value(), c_Length.nativeAddress()));
+            long ptr = Native.INSTANCE.LLVMGetStringAttributeValue(A.value(), c_Length.nativeAddress());
             int /* unsigned */ Length = c_Length.get(JAVA_INT, 0);
             return addressToString(ptr, Length);
         }
@@ -3570,11 +3349,11 @@ public class Core {
      * Check for the different types of attributes.
      */
     public static boolean LLVMIsEnumAttribute(LLVMAttributeRef A) {
-        return nothrows_run(() -> (boolean) Function.LLVMIsEnumAttribute.handle().invoke(A.value()));
+        return Native.INSTANCE.LLVMIsEnumAttribute(A.value());
     }
 
     public static boolean LLVMIsStringAttribute(LLVMAttributeRef A) {
-        return nothrows_run(() -> (boolean) Function.LLVMIsStringAttribute.handle().invoke(A.value()));
+        return Native.INSTANCE.LLVMIsStringAttribute(A.value());
     }
 
     /*
@@ -3597,7 +3376,7 @@ public class Core {
     public static LLVMModuleRef LLVMModuleCreateWithName(String ModuleID) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ModuleID = allocString(arena, ModuleID);
-            return nothrows_run(() -> LLVMModuleRef.ofNullable((long) Function.LLVMModuleCreateWithName.handle().invoke(c_ModuleID.nativeAddress())));
+            return LLVMModuleRef.ofNullable(Native.INSTANCE.LLVMModuleCreateWithName(c_ModuleID.nativeAddress()));
         }
     }
 
@@ -3610,7 +3389,7 @@ public class Core {
     public static LLVMModuleRef LLVMModuleCreateWithNameInContext(String ModuleID, LLVMContextRef C) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ModuleID = allocString(arena, ModuleID);
-            return nothrows_run(() -> LLVMModuleRef.ofNullable((long) Function.LLVMModuleCreateWithNameInContext.handle().invoke(c_ModuleID.nativeAddress(), C.value())));
+            return LLVMModuleRef.ofNullable(Native.INSTANCE.LLVMModuleCreateWithNameInContext(c_ModuleID.nativeAddress(), C.value()));
         }
     }
 
@@ -3618,7 +3397,7 @@ public class Core {
      * Return an exact copy of the specified module.
      */
     public static LLVMModuleRef LLVMCloneModule(LLVMModuleRef M) {
-        return nothrows_run(() -> LLVMModuleRef.ofNullable((long) Function.LLVMCloneModule.handle().invoke(M.value())));
+        return LLVMModuleRef.ofNullable(Native.INSTANCE.LLVMCloneModule(M.value()));
     }
 
     /**
@@ -3628,7 +3407,7 @@ public class Core {
      * leaked.
      */
     public static void LLVMDisposeModule(LLVMModuleRef M) {
-        nothrows_run(() -> Function.LLVMDisposeModule.handle().invoke(M.value()));
+        Native.INSTANCE.LLVMDisposeModule(M.value());
     }
 
     //TODO
@@ -3641,7 +3420,7 @@ public class Core {
     // * @see Module::getModuleIdentifier()
     // */
     //String LLVMGetModuleIdentifier(LLVMModuleRef M, long /* size_t */ *Len) {
-    //    return nothrows_run(() -> Function.LLVMGetModuleIdentifier.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetModuleIdentifier();
     //}
 
     /**
@@ -3654,7 +3433,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Ident = allocString(arena, Ident);
             long /* size_t */ Len = stringLength(c_Ident);
-            nothrows_run(() -> Function.LLVMSetModuleIdentifier.handle().invoke(c_Ident.nativeAddress(), Len));
+            Native.INSTANCE.LLVMSetModuleIdentifier(M.value(), c_Ident.nativeAddress(), Len);
         }
     }
 
@@ -3662,7 +3441,7 @@ public class Core {
      * Obtain the data layout for a module.
      */
     public static String LLVMGetDataLayoutStr(LLVMModuleRef M) {
-        return nothrows_run(() -> addressToString((long) Function.LLVMGetDataLayoutStr.handle().invoke(M.value())));
+        return addressToString(Native.INSTANCE.LLVMGetDataLayoutStr(M.value()));
     }
 
     /**
@@ -3673,7 +3452,7 @@ public class Core {
      * of LLVMGetDataLayoutStr, which is not ambiguous.
      */
     public static String LLVMGetDataLayout(LLVMModuleRef M) {
-        return nothrows_run(() -> addressToString((long) Function.LLVMGetDataLayout.handle().invoke(M.value())));
+        return addressToString(Native.INSTANCE.LLVMGetDataLayout(M.value()));
     }
 
     /**
@@ -3682,7 +3461,7 @@ public class Core {
     public static void LLVMSetDataLayout(LLVMModuleRef M, String DataLayoutStr) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_DataLayoutStr = allocString(arena, DataLayoutStr);
-            nothrows_run(() -> Function.LLVMSetDataLayout.handle().invoke(M.value(), c_DataLayoutStr.nativeAddress()));
+            Native.INSTANCE.LLVMSetDataLayout(M.value(), c_DataLayoutStr.nativeAddress());
         }
     }
 
@@ -3690,7 +3469,7 @@ public class Core {
      * Obtain the target triple for a module.
      */
     public static String LLVMGetTarget(LLVMModuleRef M) {
-        return nothrows_run(() -> addressToString((long) Function.LLVMGetTarget.handle().invoke(M.value())));
+        return addressToString(Native.INSTANCE.LLVMGetTarget(M.value()));
     }
 
     /**
@@ -3699,7 +3478,7 @@ public class Core {
     public static void LLVMSetTarget(LLVMModuleRef M, String Triple) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Triple = allocString(arena, Triple);
-            nothrows_run(() -> Function.LLVMSetTarget.handle().invoke(M.value(), c_Triple.nativeAddress()));
+            Native.INSTANCE.LLVMSetTarget(M.value(), c_Triple.nativeAddress());
         }
     }
 
@@ -3707,7 +3486,7 @@ public class Core {
      * Dump a representation of a module to stderr.
      */
     public static void LLVMDumpModule(LLVMModuleRef M) {
-        nothrows_run(() -> Function.LLVMDumpModule.handle().invoke(M.value()));
+        Native.INSTANCE.LLVMDumpModule(M.value());
     }
 
     //TODO
@@ -3716,14 +3495,14 @@ public class Core {
     // * disposed with LLVMDisposeMessage. Returns 0 on success, 1 otherwise.
     // */
     //boolean LLVMPrintModuleToFile(LLVMModuleRef M, String Filename, LLVMString *ErrorMessage) {
-    //    return nothrows_run(() -> Function.LLVMPrintModuleToFile.handle().invoke());
+    //    return Native.INSTANCE.LLVMPrintModuleToFile();
     //}
 
     /**
      * Return a string representation of the module.
      */
     public static String LLVMPrintModuleToString(LLVMModuleRef M) {
-        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMPrintModuleToString.handle().invoke(M.value())));
+        return addressToLLVMString(Native.INSTANCE.LLVMPrintModuleToString(M.value()));
     }
 
     ///**
@@ -3732,21 +3511,21 @@ public class Core {
     // * @see Module::setModuleInlineAsm()
     // */
     //void LLVMSetModuleInlineAsm(LLVMModuleRef M, String Asm) {
-    //    return nothrows_run(() -> Function.LLVMSetModuleInlineAsm.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetModuleInlineAsm();
     //}
 
     /**
      * Obtain the context to which this module is associated.
      */
     public static LLVMContextRef LLVMGetModuleContext(LLVMModuleRef M) {
-        return nothrows_run(() -> LLVMContextRef.ofNullable((long) Function.LLVMGetModuleContext.handle().invoke(M.value())));
+        return LLVMContextRef.ofNullable(Native.INSTANCE.LLVMGetModuleContext(M.value()));
     }
 
     ///**
     // * Obtain a Type from a module by its registered name.
     // */
     //LLVMTypeRef LLVMGetTypeByName(LLVMModuleRef M, String Name) {
-    //    return nothrows_run(() -> Function.LLVMGetTypeByName.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetTypeByName();
     //}
     ///**
     // * Obtain the number of operands for named metadata in a module.
@@ -3754,7 +3533,7 @@ public class Core {
     // * @see llvm::Module::getNamedMetadata()
     // */
     //int /* unsigned */ LLVMGetNamedMetadataNumOperands(LLVMModuleRef M, String Name) {
-    //    return nothrows_run(() -> Function.LLVMGetNamedMetadataNumOperands.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNamedMetadataNumOperands();
     //}
     ///**
     // * Obtain the named metadata operands for a module.
@@ -3768,7 +3547,7 @@ public class Core {
     // * @see llvm::MDNode::getOperand()
     // */
     //void LLVMGetNamedMetadataOperands(LLVMModuleRef M, String Name, LLVMValueRef *Dest) {
-    //    return nothrows_run(() -> Function.LLVMGetNamedMetadataOperands.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNamedMetadataOperands();
     //}
     ///**
     // * Add an operand to named metadata.
@@ -3777,7 +3556,7 @@ public class Core {
     // * @see llvm::MDNode::addOperand()
     // */
     //void LLVMAddNamedMetadataOperand(LLVMModuleRef M, String Name, LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMAddNamedMetadataOperand.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddNamedMetadataOperand();
     //}
 
     /**
@@ -3786,8 +3565,8 @@ public class Core {
     public static LLVMValueRef LLVMAddFunction(LLVMModuleRef M, String Name, LLVMTypeRef FunctionTy) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMAddFunction.handle()
-                    .invoke(M.value(), c_Name.nativeAddress(), FunctionTy.value())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMAddFunction(
+                    M.value(), c_Name.nativeAddress(), FunctionTy.value()));
         }
     }
 
@@ -3799,8 +3578,8 @@ public class Core {
     public static LLVMValueRef LLVMGetNamedFunction(LLVMModuleRef M, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetNamedFunction.handle()
-                    .invoke(M.value(), c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetNamedFunction(
+                    M.value(), c_Name.nativeAddress()));
         }
     }
 
@@ -3810,7 +3589,7 @@ public class Core {
     // * @see llvm::Module::begin()
     // */
     //LLVMValueRef LLVMGetFirstFunction(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMGetFirstFunction.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetFirstFunction();
     //}
     ///**
     // * Obtain an iterator to the last Function in a Module.
@@ -3818,25 +3597,25 @@ public class Core {
     // * @see llvm::Module::end()
     // */
     //LLVMValueRef LLVMGetLastFunction(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMGetLastFunction.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetLastFunction();
     //}
     ///**
-    // * Advance a Function iterator to the next Function.
+    // * Advance a Function iterator to the next Native.INSTANCE.
     // *
     // * Returns NULL if the iterator was already at the end and there are no more
     // * functions.
     // */
     //LLVMValueRef LLVMGetNextFunction(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetNextFunction.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNextFunction();
     //}
     ///**
-    // * Decrement a Function iterator to the previous Function.
+    // * Decrement a Function iterator to the previous Native.INSTANCE.
     // *
     // * Returns NULL if the iterator was already at the beginning and there are
     // * no previous functions.
     // */
     //LLVMValueRef LLVMGetPreviousFunction(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetPreviousFunction.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetPreviousFunction();
     //}
 
     /*
@@ -3870,7 +3649,7 @@ public class Core {
      * Obtain the enumerated type of a Type instance.
      */
     public static LLVMTypeKind LLVMGetTypeKind(LLVMTypeRef Ty) {
-        return nothrows_run(() -> LLVMTypeKind.of((int) Function.LLVMGetTypeKind.handle().invoke(Ty.value())));
+        return LLVMTypeKind.of(Native.INSTANCE.LLVMGetTypeKind(Ty.value()));
     }
 
     /**
@@ -3879,28 +3658,28 @@ public class Core {
      * Things that don't have a size are abstract types, labels, and void.a
      */
     public static boolean LLVMTypeIsSized(LLVMTypeRef Ty) {
-        return nothrows_run(() -> (boolean) Function.LLVMTypeIsSized.handle().invoke(Ty.value()));
+        return Native.INSTANCE.LLVMTypeIsSized(Ty.value());
     }
 
     /**
      * Obtain the context to which this type instance is associated.
      */
     public static LLVMContextRef LLVMGetTypeContext(LLVMTypeRef Ty) {
-        return nothrows_run(() -> LLVMContextRef.ofNullable((long) Function.LLVMGetTypeContext.handle().invoke(Ty.value())));
+        return LLVMContextRef.ofNullable(Native.INSTANCE.LLVMGetTypeContext(Ty.value()));
     }
 
     /**
      * Dump a representation of a type to stderr.
      */
     public static void LLVMDumpType(LLVMTypeRef Val) {
-        nothrows_run(() -> Function.LLVMDumpType.handle().invoke(Val.value()));
+        Native.INSTANCE.LLVMDumpType(Val.value());
     }
 
     /**
      * Return a string representation of the type.
      */
     public static String LLVMPrintTypeToString(LLVMTypeRef Val) {
-        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMPrintTypeToString.handle().invoke(Val.value())));
+        return addressToLLVMString(Native.INSTANCE.LLVMPrintTypeToString(Val.value()));
     }
 
     /*
@@ -4066,8 +3845,8 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ParamTypes = allocArray(arena, ParamTypes);
             int /* unsigned */ ParamCount = arrayLength(ParamTypes);
-            return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMFunctionType.handle()
-                    .invoke(ReturnType.value(), c_ParamTypes.nativeAddress(), ParamCount, IsVarArg)));
+            return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMFunctionType(
+                    ReturnType.value(), c_ParamTypes.nativeAddress(), ParamCount, IsVarArg));
         }
     }
 
@@ -4075,21 +3854,21 @@ public class Core {
      * Returns whether a function type is variadic.
      */
     public static boolean LLVMIsFunctionVarArg(LLVMTypeRef FunctionTy) {
-        return nothrows_run(() -> (boolean) Function.LLVMIsFunctionVarArg.handle().invoke(FunctionTy.value()));
+        return Native.INSTANCE.LLVMIsFunctionVarArg(FunctionTy.value());
     }
 
     /**
      * Obtain the Type this function Type returns.
      */
     public static LLVMTypeRef LLVMGetReturnType(LLVMTypeRef FunctionTy) {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMGetReturnType.handle().invoke(FunctionTy.value())));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMGetReturnType(FunctionTy.value()));
     }
 
     ///**
     // * Obtain the number of parameters this function accepts.
     // */
     //int /* unsigned */ LLVMCountParamTypes(LLVMTypeRef FunctionTy) {
-    //    return nothrows_run(() -> Function.LLVMCountParamTypes.handle().invoke());
+    //    return Native.INSTANCE.LLVMCountParamTypes();
     //}
     ///**
     // * Obtain the types of a function's parameters.
@@ -4103,7 +3882,7 @@ public class Core {
     // * @param Dest Memory address of an array to be filled with result.
     // */
     //void LLVMGetParamTypes(LLVMTypeRef FunctionTy, LLVMTypeRef *Dest) {
-    //    return nothrows_run(() -> Function.LLVMGetParamTypes.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetParamTypes();
     //}
 
     /*
@@ -4122,8 +3901,8 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
             int /* unsigned */ ElementCount = arrayLength(ElementTypes);
-            return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMStructTypeInContext.handle()
-                    .invoke(C.value(), c_ElementTypes.nativeAddress(), ElementCount, Packed)));
+            return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMStructTypeInContext(
+                    C.value(), c_ElementTypes.nativeAddress(), ElementCount, Packed));
         }
     }
 
@@ -4134,8 +3913,8 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
             int /* unsigned */ ElementCount = arrayLength(ElementTypes);
-            return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMStructType.handle()
-                    .invoke(c_ElementTypes.nativeAddress(), ElementCount, Packed)));
+            return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMStructType(
+                    c_ElementTypes.nativeAddress(), ElementCount, Packed));
         }
     }
 
@@ -4145,8 +3924,8 @@ public class Core {
     public static LLVMTypeRef LLVMStructCreateNamed(LLVMContextRef C, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMStructCreateNamed
-                    .handle().invoke(C.value(), c_Name.nativeAddress())));
+            return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMStructCreateNamed
+                    (C.value(), c_Name.nativeAddress()));
         }
     }
 
@@ -4154,7 +3933,7 @@ public class Core {
      * Obtain the name of a structure.
      */
     public static String LLVMGetStructName(LLVMTypeRef Ty) {
-        return nothrows_run(() -> addressToString((long) Function.LLVMGetStructName.handle().invoke(Ty.value())));
+        return addressToString(Native.INSTANCE.LLVMGetStructName(Ty.value()));
     }
 
     /**
@@ -4164,8 +3943,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
             int /* unsigned */ ElementCount = arrayLength(ElementTypes);
-            nothrows_run(() -> Function.LLVMStructSetBody.handle().invoke(
-                    StructTy.value(), c_ElementTypes.nativeAddress(), ElementCount, Packed));
+            Native.INSTANCE.LLVMStructSetBody(StructTy.value(), c_ElementTypes.nativeAddress(), ElementCount, Packed);
         }
     }
 
@@ -4175,7 +3953,7 @@ public class Core {
     // * @see llvm::StructType::getNumElements()
     // */
     //int /* unsigned */ LLVMCountStructElementTypes(LLVMTypeRef StructTy) {
-    //    return nothrows_run(() -> Function.LLVMCountStructElementTypes.handle().invoke());
+    //    return Native.INSTANCE.LLVMCountStructElementTypes();
     //}
     ///**
     // * Get the elements within a structure.
@@ -4188,7 +3966,7 @@ public class Core {
     // * is contained in.
     // */
     //void LLVMGetStructElementTypes(LLVMTypeRef StructTy, LLVMTypeRef *Dest) {
-    //    return nothrows_run(() -> Function.LLVMGetStructElementTypes.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetStructElementTypes();
     //}
     ///**
     // * Get the type of the element at a given index in the structure.
@@ -4196,21 +3974,21 @@ public class Core {
     // * @see llvm::StructType::getTypeAtIndex()
     // */
     //LLVMTypeRef LLVMStructGetTypeAtIndex(LLVMTypeRef StructTy, int /* unsigned */ i) {
-    //    return nothrows_run(() -> Function.LLVMStructGetTypeAtIndex.handle().invoke());
+    //    return Native.INSTANCE.LLVMStructGetTypeAtIndex();
     //}
 
     /**
      * Determine whether a structure is packed.
      */
     public static boolean LLVMIsPackedStruct(LLVMTypeRef StructTy) {
-        return nothrows_run(() -> (boolean) Function.LLVMIsPackedStruct.handle().invoke(StructTy.value()));
+        return Native.INSTANCE.LLVMIsPackedStruct(StructTy.value());
     }
 
     /**
      * Determine whether a structure is opaque.
      */
     public static boolean LLVMIsOpaqueStruct(LLVMTypeRef StructTy) {
-        return nothrows_run(() -> (boolean) Function.LLVMIsOpaqueStruct.handle().invoke(StructTy.value()));
+        return Native.INSTANCE.LLVMIsOpaqueStruct(StructTy.value());
     }
 
     /*
@@ -4226,7 +4004,7 @@ public class Core {
      * This works on array, vector, and pointer types.
      */
     public static LLVMTypeRef LLVMGetElementType(LLVMTypeRef Ty) {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMGetElementType.handle().invoke(Ty.value())));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMGetElementType(Ty.value()));
     }
 
     /**
@@ -4236,7 +4014,7 @@ public class Core {
      * exists in.
      */
     public static LLVMTypeRef LLVMArrayType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMArrayType.handle().invoke(ElementType.value(), ElementCount)));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMArrayType(ElementType.value(), ElementCount));
     }
 
     /**
@@ -4245,7 +4023,7 @@ public class Core {
      * This only works on types that represent arrays.
      */
     public static int /* unsigned */ LLVMGetArrayLength(LLVMTypeRef ArrayTy) {
-        return nothrows_run(() -> (int) Function.LLVMGetArrayLength.handle().invoke(ArrayTy.value()));
+        return Native.INSTANCE.LLVMGetArrayLength(ArrayTy.value());
     }
 
     /**
@@ -4255,7 +4033,7 @@ public class Core {
      * exists in.
      */
     public static LLVMTypeRef LLVMPointerType(LLVMTypeRef ElementType, int /* unsigned */ AddressSpace) {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMPointerType.handle().invoke(ElementType.value(), AddressSpace)));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMPointerType(ElementType.value(), AddressSpace));
     }
 
     /**
@@ -4264,7 +4042,7 @@ public class Core {
      * This only works on types that represent pointers.
      */
     public static int /* unsigned */ LLVMGetPointerAddressSpace(LLVMTypeRef PointerTy) {
-        return nothrows_run(() -> (int) Function.LLVMGetPointerAddressSpace.handle().invoke(PointerTy.value()));
+        return Native.INSTANCE.LLVMGetPointerAddressSpace(PointerTy.value());
     }
 
     /**
@@ -4275,7 +4053,7 @@ public class Core {
      * exists in.
      */
     public static LLVMTypeRef LLVMVectorType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMVectorType.handle().invoke(ElementType.value(), ElementCount)));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMVectorType(ElementType.value(), ElementCount));
     }
 
     /**
@@ -4284,7 +4062,7 @@ public class Core {
      * This only works on types that represent vectors.
      */
     public static int /* unsigned */ LLVMGetVectorSize(LLVMTypeRef VectorTy) {
-        return nothrows_run(() -> (int) Function.LLVMGetVectorSize.handle().invoke(VectorTy.value()));
+        return Native.INSTANCE.LLVMGetVectorSize(VectorTy.value());
     }
 
     /*
@@ -4295,42 +4073,42 @@ public class Core {
      * Create a void type in a context.
      */
     public static LLVMTypeRef LLVMVoidTypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMVoidTypeInContext.handle().invoke(C.value())));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMVoidTypeInContext(C.value()));
     }
 
     /**
      * Create a label type in a context.
      */
     public static LLVMTypeRef LLVMLabelTypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMLabelTypeInContext.handle().invoke(C.value())));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMLabelTypeInContext(C.value()));
     }
 
     /**
      * Create a X86 MMX type in a context.
      */
     public static LLVMTypeRef LLVMX86MMXTypeInContext(LLVMContextRef C) {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMX86MMXTypeInContext.handle().invoke(C.value())));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMX86MMXTypeInContext(C.value()));
     }
 
     /**
      * Create a void type in the global context.
      */
     public static LLVMTypeRef LLVMVoidType() {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMVoidType.handle().invoke()));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMVoidType());
     }
 
     /**
      * Create a label type in the global context.
      */
     public static LLVMTypeRef LLVMLabelType() {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMLabelType.handle().invoke()));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMLabelType());
     }
 
     /**
      * Create a X86 MMX type in the global context.
      */
     public static LLVMTypeRef LLVMX86MMXType() {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMX86MMXType.handle().invoke()));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMX86MMXType());
     }
 
     /*
@@ -4347,7 +4125,7 @@ public class Core {
     // * @see llvm::Value::getType()
     // */
     //LLVMTypeRef LLVMTypeOf(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMTypeOf.handle().invoke());
+    //    return Native.INSTANCE.LLVMTypeOf();
     //}
     ///**
     // * Obtain the enumerated type of a Value instance.
@@ -4355,7 +4133,7 @@ public class Core {
     // * @see llvm::Value::getValueID()
     // */
     //LLVMValueKind LLVMGetValueKind(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMGetValueKind.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetValueKind();
     //}
     ///**
     // * Obtain the string name of a value.
@@ -4363,7 +4141,7 @@ public class Core {
     // * @see llvm::Value::getName()
     // */
     //String LLVMGetValueName(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMGetValueName.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetValueName();
     //}
     ///**
     // * Set the string name of a value.
@@ -4371,7 +4149,7 @@ public class Core {
     // * @see llvm::Value::setName()
     // */
     //void LLVMSetValueName(LLVMValueRef Val, String Name) {
-    //    return nothrows_run(() -> Function.LLVMSetValueName.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetValueName();
     //}
     ///**
     // * Dump a representation of a value to stderr.
@@ -4379,7 +4157,7 @@ public class Core {
     // * @see llvm::Value::dump()
     // */
     //void LLVMDumpValue(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMDumpValue.handle().invoke());
+    //    return Native.INSTANCE.LLVMDumpValue();
     //}
 
     /**
@@ -4387,7 +4165,7 @@ public class Core {
      * LLVMDisposeMessage to free the string.
      */
     public static String LLVMPrintValueToString(LLVMValueRef Val) {
-        return nothrows_run(() -> addressToLLVMString((long) Function.LLVMPrintValueToString.handle().invoke(Val.value())));
+        return addressToLLVMString(Native.INSTANCE.LLVMPrintValueToString(Val.value()));
     }
 
     ///**
@@ -4396,19 +4174,19 @@ public class Core {
     // * @see llvm::Value::replaceAllUsesWith()
     // */
     //void LLVMReplaceAllUsesWith(LLVMValueRef OldVal, LLVMValueRef NewVal) {
-    //    return nothrows_run(() -> Function.LLVMReplaceAllUsesWith.handle().invoke());
+    //    return Native.INSTANCE.LLVMReplaceAllUsesWith();
     //}
     ///**
     // * Determine whether the specified value instance is constant.
     // */
     //boolean LLVMIsConstant(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMIsConstant.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsConstant();
     //}
     ///**
     // * Determine whether a value instance is undefined.
     // */
     //boolean LLVMIsUndef(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMIsUndef.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsUndef();
     //}
 
     /*
@@ -4433,7 +4211,7 @@ public class Core {
     // * @see llvm::Value::use_begin()
     // */
     //LLVMUseRef LLVMGetFirstUse(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMGetFirstUse.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetFirstUse();
     //}
     ///**
     // * Obtain the next use of a value.
@@ -4442,7 +4220,7 @@ public class Core {
     // * the final use and no more are available.
     // */
     //LLVMUseRef LLVMGetNextUse(LLVMUseRef U) {
-    //    return nothrows_run(() -> Function.LLVMGetNextUse.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNextUse();
     //}
     ///**
     // * Obtain the user value for a user.
@@ -4452,7 +4230,7 @@ public class Core {
     // * @see llvm::Use::getUser()
     // */
     //LLVMValueRef LLVMGetUser(LLVMUseRef U) {
-    //    return nothrows_run(() -> Function.LLVMGetUser.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetUser();
     //}
     ///**
     // * Obtain the value this use corresponds to.
@@ -4460,7 +4238,7 @@ public class Core {
     // * @see llvm::Use::get().
     // */
     //LLVMValueRef LLVMGetUsedValue(LLVMUseRef U) {
-    //    return nothrows_run(() -> Function.LLVMGetUsedValue.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetUsedValue();
     //}
 
     /*
@@ -4477,7 +4255,7 @@ public class Core {
     // * @see llvm::User::getOperand()
     // */
     //LLVMValueRef LLVMGetOperand(LLVMValueRef Val, int /* unsigned */ Index) {
-    //    return nothrows_run(() -> Function.LLVMGetOperand.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetOperand();
     //}
     ///**
     // * Obtain the use of an operand at a specific index in a llvm::User value.
@@ -4485,7 +4263,7 @@ public class Core {
     // * @see llvm::User::getOperandUse()
     // */
     //LLVMUseRef LLVMGetOperandUse(LLVMValueRef Val, int /* unsigned */ Index) {
-    //    return nothrows_run(() -> Function.LLVMGetOperandUse.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetOperandUse();
     //}
     ///**
     // * Set an operand at a specific index in a llvm::User value.
@@ -4493,7 +4271,7 @@ public class Core {
     // * @see llvm::User::setOperand()
     // */
     //void LLVMSetOperand(LLVMValueRef User, int /* unsigned */ Index, LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMSetOperand.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetOperand();
     //}
     ///**
     // * Obtain the number of operands in a llvm::User value.
@@ -4501,7 +4279,7 @@ public class Core {
     // * @see llvm::User::getNumOperands()
     // */
     //int LLVMGetNumOperands(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMGetNumOperands.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNumOperands();
     //}
 
     /*
@@ -4518,7 +4296,7 @@ public class Core {
      * Obtain a constant value referring to the null instance of a type.
      */
     public static LLVMValueRef LLVMConstNull(LLVMTypeRef Ty) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstNull.handle().invoke(Ty.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNull(Ty.value()));
     }
 
     /**
@@ -4528,14 +4306,14 @@ public class Core {
      * This is only valid for integer types.
      */
     public static LLVMValueRef LLVMConstAllOnes(LLVMTypeRef Ty) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstAllOnes.handle().invoke(Ty.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstAllOnes(Ty.value()));
     }
 
     /**
      * Obtain a constant value referring to an undefined value of a type.
      */
     public static LLVMValueRef LLVMGetUndef(LLVMTypeRef Ty) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetUndef.handle().invoke(Ty.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetUndef(Ty.value()));
     }
 
     ///**
@@ -4544,14 +4322,14 @@ public class Core {
     // * @see llvm::Constant::isNullValue()
     // */
     //boolean LLVMIsNull(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMIsNull.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsNull();
     //}
     ///**
     // * Obtain a constant that is a constant pointer pointing to NULL for a
     // * specified type.
     // */
     //LLVMValueRef LLVMConstPointerNull(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMConstPointerNull.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstPointerNull();
     //}
 
     /*
@@ -4578,7 +4356,7 @@ public class Core {
      * @param SignExtend Whether to sign extend the produced value.
      */
     public static LLVMValueRef LLVMConstInt(LLVMTypeRef IntTy, long /* unsigned long long */ N, boolean SignExtend) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstInt.handle().invoke(IntTy.value(), N, SignExtend)));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstInt(IntTy.value(), N, SignExtend));
     }
 
     /**
@@ -4588,8 +4366,8 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Words = allocArray(arena, Words);
             int /* unsigned */ NumWords = arrayLength(Words);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstIntOfArbitraryPrecision
-                    .handle().invoke(IntTy.value(), NumWords, c_Words.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstIntOfArbitraryPrecision(
+                    IntTy.value(), NumWords, c_Words.nativeAddress()));
         }
     }
 
@@ -4603,7 +4381,7 @@ public class Core {
     // * @see llvm::ConstantInt::get()
     // */
     //LLVMValueRef LLVMConstIntOfString(LLVMTypeRef IntTy, String Text, byte /* uint8_t */ Radix) {
-    //    return nothrows_run(() -> Function.LLVMConstIntOfString.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstIntOfString();
     //}
     ///**
     // * Obtain a constant value for an integer parsed from a string with
@@ -4612,13 +4390,13 @@ public class Core {
     // * @see llvm::ConstantInt::get()
     // */
     //LLVMValueRef LLVMConstIntOfStringAndSize(LLVMTypeRef IntTy, String Text, int /* unsigned */ SLen, byte /* uint8_t */ Radix) {
-    //    return nothrows_run(() -> Function.LLVMConstIntOfStringAndSize.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstIntOfStringAndSize();
     //}
     ///**
     // * Obtain a constant value referring to a double floating point value.
     // */
     //LLVMValueRef LLVMConstReal(LLVMTypeRef RealTy, double N) {
-    //    return nothrows_run(() -> Function.LLVMConstReal.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstReal();
     //}
     ///**
     // * Obtain a constant for a floating point value parsed from a string.
@@ -4627,13 +4405,13 @@ public class Core {
     // * should be used if the input string's length is known.
     // */
     //LLVMValueRef LLVMConstRealOfString(LLVMTypeRef RealTy, String Text) {
-    //    return nothrows_run(() -> Function.LLVMConstRealOfString.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstRealOfString();
     //}
     ///**
     // * Obtain a constant for a floating point value parsed from a string.
     // */
     //LLVMValueRef LLVMConstRealOfStringAndSize(LLVMTypeRef RealTy, String Text, int /* unsigned */ SLen) {
-    //    return nothrows_run(() -> Function.LLVMConstRealOfStringAndSize.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstRealOfStringAndSize();
     //}
     ///**
     // * Obtain the zero extended value for an integer constant value.
@@ -4641,7 +4419,7 @@ public class Core {
     // * @see llvm::ConstantInt::getZExtValue()
     // */
     //long /* unsigned long long */ LLVMConstIntGetZExtValue(LLVMValueRef ConstantVal) {
-    //    return nothrows_run(() -> Function.LLVMConstIntGetZExtValue.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstIntGetZExtValue();
     //}
     ///**
     // * Obtain the sign extended value for an integer constant value.
@@ -4649,7 +4427,7 @@ public class Core {
     // * @see llvm::ConstantInt::getSExtValue()
     // */
     //long /* long long */ LLVMConstIntGetSExtValue(LLVMValueRef ConstantVal) {
-    //    return nothrows_run(() -> Function.LLVMConstIntGetSExtValue.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstIntGetSExtValue();
     //}
     ///**
     // * Obtain the double value for an floating point constant value.
@@ -4658,7 +4436,7 @@ public class Core {
     // * @see llvm::ConstantFP::getDoubleValue
     // */
     //double LLVMConstRealGetDouble(LLVMValueRef ConstantVal, boolean *losesInfo) {
-    //    return nothrows_run(() -> Function.LLVMConstRealGetDouble.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstRealGetDouble();
     //}
 
     /*
@@ -4674,8 +4452,8 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             int /* unsigned */ Length = Math.toIntExact(stringLength(c_Str));
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstStringInContext.handle()
-                    .invoke(C.value(), c_Str.nativeAddress(), Length, DontNullTerminate)));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstStringInContext(
+                    C.value(), c_Str.nativeAddress(), Length, DontNullTerminate));
         }
     }
 
@@ -4689,8 +4467,8 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             int /* unsigned */ Length = Math.toIntExact(stringLength(c_Str));
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMConstString.handle()
-                    .invoke(c_Str.nativeAddress(), Length, DontNullTerminate)));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstString(
+                    c_Str.nativeAddress(), Length, DontNullTerminate));
         }
     }
 
@@ -4700,7 +4478,7 @@ public class Core {
     // * @see ConstantDataSequential::getAsString()
     // */
     //boolean LLVMIsConstantString(LLVMValueRef c) {
-    //    return nothrows_run(() -> Function.LLVMIsConstantString.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsConstantString();
     //}
     ///**
     // * Get the given constant data sequential as a string.
@@ -4708,7 +4486,7 @@ public class Core {
     // * @see ConstantDataSequential::getAsString()
     // */
     //String LLVMGetAsString(LLVMValueRef c, long /* size_t */ *Length) {
-    //    return nothrows_run(() -> Function.LLVMGetAsString.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetAsString();
     //}
     ///**
     // * Create an anonymous ConstantStruct with the specified values.
@@ -4716,7 +4494,7 @@ public class Core {
     // * @see llvm::ConstantStruct::getAnon()
     // */
     //LLVMValueRef LLVMConstStructInContext(LLVMContextRef C, LLVMValueRef *ConstantVals, int /* unsigned */ Count, boolean Packed) {
-    //    return nothrows_run(() -> Function.LLVMConstStructInContext.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstStructInContext();
     //}
     ///**
     // * Create a ConstantStruct in the global Context.
@@ -4727,7 +4505,7 @@ public class Core {
     // * @see LLVMConstStructInContext()
     // */
     //LLVMValueRef LLVMConstStruct(LLVMValueRef *ConstantVals, int /* unsigned */ Count, boolean Packed) {
-    //    return nothrows_run(() -> Function.LLVMConstStruct.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstStruct();
     //}
     ///**
     // * Create a ConstantArray from values.
@@ -4735,7 +4513,7 @@ public class Core {
     // * @see llvm::ConstantArray::get()
     // */
     //LLVMValueRef LLVMConstArray(LLVMTypeRef ElementTy, LLVMValueRef *ConstantVals, int /* unsigned */ Length) {
-    //    return nothrows_run(() -> Function.LLVMConstArray.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstArray();
     //}
     ///**
     // * Create a non-anonymous ConstantStruct from values.
@@ -4743,7 +4521,7 @@ public class Core {
     // * @see llvm::ConstantStruct::get()
     // */
     //LLVMValueRef LLVMConstNamedStruct(LLVMTypeRef StructTy, LLVMValueRef *ConstantVals, int /* unsigned */ Count) {
-    //    return nothrows_run(() -> Function.LLVMConstNamedStruct.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNamedStruct();
     //}
     ///**
     // * Get an element at specified index as a constant.
@@ -4751,7 +4529,7 @@ public class Core {
     // * @see ConstantDataSequential::getElementAsConstant()
     // */
     //LLVMValueRef LLVMGetElementAsConstant(LLVMValueRef C, int /* unsigned */ idx) {
-    //    return nothrows_run(() -> Function.LLVMGetElementAsConstant.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetElementAsConstant();
     //}
     ///**
     // * Create a ConstantVector from values.
@@ -4759,7 +4537,7 @@ public class Core {
     // * @see llvm::ConstantVector::get()
     // */
     //LLVMValueRef LLVMConstVector(LLVMValueRef *ScalarConstantVals, int /* unsigned */ Size) {
-    //    return nothrows_run(() -> Function.LLVMConstVector.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstVector();
     //}
     ///**
     // * @}
@@ -4774,196 +4552,196 @@ public class Core {
     // * @{
     // */
     //LLVMOpcode LLVMGetConstOpcode(LLVMValueRef ConstantVal) {
-    //    return nothrows_run(() -> Function.LLVMGetConstOpcode.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetConstOpcode();
     //}
     //LLVMValueRef LLVMAlignOf(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMAlignOf.handle().invoke());
+    //    return Native.INSTANCE.LLVMAlignOf();
     //}
     //LLVMValueRef LLVMSizeOf(LLVMTypeRef Ty) {
-    //    return nothrows_run(() -> Function.LLVMSizeOf.handle().invoke());
+    //    return Native.INSTANCE.LLVMSizeOf();
     //}
     //LLVMValueRef LLVMConstNeg(LLVMValueRef ConstantVal) {
-    //    return nothrows_run(() -> Function.LLVMConstNeg.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNeg();
     //}
     //LLVMValueRef LLVMConstNSWNeg(LLVMValueRef ConstantVal) {
-    //    return nothrows_run(() -> Function.LLVMConstNSWNeg.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNSWNeg();
     //}
     //LLVMValueRef LLVMConstNUWNeg(LLVMValueRef ConstantVal) {
-    //    return nothrows_run(() -> Function.LLVMConstNUWNeg.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNUWNeg();
     //}
     //LLVMValueRef LLVMConstFNeg(LLVMValueRef ConstantVal) {
-    //    return nothrows_run(() -> Function.LLVMConstFNeg.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFNeg();
     //}
     //LLVMValueRef LLVMConstNot(LLVMValueRef ConstantVal) {
-    //    return nothrows_run(() -> Function.LLVMConstNot.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNot();
     //}
     //LLVMValueRef LLVMConstAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstAdd.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstAdd();
     //}
     //LLVMValueRef LLVMConstNSWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstNSWAdd.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNSWAdd();
     //}
     //LLVMValueRef LLVMConstNUWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstNUWAdd.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNUWAdd();
     //}
     //LLVMValueRef LLVMConstFAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstFAdd.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFAdd();
     //}
     //LLVMValueRef LLVMConstSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstSub.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstSub();
     //}
     //LLVMValueRef LLVMConstNSWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstNSWSub.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNSWSub();
     //}
     //LLVMValueRef LLVMConstNUWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstNUWSub.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNUWSub();
     //}
     //LLVMValueRef LLVMConstFSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstFSub.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFSub();
     //}
     //LLVMValueRef LLVMConstMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstMul.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstMul();
     //}
     //LLVMValueRef LLVMConstNSWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstNSWMul.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNSWMul();
     //}
     //LLVMValueRef LLVMConstNUWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstNUWMul.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstNUWMul();
     //}
     //LLVMValueRef LLVMConstFMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstFMul.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFMul();
     //}
     //LLVMValueRef LLVMConstUDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstUDiv.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstUDiv();
     //}
     //LLVMValueRef LLVMConstSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstSDiv.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstSDiv();
     //}
     //LLVMValueRef LLVMConstExactSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstExactSDiv.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstExactSDiv();
     //}
     //LLVMValueRef LLVMConstFDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstFDiv.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFDiv();
     //}
     //LLVMValueRef LLVMConstURem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstURem.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstURem();
     //}
     //LLVMValueRef LLVMConstSRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstSRem.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstSRem();
     //}
     //LLVMValueRef LLVMConstFRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstFRem.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFRem();
     //}
     //LLVMValueRef LLVMConstAnd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstAnd.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstAnd();
     //}
     //LLVMValueRef LLVMConstOr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstOr.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstOr();
     //}
     //LLVMValueRef LLVMConstXor(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstXor.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstXor();
     //}
     //LLVMValueRef LLVMConstICmp(LLVMIntPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstICmp.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstICmp();
     //}
     //LLVMValueRef LLVMConstFCmp(LLVMRealPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstFCmp.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFCmp();
     //}
     //LLVMValueRef LLVMConstShl(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstShl.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstShl();
     //}
     //LLVMValueRef LLVMConstLShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstLShr.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstLShr();
     //}
     //LLVMValueRef LLVMConstAShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstAShr.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstAShr();
     //}
     //LLVMValueRef LLVMConstGEP(LLVMValueRef ConstantVal, LLVMValueRef *ConstantIndices, int /* unsigned */ NumIndices) {
-    //    return nothrows_run(() -> Function.LLVMConstGEP.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstGEP();
     //}
     //LLVMValueRef LLVMConstInBoundsGEP(LLVMValueRef ConstantVal, LLVMValueRef *ConstantIndices, int /* unsigned */ NumIndices) {
-    //    return nothrows_run(() -> Function.LLVMConstInBoundsGEP.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstInBoundsGEP();
     //}
     //LLVMValueRef LLVMConstTrunc(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstTrunc.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstTrunc();
     //}
     //LLVMValueRef LLVMConstSExt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstSExt.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstSExt();
     //}
     //LLVMValueRef LLVMConstZExt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstZExt.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstZExt();
     //}
     //LLVMValueRef LLVMConstFPTrunc(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstFPTrunc.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFPTrunc();
     //}
     //LLVMValueRef LLVMConstFPExt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstFPExt.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFPExt();
     //}
     //LLVMValueRef LLVMConstUIToFP(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstUIToFP.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstUIToFP();
     //}
     //LLVMValueRef LLVMConstSIToFP(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstSIToFP.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstSIToFP();
     //}
     //LLVMValueRef LLVMConstFPToUI(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstFPToUI.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFPToUI();
     //}
     //LLVMValueRef LLVMConstFPToSI(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstFPToSI.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFPToSI();
     //}
     //LLVMValueRef LLVMConstPtrToInt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstPtrToInt.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstPtrToInt();
     //}
     //LLVMValueRef LLVMConstIntToPtr(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstIntToPtr.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstIntToPtr();
     //}
     //LLVMValueRef LLVMConstBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstBitCast.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstBitCast();
     //}
     //LLVMValueRef LLVMConstAddrSpaceCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstAddrSpaceCast.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstAddrSpaceCast();
     //}
     //LLVMValueRef LLVMConstZExtOrBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstZExtOrBitCast.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstZExtOrBitCast();
     //}
     //LLVMValueRef LLVMConstSExtOrBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstSExtOrBitCast.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstSExtOrBitCast();
     //}
     //LLVMValueRef LLVMConstTruncOrBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstTruncOrBitCast.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstTruncOrBitCast();
     //}
     //LLVMValueRef LLVMConstPointerCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstPointerCast.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstPointerCast();
     //}
     //LLVMValueRef LLVMConstIntCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType, boolean isSigned) {
-    //    return nothrows_run(() -> Function.LLVMConstIntCast.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstIntCast();
     //}
     //LLVMValueRef LLVMConstFPCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-    //    return nothrows_run(() -> Function.LLVMConstFPCast.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstFPCast();
     //}
     //LLVMValueRef LLVMConstSelect(LLVMValueRef ConstantCondition, LLVMValueRef ConstantIfTrue, LLVMValueRef ConstantIfFalse) {
-    //    return nothrows_run(() -> Function.LLVMConstSelect.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstSelect();
     //}
     //LLVMValueRef LLVMConstExtractElement(LLVMValueRef VectorConstant, LLVMValueRef IndexConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstExtractElement.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstExtractElement();
     //}
     //LLVMValueRef LLVMConstInsertElement(LLVMValueRef VectorConstant, LLVMValueRef ElementValueConstant, LLVMValueRef IndexConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstInsertElement.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstInsertElement();
     //}
     //LLVMValueRef LLVMConstShuffleVector(LLVMValueRef VectorAConstant, LLVMValueRef VectorBConstant, LLVMValueRef MaskConstant) {
-    //    return nothrows_run(() -> Function.LLVMConstShuffleVector.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstShuffleVector();
     //}
     //LLVMValueRef LLVMConstExtractValue(LLVMValueRef AggConstant, int /* unsigned */ *IdxList, int /* unsigned */ NumIdx) {
-    //    return nothrows_run(() -> Function.LLVMConstExtractValue.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstExtractValue();
     //}
     //LLVMValueRef LLVMConstInsertValue(LLVMValueRef AggConstant, LLVMValueRef ElementValueConstant, int /* unsigned */ *IdxList, int /* unsigned */ NumIdx) {
-    //    return nothrows_run(() -> Function.LLVMConstInsertValue.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstInsertValue();
     //}
     //LLVMValueRef LLVMConstInlineAsm(LLVMTypeRef Ty, String AsmString, String Constraints, boolean HasSideEffects, boolean IsAlignStack) {
-    //    return nothrows_run(() -> Function.LLVMConstInlineAsm.handle().invoke());
+    //    return Native.INSTANCE.LLVMConstInlineAsm();
     //}
     //LLVMValueRef LLVMBlockAddress(LLVMValueRef F, LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMBlockAddress.handle().invoke());
+    //    return Native.INSTANCE.LLVMBlockAddress();
     //}
 
     /*
@@ -4974,53 +4752,53 @@ public class Core {
      */
 
     public static LLVMModuleRef LLVMGetGlobalParent(LLVMValueRef Global) {
-        return nothrows_run(() -> LLVMModuleRef.ofNullable((long) Function.LLVMGetGlobalParent.handle().invoke(Global.value())));
+        return LLVMModuleRef.ofNullable(Native.INSTANCE.LLVMGetGlobalParent(Global.value()));
     }
 
     public static boolean LLVMIsDeclaration(LLVMValueRef Global) {
-        return nothrows_run(() -> (boolean) Function.LLVMIsDeclaration.handle().invoke(Global.value()));
+        return Native.INSTANCE.LLVMIsDeclaration(Global.value());
     }
 
     public static LLVMLinkage LLVMGetLinkage(LLVMValueRef Global) {
-        return nothrows_run(() -> LLVMLinkage.of((int) Function.LLVMGetLinkage.handle().invoke(Global.value())));
+        return LLVMLinkage.of(Native.INSTANCE.LLVMGetLinkage(Global.value()));
     }
 
     public static void LLVMSetLinkage(LLVMValueRef Global, LLVMLinkage Linkage) {
-        nothrows_run(() -> Function.LLVMSetLinkage.handle().invoke(Global.value(), Linkage.value()));
+        Native.INSTANCE.LLVMSetLinkage(Global.value(), Linkage.value());
     }
 
     public static String LLVMGetSection(LLVMValueRef Global) {
-        return nothrows_run(() -> addressToString((long) Function.LLVMGetSection.handle().invoke(Global.value())));
+        return addressToString(Native.INSTANCE.LLVMGetSection(Global.value()));
     }
 
     public static void LLVMSetSection(LLVMValueRef Global, String Section) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Section = allocString(arena, Section);
-            nothrows_run(() -> Function.LLVMSetSection.handle().invoke(Global.value(), c_Section.nativeAddress()));
+            Native.INSTANCE.LLVMSetSection(Global.value(), c_Section.nativeAddress());
         }
     }
 
     public static LLVMVisibility LLVMGetVisibility(LLVMValueRef Global) {
-        return nothrows_run(() -> LLVMVisibility.of((int) Function.LLVMGetVisibility.handle().invoke(Global.value())));
+        return LLVMVisibility.of(Native.INSTANCE.LLVMGetVisibility(Global.value()));
     }
 
     public static void LLVMSetVisibility(LLVMValueRef Global, LLVMVisibility Viz) {
-        nothrows_run(() -> Function.LLVMSetVisibility.handle().invoke(Global.value(), Viz.value()));
+        Native.INSTANCE.LLVMSetVisibility(Global.value(), Viz.value());
     }
 
     public static LLVMDLLStorageClass LLVMGetDLLStorageClass(LLVMValueRef Global) {
-        return nothrows_run(() -> LLVMDLLStorageClass.of((int) Function.LLVMGetDLLStorageClass.handle().invoke(Global.value())));
+        return LLVMDLLStorageClass.of(Native.INSTANCE.LLVMGetDLLStorageClass(Global.value()));
     }
 
     public static void LLVMSetDLLStorageClass(LLVMValueRef Global, LLVMDLLStorageClass Class) {
-        nothrows_run(() -> Function.LLVMSetDLLStorageClass.handle().invoke(Global.value(), Class.value()));
+        Native.INSTANCE.LLVMSetDLLStorageClass(Global.value(), Class.value());
     }
 
     //boolean LLVMHasUnnamedAddr(LLVMValueRef Global) {
-    //    return nothrows_run(() -> Function.LLVMHasUnnamedAddr.handle().invoke());
+    //    return Native.INSTANCE.LLVMHasUnnamedAddr();
     //}
     //void LLVMSetUnnamedAddr(LLVMValueRef Global, boolean HasUnnamedAddr) {
-    //    return nothrows_run(() -> Function.LLVMSetUnnamedAddr.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetUnnamedAddr();
     //}
 
     /*
@@ -5034,14 +4812,14 @@ public class Core {
      * Obtain the preferred alignment of the value.
      */
     public static int /* unsigned */ LLVMGetAlignment(LLVMValueRef V) {
-        return nothrows_run(() -> (int) Function.LLVMGetAlignment.handle().invoke(V.value()));
+        return Native.INSTANCE.LLVMGetAlignment(V.value());
     }
 
     /**
      * Set the preferred alignment of the value.
      */
     public static void LLVMSetAlignment(LLVMValueRef V, int /* unsigned */ Bytes) {
-        nothrows_run(() -> Function.LLVMSetAlignment.handle().invoke(V.value(), Bytes));
+        Native.INSTANCE.LLVMSetAlignment(V.value(), Bytes);
     }
 
     /*
@@ -5051,58 +4829,58 @@ public class Core {
      */
 
     //LLVMValueRef LLVMAddGlobal(LLVMModuleRef M, LLVMTypeRef Ty, String Name) {
-    //    return nothrows_run(() -> Function.LLVMAddGlobal.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddGlobal();
     //}
     //LLVMValueRef LLVMAddGlobalInAddressSpace(LLVMModuleRef M, LLVMTypeRef Ty, String Name, int /* unsigned */ AddressSpace) {
-    //    return nothrows_run(() -> Function.LLVMAddGlobalInAddressSpace.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddGlobalInAddressSpace();
     //}
     //LLVMValueRef LLVMGetNamedGlobal(LLVMModuleRef M, String Name) {
-    //    return nothrows_run(() -> Function.LLVMGetNamedGlobal.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNamedGlobal();
     //}
     //LLVMValueRef LLVMGetFirstGlobal(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMGetFirstGlobal.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetFirstGlobal();
     //}
     //LLVMValueRef LLVMGetLastGlobal(LLVMModuleRef M) {
-    //    return nothrows_run(() -> Function.LLVMGetLastGlobal.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetLastGlobal();
     //}
     //LLVMValueRef LLVMGetNextGlobal(LLVMValueRef GlobalVar) {
-    //    return nothrows_run(() -> Function.LLVMGetNextGlobal.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNextGlobal();
     //}
     //LLVMValueRef LLVMGetPreviousGlobal(LLVMValueRef GlobalVar) {
-    //    return nothrows_run(() -> Function.LLVMGetPreviousGlobal.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetPreviousGlobal();
     //}
     //void LLVMDeleteGlobal(LLVMValueRef GlobalVar) {
-    //    return nothrows_run(() -> Function.LLVMDeleteGlobal.handle().invoke());
+    //    return Native.INSTANCE.LLVMDeleteGlobal();
     //}
     //LLVMValueRef LLVMGetInitializer(LLVMValueRef GlobalVar) {
-    //    return nothrows_run(() -> Function.LLVMGetInitializer.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetInitializer();
     //}
     //void LLVMSetInitializer(LLVMValueRef GlobalVar, LLVMValueRef ConstantVal) {
-    //    return nothrows_run(() -> Function.LLVMSetInitializer.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetInitializer();
     //}
     //boolean LLVMIsThreadLocal(LLVMValueRef GlobalVar) {
-    //    return nothrows_run(() -> Function.LLVMIsThreadLocal.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsThreadLocal();
     //}
     //void LLVMSetThreadLocal(LLVMValueRef GlobalVar, boolean IsThreadLocal) {
-    //    return nothrows_run(() -> Function.LLVMSetThreadLocal.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetThreadLocal();
     //}
     //boolean LLVMIsGlobalConstant(LLVMValueRef GlobalVar) {
-    //    return nothrows_run(() -> Function.LLVMIsGlobalConstant.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsGlobalConstant();
     //}
     //void LLVMSetGlobalConstant(LLVMValueRef GlobalVar, boolean IsConstant) {
-    //    return nothrows_run(() -> Function.LLVMSetGlobalConstant.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetGlobalConstant();
     //}
     //LLVMThreadLocalMode LLVMGetThreadLocalMode(LLVMValueRef GlobalVar) {
-    //    return nothrows_run(() -> Function.LLVMGetThreadLocalMode.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetThreadLocalMode();
     //}
     //void LLVMSetThreadLocalMode(LLVMValueRef GlobalVar, LLVMThreadLocalMode Mode) {
-    //    return nothrows_run(() -> Function.LLVMSetThreadLocalMode.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetThreadLocalMode();
     //}
     //boolean LLVMIsExternallyInitialized(LLVMValueRef GlobalVar) {
-    //    return nothrows_run(() -> Function.LLVMIsExternallyInitialized.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsExternallyInitialized();
     //}
     //void LLVMSetExternallyInitialized(LLVMValueRef GlobalVar, boolean IsExtInit) {
-    //    return nothrows_run(() -> Function.LLVMSetExternallyInitialized.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetExternallyInitialized();
     //}
 
     /*
@@ -5112,7 +4890,7 @@ public class Core {
      */
 
     //LLVMValueRef LLVMAddAlias(LLVMModuleRef M, LLVMTypeRef Ty, LLVMValueRef Aliasee, String Name) {
-    //    return nothrows_run(() -> Function.LLVMAddAlias.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddAlias();
     //}
     ///**
     // * @}
@@ -5133,31 +4911,31 @@ public class Core {
     // * @see llvm::Function::eraseFromParent()
     // */
     //void LLVMDeleteFunction(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMDeleteFunction.handle().invoke());
+    //    return Native.INSTANCE.LLVMDeleteFunction();
     //}
     ///**
-    // * Check whether the given function has a personality function.
+    // * Check whether the given function has a personality Native.INSTANCE.
     // *
     // * @see llvm::Function::hasPersonalityFn()
     // */
     //boolean LLVMHasPersonalityFn(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMHasPersonalityFn.handle().invoke());
+    //    return Native.INSTANCE.LLVMHasPersonalityFn();
     //}
     ///**
-    // * Obtain the personality function attached to the function.
+    // * Obtain the personality function attached to the Native.INSTANCE.
     // *
     // * @see llvm::Function::getPersonalityFn()
     // */
     //LLVMValueRef LLVMGetPersonalityFn(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetPersonalityFn.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetPersonalityFn();
     //}
     ///**
-    // * Set the personality function attached to the function.
+    // * Set the personality function attached to the Native.INSTANCE.
     // *
     // * @see llvm::Function::setPersonalityFn()
     // */
     //void LLVMSetPersonalityFn(LLVMValueRef Fn, LLVMValueRef PersonalityFn) {
-    //    return nothrows_run(() -> Function.LLVMSetPersonalityFn.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetPersonalityFn();
     //}
     ///**
     // * Obtain the ID number from a function instance.
@@ -5165,26 +4943,26 @@ public class Core {
     // * @see llvm::Function::getIntrinsicID()
     // */
     //int /* unsigned */ LLVMGetIntrinsicID(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetIntrinsicID.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetIntrinsicID();
     //}
 
     /**
-     * Obtain the calling function of a function.
+     * Obtain the calling function of a Native.INSTANCE.
      * <p>
      * The returned value corresponds to the LLVMCallConv enumeration.
      */
     public static LLVMCallConv LLVMGetFunctionCallConv(LLVMValueRef Fn) {
-        return nothrows_run(() -> LLVMCallConv.of((int) Function.LLVMGetFunctionCallConv.handle().invoke(Fn.value())));
+        return LLVMCallConv.of(Native.INSTANCE.LLVMGetFunctionCallConv(Fn.value()));
     }
 
     /**
-     * Set the calling convention of a function.
+     * Set the calling convention of a Native.INSTANCE.
      *
      * @param Fn Function to operate on
      * @param CC LLVMCallConv to set calling convention to
      */
     public static void LLVMSetFunctionCallConv(LLVMValueRef Fn, LLVMCallConv CC) {
-        nothrows_run(() -> Function.LLVMSetFunctionCallConv.handle().invoke(Fn.value(), CC.value()));
+        Native.INSTANCE.LLVMSetFunctionCallConv(Fn.value(), CC.value());
     }
 
     ///**
@@ -5194,7 +4972,7 @@ public class Core {
     // * @see llvm::Function::getGC()
     // */
     //String LLVMGetGC(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetGC.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetGC();
     //}
     ///**
     // * Define the garbage collector to use during code generation.
@@ -5202,52 +4980,52 @@ public class Core {
     // * @see llvm::Function::setGC()
     // */
     //void LLVMSetGC(LLVMValueRef Fn, String Name) {
-    //    return nothrows_run(() -> Function.LLVMSetGC.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetGC();
     //}
 
     /**
-     * Add an attribute to a function.
+     * Add an attribute to a Native.INSTANCE.
      */
     public static void LLVMAddFunctionAttr(LLVMValueRef Fn, int /* LLVMAttribute */ PA) {
-        nothrows_run(() -> Function.LLVMAddFunctionAttr.handle().invoke(Fn.value(), PA));
+        Native.INSTANCE.LLVMAddFunctionAttr(Fn.value(), PA);
     }
 
     public static void LLVMAddAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, LLVMAttributeRef A) {
-        nothrows_run(() -> Function.LLVMAddAttributeAtIndex.handle().invoke(F.value(), Idx, A.value()));
+        Native.INSTANCE.LLVMAddAttributeAtIndex(F.value(), Idx, A.value());
     }
 
     //LLVMAttributeRef LLVMGetEnumAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, int /* unsigned */ KindID) {
-    //    return nothrows_run(() -> Function.LLVMGetEnumAttributeAtIndex.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetEnumAttributeAtIndex();
     //}
     //LLVMAttributeRef LLVMGetStringAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, String K, int /* unsigned */ KLen) {
-    //    return nothrows_run(() -> Function.LLVMGetStringAttributeAtIndex.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetStringAttributeAtIndex();
     //}
     //void LLVMRemoveEnumAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, int /* unsigned */ KindID) {
-    //    return nothrows_run(() -> Function.LLVMRemoveEnumAttributeAtIndex.handle().invoke());
+    //    return Native.INSTANCE.LLVMRemoveEnumAttributeAtIndex();
     //}
     //void LLVMRemoveStringAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, String K, int /* unsigned */ KLen) {
-    //    return nothrows_run(() -> Function.LLVMRemoveStringAttributeAtIndex.handle().invoke());
+    //    return Native.INSTANCE.LLVMRemoveStringAttributeAtIndex();
     //}
     ///**
     // * Add a target-dependent attribute to a function
     // * @see llvm::AttrBuilder::addAttribute()
     // */
     //void LLVMAddTargetDependentFunctionAttr(LLVMValueRef Fn, String A, String V) {
-    //    return nothrows_run(() -> Function.LLVMAddTargetDependentFunctionAttr.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddTargetDependentFunctionAttr();
     //}
     ///**
-    // * Obtain an attribute from a function.
+    // * Obtain an attribute from a Native.INSTANCE.
     // *
     // * @see llvm::Function::getAttributes()
     // */
     //LLVMAttribute LLVMGetFunctionAttr(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetFunctionAttr.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetFunctionAttr();
     //}
     ///**
-    // * Remove an attribute from a function.
+    // * Remove an attribute from a Native.INSTANCE.
     // */
     //void LLVMRemoveFunctionAttr(LLVMValueRef Fn, LLVMAttribute PA) {
-    //    return nothrows_run(() -> Function.LLVMRemoveFunctionAttr.handle().invoke());
+    //    return Native.INSTANCE.LLVMRemoveFunctionAttr();
     //}
 
     /*
@@ -5260,14 +5038,14 @@ public class Core {
      */
 
     /**
-     * Obtain the number of parameters in a function.
+     * Obtain the number of parameters in a Native.INSTANCE.
      */
     public static int /* unsigned */ LLVMCountParams(LLVMValueRef Fn) {
-        return nothrows_run(() -> (int) Function.LLVMCountParams.handle().invoke(Fn.value()));
+        return Native.INSTANCE.LLVMCountParams(Fn.value());
     }
 
     /**
-     * Obtain the parameters in a function.
+     * Obtain the parameters in a Native.INSTANCE.
      * <p>
      * The takes a pointer to a pre-allocated array of LLVMValueRef that is
      * at least LLVMCountParams() long. This array will be filled with
@@ -5277,11 +5055,11 @@ public class Core {
      */
     /* package-private */
     static void LLVMGetParams(LLVMValueRef Fn, long Params) {
-        nothrows_run(() -> Function.LLVMGetParams.handle().invoke(Fn.value(), Params));
+        Native.INSTANCE.LLVMGetParams(Fn.value(), Params);
     }
 
     /**
-     * Obtain the parameters in a function.
+     * Obtain the parameters in a Native.INSTANCE.
      * <p>
      * Return array will be filled with LLVMValueRef instances which correspond
      * to the parameters the function receives. Each LLVMValueRef corresponds
@@ -5306,7 +5084,7 @@ public class Core {
      * Parameters are indexed from 0.
      */
     public static LLVMValueRef LLVMGetParam(LLVMValueRef Fn, int /* unsigned */ Index) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetParam.handle().invoke(Fn.value(), Index)));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetParam(Fn.value(), Index));
     }
 
     ///**
@@ -5319,48 +5097,48 @@ public class Core {
     // * argument belongs.
     // */
     //LLVMValueRef LLVMGetParamParent(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMGetParamParent.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetParamParent();
     //}
     ///**
-    // * Obtain the first parameter to a function.
+    // * Obtain the first parameter to a Native.INSTANCE.
     // *
     // * @see llvm::Function::arg_begin()
     // */
     //LLVMValueRef LLVMGetFirstParam(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetFirstParam.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetFirstParam();
     //}
     ///**
-    // * Obtain the last parameter to a function.
+    // * Obtain the last parameter to a Native.INSTANCE.
     // *
     // * @see llvm::Function::arg_end()
     // */
     //LLVMValueRef LLVMGetLastParam(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetLastParam.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetLastParam();
     //}
     ///**
-    // * Obtain the next parameter to a function.
+    // * Obtain the next parameter to a Native.INSTANCE.
     // *
     // * This takes an LLVMValueRef obtained from LLVMGetFirstParam() (which is
     // * actually a wrapped iterator) and obtains the next parameter from the
     // * underlying iterator.
     // */
     //LLVMValueRef LLVMGetNextParam(LLVMValueRef Arg) {
-    //    return nothrows_run(() -> Function.LLVMGetNextParam.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNextParam();
     //}
     ///**
-    // * Obtain the previous parameter to a function.
+    // * Obtain the previous parameter to a Native.INSTANCE.
     // *
     // * This is the opposite of LLVMGetNextParam().
     // */
     //LLVMValueRef LLVMGetPreviousParam(LLVMValueRef Arg) {
-    //    return nothrows_run(() -> Function.LLVMGetPreviousParam.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetPreviousParam();
     //}
 
     /**
      * Add an attribute to a function argument.
      */
     public static void LLVMAddAttribute(LLVMValueRef Arg, int /* LLVMAttribute */ PA) {
-        nothrows_run(() -> Function.LLVMAddAttribute.handle().invoke(Arg.value(), PA));
+        Native.INSTANCE.LLVMAddAttribute(Arg.value(), PA);
     }
 
     ///**
@@ -5369,21 +5147,21 @@ public class Core {
     // * @see llvm::Argument::removeAttr()
     // */
     //void LLVMRemoveAttribute(LLVMValueRef Arg, LLVMAttribute PA) {
-    //    return nothrows_run(() -> Function.LLVMRemoveAttribute.handle().invoke());
+    //    return Native.INSTANCE.LLVMRemoveAttribute();
     //}
 
     /**
      * Get an attribute from a function argument.
      */
     public static int /* LLVMAttribute */ LLVMGetAttribute(LLVMValueRef Arg) {
-        return nothrows_run(() -> (int) Function.LLVMGetAttribute.handle().invoke(Arg.value()));
+        return Native.INSTANCE.LLVMGetAttribute(Arg.value());
     }
 
     /**
      * Set the alignment for a function parameter.
      */
     public static void LLVMSetParamAlignment(LLVMValueRef Arg, int /* unsigned */ Align) {
-        nothrows_run(() -> Function.LLVMSetParamAlignment.handle().invoke(Arg.value(), Align));
+        Native.INSTANCE.LLVMSetParamAlignment(Arg.value(), Align);
     }
 
     /*
@@ -5400,13 +5178,13 @@ public class Core {
     // * this function returns.
     // */
     //LLVMValueRef LLVMMDStringInContext(LLVMContextRef C, String Str, int /* unsigned */ SLen) {
-    //    return nothrows_run(() -> Function.LLVMMDStringInContext.handle().invoke());
+    //    return Native.INSTANCE.LLVMMDStringInContext();
     //}
     ///**
     // * Obtain a MDString value from the global context.
     // */
     //LLVMValueRef LLVMMDString(String Str, int /* unsigned */ SLen) {
-    //    return nothrows_run(() -> Function.LLVMMDString.handle().invoke());
+    //    return Native.INSTANCE.LLVMMDString();
     //}
     ///**
     // * Obtain a MDNode value from a context.
@@ -5414,13 +5192,13 @@ public class Core {
     // * The returned value corresponds to the llvm::MDNode class.
     // */
     //LLVMValueRef LLVMMDNodeInContext(LLVMContextRef C, LLVMValueRef *Vals, int /* unsigned */ Count) {
-    //    return nothrows_run(() -> Function.LLVMMDNodeInContext.handle().invoke());
+    //    return Native.INSTANCE.LLVMMDNodeInContext();
     //}
     ///**
     // * Obtain a MDNode value from the global context.
     // */
     //LLVMValueRef LLVMMDNode(LLVMValueRef *Vals, int /* unsigned */ Count) {
-    //    return nothrows_run(() -> Function.LLVMMDNode.handle().invoke());
+    //    return Native.INSTANCE.LLVMMDNode();
     //}
     ///**
     // * Obtain the underlying string from a MDString value.
@@ -5430,7 +5208,7 @@ public class Core {
     // * @return String data in MDString.
     // */
     //String LLVMGetMDString(LLVMValueRef V, int /* unsigned */ *Length) {
-    //    return nothrows_run(() -> Function.LLVMGetMDString.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetMDString();
     //}
     ///**
     // * Obtain the number of operands from an MDNode value.
@@ -5439,7 +5217,7 @@ public class Core {
     // * @return Number of operands of the MDNode.
     // */
     //int /* unsigned */ LLVMGetMDNodeNumOperands(LLVMValueRef V) {
-    //    return nothrows_run(() -> Function.LLVMGetMDNodeNumOperands.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetMDNodeNumOperands();
     //}
     ///**
     // * Obtain the given MDNode's operands.
@@ -5453,7 +5231,7 @@ public class Core {
     // * @param Dest Destination array for operands.
     // */
     //void LLVMGetMDNodeOperands(LLVMValueRef V, LLVMValueRef *Dest) {
-    //    return nothrows_run(() -> Function.LLVMGetMDNodeOperands.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetMDNodeOperands();
     //}
     ///**
     // * @}
@@ -5478,32 +5256,32 @@ public class Core {
     // * Convert a basic block instance to a value type.
     // */
     //LLVMValueRef LLVMBasicBlockAsValue(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMBasicBlockAsValue.handle().invoke());
+    //    return Native.INSTANCE.LLVMBasicBlockAsValue();
     //}
     ///**
     // * Determine whether an LLVMValueRef is itself a basic block.
     // */
     //boolean LLVMValueIsBasicBlock(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMValueIsBasicBlock.handle().invoke());
+    //    return Native.INSTANCE.LLVMValueIsBasicBlock();
     //}
     ///**
     // * Convert an LLVMValueRef to an LLVMBasicBlockRef instance.
     // */
     //LLVMBasicBlockRef LLVMValueAsBasicBlock(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMValueAsBasicBlock.handle().invoke());
+    //    return Native.INSTANCE.LLVMValueAsBasicBlock();
     //}
     ///**
     // * Obtain the string name of a basic block.
     // */
     //String LLVMGetBasicBlockName(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMGetBasicBlockName.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetBasicBlockName();
     //}
 
     /**
      * Obtain the function to which a basic block belongs.
      */
     public static LLVMValueRef LLVMGetBasicBlockParent(LLVMBasicBlockRef BB) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetBasicBlockParent.handle().invoke(BB.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetBasicBlockParent(BB.value()));
     }
 
     ///**
@@ -5517,18 +5295,18 @@ public class Core {
     // * @see llvm::BasicBlock::getTerminator()
     // */
     //LLVMValueRef LLVMGetBasicBlockTerminator(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMGetBasicBlockTerminator.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetBasicBlockTerminator();
     //}
     ///**
-    // * Obtain the number of basic blocks in a function.
+    // * Obtain the number of basic blocks in a Native.INSTANCE.
     // *
     // * @param Fn Function value to operate on.
     // */
     //int /* unsigned */ LLVMCountBasicBlocks(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMCountBasicBlocks.handle().invoke());
+    //    return Native.INSTANCE.LLVMCountBasicBlocks();
     //}
     ///**
-    // * Obtain all of the basic blocks in a function.
+    // * Obtain all of the basic blocks in a Native.INSTANCE.
     // *
     // * This operates on a function value. The BasicBlocks parameter is a
     // * pointer to a pre-allocated array of LLVMBasicBlockRef of at least
@@ -5536,10 +5314,10 @@ public class Core {
     // * LLVMBasicBlockRef instances.
     // */
     //void LLVMGetBasicBlocks(LLVMValueRef Fn, LLVMBasicBlockRef *BasicBlocks) {
-    //    return nothrows_run(() -> Function.LLVMGetBasicBlocks.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetBasicBlocks();
     //}
     ///**
-    // * Obtain the first basic block in a function.
+    // * Obtain the first basic block in a Native.INSTANCE.
     // *
     // * The returned basic block can be used as an iterator. You will likely
     // * eventually call into LLVMGetNextBasicBlock() with it.
@@ -5547,45 +5325,45 @@ public class Core {
     // * @see llvm::Function::begin()
     // */
     //LLVMBasicBlockRef LLVMGetFirstBasicBlock(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetFirstBasicBlock.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetFirstBasicBlock();
     //}
     ///**
-    // * Obtain the last basic block in a function.
+    // * Obtain the last basic block in a Native.INSTANCE.
     // *
     // * @see llvm::Function::end()
     // */
     //LLVMBasicBlockRef LLVMGetLastBasicBlock(LLVMValueRef Fn) {
-    //    return nothrows_run(() -> Function.LLVMGetLastBasicBlock.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetLastBasicBlock();
     //}
     ///**
     // * Advance a basic block iterator.
     // */
     //LLVMBasicBlockRef LLVMGetNextBasicBlock(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMGetNextBasicBlock.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNextBasicBlock();
     //}
     ///**
     // * Go backwards in a basic block iterator.
     // */
     //LLVMBasicBlockRef LLVMGetPreviousBasicBlock(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMGetPreviousBasicBlock.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetPreviousBasicBlock();
     //}
 
     /**
      * Obtain the basic block that corresponds to the entry point of a
-     * function.
+     * Native.INSTANCE.
      */
     public static LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
-        return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMGetEntryBasicBlock.handle().invoke(Fn.value())));
+        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetEntryBasicBlock(Fn.value()));
     }
 
     /**
-     * Append a basic block to the end of a function.
+     * Append a basic block to the end of a Native.INSTANCE.
      */
     public static LLVMBasicBlockRef LLVMAppendBasicBlockInContext(LLVMContextRef C, LLVMValueRef Fn, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMAppendBasicBlockInContext.handle()
-                    .invoke(C.value(), Fn.value(), c_Name.nativeAddress())));
+            return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMAppendBasicBlockInContext(
+                    C.value(), Fn.value(), c_Name.nativeAddress()));
         }
     }
 
@@ -5596,7 +5374,8 @@ public class Core {
     public static LLVMBasicBlockRef LLVMAppendBasicBlock(LLVMValueRef Fn, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMAppendBasicBlock.handle().invoke(Fn.value(), c_Name.nativeAddress())));
+            return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMAppendBasicBlock(
+                    Fn.value(), c_Name.nativeAddress()));
         }
     }
 
@@ -5609,7 +5388,7 @@ public class Core {
     // * @see llvm::BasicBlock::Create()
     // */
     //LLVMBasicBlockRef LLVMInsertBasicBlockInContext(LLVMContextRef C, LLVMBasicBlockRef BB, String Name) {
-    //    return nothrows_run(() -> Function.LLVMInsertBasicBlockInContext.handle().invoke());
+    //    return Native.INSTANCE.LLVMInsertBasicBlockInContext();
     //}
     ///**
     // * Insert a basic block in a function using the global context.
@@ -5617,7 +5396,7 @@ public class Core {
     // * @see llvm::BasicBlock::Create()
     // */
     //LLVMBasicBlockRef LLVMInsertBasicBlock(LLVMBasicBlockRef InsertBeforeBB, String Name) {
-    //    return nothrows_run(() -> Function.LLVMInsertBasicBlock.handle().invoke());
+    //    return Native.INSTANCE.LLVMInsertBasicBlock();
     //}
     ///**
     // * Remove a basic block from a function and delete it.
@@ -5628,10 +5407,10 @@ public class Core {
     // * @see llvm::BasicBlock::eraseFromParent()
     // */
     //void LLVMDeleteBasicBlock(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMDeleteBasicBlock.handle().invoke());
+    //    return Native.INSTANCE.LLVMDeleteBasicBlock();
     //}
     ///**
-    // * Remove a basic block from a function.
+    // * Remove a basic block from a Native.INSTANCE.
     // *
     // * This deletes the basic block from its containing function but keep
     // * the basic block alive.
@@ -5639,7 +5418,7 @@ public class Core {
     // * @see llvm::BasicBlock::removeFromParent()
     // */
     //void LLVMRemoveBasicBlockFromParent(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMRemoveBasicBlockFromParent.handle().invoke());
+    //    return Native.INSTANCE.LLVMRemoveBasicBlockFromParent();
     //}
     ///**
     // * Move a basic block to before another one.
@@ -5647,7 +5426,7 @@ public class Core {
     // * @see llvm::BasicBlock::moveBefore()
     // */
     //void LLVMMoveBasicBlockBefore(LLVMBasicBlockRef BB, LLVMBasicBlockRef MovePos) {
-    //    return nothrows_run(() -> Function.LLVMMoveBasicBlockBefore.handle().invoke());
+    //    return Native.INSTANCE.LLVMMoveBasicBlockBefore();
     //}
     ///**
     // * Move a basic block to after another one.
@@ -5655,7 +5434,7 @@ public class Core {
     // * @see llvm::BasicBlock::moveAfter()
     // */
     //void LLVMMoveBasicBlockAfter(LLVMBasicBlockRef BB, LLVMBasicBlockRef MovePos) {
-    //    return nothrows_run(() -> Function.LLVMMoveBasicBlockAfter.handle().invoke());
+    //    return Native.INSTANCE.LLVMMoveBasicBlockAfter();
     //}
     ///**
     // * Obtain the first instruction in a basic block.
@@ -5664,7 +5443,7 @@ public class Core {
     // * instance.
     // */
     //LLVMValueRef LLVMGetFirstInstruction(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMGetFirstInstruction.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetFirstInstruction();
     //}
     ///**
     // * Obtain the last instruction in a basic block.
@@ -5672,7 +5451,7 @@ public class Core {
     // * The returned LLVMValueRef corresponds to an LLVM:Instruction.
     // */
     //LLVMValueRef LLVMGetLastInstruction(LLVMBasicBlockRef BB) {
-    //    return nothrows_run(() -> Function.LLVMGetLastInstruction.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetLastInstruction();
     //}
     ///**
     // * @}
@@ -5697,19 +5476,19 @@ public class Core {
     // * Determine whether an instruction has any metadata attached.
     // */
     //int LLVMHasMetadata(LLVMValueRef Val) {
-    //    return nothrows_run(() -> Function.LLVMHasMetadata.handle().invoke());
+    //    return Native.INSTANCE.LLVMHasMetadata();
     //}
     ///**
     // * Return metadata associated with an instruction value.
     // */
     //LLVMValueRef LLVMGetMetadata(LLVMValueRef Val, int /* unsigned */ KindID) {
-    //    return nothrows_run(() -> Function.LLVMGetMetadata.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetMetadata();
     //}
     ///**
     // * Set metadata associated with an instruction value.
     // */
     //void LLVMSetMetadata(LLVMValueRef Val, int /* unsigned */ KindID, LLVMValueRef Node) {
-    //    return nothrows_run(() -> Function.LLVMSetMetadata.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetMetadata();
     //}
     ///**
     // * Obtain the basic block to which an instruction belongs.
@@ -5717,7 +5496,7 @@ public class Core {
     // * @see llvm::Instruction::getParent()
     // */
     //LLVMBasicBlockRef LLVMGetInstructionParent(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMGetInstructionParent.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetInstructionParent();
     //}
     ///**
     // * Obtain the instruction that occurs after the one specified.
@@ -5728,7 +5507,7 @@ public class Core {
     // * returned.
     // */
     //LLVMValueRef LLVMGetNextInstruction(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMGetNextInstruction.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNextInstruction();
     //}
     ///**
     // * Obtain the instruction that occurred before this one.
@@ -5737,7 +5516,7 @@ public class Core {
     // * will be returned.
     // */
     //LLVMValueRef LLVMGetPreviousInstruction(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMGetPreviousInstruction.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetPreviousInstruction();
     //}
     ///**
     // * Remove and delete an instruction.
@@ -5748,7 +5527,7 @@ public class Core {
     // * @see llvm::Instruction::removeFromParent()
     // */
     //void LLVMInstructionRemoveFromParent(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMInstructionRemoveFromParent.handle().invoke());
+    //    return Native.INSTANCE.LLVMInstructionRemoveFromParent();
     //}
     ///**
     // * Remove and delete an instruction.
@@ -5759,7 +5538,7 @@ public class Core {
     // * @see llvm::Instruction::eraseFromParent()
     // */
     //void LLVMInstructionEraseFromParent(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMInstructionEraseFromParent.handle().invoke());
+    //    return Native.INSTANCE.LLVMInstructionEraseFromParent();
     //}
     ///**
     // * Obtain the code opcode for an individual instruction.
@@ -5767,7 +5546,7 @@ public class Core {
     // * @see llvm::Instruction::getOpCode()
     // */
     //LLVMOpcode LLVMGetInstructionOpcode(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMGetInstructionOpcode.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetInstructionOpcode();
     //}
     ///**
     // * Obtain the predicate of an instruction.
@@ -5778,7 +5557,7 @@ public class Core {
     // * @see llvm::ICmpInst::getPredicate()
     // */
     //LLVMIntPredicate LLVMGetICmpPredicate(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMGetICmpPredicate.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetICmpPredicate();
     //}
     ///**
     // * Obtain the float predicate of an instruction.
@@ -5789,7 +5568,7 @@ public class Core {
     // * @see llvm::FCmpInst::getPredicate()
     // */
     //LLVMRealPredicate LLVMGetFCmpPredicate(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMGetFCmpPredicate.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetFCmpPredicate();
     //}
     ///**
     // * Create a copy of 'this' instruction that is identical in all ways
@@ -5800,7 +5579,7 @@ public class Core {
     // * @see llvm::Instruction::clone()
     // */
     //LLVMValueRef LLVMInstructionClone(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMInstructionClone.handle().invoke());
+    //    return Native.INSTANCE.LLVMInstructionClone();
     //}
     ///**
     // * @defgroup LLVMCCoreValueInstructionCall Call Sites and Invocations
@@ -5821,7 +5600,7 @@ public class Core {
     // * @see llvm::InvokeInst::getNumArgOperands()
     // */
     //int /* unsigned */ LLVMGetNumArgOperands(LLVMValueRef Instr) {
-    //    return nothrows_run(() -> Function.LLVMGetNumArgOperands.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNumArgOperands();
     //}
     ///**
     // * Set the calling convention for a call instruction.
@@ -5833,7 +5612,7 @@ public class Core {
     // * @see llvm::InvokeInst::setCallingConv()
     // */
     //void LLVMSetInstructionCallConv(LLVMValueRef Instr, int /* unsigned */ CC) {
-    //    return nothrows_run(() -> Function.LLVMSetInstructionCallConv.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetInstructionCallConv();
     //}
     ///**
     // * Obtain the calling convention for a call instruction.
@@ -5844,35 +5623,35 @@ public class Core {
     // * @see LLVMSetInstructionCallConv()
     // */
     //int /* unsigned */ LLVMGetInstructionCallConv(LLVMValueRef Instr) {
-    //    return nothrows_run(() -> Function.LLVMGetInstructionCallConv.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetInstructionCallConv();
     //}
 
     public static void LLVMAddInstrAttribute(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* LLVMAttribute */ PA) {
-        nothrows_run(() -> Function.LLVMAddInstrAttribute.handle().invoke(Instr.value(), index, PA));
+        Native.INSTANCE.LLVMAddInstrAttribute(Instr.value(), index, PA);
     }
 
     public static void LLVMRemoveInstrAttribute(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* LLVMAttribute */ PA) {
-        nothrows_run(() -> Function.LLVMRemoveInstrAttribute.handle().invoke(Instr.value(), index, PA));
+        Native.INSTANCE.LLVMRemoveInstrAttribute(Instr.value(), index, PA);
     }
 
     public static void LLVMSetInstrParamAlignment(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* unsigned */ Align) {
-        nothrows_run(() -> Function.LLVMSetInstrParamAlignment.handle().invoke(Instr.value(), index, Align));
+        Native.INSTANCE.LLVMSetInstrParamAlignment(Instr.value(), index, Align);
     }
 
     //void LLVMAddCallSiteAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, LLVMAttributeRef A) {
-    //    return nothrows_run(() -> Function.LLVMAddCallSiteAttribute.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddCallSiteAttribute();
     //}
     //LLVMAttributeRef LLVMGetCallSiteEnumAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, int /* unsigned */ KindID) {
-    //    return nothrows_run(() -> Function.LLVMGetCallSiteEnumAttribute.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetCallSiteEnumAttribute();
     //}
     //LLVMAttributeRef LLVMGetCallSiteStringAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, String K, int /* unsigned */ KLen) {
-    //    return nothrows_run(() -> Function.LLVMGetCallSiteStringAttribute.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetCallSiteStringAttribute();
     //}
     //void LLVMRemoveCallSiteEnumAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, int /* unsigned */ KindID) {
-    //    return nothrows_run(() -> Function.LLVMRemoveCallSiteEnumAttribute.handle().invoke());
+    //    return Native.INSTANCE.LLVMRemoveCallSiteEnumAttribute();
     //}
     //void LLVMRemoveCallSiteStringAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, String K, int /* unsigned */ KLen) {
-    //    return nothrows_run(() -> Function.LLVMRemoveCallSiteStringAttribute.handle().invoke());
+    //    return Native.INSTANCE.LLVMRemoveCallSiteStringAttribute();
     //}
     ///**
     // * Obtain the pointer to the function invoked by this instruction.
@@ -5884,7 +5663,7 @@ public class Core {
     // * @see llvm::InvokeInst::getCalledValue()
     // */
     //LLVMValueRef LLVMGetCalledValue(LLVMValueRef Instr) {
-    //    return nothrows_run(() -> Function.LLVMGetCalledValue.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetCalledValue();
     //}
     ///**
     // * Obtain whether a call instruction is a tail call.
@@ -5894,7 +5673,7 @@ public class Core {
     // * @see llvm::CallInst::isTailCall()
     // */
     //boolean LLVMIsTailCall(LLVMValueRef CallInst) {
-    //    return nothrows_run(() -> Function.LLVMIsTailCall.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsTailCall();
     //}
     ///**
     // * Set whether a call instruction is a tail call.
@@ -5904,7 +5683,7 @@ public class Core {
     // * @see llvm::CallInst::setTailCall()
     // */
     //void LLVMSetTailCall(LLVMValueRef CallInst, boolean IsTailCall) {
-    //    return nothrows_run(() -> Function.LLVMSetTailCall.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetTailCall();
     //}
     ///**
     // * Return the normal destination basic block.
@@ -5914,7 +5693,7 @@ public class Core {
     // * @see llvm::InvokeInst::getNormalDest()
     // */
     //LLVMBasicBlockRef LLVMGetNormalDest(LLVMValueRef InvokeInst) {
-    //    return nothrows_run(() -> Function.LLVMGetNormalDest.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNormalDest();
     //}
     ///**
     // * Return the unwind destination basic block.
@@ -5924,7 +5703,7 @@ public class Core {
     // * @see llvm::InvokeInst::getUnwindDest()
     // */
     //LLVMBasicBlockRef LLVMGetUnwindDest(LLVMValueRef InvokeInst) {
-    //    return nothrows_run(() -> Function.LLVMGetUnwindDest.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetUnwindDest();
     //}
     ///**
     // * Set the normal destination basic block.
@@ -5934,7 +5713,7 @@ public class Core {
     // * @see llvm::InvokeInst::setNormalDest()
     // */
     //void LLVMSetNormalDest(LLVMValueRef InvokeInst, LLVMBasicBlockRef B) {
-    //    return nothrows_run(() -> Function.LLVMSetNormalDest.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetNormalDest();
     //}
     ///**
     // * Set the unwind destination basic block.
@@ -5944,7 +5723,7 @@ public class Core {
     // * @see llvm::InvokeInst::setUnwindDest()
     // */
     //void LLVMSetUnwindDest(LLVMValueRef InvokeInst, LLVMBasicBlockRef B) {
-    //    return nothrows_run(() -> Function.LLVMSetUnwindDest.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetUnwindDest();
     //}
     ///**
     // * @}
@@ -5963,7 +5742,7 @@ public class Core {
     // * @see llvm::TerminatorInst::getNumSuccessors
     // */
     //int /* unsigned */ LLVMGetNumSuccessors(LLVMValueRef Term) {
-    //    return nothrows_run(() -> Function.LLVMGetNumSuccessors.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNumSuccessors();
     //}
     ///**
     // * Return the specified successor.
@@ -5971,7 +5750,7 @@ public class Core {
     // * @see llvm::TerminatorInst::getSuccessor
     // */
     //LLVMBasicBlockRef LLVMGetSuccessor(LLVMValueRef Term, int /* unsigned */ i) {
-    //    return nothrows_run(() -> Function.LLVMGetSuccessor.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetSuccessor();
     //}
     ///**
     // * Update the specified successor to point at the provided block.
@@ -5979,7 +5758,7 @@ public class Core {
     // * @see llvm::TerminatorInst::setSuccessor
     // */
     //void LLVMSetSuccessor(LLVMValueRef Term, int /* unsigned */ i, LLVMBasicBlockRef block) {
-    //    return nothrows_run(() -> Function.LLVMSetSuccessor.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetSuccessor();
     //}
     ///**
     // * Return if a branch is conditional.
@@ -5989,7 +5768,7 @@ public class Core {
     // * @see llvm::BranchInst::isConditional
     // */
     //boolean LLVMIsConditional(LLVMValueRef Branch) {
-    //    return nothrows_run(() -> Function.LLVMIsConditional.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsConditional();
     //}
     ///**
     // * Return the condition of a branch instruction.
@@ -5999,7 +5778,7 @@ public class Core {
     // * @see llvm::BranchInst::getCondition
     // */
     //LLVMValueRef LLVMGetCondition(LLVMValueRef Branch) {
-    //    return nothrows_run(() -> Function.LLVMGetCondition.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetCondition();
     //}
     ///**
     // * Set the condition of a branch instruction.
@@ -6009,7 +5788,7 @@ public class Core {
     // * @see llvm::BranchInst::setCondition
     // */
     //void LLVMSetCondition(LLVMValueRef Branch, LLVMValueRef Cond) {
-    //    return nothrows_run(() -> Function.LLVMSetCondition.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetCondition();
     //}
     ///**
     // * Obtain the default destination basic block of a switch instruction.
@@ -6019,7 +5798,7 @@ public class Core {
     // * @see llvm::SwitchInst::getDefaultDest()
     // */
     //LLVMBasicBlockRef LLVMGetSwitchDefaultDest(LLVMValueRef SwitchInstr) {
-    //    return nothrows_run(() -> Function.LLVMGetSwitchDefaultDest.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetSwitchDefaultDest();
     //}
 
     /*
@@ -6033,7 +5812,7 @@ public class Core {
      * Obtain the type that is being allocated by the alloca instruction.
      */
     public static LLVMTypeRef LLVMGetAllocatedType(LLVMValueRef Alloca) {
-        return nothrows_run(() -> LLVMTypeRef.ofNullable((long) Function.LLVMGetAllocatedType.handle().invoke(Alloca.value())));
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMGetAllocatedType(Alloca.value()));
     }
 
     /*
@@ -6047,14 +5826,14 @@ public class Core {
      * Check whether the given GEP instruction is inbounds.
      */
     public static boolean LLVMIsInBounds(LLVMValueRef GEP) {
-        return nothrows_run(() -> (boolean) Function.LLVMIsInBounds.handle().invoke(GEP.value()));
+        return Native.INSTANCE.LLVMIsInBounds(GEP.value());
     }
 
     /**
      * Set the given GEP instruction to be inbounds or not.
      */
     public static void LLVMSetIsInBounds(LLVMValueRef GEP, boolean InBounds) {
-        nothrows_run(() -> Function.LLVMSetIsInBounds.handle().invoke(GEP.value(), InBounds));
+        Native.INSTANCE.LLVMSetIsInBounds(GEP.value(), InBounds);
     }
 
     /*
@@ -6084,9 +5863,8 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_IncomingValues = allocArray(arena, IncomingValues);
             MemorySegment c_IncomingBlocks = allocArray(arena, IncomingBlocks);
-            nothrows_run(() -> Function.LLVMAddIncoming.handle().invoke(
-                    PhiNode.value(), c_IncomingValues.nativeAddress(),
-                    c_IncomingBlocks.nativeAddress(), Count));
+            Native.INSTANCE.LLVMAddIncoming(PhiNode.value(),
+                    c_IncomingValues.nativeAddress(), c_IncomingBlocks.nativeAddress(), Count);
         }
     }
 
@@ -6102,21 +5880,21 @@ public class Core {
      * Obtain the number of incoming basic blocks to a PHI node.
      */
     public static int /* unsigned */ LLVMCountIncoming(LLVMValueRef PhiNode) {
-        return nothrows_run(() -> (int) Function.LLVMCountIncoming.handle().invoke(PhiNode.value()));
+        return Native.INSTANCE.LLVMCountIncoming(PhiNode.value());
     }
 
     /**
      * Obtain an incoming value to a PHI node as an LLVMValueRef.
      */
     public static LLVMValueRef LLVMGetIncomingValue(LLVMValueRef PhiNode, int /* unsigned */ Index) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetIncomingValue.handle().invoke(PhiNode.value(), Index)));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetIncomingValue(PhiNode.value(), Index));
     }
 
     /**
      * Obtain an incoming value to a PHI node as an LLVMBasicBlockRef.
      */
     public static LLVMBasicBlockRef LLVMGetIncomingBlock(LLVMValueRef PhiNode, int /* unsigned */ Index) {
-        return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMGetIncomingBlock.handle().invoke(PhiNode.value(), Index)));
+        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetIncomingBlock(PhiNode.value(), Index));
     }
 
     /*
@@ -6132,13 +5910,13 @@ public class Core {
     // * NB: This also works on GEP.
     // */
     //int /* unsigned */ LLVMGetNumIndices(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.LLVMGetNumIndices.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNumIndices();
     //}
     ///**
     // * Obtain the indices as an array.
     // */
     //const int /* unsigned */ *LLVMGetIndices(LLVMValueRef Inst) {
-    //    return nothrows_run(() -> Function.*LLVMGetIndices.handle().invoke());
+    //    return Native.INSTANCE.*LLVMGetIndices();
     //}
 
     /*
@@ -6149,129 +5927,130 @@ public class Core {
      */
 
     public static LLVMBuilderRef LLVMCreateBuilderInContext(LLVMContextRef C) {
-        return nothrows_run(() -> LLVMBuilderRef.ofNullable((long) Function.LLVMCreateBuilderInContext.handle().invoke(C.value())));
+        return LLVMBuilderRef.ofNullable(Native.INSTANCE.LLVMCreateBuilderInContext(C.value()));
     }
 
     public static LLVMBuilderRef LLVMCreateBuilder() {
-        return nothrows_run(() -> LLVMBuilderRef.ofNullable((long) Function.LLVMCreateBuilder.handle().invoke()));
+        return LLVMBuilderRef.ofNullable(Native.INSTANCE.LLVMCreateBuilder());
     }
 
     public static void LLVMPositionBuilder(LLVMBuilderRef Builder, LLVMBasicBlockRef Block, LLVMValueRef Instr) {
-        nothrows_run(() -> Function.LLVMPositionBuilder.handle().invoke(Builder.value(), Block.value(), Instr.value()));
+        Native.INSTANCE.LLVMPositionBuilder(Builder.value(), Block.value(), Instr.value());
     }
 
     public static void LLVMPositionBuilderBefore(LLVMBuilderRef Builder, LLVMValueRef Instr) {
-        nothrows_run(() -> Function.LLVMPositionBuilderBefore.handle().invoke(Builder.value(), Instr.value()));
+        Native.INSTANCE.LLVMPositionBuilderBefore(Builder.value(), Instr.value());
     }
 
     public static void LLVMPositionBuilderAtEnd(LLVMBuilderRef Builder, LLVMBasicBlockRef Block) {
-        nothrows_run(() -> Function.LLVMPositionBuilderAtEnd.handle().invoke(Builder.value(), Block.value()));
+        Native.INSTANCE.LLVMPositionBuilderAtEnd(Builder.value(), Block.value());
     }
 
     public static LLVMBasicBlockRef LLVMGetInsertBlock(LLVMBuilderRef Builder) {
-        return nothrows_run(() -> LLVMBasicBlockRef.ofNullable((long) Function.LLVMGetInsertBlock.handle().invoke(Builder.value())));
+        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetInsertBlock(Builder.value()));
     }
 
     public static void LLVMClearInsertionPosition(LLVMBuilderRef Builder) {
-        nothrows_run(() -> Function.LLVMClearInsertionPosition.handle().invoke(Builder.value()));
+        Native.INSTANCE.LLVMClearInsertionPosition(Builder.value());
     }
 
     public static void LLVMInsertIntoBuilder(LLVMBuilderRef Builder, LLVMValueRef Instr) {
-        nothrows_run(() -> Function.LLVMInsertIntoBuilder.handle().invoke(Builder.value(), Instr.value()));
+        Native.INSTANCE.LLVMInsertIntoBuilder(Builder.value(), Instr.value());
     }
 
     public static void LLVMInsertIntoBuilderWithName(LLVMBuilderRef Builder, LLVMValueRef Instr, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            nothrows_run(() -> Function.LLVMInsertIntoBuilderWithName.handle().invoke(Builder.value(), Instr.value(), c_Name.nativeAddress()));
+            Native.INSTANCE.LLVMInsertIntoBuilderWithName(Builder.value(), Instr.value(), c_Name.nativeAddress());
         }
     }
 
     public static void LLVMDisposeBuilder(LLVMBuilderRef Builder) {
-        nothrows_run(() -> Function.LLVMDisposeBuilder.handle().invoke(Builder.value()));
+        Native.INSTANCE.LLVMDisposeBuilder(Builder.value());
     }
 
     /* Metadata */
 
     public static void LLVMSetCurrentDebugLocation(LLVMBuilderRef Builder, LLVMValueRef L) {
-        nothrows_run(() -> Function.LLVMSetCurrentDebugLocation.handle().invoke(Builder.value(), L.value()));
+        Native.INSTANCE.LLVMSetCurrentDebugLocation(Builder.value(), L.value());
     }
 
     public static LLVMValueRef LLVMGetCurrentDebugLocation(LLVMBuilderRef Builder) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMGetCurrentDebugLocation.handle().invoke(Builder.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetCurrentDebugLocation(Builder.value()));
     }
 
     public static void LLVMSetInstDebugLocation(LLVMBuilderRef Builder, LLVMValueRef Inst) {
-        nothrows_run(() -> Function.LLVMSetInstDebugLocation.handle().invoke(Builder.value(), Inst.value()));
+        Native.INSTANCE.LLVMSetInstDebugLocation(Builder.value(), Inst.value());
     }
 
     /* Terminators */
 
     public static LLVMValueRef LLVMBuildRetVoid(LLVMBuilderRef Builder) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildRetVoid.handle().invoke(Builder.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildRetVoid(Builder.value()));
     }
 
     public static LLVMValueRef LLVMBuildRet(LLVMBuilderRef Builder, LLVMValueRef V) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildRet.handle().invoke(Builder.value(), V.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildRet(Builder.value(), V.value()));
     }
 
     //LLVMValueRef LLVMBuildAggregateRet(LLVMBuilderRef B, LLVMValueRef *RetVals, int /* unsigned */ N) {
-    //    return nothrows_run(() -> Function.LLVMBuildAggregateRet.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildAggregateRet();
     //}
 
     public static LLVMValueRef LLVMBuildBr(LLVMBuilderRef B, LLVMBasicBlockRef Dest) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildBr.handle().invoke(B.value(), Dest.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildBr(B.value(), Dest.value()));
     }
 
     public static LLVMValueRef LLVMBuildCondBr(LLVMBuilderRef B, LLVMValueRef If, LLVMBasicBlockRef Then, LLVMBasicBlockRef Else) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildCondBr.handle().invoke(B.value(), If.value(), Then.value(), Else.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildCondBr(
+                B.value(), If.value(), Then.value(), Else.value()));
     }
 
     //LLVMValueRef LLVMBuildSwitch(LLVMBuilderRef B, LLVMValueRef V, LLVMBasicBlockRef Else, int /* unsigned */ NumCases) {
-    //    return nothrows_run(() -> Function.LLVMBuildSwitch.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildSwitch();
     //}
     //LLVMValueRef LLVMBuildIndirectBr(LLVMBuilderRef B, LLVMValueRef Addr, int /* unsigned */ NumDests) {
-    //    return nothrows_run(() -> Function.LLVMBuildIndirectBr.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildIndirectBr();
     //}
     //LLVMValueRef LLVMBuildInvoke(LLVMBuilderRef B, LLVMValueRef Fn, LLVMValueRef *Args, int /* unsigned */ NumArgs, LLVMBasicBlockRef Then, LLVMBasicBlockRef Catch, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildInvoke.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildInvoke();
     //}
     //LLVMValueRef LLVMBuildLandingPad(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef PersFn, int /* unsigned */ NumClauses, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildLandingPad.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildLandingPad();
     //}
     //LLVMValueRef LLVMBuildResume(LLVMBuilderRef B, LLVMValueRef Exn) {
-    //    return nothrows_run(() -> Function.LLVMBuildResume.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildResume();
     //}
     //LLVMValueRef LLVMBuildUnreachable(LLVMBuilderRef) {
-    //    return nothrows_run(() -> Function.LLVMBuildUnreachable.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildUnreachable();
     //}
     ///* Add a case to the switch instruction */
     //void LLVMAddCase(LLVMValueRef Switch, LLVMValueRef OnVal, LLVMBasicBlockRef Dest) {
-    //    return nothrows_run(() -> Function.LLVMAddCase.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddCase();
     //}
     ///* Add a destination to the indirectbr instruction */
     //void LLVMAddDestination(LLVMValueRef IndirectBr, LLVMBasicBlockRef Dest) {
-    //    return nothrows_run(() -> Function.LLVMAddDestination.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddDestination();
     //}
     ///* Get the number of clauses on the landingpad instruction */
     //int /* unsigned */ LLVMGetNumClauses(LLVMValueRef LandingPad) {
-    //    return nothrows_run(() -> Function.LLVMGetNumClauses.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetNumClauses();
     //}
     ///* Get the value of the clause at idnex Idx on the landingpad instruction */
     //LLVMValueRef LLVMGetClause(LLVMValueRef LandingPad, int /* unsigned */ Idx) {
-    //    return nothrows_run(() -> Function.LLVMGetClause.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetClause();
     //}
     ///* Add a catch or filter clause to the landingpad instruction */
     //void LLVMAddClause(LLVMValueRef LandingPad, LLVMValueRef ClauseVal) {
-    //    return nothrows_run(() -> Function.LLVMAddClause.handle().invoke());
+    //    return Native.INSTANCE.LLVMAddClause();
     //}
     ///* Get the 'cleanup' flag in the landingpad instruction */
     //boolean LLVMIsCleanup(LLVMValueRef LandingPad) {
-    //    return nothrows_run(() -> Function.LLVMIsCleanup.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsCleanup();
     //}
     ///* Set the 'cleanup' flag in the landingpad instruction */
     //void LLVMSetCleanup(LLVMValueRef LandingPad, boolean Val) {
-    //    return nothrows_run(() -> Function.LLVMSetCleanup.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetCleanup();
     //}
 
     /* Arithmetic */
@@ -6529,48 +6308,49 @@ public class Core {
     public static LLVMValueRef LLVMBuildMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildMalloc.handle()
-                    .invoke(B.value(), Ty.value(), c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildMalloc(
+                    B.value(), Ty.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildArrayMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildArrayMalloc.handle()
-                    .invoke(B.value(), Ty.value(), Val.value(), c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildArrayMalloc(
+                    B.value(), Ty.value(), Val.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildAlloca(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildAlloca.handle()
-                    .invoke(B.value(), Ty.value(), c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAlloca(
+                    B.value(), Ty.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildArrayAlloca(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildArrayAlloca.handle()
-                    .invoke(B.value(), Ty.value(), Val.value(), c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildArrayAlloca(
+                    B.value(), Ty.value(), Val.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildFree(LLVMBuilderRef B, LLVMValueRef Ptr) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildFree.handle().invoke(B.value(), Ptr.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFree(B.value(), Ptr.value()));
     }
 
     public static LLVMValueRef LLVMBuildLoad(LLVMBuilderRef B, LLVMValueRef Ptr, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildLoad.handle().invoke(B.value(), Ptr.value(), c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildLoad(
+                    B.value(), Ptr.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildStore(LLVMBuilderRef B, LLVMValueRef Val, LLVMValueRef Ptr) {
-        return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildStore.handle().invoke(B.value(), Val.value(), Ptr.value())));
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildStore(B.value(), Val.value(), Ptr.value()));
     }
 
     public static LLVMValueRef LLVMBuildGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef[] Indices, String Name) {
@@ -6578,8 +6358,8 @@ public class Core {
             MemorySegment c_Indices = allocArray(arena, Indices);
             int /* unsigned */ NumIndices = arrayLength(Indices);
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildGEP.handle()
-                    .invoke(B.value(), Pointer.value(), c_Indices.nativeAddress(), NumIndices, c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildGEP(B.value(),
+                    Pointer.value(), c_Indices.nativeAddress(), NumIndices, c_Name.nativeAddress()));
         }
     }
 
@@ -6588,16 +6368,16 @@ public class Core {
             MemorySegment c_Indices = allocArray(arena, Indices);
             int /* unsigned */ NumIndices = arrayLength(Indices);
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildInBoundsGEP.handle()
-                    .invoke(B.value(), Pointer.value(), c_Indices.nativeAddress(), NumIndices, c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildInBoundsGEP(B.value(),
+                    Pointer.value(), c_Indices.nativeAddress(), NumIndices, c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildStructGEP(LLVMBuilderRef B, LLVMValueRef Pointer, int /* unsigned */ Idx, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildStructGEP.handle()
-                    .invoke(B.value(), Pointer.value(), Idx, c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildStructGEP(
+                    B.value(), Pointer.value(), Idx, c_Name.nativeAddress()));
         }
     }
 
@@ -6605,8 +6385,8 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildGlobalString.handle()
-                    .invoke(B.value(), c_Str.nativeAddress(), c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildGlobalString(
+                    B.value(), c_Str.nativeAddress(), c_Name.nativeAddress()));
         }
     }
 
@@ -6614,25 +6394,25 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildGlobalStringPtr.handle()
-                    .invoke(B.value(), c_Str.nativeAddress(), c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildGlobalStringPtr(
+                    B.value(), c_Str.nativeAddress(), c_Name.nativeAddress()));
         }
     }
 
     public static boolean LLVMGetVolatile(LLVMValueRef MemoryAccessInst) {
-        return nothrows_run(() -> (boolean) Function.LLVMGetVolatile.handle().invoke(MemoryAccessInst.value()));
+        return Native.INSTANCE.LLVMGetVolatile(MemoryAccessInst.value());
     }
 
     public static void LLVMSetVolatile(LLVMValueRef MemoryAccessInst, boolean IsVolatile) {
-        nothrows_run(() -> Function.LLVMSetVolatile.handle().invoke(MemoryAccessInst.value(), IsVolatile));
+        Native.INSTANCE.LLVMSetVolatile(MemoryAccessInst.value(), IsVolatile);
     }
 
     public static LLVMAtomicOrdering LLVMGetOrdering(LLVMValueRef MemoryAccessInst) {
-        return nothrows_run(() -> LLVMAtomicOrdering.of((int) Function.LLVMGetOrdering.handle().invoke(MemoryAccessInst.value())));
+        return LLVMAtomicOrdering.of(Native.INSTANCE.LLVMGetOrdering(MemoryAccessInst.value()));
     }
 
     public static void LLVMSetOrdering(LLVMValueRef MemoryAccessInst, LLVMAtomicOrdering Ordering) {
-        nothrows_run(() -> Function.LLVMSetOrdering.handle().invoke(MemoryAccessInst.value(), Ordering.value()));
+        Native.INSTANCE.LLVMSetOrdering(MemoryAccessInst.value(), Ordering.value());
     }
 
     /* Casts */
@@ -6844,69 +6624,69 @@ public class Core {
     }
 
     //LLVMValueRef LLVMBuildVAArg(LLVMBuilderRef B, LLVMValueRef List, LLVMTypeRef Ty, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildVAArg.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildVAArg();
     //}
     //LLVMValueRef LLVMBuildExtractElement(LLVMBuilderRef B, LLVMValueRef VecVal, LLVMValueRef Index, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildExtractElement.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildExtractElement();
     //}
     //LLVMValueRef LLVMBuildInsertElement(LLVMBuilderRef B, LLVMValueRef VecVal, LLVMValueRef EltVal, LLVMValueRef Index, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildInsertElement.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildInsertElement();
     //}
     //LLVMValueRef LLVMBuildShuffleVector(LLVMBuilderRef B, LLVMValueRef V1, LLVMValueRef V2, LLVMValueRef Mask, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildShuffleVector.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildShuffleVector();
     //}
 
     public static LLVMValueRef LLVMBuildExtractValue(LLVMBuilderRef B, LLVMValueRef AggVal, int /* unsigned */ Index, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildExtractValue.handle()
-                    .invoke(B.value(), AggVal.value(), Index, c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildExtractValue(
+                    B.value(), AggVal.value(), Index, c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildInsertValue(LLVMBuilderRef B, LLVMValueRef AggVal, LLVMValueRef EltVal, int /* unsigned */ Index, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return nothrows_run(() -> LLVMValueRef.ofNullable((long) Function.LLVMBuildInsertValue.handle()
-                    .invoke(B.value(), AggVal.value(), EltVal.value(), Index, c_Name.nativeAddress())));
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildInsertValue(
+                    B.value(), AggVal.value(), EltVal.value(), Index, c_Name.nativeAddress()));
         }
     }
 
     //LLVMValueRef LLVMBuildIsNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildIsNull.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildIsNull();
     //}
     //LLVMValueRef LLVMBuildIsNotNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildIsNotNull.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildIsNotNull();
     //}
     //LLVMValueRef LLVMBuildPtrDiff(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildPtrDiff.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildPtrDiff();
     //}
     //LLVMValueRef LLVMBuildFence(LLVMBuilderRef B, LLVMAtomicOrdering ordering, boolean singleThread, String Name) {
-    //    return nothrows_run(() -> Function.LLVMBuildFence.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildFence();
     //}
     //LLVMValueRef LLVMBuildAtomicRMW(LLVMBuilderRef B, LLVMAtomicRMWBinOp op, LLVMValueRef PTR, LLVMValueRef Val, LLVMAtomicOrdering ordering, boolean singleThread) {
-    //    return nothrows_run(() -> Function.LLVMBuildAtomicRMW.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildAtomicRMW();
     //}
     //LLVMValueRef LLVMBuildAtomicCmpXchg(LLVMBuilderRef B, LLVMValueRef Ptr, LLVMValueRef Cmp, LLVMValueRef New, LLVMAtomicOrdering SuccessOrdering, LLVMAtomicOrdering FailureOrdering, boolean SingleThread) {
-    //    return nothrows_run(() -> Function.LLVMBuildAtomicCmpXchg.handle().invoke());
+    //    return Native.INSTANCE.LLVMBuildAtomicCmpXchg();
     //}
     //boolean LLVMIsAtomicSingleThread(LLVMValueRef AtomicInst) {
-    //    return nothrows_run(() -> Function.LLVMIsAtomicSingleThread.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsAtomicSingleThread();
     //}
     //void LLVMSetAtomicSingleThread(LLVMValueRef AtomicInst, boolean SingleThread) {
-    //    return nothrows_run(() -> Function.LLVMSetAtomicSingleThread.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetAtomicSingleThread();
     //}
     //LLVMAtomicOrdering LLVMGetCmpXchgSuccessOrdering(LLVMValueRef CmpXchgInst) {
-    //    return nothrows_run(() -> Function.LLVMGetCmpXchgSuccessOrdering.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetCmpXchgSuccessOrdering();
     //}
     //void LLVMSetCmpXchgSuccessOrdering(LLVMValueRef CmpXchgInst, LLVMAtomicOrdering Ordering) {
-    //    return nothrows_run(() -> Function.LLVMSetCmpXchgSuccessOrdering.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetCmpXchgSuccessOrdering();
     //}
     //LLVMAtomicOrdering LLVMGetCmpXchgFailureOrdering(LLVMValueRef CmpXchgInst) {
-    //    return nothrows_run(() -> Function.LLVMGetCmpXchgFailureOrdering.handle().invoke());
+    //    return Native.INSTANCE.LLVMGetCmpXchgFailureOrdering();
     //}
     //void LLVMSetCmpXchgFailureOrdering(LLVMValueRef CmpXchgInst, LLVMAtomicOrdering Ordering) {
-    //    return nothrows_run(() -> Function.LLVMSetCmpXchgFailureOrdering.handle().invoke());
+    //    return Native.INSTANCE.LLVMSetCmpXchgFailureOrdering();
     //}
 
     /*
@@ -6918,14 +6698,14 @@ public class Core {
      * JIT. They take ModuleProviders for historical reasons.
      */
     public static LLVMModuleProviderRef LLVMCreateModuleProviderForExistingModule(LLVMModuleRef M) {
-        return nothrows_run(() -> LLVMModuleProviderRef.ofNullable((long) Function.LLVMCreateModuleProviderForExistingModule.handle().invoke(M.value())));
+        return LLVMModuleProviderRef.ofNullable(Native.INSTANCE.LLVMCreateModuleProviderForExistingModule(M.value()));
     }
 
     /**
      * Destroys the module M.
      */
     public static void LLVMDisposeModuleProvider(LLVMModuleProviderRef M) {
-        nothrows_run(() -> Function.LLVMDisposeModuleProvider.handle().invoke(M.value()));
+        Native.INSTANCE.LLVMDisposeModuleProvider(M.value());
     }
 
     /*
@@ -6933,10 +6713,10 @@ public class Core {
      */
 
     //boolean LLVMCreateMemoryBufferWithContentsOfFile(String Path, LLVMMemoryBufferRef *OutMemBuf, LLVMString *OutMessage) {
-    //    return nothrows_run(() -> Function.LLVMCreateMemoryBufferWithContentsOfFile.handle().invoke());
+    //    return Native.INSTANCE.LLVMCreateMemoryBufferWithContentsOfFile();
     //}
     //boolean LLVMCreateMemoryBufferWithSTDIN(LLVMMemoryBufferRef *OutMemBuf, LLVMString *OutMessage) {
-    //    return nothrows_run(() -> Function.LLVMCreateMemoryBufferWithSTDIN.handle().invoke());
+    //    return Native.INSTANCE.LLVMCreateMemoryBufferWithSTDIN();
     //}
 
     /* package-private */
@@ -6945,8 +6725,8 @@ public class Core {
             String BufferName, boolean RequiresNullTerminator) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BufferName = allocString(arena, BufferName);
-            return nothrows_run(() -> LLVMMemoryBufferRef.ofNullable((long) Function.LLVMCreateMemoryBufferWithMemoryRange
-                    .handle().invoke(InputData, InputDataLength, c_BufferName.nativeAddress(), RequiresNullTerminator)));
+            return LLVMMemoryBufferRef.ofNullable(Native.INSTANCE.LLVMCreateMemoryBufferWithMemoryRange(
+                    InputData, InputDataLength, c_BufferName.nativeAddress(), RequiresNullTerminator));
         }
     }
 
@@ -6962,9 +6742,8 @@ public class Core {
             long InputData, long /* size_t */ InputDataLength, String BufferName) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BufferName = allocString(arena, BufferName);
-            return nothrows_run(() -> LLVMMemoryBufferRef.ofNullable(
-                    (long) Function.LLVMCreateMemoryBufferWithMemoryRangeCopy.handle()
-                            .invoke(InputData, InputDataLength, c_BufferName.nativeAddress())));
+            return LLVMMemoryBufferRef.ofNullable(Native.INSTANCE.LLVMCreateMemoryBufferWithMemoryRangeCopy(
+                    InputData, InputDataLength, c_BufferName.nativeAddress()));
         }
     }
 
@@ -6977,11 +6756,11 @@ public class Core {
 
     /* package-private */
     static long LLVMGetBufferStart(LLVMMemoryBufferRef MemBuf) {
-        return nothrows_run(() -> (long) Function.LLVMGetBufferStart.handle().invoke(MemBuf.value()));
+        return Native.INSTANCE.LLVMGetBufferStart(MemBuf.value());
     }
 
     public static long /* size_t */ LLVMGetBufferSize(LLVMMemoryBufferRef MemBuf) {
-        return nothrows_run(() -> (long) Function.LLVMGetBufferSize.handle().invoke(MemBuf.value()));
+        return Native.INSTANCE.LLVMGetBufferSize(MemBuf.value());
     }
 
     // Port-added
@@ -6992,7 +6771,7 @@ public class Core {
     }
 
     public static void LLVMDisposeMemoryBuffer(LLVMMemoryBufferRef MemBuf) {
-        nothrows_run(() -> Function.LLVMDisposeMemoryBuffer.handle().invoke(MemBuf.value()));
+        Native.INSTANCE.LLVMDisposeMemoryBuffer(MemBuf.value());
     }
 
     /*
@@ -7003,7 +6782,7 @@ public class Core {
      * Return the global pass registry, for use with initialization functions.
      */
     public static LLVMPassRegistryRef LLVMGetGlobalPassRegistry() {
-        return nothrows_run(() -> LLVMPassRegistryRef.ofNullable((long) Function.LLVMGetGlobalPassRegistry.handle().invoke()));
+        return LLVMPassRegistryRef.ofNullable(Native.INSTANCE.LLVMGetGlobalPassRegistry());
     }
 
     /*
@@ -7015,7 +6794,7 @@ public class Core {
      * suitable for link-time optimization and whole-module transformations.
      */
     public static LLVMPassManagerRef LLVMCreatePassManager() {
-        return nothrows_run(() -> LLVMPassManagerRef.ofNullable((long) Function.LLVMCreatePassManager.handle().invoke()));
+        return LLVMPassManagerRef.ofNullable(Native.INSTANCE.LLVMCreatePassManager());
     }
 
     /**
@@ -7024,7 +6803,7 @@ public class Core {
      * pipeline is suitable for code generation and JIT compilation tasks.
      */
     public static LLVMPassManagerRef LLVMCreateFunctionPassManagerForModule(LLVMModuleRef M) {
-        return nothrows_run(() -> LLVMPassManagerRef.ofNullable((long) Function.LLVMCreateFunctionPassManagerForModule.handle().invoke(M.value())));
+        return LLVMPassManagerRef.ofNullable(Native.INSTANCE.LLVMCreateFunctionPassManagerForModule(M.value()));
     }
 
     /**
@@ -7032,7 +6811,7 @@ public class Core {
      */
     @Deprecated
     public static LLVMPassManagerRef LLVMCreateFunctionPassManager(LLVMModuleProviderRef MP) {
-        return nothrows_run(() -> LLVMPassManagerRef.ofNullable((long) Function.LLVMCreateFunctionPassManager.handle().invoke(MP.value())));
+        return LLVMPassManagerRef.ofNullable(Native.INSTANCE.LLVMCreateFunctionPassManager(MP.value()));
     }
 
     /**
@@ -7041,7 +6820,7 @@ public class Core {
      * modified the module, 0 otherwise.
      */
     public static boolean LLVMRunPassManager(LLVMPassManagerRef PM, LLVMModuleRef M) {
-        return nothrows_run(() -> (boolean) Function.LLVMRunPassManager.handle().invoke(PM.value(), M.value()));
+        return Native.INSTANCE.LLVMRunPassManager(PM.value(), M.value());
     }
 
     /**
@@ -7049,16 +6828,16 @@ public class Core {
      * manager. Returns 1 if any of the passes modified the module, 0 otherwise.
      */
     public static boolean LLVMInitializeFunctionPassManager(LLVMPassManagerRef FPM) {
-        return nothrows_run(() -> (boolean) Function.LLVMInitializeFunctionPassManager.handle().invoke(FPM.value()));
+        return Native.INSTANCE.LLVMInitializeFunctionPassManager(FPM.value());
     }
 
     /**
      * Executes all of the function passes scheduled in the function pass manager
-     * on the provided function. Returns 1 if any of the passes modified the
+     * on the provided Native.INSTANCE. Returns 1 if any of the passes modified the
      * function, false otherwise.
      */
     public static boolean LLVMRunFunctionPassManager(LLVMPassManagerRef FPM, LLVMValueRef F) {
-        return nothrows_run(() -> (boolean) Function.LLVMRunFunctionPassManager.handle().invoke(FPM.value(), F.value()));
+        return Native.INSTANCE.LLVMRunFunctionPassManager(FPM.value(), F.value());
     }
 
     /**
@@ -7066,7 +6845,7 @@ public class Core {
      * manager. Returns 1 if any of the passes modified the module, 0 otherwise.
      */
     public static boolean LLVMFinalizeFunctionPassManager(LLVMPassManagerRef FPM) {
-        return nothrows_run(() -> (boolean) Function.LLVMFinalizeFunctionPassManager.handle().invoke(FPM.value()));
+        return Native.INSTANCE.LLVMFinalizeFunctionPassManager(FPM.value());
     }
 
     /**
@@ -7074,7 +6853,7 @@ public class Core {
      * the module provider.
      */
     public static void LLVMDisposePassManager(LLVMPassManagerRef PM) {
-        nothrows_run(() -> Function.LLVMDisposePassManager.handle().invoke(PM.value()));
+        Native.INSTANCE.LLVMDisposePassManager(PM.value());
     }
 
     /*
@@ -7087,16 +6866,16 @@ public class Core {
     //    time define LLVM_ENABLE_THREADS.  This function always returns
     //    LLVMIsMultithreaded(). */
     //boolean LLVMStartMultithreaded() {
-    //    return nothrows_run(() -> Function.LLVMStartMultithreaded.handle().invoke());
+    //    return Native.INSTANCE.LLVMStartMultithreaded();
     //}
     ///** Deprecated: Multi-threading can only be enabled/disabled with the compile
     //    time define LLVM_ENABLE_THREADS. */
     //void LLVMStopMultithreaded() {
-    //    return nothrows_run(() -> Function.LLVMStopMultithreaded.handle().invoke());
+    //    return Native.INSTANCE.LLVMStopMultithreaded();
     //}
     ///** Check whether LLVM is executing in thread-safe mode or not.
     //    @see llvm::llvm_is_multithreaded */
     //boolean LLVMIsMultithreaded() {
-    //    return nothrows_run(() -> Function.LLVMIsMultithreaded.handle().invoke());
+    //    return Native.INSTANCE.LLVMIsMultithreaded();
     //}
 }
