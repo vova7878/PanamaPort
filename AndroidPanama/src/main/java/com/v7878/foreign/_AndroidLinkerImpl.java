@@ -5,7 +5,6 @@ import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
-import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign._CapturableState.ERRNO;
 import static com.v7878.foreign._Utils.moveArgument;
 import static com.v7878.llvm.Analysis.LLVMVerifyModule;
@@ -569,7 +568,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 LLVMMemoryBufferRef buf = LLVMTargetMachineEmitToMemoryBuffer(
                         machine, module, LLVMObjectFile);
                 try (var of = LLVMCreateObjectFile(buf)) {
-                    byte[] code = getFunctionCode(of, function_name).toArray(JAVA_BYTE);
+                    MemorySegment code = getFunctionCode(of, function_name);
                     return NativeCodeBlob.makeCodeBlob(scope, code)[0];
                 }
             }
