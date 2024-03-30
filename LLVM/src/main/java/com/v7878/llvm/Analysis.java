@@ -1,7 +1,7 @@
 package com.v7878.llvm;
 
 import static com.v7878.foreign.ValueLayout.ADDRESS;
-import static com.v7878.llvm.LibLLVM.LLVM;
+import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL_AS_INT;

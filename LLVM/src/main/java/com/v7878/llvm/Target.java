@@ -1,6 +1,6 @@
 package com.v7878.llvm;
 
-import static com.v7878.llvm.LibLLVM.LLVM;
+import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm.Types.LLVMContextRef;
 import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassManagerRef;

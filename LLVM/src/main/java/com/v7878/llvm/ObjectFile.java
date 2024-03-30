@@ -1,6 +1,6 @@
 package com.v7878.llvm;
 
-import static com.v7878.llvm.LibLLVM.LLVM;
+import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;

@@ -1,7 +1,7 @@
 package com.v7878.llvm;
 
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
-import static com.v7878.llvm.LibLLVM.LLVM;
+import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm.Types.LLVMAttributeRef;
 import static com.v7878.llvm.Types.LLVMBasicBlockRef;
 import static com.v7878.llvm.Types.LLVMBuilderRef;
