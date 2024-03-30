@@ -502,6 +502,7 @@ public class JNIUtils {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void PushLocalFrame(long env, int capacity);
 
+        @SuppressWarnings("unused")
         private static MemorySegment genPushLocalFrame() {
             return JNIUtils.getJNINativeInterfaceFunction("PushLocalFrame");
         }
