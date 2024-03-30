@@ -372,8 +372,8 @@ public class BulkLinker {
         return impl;
     }
 
-    public enum HeapPoisoning {
-        ENABLED, DISABLED, NO_MATTER
+    public enum Tristate {
+        TRUE, FALSE, NO_MATTER
     }
 
     @Keep
@@ -383,7 +383,7 @@ public class BulkLinker {
         @ApiSensitive
         int[] api() default {26, 27, 28, 29, 30, 31, 32, 33, 34, 35};
 
-        HeapPoisoning poisoning() default HeapPoisoning.NO_MATTER;
+        Tristate poisoning() default Tristate.NO_MATTER;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -496,9 +496,9 @@ public class BulkLinker {
         return false;
     }
 
-    private static boolean checkPoisoning(HeapPoisoning poisoning) {
-        return poisoning == HeapPoisoning.NO_MATTER ||
-                ((poisoning == HeapPoisoning.ENABLED) == VM.isPoisonReferences());
+    private static boolean checkPoisoning(Tristate poisoning) {
+        return poisoning == Tristate.NO_MATTER ||
+                ((poisoning == Tristate.TRUE) == VM.isPoisonReferences());
     }
 
     private static boolean checkConditions(Conditions cond) {
