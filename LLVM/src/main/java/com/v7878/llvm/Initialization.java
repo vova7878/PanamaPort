@@ -1,7 +1,7 @@
 package com.v7878.llvm;
 
-import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm.Types.LLVMPassRegistryRef;
+import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;

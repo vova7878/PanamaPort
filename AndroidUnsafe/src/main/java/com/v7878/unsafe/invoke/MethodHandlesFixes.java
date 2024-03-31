@@ -137,7 +137,7 @@ public class MethodHandlesFixes {
         }
         addClass(map, Transformers.rtype(type));
 
-        if (map.size() == 0) {
+        if (map.isEmpty()) {
             return Utils.newEmptyClassLoader();
         }
 

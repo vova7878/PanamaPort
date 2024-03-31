@@ -61,7 +61,6 @@ final class _ValueLayouts {
 
         private final Class<?> carrier;
         private final ByteOrder order;
-        //TODO: @Stable
         private VarHandle handle;
 
         AbstractValueLayout(Class<?> carrier, ByteOrder order, long byteSize, long byteAlignment, String name) {

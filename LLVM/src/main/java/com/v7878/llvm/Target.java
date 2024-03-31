@@ -1,11 +1,11 @@
 package com.v7878.llvm;
 
-import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm.Types.LLVMContextRef;
 import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassManagerRef;
 import static com.v7878.llvm.Types.LLVMTypeRef;
 import static com.v7878.llvm.Types.LLVMValueRef;
+import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.unsafe.InstructionSet.ARM;

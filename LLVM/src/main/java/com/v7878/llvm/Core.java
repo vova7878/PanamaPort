@@ -1,7 +1,6 @@
 package com.v7878.llvm;
 
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
-import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm.Types.LLVMAttributeRef;
 import static com.v7878.llvm.Types.LLVMBasicBlockRef;
 import static com.v7878.llvm.Types.LLVMBuilderRef;
@@ -10,6 +9,7 @@ import static com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import static com.v7878.llvm.Types.LLVMModuleRef;
 import static com.v7878.llvm.Types.LLVMPassRegistryRef;
 import static com.v7878.llvm.Types.LLVMTypeRef;
+import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.addressToString;
 import static com.v7878.llvm._Utils.allocArray;

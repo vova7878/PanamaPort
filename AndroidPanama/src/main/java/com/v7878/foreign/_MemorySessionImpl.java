@@ -133,16 +133,6 @@ abstract sealed class _MemorySessionImpl implements Scope
 
     public abstract void acquire0();
 
-    public void whileAlive(Runnable action) {
-        Objects.requireNonNull(action);
-        acquire0();
-        try {
-            action.run();
-        } finally {
-            release0();
-        }
-    }
-
     public final Thread ownerThread() {
         return owner;
     }
@@ -190,10 +180,6 @@ abstract sealed class _MemorySessionImpl implements Scope
         } catch (ScopedAccessError error) {
             throw error.newRuntimeException();
         }
-    }
-
-    public static void checkValidState(MemorySegment segment) {
-        ((_AbstractMemorySegmentImpl) segment).sessionImpl().checkValidState();
     }
 
     @Override

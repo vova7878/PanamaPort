@@ -382,7 +382,7 @@ import java.util.Optional;
  * of that below). In cases where the base offset is constant (as in the previous
  * example) clients can, if desired, drop the base offset parameter and make the access
  * expression simpler. This is achieved using the
- * {@link java.lang.invoke.MethodHandles#insertCoordinates(VarHandle, int, Object...)}
+ * {@link com.v7878.invoke.VarHandles#insertCoordinates(VarHandle, int, Object...)}
  * var handle adapter.
  * <p>
  * <h3 id="variable-length-nested">Nested variable-length arrays</h3>

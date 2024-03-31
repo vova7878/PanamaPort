@@ -1,25 +1,29 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.throwException;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 
 import android.system.ErrnoException;
 
 import androidx.annotation.Keep;
 
+import com.v7878.foreign.Arena;
 import com.v7878.foreign.Linker;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.foreign.BulkLinker;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.foreign.Errno;
 
 import java.io.FileDescriptor;
 import java.lang.reflect.Method;
 import java.nio.MappedByteBuffer;
-
-import dalvik.annotation.optimization.CriticalNative;
 
 class MappedMemoryUtils {
     private static final int PAGE_SIZE = AndroidUnsafe.PAGE_SIZE;
@@ -100,16 +104,20 @@ class MappedMemoryUtils {
     private static final int MADV_DONTNEED = 4;
 
     @Keep
-    @CriticalNative
-    private static native int madvise64(long address, long length, int advice);
+    private abstract static class Native {
 
-    @Keep
-    @CriticalNative
-    private static native int madvise32(int address, int length, int advice);
+        private static final Arena SCOPE = Arena.ofAuto();
+
+        @LibrarySymbol(name = "madvise")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
+        abstract int madvise(long address, long length, int advice);
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class, Linker.nativeLinker().defaultLookup()));
+    }
 
     private static int madvise(long address, long length, int advice) {
-        return IS64BIT ? madvise64(address, length, advice)
-                : madvise32((int) address, (int) length, advice);
+        return Native.INSTANCE.madvise(address, length, advice);
     }
 
     private static void load0(long address, long length) {
@@ -133,13 +141,5 @@ class MappedMemoryUtils {
                 getExecutableData(searchMethod(mm, "isLoaded0", long.class, long.class, int.class)));
         registerNativeMethod(searchMethod(tm, "force0", FileDescriptor.class, long.class, long.class),
                 getExecutableData(searchMethod(mm, "force0", FileDescriptor.class, long.class, long.class)));
-
-        // TODO: use BulkLinker
-        Class<?> word = IS64BIT ? long.class : int.class;
-        String suffix = IS64BIT ? "64" : "32";
-
-        registerNativeMethod(searchMethod(tm, "madvise" + suffix, word, word, int.class),
-                Linker.nativeLinker().defaultLookup().find("madvise")
-                        .orElseThrow(ExceptionInInitializerError::new).nativeAddress());
     }
 }

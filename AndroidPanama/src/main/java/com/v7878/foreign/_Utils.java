@@ -106,11 +106,6 @@ final class _Utils {
         return (n + alignment - 1) & -alignment;
     }
 
-    public static MemorySegment alignUp(MemorySegment ms, long alignment) {
-        long offset = ms.address();
-        return ms.asSlice(alignUp(offset, alignment) - offset);
-    }
-
     public static long remainsToAlignment(long addr, long alignment) {
         return alignUp(addr, alignment) - addr;
     }
@@ -227,19 +222,16 @@ final class _Utils {
         return segment.address();
     }
 
-    @Keep
-    public static MemorySegment longToAddress(long addr, long size, long align) {
-        if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
-        }
-        return _SegmentFactories.makeNativeSegmentUnchecked(addr, size);
-    }
-
     public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
         return _SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
+    }
+
+    @Keep
+    public static MemorySegment longToAddress(long addr, long size, long align) {
+        return longToAddress(addr, size, align, _GlobalSession.INSTANCE);
     }
 
     public static boolean isAligned(long offset, long align) {
@@ -399,37 +391,17 @@ final class _Utils {
         }
 
         public static BaseAndScale of(Object array) {
-            // Port-changed: Android Studio doesn't like this construction
-            //return switch (array) {
-            //    case byte[] _ -> BaseAndScale.BYTE;
-            //    case char[] _ -> BaseAndScale.CHAR;
-            //    case short[] _ -> BaseAndScale.SHORT;
-            //    case int[] _ -> BaseAndScale.INT;
-            //    case float[] _ -> BaseAndScale.FLOAT;
-            //    case long[] _ -> BaseAndScale.LONG;
-            //    case double[] _ -> BaseAndScale.DOUBLE;
-            //    default -> throw new IllegalArgumentException("Not a supported array class: "
-            //            + array.getClass().getSimpleName());
-            //};
-
-            if (array instanceof byte[]) {
-                return BaseAndScale.BYTE;
-            } else if (array instanceof char[]) {
-                return BaseAndScale.CHAR;
-            } else if (array instanceof short[]) {
-                return BaseAndScale.SHORT;
-            } else if (array instanceof int[]) {
-                return BaseAndScale.INT;
-            } else if (array instanceof float[]) {
-                return BaseAndScale.FLOAT;
-            } else if (array instanceof long[]) {
-                return BaseAndScale.LONG;
-            } else if (array instanceof double[]) {
-                return BaseAndScale.DOUBLE;
-            } else {
-                throw new IllegalArgumentException("Not a supported array class: "
+            return switch (array) {
+                case byte[] ignored -> BaseAndScale.BYTE;
+                case char[] ignored -> BaseAndScale.CHAR;
+                case short[] ignored -> BaseAndScale.SHORT;
+                case int[] ignored -> BaseAndScale.INT;
+                case float[] ignored -> BaseAndScale.FLOAT;
+                case long[] ignored -> BaseAndScale.LONG;
+                case double[] ignored -> BaseAndScale.DOUBLE;
+                default -> throw new IllegalArgumentException("Not a supported array class: "
                         + array.getClass().getSimpleName());
-            }
+            };
         }
 
         public int base() {

@@ -52,13 +52,11 @@ final class _StringSupport {
     private _StringSupport() {
     }
 
-    @SuppressWarnings("UnnecessaryDefault")
     public static String read(MemorySegment segment, long offset, Charset charset) {
         return switch (CharsetKind.of(charset)) {
             case SINGLE_BYTE -> readByte(segment, offset, charset);
             case DOUBLE_BYTE -> readShort(segment, offset, charset);
             case QUAD_BYTE -> readInt(segment, offset, charset);
-            default -> throw shouldNotReachHere();
         };
     }
 

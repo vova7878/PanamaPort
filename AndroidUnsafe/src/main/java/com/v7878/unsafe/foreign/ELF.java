@@ -136,6 +136,7 @@ class ELF {
             this.name_offset = name_offset;
         }
 
+        @SuppressWarnings("ReplaceNullCheck")
         public String getName() {
             if (cached_name != null) {
                 return cached_name;

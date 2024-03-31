@@ -42,7 +42,7 @@ import com.v7878.unsafe.AndroidUnsafe;
  * (i) only one thread can successfully close a session (e.g. in a close vs. close race) and that
  * (ii) no other thread is accessing the memory associated with this session while the segment is being
  * closed. To ensure the former condition, a CAS is performed on the liveness bit. Ensuring the latter
- * is trickier, and require a complex synchronization protocol (see {@link jdk.internal.misc.ScopedMemoryAccess}).
+ * is trickier, and require a complex synchronization protocol (see {@link _ScopedMemoryAccess}).
  * Since it is the responsibility of the closing thread to make sure that no concurrent access is possible,
  * checking the liveness bit upon access can be performed in plain mode, as in the confined case.
  */

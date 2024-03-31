@@ -37,7 +37,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         } else if (carrier == double.class) {
             transformer = new VarHandleSegmentAsDoubles(swap, alignmentMask);
         } else {
-            throw new IllegalStateException("Cannot get here");
+            throw shouldNotReachHere();
         }
 
         return VarHandleImpl.newVarHandle(accessModesBitMask,

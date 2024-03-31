@@ -149,7 +149,6 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
     private void checkLayout(MemoryLayout layout) {
         // Note: we should not worry about padding layouts, as they cannot be present in a function descriptor
         if (layout instanceof SequenceLayout) {
-            //TODO?: support it
             throw new IllegalArgumentException("Unsupported layout: " + layout);
         } else {
             checkLayoutRecursive(layout);
@@ -162,37 +161,41 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
     }
 
     private void checkLayoutRecursive(MemoryLayout layout) {
-        if (layout instanceof ValueLayout vl) {
-            checkSupported(vl);
-        } else if (layout instanceof StructLayout sl) {
-            checkHasNaturalAlignment(layout);
-            long offset = 0;
-            long lastUnpaddedOffset = 0;
-            for (MemoryLayout member : sl.memberLayouts()) {
-                // check element offset before recursing so that an error points at the
-                // outermost layout first
-                checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
-                checkStructMember(member, offset);
+        switch (layout) {
+            case ValueLayout vl -> checkSupported(vl);
+            case StructLayout sl -> {
+                checkHasNaturalAlignment(layout);
+                long offset = 0;
+                long lastUnpaddedOffset = 0;
+                for (MemoryLayout member : sl.memberLayouts()) {
+                    // check element offset before recursing so that an error points at the
+                    // outermost layout first
+                    checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
+                    checkStructMember(member, offset);
 
-                offset += member.byteSize();
-                if (!(member instanceof PaddingLayout)) {
-                    lastUnpaddedOffset = offset;
+                    offset += member.byteSize();
+                    if (!(member instanceof PaddingLayout)) {
+                        lastUnpaddedOffset = offset;
+                    }
                 }
+                checkGroupSize(sl, lastUnpaddedOffset);
             }
-            checkGroupSize(sl, lastUnpaddedOffset);
-        } else if (layout instanceof UnionLayout ul) {
-            checkHasNaturalAlignment(layout);
-            long maxUnpaddedLayout = 0;
-            for (MemoryLayout member : ul.memberLayouts()) {
-                checkLayoutRecursive(member);
-                if (!(member instanceof PaddingLayout)) {
-                    maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
+            case UnionLayout ul -> {
+                checkHasNaturalAlignment(layout);
+                long maxUnpaddedLayout = 0;
+                for (MemoryLayout member : ul.memberLayouts()) {
+                    checkLayoutRecursive(member);
+                    if (!(member instanceof PaddingLayout)) {
+                        maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
+                    }
                 }
+                checkGroupSize(ul, maxUnpaddedLayout);
             }
-            checkGroupSize(ul, maxUnpaddedLayout);
-        } else if (layout instanceof SequenceLayout sl) {
-            checkHasNaturalAlignment(layout);
-            checkLayoutRecursive(sl.elementLayout());
+            case SequenceLayout sl -> {
+                checkHasNaturalAlignment(layout);
+                checkLayoutRecursive(sl.elementLayout());
+            }
+            default -> { /* nop */ }
         }
     }
 
@@ -236,50 +239,56 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
     private static MemoryLayout stripNames(MemoryLayout ml, boolean nested) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
-        if (ml instanceof StructLayout sl) {
-            MemoryLayout[] memberLayouts = stripNames(sl.memberLayouts(), true);
-            List<MemoryLayout> members = new ArrayList<>(memberLayouts.length);
-            for (MemoryLayout member : memberLayouts) {
-                if (member instanceof StructLayout sl_sl) {
-                    members.addAll(sl_sl.memberLayouts());
-                    continue;
+        switch (ml) {
+            case StructLayout sl -> {
+                MemoryLayout[] memberLayouts = stripNames(sl.memberLayouts(), true);
+                List<MemoryLayout> members = new ArrayList<>(memberLayouts.length);
+                for (MemoryLayout member : memberLayouts) {
+                    if (member instanceof StructLayout sl_sl) {
+                        members.addAll(sl_sl.memberLayouts());
+                        continue;
+                    }
+                    members.add(member);
                 }
-                members.add(member);
+                if (nested && members.size() == 1) {
+                    return members.get(0);
+                }
+                return MemoryLayout.structLayout(members.toArray(new MemoryLayout[0]));
             }
-            if (nested && members.size() == 1) {
-                return members.get(0);
+            case UnionLayout ul -> {
+                MemoryLayout[] members = stripNames(ul.memberLayouts(), true);
+                if (nested && members.length == 1) {
+                    return members[0];
+                }
+                return MemoryLayout.unionLayout(members);
             }
-            return MemoryLayout.structLayout(members.toArray(new MemoryLayout[0]));
-        } else if (ml instanceof UnionLayout ul) {
-            MemoryLayout[] members = stripNames(ul.memberLayouts(), true);
-            if (nested && members.length == 1) {
-                return members[0];
+            case SequenceLayout sl -> {
+                MemoryLayout el = stripNames(sl.elementLayout(), true);
+                if (nested && sl.elementCount() == 1) {
+                    return el;
+                }
+                if (el instanceof SequenceLayout el_sl) {
+                    long count = sl.elementCount() * el_sl.elementCount();
+                    return MemoryLayout.sequenceLayout(count, el_sl.elementLayout());
+                }
+                return MemoryLayout.sequenceLayout(sl.elementCount(), el);
             }
-            return MemoryLayout.unionLayout(members);
-        } else if (ml instanceof SequenceLayout sl) {
-            MemoryLayout el = stripNames(sl.elementLayout(), true);
-            if (nested && sl.elementCount() == 1) {
-                return el;
+            case AddressLayout al -> {
+                al = al.withoutName();
+                if (nested) {
+                    return al.withoutTargetLayout();
+                }
+                if (al.targetLayout().isPresent()) {
+                    MemoryLayout tl = al.targetLayout().get();
+                    return al.withTargetLayout(
+                            MemoryLayout.paddingLayout(tl.byteSize())
+                                    .withByteAlignment(tl.byteAlignment()));
+                }
+                return al;
             }
-            if (el instanceof SequenceLayout el_sl) {
-                long count = sl.elementCount() * el_sl.elementCount();
-                return MemoryLayout.sequenceLayout(count, el_sl.elementLayout());
+            default -> {
+                return ml.withoutName(); // ValueLayout and PaddingLayout
             }
-            return MemoryLayout.sequenceLayout(sl.elementCount(), el);
-        } else if (ml instanceof AddressLayout al) {
-            al = al.withoutName();
-            if (nested) {
-                return al.withoutTargetLayout();
-            }
-            if (al.targetLayout().isPresent()) {
-                MemoryLayout tl = al.targetLayout().get();
-                return al.withTargetLayout(
-                        MemoryLayout.paddingLayout(tl.byteSize())
-                                .withByteAlignment(tl.byteAlignment()));
-            }
-            return al;
-        } else {
-            return ml.withoutName(); // ValueLayout and PaddingLayout;
         }
     }
 

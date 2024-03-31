@@ -9,10 +9,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 import static com.v7878.misc.Math.roundUp;
-import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
-import static com.v7878.unsafe.InstructionSet.X86;
-import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import android.util.Pair;
@@ -56,35 +53,38 @@ final class _LLVMCallingConvention {
         }
 
         private static void markWrapperType(MemoryLayout layout, int offset, WrapperType[] types) {
-            if (layout instanceof StructLayout sl) {
-                for (MemoryLayout member : sl.memberLayouts()) {
-                    markWrapperType(member, offset, types);
-                    offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
+            switch (layout) {
+                case StructLayout sl -> {
+                    for (MemoryLayout member : sl.memberLayouts()) {
+                        markWrapperType(member, offset, types);
+                        offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
+                    }
                 }
-            } else if (layout instanceof UnionLayout ul) {
-                for (MemoryLayout member : ul.memberLayouts()) {
-                    markWrapperType(member, offset, types);
+                case UnionLayout ul -> {
+                    for (MemoryLayout member : ul.memberLayouts()) {
+                        markWrapperType(member, offset, types);
+                    }
                 }
-            } else if (layout instanceof SequenceLayout sl) {
-                MemoryLayout el = sl.elementLayout();
-                int count = Math.toIntExact(sl.elementCount());
-                int size = Math.toIntExact(el.byteSize());
-                for (int i = 0; i < count; i++) {
-                    markWrapperType(el, offset, types);
-                    offset = Math.addExact(offset, size);
+                case SequenceLayout sl -> {
+                    MemoryLayout el = sl.elementLayout();
+                    int count = Math.toIntExact(sl.elementCount());
+                    int size = Math.toIntExact(el.byteSize());
+                    for (int i = 0; i < count; i++) {
+                        markWrapperType(el, offset, types);
+                        offset = Math.addExact(offset, size);
+                    }
                 }
-            } else if (layout instanceof ValueLayout vl) {
-                WrapperType type;
-                if (layout instanceof ValueLayout.OfFloat || layout instanceof ValueLayout.OfDouble) {
-                    type = WrapperType.FP;
-                } else {
-                    type = WrapperType.INT;
+                case ValueLayout vl -> {
+                    WrapperType type;
+                    if (layout instanceof ValueLayout.OfFloat || layout instanceof ValueLayout.OfDouble) {
+                        type = WrapperType.FP;
+                    } else {
+                        type = WrapperType.INT;
+                    }
+                    markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
                 }
-                markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
-            } else if (layout instanceof PaddingLayout) {
-                // skip
-            } else {
-                throw shouldNotReachHere();
+                case PaddingLayout ignored -> { /* skip */ }
+                default -> throw shouldNotReachHere();
             }
         }
 
@@ -209,37 +209,40 @@ final class _LLVMCallingConvention {
         }
 
         private static void markWrapperType(MemoryLayout layout, int offset, WrapperType[] types) {
-            if (layout instanceof StructLayout sl) {
-                for (MemoryLayout member : sl.memberLayouts()) {
-                    markWrapperType(member, offset, types);
-                    offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
+            switch (layout) {
+                case StructLayout sl -> {
+                    for (MemoryLayout member : sl.memberLayouts()) {
+                        markWrapperType(member, offset, types);
+                        offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
+                    }
                 }
-            } else if (layout instanceof UnionLayout ul) {
-                for (MemoryLayout member : ul.memberLayouts()) {
-                    markWrapperType(member, offset, types);
+                case UnionLayout ul -> {
+                    for (MemoryLayout member : ul.memberLayouts()) {
+                        markWrapperType(member, offset, types);
+                    }
                 }
-            } else if (layout instanceof SequenceLayout sl) {
-                MemoryLayout el = sl.elementLayout();
-                int count = Math.toIntExact(sl.elementCount());
-                int size = Math.toIntExact(el.byteSize());
-                for (int i = 0; i < count; i++) {
-                    markWrapperType(el, offset, types);
-                    offset = Math.addExact(offset, size);
+                case SequenceLayout sl -> {
+                    MemoryLayout el = sl.elementLayout();
+                    int count = Math.toIntExact(sl.elementCount());
+                    int size = Math.toIntExact(el.byteSize());
+                    for (int i = 0; i < count; i++) {
+                        markWrapperType(el, offset, types);
+                        offset = Math.addExact(offset, size);
+                    }
                 }
-            } else if (layout instanceof ValueLayout vl) {
-                WrapperType type;
-                if (layout instanceof ValueLayout.OfFloat) {
-                    type = WrapperType.FLOAT;
-                } else if (layout instanceof ValueLayout.OfDouble) {
-                    type = WrapperType.DOUBLE;
-                } else {
-                    type = WrapperType.INT;
+                case ValueLayout vl -> {
+                    WrapperType type;
+                    if (layout instanceof ValueLayout.OfFloat) {
+                        type = WrapperType.FLOAT;
+                    } else if (layout instanceof ValueLayout.OfDouble) {
+                        type = WrapperType.DOUBLE;
+                    } else {
+                        type = WrapperType.INT;
+                    }
+                    markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
                 }
-                markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
-            } else if (layout instanceof PaddingLayout) {
-                // skip
-            } else {
-                throw shouldNotReachHere();
+                case PaddingLayout ignored -> { /* skip */ }
+                default -> throw shouldNotReachHere();
             }
         }
 
@@ -272,8 +275,6 @@ final class _LLVMCallingConvention {
                 case INT -> new Pair<>(JAVA_LONG, element_count);
                 case DOUBLE -> new Pair<>(JAVA_DOUBLE, element_count);
                 case FLOAT -> new Pair<>(JAVA_FLOAT, element_count);
-                //noinspection UnnecessaryDefault
-                default -> throw shouldNotReachHere();
             };
         }
 
@@ -311,10 +312,12 @@ final class _LLVMCallingConvention {
     }
 
     public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
-        if (CURRENT_INSTRUCTION_SET == X86) return x86_android.computeStorages(descriptor);
-        if (CURRENT_INSTRUCTION_SET == X86_64) return x86_64_android.computeStorages(descriptor);
-        if (CURRENT_INSTRUCTION_SET == ARM64) return aarch64_android.computeStorages(descriptor);
-        //TODO: arm, riscv64
-        throw new UnsupportedOperationException("Not supported yet!");
+        return switch (CURRENT_INSTRUCTION_SET) {
+            case X86 -> x86_android.computeStorages(descriptor);
+            case X86_64 -> x86_64_android.computeStorages(descriptor);
+            case ARM64 -> aarch64_android.computeStorages(descriptor);
+            //TODO: arm, riscv64
+            default -> throw new UnsupportedOperationException("Not supported yet!");
+        };
     }
 }
