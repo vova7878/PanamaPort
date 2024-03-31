@@ -391,17 +391,23 @@ final class _Utils {
         }
 
         public static BaseAndScale of(Object array) {
-            return switch (array) {
-                case byte[] ignored -> BaseAndScale.BYTE;
-                case char[] ignored -> BaseAndScale.CHAR;
-                case short[] ignored -> BaseAndScale.SHORT;
-                case int[] ignored -> BaseAndScale.INT;
-                case float[] ignored -> BaseAndScale.FLOAT;
-                case long[] ignored -> BaseAndScale.LONG;
-                case double[] ignored -> BaseAndScale.DOUBLE;
-                default -> throw new IllegalArgumentException("Not a supported array class: "
-                        + array.getClass().getSimpleName());
-            };
+            if (array instanceof byte[]) {
+                return BaseAndScale.BYTE;
+            } else if (array instanceof char[]) {
+                return BaseAndScale.CHAR;
+            } else if (array instanceof short[]) {
+                return BaseAndScale.SHORT;
+            } else if (array instanceof int[]) {
+                return BaseAndScale.INT;
+            } else if (array instanceof float[]) {
+                return BaseAndScale.FLOAT;
+            } else if (array instanceof long[]) {
+                return BaseAndScale.LONG;
+            } else if (array instanceof double[]) {
+                return BaseAndScale.DOUBLE;
+            }
+            throw new IllegalArgumentException("Not a supported array class: "
+                    + array.getClass().getSimpleName());
         }
 
         public int base() {

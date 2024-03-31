@@ -53,38 +53,35 @@ final class _LLVMCallingConvention {
         }
 
         private static void markWrapperType(MemoryLayout layout, int offset, WrapperType[] types) {
-            switch (layout) {
-                case StructLayout sl -> {
-                    for (MemoryLayout member : sl.memberLayouts()) {
-                        markWrapperType(member, offset, types);
-                        offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
-                    }
+            if (layout instanceof StructLayout sl) {
+                for (MemoryLayout member : sl.memberLayouts()) {
+                    markWrapperType(member, offset, types);
+                    offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
                 }
-                case UnionLayout ul -> {
-                    for (MemoryLayout member : ul.memberLayouts()) {
-                        markWrapperType(member, offset, types);
-                    }
+            } else if (layout instanceof UnionLayout ul) {
+                for (MemoryLayout member : ul.memberLayouts()) {
+                    markWrapperType(member, offset, types);
                 }
-                case SequenceLayout sl -> {
-                    MemoryLayout el = sl.elementLayout();
-                    int count = Math.toIntExact(sl.elementCount());
-                    int size = Math.toIntExact(el.byteSize());
-                    for (int i = 0; i < count; i++) {
-                        markWrapperType(el, offset, types);
-                        offset = Math.addExact(offset, size);
-                    }
+            } else if (layout instanceof SequenceLayout sl) {
+                MemoryLayout el = sl.elementLayout();
+                int count = Math.toIntExact(sl.elementCount());
+                int size = Math.toIntExact(el.byteSize());
+                for (int i = 0; i < count; i++) {
+                    markWrapperType(el, offset, types);
+                    offset = Math.addExact(offset, size);
                 }
-                case ValueLayout vl -> {
-                    WrapperType type;
-                    if (layout instanceof ValueLayout.OfFloat || layout instanceof ValueLayout.OfDouble) {
-                        type = WrapperType.FP;
-                    } else {
-                        type = WrapperType.INT;
-                    }
-                    markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
+            } else if (layout instanceof ValueLayout vl) {
+                WrapperType type;
+                if (layout instanceof ValueLayout.OfFloat || layout instanceof ValueLayout.OfDouble) {
+                    type = WrapperType.FP;
+                } else {
+                    type = WrapperType.INT;
                 }
-                case PaddingLayout ignored -> { /* skip */ }
-                default -> throw shouldNotReachHere();
+                markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
+            } else if (layout instanceof PaddingLayout) {
+                /* skip */
+            } else {
+                throw shouldNotReachHere();
             }
         }
 
@@ -209,40 +206,37 @@ final class _LLVMCallingConvention {
         }
 
         private static void markWrapperType(MemoryLayout layout, int offset, WrapperType[] types) {
-            switch (layout) {
-                case StructLayout sl -> {
-                    for (MemoryLayout member : sl.memberLayouts()) {
-                        markWrapperType(member, offset, types);
-                        offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
-                    }
+            if (layout instanceof StructLayout sl) {
+                for (MemoryLayout member : sl.memberLayouts()) {
+                    markWrapperType(member, offset, types);
+                    offset = Math.addExact(offset, Math.toIntExact(member.byteSize()));
                 }
-                case UnionLayout ul -> {
-                    for (MemoryLayout member : ul.memberLayouts()) {
-                        markWrapperType(member, offset, types);
-                    }
+            } else if (layout instanceof UnionLayout ul) {
+                for (MemoryLayout member : ul.memberLayouts()) {
+                    markWrapperType(member, offset, types);
                 }
-                case SequenceLayout sl -> {
-                    MemoryLayout el = sl.elementLayout();
-                    int count = Math.toIntExact(sl.elementCount());
-                    int size = Math.toIntExact(el.byteSize());
-                    for (int i = 0; i < count; i++) {
-                        markWrapperType(el, offset, types);
-                        offset = Math.addExact(offset, size);
-                    }
+            } else if (layout instanceof SequenceLayout sl) {
+                MemoryLayout el = sl.elementLayout();
+                int count = Math.toIntExact(sl.elementCount());
+                int size = Math.toIntExact(el.byteSize());
+                for (int i = 0; i < count; i++) {
+                    markWrapperType(el, offset, types);
+                    offset = Math.addExact(offset, size);
                 }
-                case ValueLayout vl -> {
-                    WrapperType type;
-                    if (layout instanceof ValueLayout.OfFloat) {
-                        type = WrapperType.FLOAT;
-                    } else if (layout instanceof ValueLayout.OfDouble) {
-                        type = WrapperType.DOUBLE;
-                    } else {
-                        type = WrapperType.INT;
-                    }
-                    markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
+            } else if (layout instanceof ValueLayout vl) {
+                WrapperType type;
+                if (layout instanceof ValueLayout.OfFloat) {
+                    type = WrapperType.FLOAT;
+                } else if (layout instanceof ValueLayout.OfDouble) {
+                    type = WrapperType.DOUBLE;
+                } else {
+                    type = WrapperType.INT;
                 }
-                case PaddingLayout ignored -> { /* skip */ }
-                default -> throw shouldNotReachHere();
+                markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
+            } else if (layout instanceof PaddingLayout) {
+                /* skip */
+            } else {
+                throw shouldNotReachHere();
             }
         }
 
@@ -275,6 +269,8 @@ final class _LLVMCallingConvention {
                 case INT -> new Pair<>(JAVA_LONG, element_count);
                 case DOUBLE -> new Pair<>(JAVA_DOUBLE, element_count);
                 case FLOAT -> new Pair<>(JAVA_FLOAT, element_count);
+                //noinspection UnnecessaryDefault
+                default -> throw shouldNotReachHere();
             };
         }
 

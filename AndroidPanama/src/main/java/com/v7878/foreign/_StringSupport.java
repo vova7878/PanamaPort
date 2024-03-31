@@ -57,6 +57,8 @@ final class _StringSupport {
             case SINGLE_BYTE -> readByte(segment, offset, charset);
             case DOUBLE_BYTE -> readShort(segment, offset, charset);
             case QUAD_BYTE -> readInt(segment, offset, charset);
+            //noinspection UnnecessaryDefault
+            default -> throw shouldNotReachHere();
         };
     }
 

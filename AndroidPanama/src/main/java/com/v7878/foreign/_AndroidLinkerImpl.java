@@ -307,36 +307,40 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     // Note: all layouts already has natural alignment
     private static LLVMTypeRef layoutToLLVMType(LLVMContextRef context, MemoryLayout layout) {
         Objects.requireNonNull(layout);
-        return switch (layout) {
-            case ValueLayout.OfByte ignored -> int8_t(context);
-            case ValueLayout.OfBoolean ignored -> int1_t(context);
-            case ValueLayout.OfShort ignored -> int16_t(context);
-            case ValueLayout.OfChar ignored -> int16_t(context);
-            case ValueLayout.OfInt ignored -> int32_t(context);
-            case ValueLayout.OfFloat ignored -> float_t(context);
-            case ValueLayout.OfLong ignored -> int64_t(context);
-            case ValueLayout.OfDouble ignored -> double_t(context);
-            case AddressLayout addressLayout ->
-                    LLVMPointerType(getTargetType(context, addressLayout), 0);
+        if (layout instanceof ValueLayout.OfByte) {
+            return int8_t(context);
+        } else if (layout instanceof ValueLayout.OfBoolean) {
+            return int1_t(context);
+        } else if (layout instanceof ValueLayout.OfShort || layout instanceof ValueLayout.OfChar) {
+            return int16_t(context);
+        } else if (layout instanceof ValueLayout.OfInt) {
+            return int32_t(context);
+        } else if (layout instanceof ValueLayout.OfFloat) {
+            return float_t(context);
+        } else if (layout instanceof ValueLayout.OfLong) {
+            return int64_t(context);
+        } else if (layout instanceof ValueLayout.OfDouble) {
+            return double_t(context);
+        } else if (layout instanceof AddressLayout addressLayout) {
             // TODO: it`s ok?
-            case UnionLayout ignored ->
-                    LLVMArrayType(int8_t(context), Math.toIntExact(layout.byteSize()));
-            case SequenceLayout sequence ->
-                    LLVMArrayType(layoutToLLVMType(context, sequence.elementLayout()),
-                            Math.toIntExact(sequence.elementCount()));
-            case StructLayout struct -> {
-                List<MemoryLayout> members = struct.memberLayouts();
-                List<LLVMTypeRef> elements = new ArrayList<>(members.size());
-                for (MemoryLayout member : members) {
-                    if (!(member instanceof PaddingLayout)) {
-                        elements.add(layoutToLLVMType(context, member));
-                    }
+            return LLVMPointerType(getTargetType(context, addressLayout), 0);
+        } else if (layout instanceof UnionLayout) {
+            return LLVMArrayType(int8_t(context), Math.toIntExact(layout.byteSize()));
+        } else if (layout instanceof SequenceLayout sequence) {
+            return LLVMArrayType(layoutToLLVMType(context, sequence.elementLayout()),
+                    Math.toIntExact(sequence.elementCount()));
+        } else if (layout instanceof StructLayout struct) {
+            List<MemoryLayout> members = struct.memberLayouts();
+            List<LLVMTypeRef> elements = new ArrayList<>(members.size());
+            for (MemoryLayout member : members) {
+                if (!(member instanceof PaddingLayout)) {
+                    elements.add(layoutToLLVMType(context, member));
                 }
-                // TODO: check offsets
-                yield LLVMStructTypeInContext(context, elements.toArray(new LLVMTypeRef[0]), false);
             }
-            default -> throw shouldNotReachHere();
-        };
+            // TODO: check offsets
+            return LLVMStructTypeInContext(context, elements.toArray(new LLVMTypeRef[0]), false);
+        }
+        throw shouldNotReachHere();
     }
 
     private static LLVMTypeRef getPointeeType(LLVMContextRef context, MemoryLayout layout) {
@@ -390,27 +394,32 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         LLVMTypeRef retType;
         List<LLVMTypeRef> argTypes = new ArrayList<>(argStorages.length);
 
-        switch (retStorage) {
-            case NoStorage ignored -> retType = void_t(context);
-            case RawStorage ignored -> retType = layoutToLLVMType(context, retStorage.layout);
-            case WrapperStorage ws -> retType = layoutToLLVMType(context, ws.wrapper);
-            case MemoryStorage ignored -> {
-                // pass as pointer argument with "sret" attribute
-                retType = void_t(context);
-                argTypes.add(layoutToLLVMType(context, ADDRESS.withTargetLayout(retStorage.layout)));
-            }
-            default -> throw shouldNotReachHere();
+        if (retStorage instanceof NoStorage) {
+            retType = void_t(context);
+        } else if (retStorage instanceof RawStorage) {
+            retType = layoutToLLVMType(context, retStorage.layout);
+        } else if (retStorage instanceof WrapperStorage ws) {
+            retType = layoutToLLVMType(context, ws.wrapper);
+        } else if (retStorage instanceof MemoryStorage) {
+            // pass as pointer argument with "sret" attribute
+            retType = void_t(context);
+            argTypes.add(layoutToLLVMType(context, ADDRESS.withTargetLayout(retStorage.layout)));
+        } else {
+            throw shouldNotReachHere();
         }
 
         for (LLVMStorage storage : argStorages) {
-            switch (storage) {
-                case NoStorage ignored -> { /* just drop */ }
-                case RawStorage ignored -> argTypes.add(layoutToLLVMType(context, storage.layout));
-                case WrapperStorage ws -> argTypes.add(layoutToLLVMType(context, ws.wrapper));
+            if (storage instanceof NoStorage) {
+                /* just drop */
+            } else if (storage instanceof RawStorage) {
+                argTypes.add(layoutToLLVMType(context, storage.layout));
+            } else if (storage instanceof WrapperStorage ws) {
+                argTypes.add(layoutToLLVMType(context, ws.wrapper));
+            } else if (storage instanceof MemoryStorage) {
                 // pass as pointer with "byval" attribute
-                case MemoryStorage ignored ->
-                        argTypes.add(layoutToLLVMType(context, ADDRESS.withTargetLayout(storage.layout)));
-                default -> throw shouldNotReachHere();
+                argTypes.add(layoutToLLVMType(context, ADDRESS.withTargetLayout(storage.layout)));
+            } else {
+                throw shouldNotReachHere();
             }
         }
 
@@ -466,65 +475,61 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             MemoryLayout retStore;
             {
                 LLVMStorage retStorage = target_descriptor.returnStorage();
-                switch (retStorage) {
-                    case NoStorage ignored -> {
-                        retVoid = true;
-                        retStore = null;
-                        if (options.isReturnInMemory()) {
-                            index++; // just drop
-                        }
+                if (retStorage instanceof NoStorage) {
+                    retVoid = true;
+                    retStore = null;
+                    if (options.isReturnInMemory()) {
+                        index++; // just drop
                     }
-                    case RawStorage ignored -> {
-                        retVoid = false;
-                        retStore = null;
-                    }
-                    case WrapperStorage ws -> {
-                        retVoid = false;
-                        // Note: store layout, not wrapper
-                        retStore = ws.layout;
-                        stub_args[index] = LLVMBuildPointerCast(builder, stub_args[index],
-                                layoutToLLVMType(context, ADDRESS.withTargetLayout(ws.wrapper)), "");
-                        index++;
-                    }
-                    case MemoryStorage ignored -> {
-                        // pass as pointer argument with "sret" attribute
-                        retVoid = true;
-                        retStore = null;
-                        attrs[count] = LLVMStructRetAttribute;
-                        // Note: alignment from layout, not wrapper
-                        aligns[count] = Math.toIntExact(retStorage.layout.byteAlignment());
-                        target_args[count] = stub_args[index];
-                        index++;
-                        count++;
-                    }
-                    default -> throw shouldNotReachHere();
+                } else if (retStorage instanceof RawStorage) {
+                    retVoid = false;
+                    retStore = null;
+                } else if (retStorage instanceof WrapperStorage ws) {
+                    retVoid = false;
+                    // Note: store layout, not wrapper
+                    retStore = ws.layout;
+                    stub_args[index] = LLVMBuildPointerCast(builder, stub_args[index],
+                            layoutToLLVMType(context, ADDRESS.withTargetLayout(ws.wrapper)), "");
+                    index++;
+                } else if (retStorage instanceof MemoryStorage) {
+                    // pass as pointer argument with "sret" attribute
+                    retVoid = true;
+                    retStore = null;
+                    attrs[count] = LLVMStructRetAttribute;
+                    // Note: alignment from layout, not wrapper
+                    aligns[count] = Math.toIntExact(retStorage.layout.byteAlignment());
+                    target_args[count] = stub_args[index];
+                    index++;
+                    count++;
+                } else {
+                    throw shouldNotReachHere();
                 }
             }
             {
                 int start = index;
                 while (index < stub_args.length) {
                     LLVMStorage storage = target_descriptor.argumentStorage(index - start);
-                    switch (storage) {
-                        case NoStorage ignored -> index++; // just drop
-                        case RawStorage ignored -> target_args[count++] = stub_args[index++];
-                        case WrapperStorage ws -> {
-                            stub_args[index] = LLVMBuildPointerCast(builder, stub_args[index],
-                                    layoutToLLVMType(context, ADDRESS.withTargetLayout(ws.wrapper)), "");
-                            target_args[count] = LLVMBuildLoad(builder, stub_args[index], "");
-                            // Note: alignment from layout, not wrapper
-                            LLVMSetAlignment(target_args[count], Math.toIntExact(ws.layout.byteAlignment()));
-                            index++;
-                            count++;
-                        }
-                        case MemoryStorage ignored -> {
-                            // pass as pointer with "byval" attribute
-                            attrs[count] = LLVMByValAttribute;
-                            aligns[count] = Math.toIntExact(storage.layout.byteAlignment());
-                            target_args[count] = stub_args[index];
-                            index++;
-                            count++;
-                        }
-                        default -> throw shouldNotReachHere();
+                    if (storage instanceof NoStorage) {
+                        index++; // just drop
+                    } else if (storage instanceof RawStorage) {
+                        target_args[count++] = stub_args[index++];
+                    } else if (storage instanceof WrapperStorage ws) {
+                        stub_args[index] = LLVMBuildPointerCast(builder, stub_args[index],
+                                layoutToLLVMType(context, ADDRESS.withTargetLayout(ws.wrapper)), "");
+                        target_args[count] = LLVMBuildLoad(builder, stub_args[index], "");
+                        // Note: alignment from layout, not wrapper
+                        LLVMSetAlignment(target_args[count], Math.toIntExact(ws.layout.byteAlignment()));
+                        index++;
+                        count++;
+                    } else if (storage instanceof MemoryStorage) {
+                        // pass as pointer with "byval" attribute
+                        attrs[count] = LLVMByValAttribute;
+                        aligns[count] = Math.toIntExact(storage.layout.byteAlignment());
+                        target_args[count] = stub_args[index];
+                        index++;
+                        count++;
+                    } else {
+                        throw shouldNotReachHere();
                     }
                 }
             }
