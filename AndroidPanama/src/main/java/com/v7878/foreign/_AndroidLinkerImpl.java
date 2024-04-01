@@ -1,5 +1,6 @@
 package com.v7878.foreign;
 
+import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
@@ -8,25 +9,38 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign._CapturableState.ERRNO;
 import static com.v7878.foreign._Utils.moveArgument;
 import static com.v7878.llvm.Analysis.LLVMVerifyModule;
+import static com.v7878.llvm.Core.LLVMAddAttribute;
 import static com.v7878.llvm.Core.LLVMAddFunction;
+import static com.v7878.llvm.Core.LLVMAddIncoming;
 import static com.v7878.llvm.Core.LLVMAddInstrAttribute;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMArrayType;
 import static com.v7878.llvm.Core.LLVMAttribute.LLVMByValAttribute;
 import static com.v7878.llvm.Core.LLVMAttribute.LLVMStructRetAttribute;
 import static com.v7878.llvm.Core.LLVMAttributeIndex.LLVMAttributeFirstArgIndex;
+import static com.v7878.llvm.Core.LLVMBuildAlloca;
 import static com.v7878.llvm.Core.LLVMBuildCall;
+import static com.v7878.llvm.Core.LLVMBuildCondBr;
+import static com.v7878.llvm.Core.LLVMBuildICmp;
+import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
+import static com.v7878.llvm.Core.LLVMBuildPhi;
 import static com.v7878.llvm.Core.LLVMBuildPointerCast;
+import static com.v7878.llvm.Core.LLVMBuildPtrToInt;
 import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMBuildStore;
+import static com.v7878.llvm.Core.LLVMBuildUnreachable;
+import static com.v7878.llvm.Core.LLVMConstInt;
+import static com.v7878.llvm.Core.LLVMConstNull;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMGetParams;
+import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
 import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
 import static com.v7878.llvm.Core.LLVMPointerType;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
+import static com.v7878.llvm.Core.LLVMPrintModuleToString;
 import static com.v7878.llvm.Core.LLVMSetAlignment;
 import static com.v7878.llvm.Core.LLVMSetInstrParamAlignment;
 import static com.v7878.llvm.Core.LLVMStructTypeInContext;
@@ -59,6 +73,7 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_ptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.buildToJvmPointer;
+import static com.v7878.unsafe.llvm.LLVMUtils.getBuilderContext;
 import static com.v7878.unsafe.llvm.LLVMUtils.getFunctionCode;
 
 import com.v7878.dex.AnnotationItem;
@@ -78,14 +93,15 @@ import com.v7878.foreign._StorageDescriptor.RawStorage;
 import com.v7878.foreign._StorageDescriptor.WrapperStorage;
 import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.LLVMException;
+import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.NativeCodeBlob;
 import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
-import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
@@ -227,7 +243,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return MethodType.methodType(returnValue, argCarriers);
     }
 
-    public static MethodType fdToStubMethodType(_FunctionDescriptorImpl descriptor, boolean allowsHeapAccess) {
+    public static MethodType fdToRawMethodType(_FunctionDescriptorImpl descriptor, boolean allowsHeapAccess) {
         MemoryLayout retLayout = descriptor.returnLayoutPlain();
         Class<?> returnValue = retLayout != null ? carrierTypeFor(retLayout) : void.class;
         if (returnValue == MemorySegment.class) {
@@ -254,26 +270,26 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 .map(a -> a == Object.class ? int.class : a).toArray(Class[]::new));
     }
 
-    private static String getStubName(ProtoId proto) {
-        return _AndroidLinkerImpl.class.getName() + "$Stub_" + proto.getShorty();
+    private static String getStubName(ProtoId proto, boolean downcall) {
+        return _AndroidLinkerImpl.class.getName() + "$" +
+                (downcall ? "Downcall" : "Upcall") + "Stub_" + proto.getShorty();
     }
 
     private static MethodHandle generateJavaDowncallStub(
-            MethodType stubType, _FunctionDescriptorImpl stub_descriptor,
-            _StorageDescriptor target_descriptor, _LinkerOptions options) {
+            Arena scope, MemorySegment nativeStub, MethodType stubType, _LinkerOptions options) {
         final String method_name = "function";
         final String field_name = "scope";
 
         MethodType gType = replaceObjectParameters(stubType);
         ProtoId stub_proto = ProtoId.of(gType);
-        String stub_name = getStubName(stub_proto);
+        String stub_name = getStubName(stub_proto, true);
         TypeId stub_id = TypeId.of(stub_name);
         ClassDef stub_def = new ClassDef(stub_id);
         stub_def.setSuperClass(TypeId.of(Object.class));
 
         FieldId scope_id = new FieldId(stub_id, TypeId.of(Arena.class), field_name);
         stub_def.getClassData().getStaticFields().add(new EncodedField(
-                scope_id, ACC_PRIVATE | ACC_STATIC, null));
+                scope_id, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, null));
 
         MethodId fid = new MethodId(stub_id, stub_proto, method_name);
         stub_def.getClassData().getDirectMethods().add(new EncodedMethod(
@@ -285,13 +301,11 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         DexFile dex = openDexFile(new Dex(stub_def).compile());
         Class<?> stub_class = loadClass(dex, stub_name, Utils.newEmptyClassLoader());
 
-        Arena scope = JavaForeignAccess.createImplicitHeapArena(stub_class);
-
         Field field = getDeclaredField(stub_class, field_name);
         putObject(stub_class, fieldOffset(field), scope);
 
         Method function = getDeclaredMethod(stub_class, method_name, gType.parameterArray());
-        registerNativeMethod(function, generateNativeDowncallStub(scope, target_descriptor, stub_descriptor, options).nativeAddress());
+        registerNativeMethod(function, nativeStub.nativeAddress());
 
         MethodHandle stub = unreflect(function);
         Reflection.setMethodType(stub, stubType);
@@ -357,8 +371,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return LLVMPointerType(getPointeeType(context, layout), 0);
     }
 
-    private static LLVMTypeRef fdToStubLLVMType(LLVMContextRef context, _FunctionDescriptorImpl descriptor,
-                                                boolean allowsHeapAccess, boolean isCritical) {
+    private static LLVMTypeRef fdToLLVMType(LLVMContextRef context, _FunctionDescriptorImpl descriptor,
+                                            boolean allowsHeapAccess, boolean isCritical) {
         MemoryLayout retLayout = descriptor.returnLayoutPlain();
         LLVMTypeRef returnType = retLayout == null ? void_t(context) : layoutToLLVMType(context, retLayout);
         List<MemoryLayout> argLayouts = descriptor.argumentLayouts();
@@ -384,7 +398,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return LLVMFunctionType(returnType, argTypes.toArray(new LLVMTypeRef[0]), false);
     }
 
-    private static LLVMTypeRef sdToTargetLLVMType(LLVMContextRef context, _StorageDescriptor descriptor, int firstVariadicArgIndex) {
+    private static LLVMTypeRef sdToLLVMType(LLVMContextRef context, _StorageDescriptor descriptor, int firstVariadicArgIndex) {
         LLVMStorage retStorage = descriptor.returnStorage();
         LLVMStorage[] argStorages = descriptor.argumentStorages();
         if (firstVariadicArgIndex >= 0) {
@@ -433,10 +447,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
              var module = LLVMModuleCreateWithNameInContext("generic", context)) {
 
-            LLVMTypeRef stub_type = fdToStubLLVMType(context, stub_descriptor, options.allowsHeapAccess(), options.isCritical());
+            LLVMTypeRef stub_type = fdToLLVMType(context, stub_descriptor, options.allowsHeapAccess(), options.isCritical());
             LLVMValueRef stub = LLVMAddFunction(module, function_name, stub_type);
 
-            LLVMTypeRef target_type = sdToTargetLLVMType(context, target_descriptor, options.firstVariadicArgIndex());
+            LLVMTypeRef target_type = sdToLLVMType(context, target_descriptor, options.firstVariadicArgIndex());
             LLVMTypeRef target_type_ptr = LLVMPointerType(target_type, 0);
 
             LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(stub, ""));
@@ -491,46 +505,41 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     stub_args[index] = LLVMBuildPointerCast(builder, stub_args[index],
                             layoutToLLVMType(context, ADDRESS.withTargetLayout(ws.wrapper)), "");
                     index++;
-                } else if (retStorage instanceof MemoryStorage) {
+                } else if (retStorage instanceof MemoryStorage ms) {
                     // pass as pointer argument with "sret" attribute
                     retVoid = true;
                     retStore = null;
-                    attrs[count] = LLVMStructRetAttribute;
-                    // Note: alignment from layout, not wrapper
-                    aligns[count] = Math.toIntExact(retStorage.layout.byteAlignment());
                     target_args[count] = stub_args[index];
+                    attrs[count] = LLVMStructRetAttribute;
+                    aligns[count] = Math.toIntExact(ms.layout.byteAlignment());
                     index++;
                     count++;
                 } else {
                     throw shouldNotReachHere();
                 }
             }
-            {
-                int start = index;
-                while (index < stub_args.length) {
-                    LLVMStorage storage = target_descriptor.argumentStorage(index - start);
-                    if (storage instanceof NoStorage) {
-                        index++; // just drop
-                    } else if (storage instanceof RawStorage) {
-                        target_args[count++] = stub_args[index++];
-                    } else if (storage instanceof WrapperStorage ws) {
-                        stub_args[index] = LLVMBuildPointerCast(builder, stub_args[index],
-                                layoutToLLVMType(context, ADDRESS.withTargetLayout(ws.wrapper)), "");
-                        target_args[count] = LLVMBuildLoad(builder, stub_args[index], "");
-                        // Note: alignment from layout, not wrapper
-                        LLVMSetAlignment(target_args[count], Math.toIntExact(ws.layout.byteAlignment()));
-                        index++;
-                        count++;
-                    } else if (storage instanceof MemoryStorage) {
-                        // pass as pointer with "byval" attribute
-                        attrs[count] = LLVMByValAttribute;
-                        aligns[count] = Math.toIntExact(storage.layout.byteAlignment());
-                        target_args[count] = stub_args[index];
-                        index++;
-                        count++;
-                    } else {
-                        throw shouldNotReachHere();
-                    }
+            for (LLVMStorage storage : target_descriptor.argumentStorages()) {
+                if (storage instanceof NoStorage) {
+                    index++; // just drop
+                } else if (storage instanceof RawStorage) {
+                    target_args[count++] = stub_args[index++];
+                } else if (storage instanceof WrapperStorage ws) {
+                    stub_args[index] = LLVMBuildPointerCast(builder, stub_args[index],
+                            layoutToLLVMType(context, ADDRESS.withTargetLayout(ws.wrapper)), "");
+                    target_args[count] = LLVMBuildLoad(builder, stub_args[index], "");
+                    // Note: alignment from layout, not wrapper
+                    LLVMSetAlignment(target_args[count], Math.toIntExact(ws.layout.byteAlignment()));
+                    index++;
+                    count++;
+                } else if (storage instanceof MemoryStorage) {
+                    // pass as pointer with "byval" attribute
+                    attrs[count] = LLVMByValAttribute;
+                    aligns[count] = Math.toIntExact(storage.layout.byteAlignment());
+                    target_args[count] = stub_args[index];
+                    index++;
+                    count++;
+                } else {
+                    throw shouldNotReachHere();
                 }
             }
 
@@ -613,8 +622,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         // leading function pointer
         stub_descriptor = stub_descriptor.insertArgumentLayouts(0, ADDRESS);
         MethodType handleType = fdToHandleMethodType(stub_descriptor);
-        MethodType stubType = fdToStubMethodType(stub_descriptor, options.allowsHeapAccess());
-        MethodHandle stub = generateJavaDowncallStub(stubType, stub_descriptor, target_descriptor, options);
+        MethodType stubType = fdToRawMethodType(stub_descriptor, options.allowsHeapAccess());
+        Arena scope = Arena.ofAuto();
+        MemorySegment nativeStub = generateNativeDowncallStub(scope, target_descriptor, stub_descriptor, options);
+        MethodHandle stub = generateJavaDowncallStub(scope, nativeStub, stubType, options);
         int capturedStateMask = options.capturedCallState()
                 .mapToInt(_CapturableState::mask)
                 .reduce(0, (a, b) -> a | b);
@@ -642,9 +653,240 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return handle;
     }
 
+    private static Method generateJavaUpcallStub(MethodType target_type) {
+        final String method_name = "function";
+        final TypeId mh = TypeId.of(MethodHandle.class);
+
+        MethodType stub_type = target_type.insertParameterTypes(0, MethodHandle.class);
+
+        ProtoId target_proto = ProtoId.of(target_type);
+        ProtoId stub_proto = ProtoId.of(stub_type);
+
+        String stub_name = getStubName(target_proto, false);
+        TypeId stub_id = TypeId.of(stub_name);
+        ClassDef stub_def = new ClassDef(stub_id);
+        stub_def.setSuperClass(TypeId.of(Object.class));
+
+        MethodId mh_invoke_id = new MethodId(mh, new ProtoId(TypeId.of(Object.class),
+                TypeId.of(Object[].class)), "invokeExact");
+
+        int regs = stub_proto.getInputRegistersCount();
+
+        MethodId fid = new MethodId(stub_id, stub_proto, method_name);
+        stub_def.getClassData().getDirectMethods().add(new EncodedMethod(
+                fid, ACC_PRIVATE | ACC_STATIC).withCode(0, b -> b
+                .invoke_polymorphic_range(mh_invoke_id, target_proto, regs, b.p(0))
+                .return_void()
+        ));
+
+        DexFile dex = openDexFile(new Dex(stub_def).compile());
+        Class<?> stub_class = loadClass(dex, stub_name, Utils.newEmptyClassLoader());
+
+        return getDeclaredMethod(stub_class, method_name, stub_type.parameterArray());
+    }
+
+    private static LLVMValueRef const_intptr(LLVMContextRef context, long value) {
+        return LLVMConstInt(intptr_t(context), value, false);
+    }
+
+    private static LLVMValueRef const_int(LLVMContextRef context, int value) {
+        return LLVMConstInt(int32_t(context), value, false);
+    }
+
+    private static MemorySegment generateNativeUpcallStub(
+            Arena scope, _StorageDescriptor stub_descriptor,
+            long arranger_id, long class_id, long function_id) {
+        class Holder {
+            private static final SymbolLookup lookup = Linker.nativeLinker().defaultLookup();
+
+            private static final long exit = lookup.find("exit").orElseThrow(Utils::shouldNotReachHere).nativeAddress();
+            private static final long jvm = JNIUtils.getJavaVMPtr().nativeAddress();
+            private static final long get_env = JNIUtils.getJNIInvokeInterfaceFunction("GetEnv").nativeAddress();
+            private static final long attach = JNIUtils.getJNIInvokeInterfaceFunction("AttachCurrentThreadAsDaemon").nativeAddress();
+            private static final long call = JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod").nativeAddress();
+
+            private static LLVMTypeRef ptr(LLVMTypeRef type) {
+                return LLVMPointerType(type, 0);
+            }
+
+            private static LLVMValueRef const_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value) {
+                var context = getBuilderContext(builder);
+                LLVMTypeRef ptr = LLVMPointerType(type, 0);
+                //TODO: LLVMConstIntToPtr
+                return LLVMBuildIntToPtr(builder, const_intptr(context, value), ptr, "");
+            }
+
+            static LLVMValueRef exit(LLVMBuilderRef builder) {
+                var context = getBuilderContext(builder);
+                var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{int32_t(context)}, false);
+                return const_ptr(builder, type, exit);
+            }
+
+            static LLVMValueRef jvm(LLVMBuilderRef builder) {
+                var context = getBuilderContext(builder);
+                return const_ptr(builder, void_t(context), jvm);
+            }
+
+            static LLVMValueRef get_env(LLVMBuilderRef builder) {
+                var context = getBuilderContext(builder);
+                var type = LLVMFunctionType(int32_t(context), new LLVMTypeRef[]{void_ptr_t(context),
+                        ptr(void_ptr_t(context)), int32_t(context)}, false);
+                return const_ptr(builder, type, get_env);
+            }
+
+            static LLVMValueRef call(LLVMBuilderRef builder) {
+                var context = getBuilderContext(builder);
+                var intptr = intptr_t(context);
+                var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{void_ptr_t(context), intptr, intptr}, true);
+                return const_ptr(builder, type, call);
+            }
+        }
+
+        final String function_name = "stub";
+        try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
+             var module = LLVMModuleCreateWithNameInContext("generic", context)) {
+
+            LLVMValueRef jni_ok = LLVMConstNull(int32_t(context));
+            LLVMValueRef jni_version = const_int(context, /* JNI_VERSION_1_6 */ 0x00010006);
+
+            LLVMTypeRef stub_type = sdToLLVMType(context, stub_descriptor, -1);
+            LLVMValueRef stub = LLVMAddFunction(module, function_name, stub_type);
+
+            var start = LLVMAppendBasicBlock(stub, "");
+            var body = LLVMAppendBasicBlock(stub, "");
+            var exit = LLVMAppendBasicBlock(stub, "");
+
+            LLVMPositionBuilderAtEnd(builder, exit);
+            var status = LLVMBuildPhi(builder, int32_t(context), "");
+            LLVMBuildCall(builder, Holder.exit(builder), new LLVMValueRef[]{status}, "");
+            LLVMBuildUnreachable(builder);
+
+            LLVMPositionBuilderAtEnd(builder, start);
+            var env_ptr = LLVMBuildAlloca(builder, void_ptr_t(context), "");
+            var jni_status = LLVMBuildCall(builder, Holder.get_env(builder), new LLVMValueRef[]{
+                    Holder.jvm(builder), env_ptr, jni_version}, "");
+            var test_status = LLVMBuildICmp(builder, LLVMIntEQ, jni_status, jni_ok, "");
+            // TODO: attach thread
+            LLVMBuildCondBr(builder, test_status, body, exit);
+            LLVMAddIncoming(status, jni_status, start);
+
+            LLVMPositionBuilderAtEnd(builder, body);
+            int count = 0; // current index in target_args[] and their count
+            int index = 0; // current index in stub_args[]
+            LLVMValueRef[] stub_args = LLVMGetParams(stub);
+            LLVMValueRef target = Holder.call(builder);
+            LLVMValueRef[] target_args = new LLVMValueRef[stub_args.length + 5];
+            target_args[count++] = LLVMBuildLoad(builder, env_ptr, "");
+            target_args[count++] = const_intptr(context, class_id);
+            target_args[count++] = const_intptr(context, function_id);
+            target_args[count++] = const_intptr(context, arranger_id);
+            LLVMValueRef ret = null;
+            MemoryLayout retLoad = null;
+            {
+                LLVMStorage retStorage = stub_descriptor.returnStorage();
+                if (retStorage instanceof NoStorage ns) {
+                    if (ns.layout != null) {
+                        var type = layoutToLLVMType(context, ns.layout);
+                        target_args[count++] = LLVMBuildAlloca(builder, type, "");
+                    }
+                } else if (retStorage instanceof RawStorage rs) {
+                    var type = layoutToLLVMType(context, retLoad = rs.layout);
+                    target_args[count++] = ret = LLVMBuildAlloca(builder, type, "");
+                } else if (retStorage instanceof WrapperStorage ws) {
+                    // Note: load layout, not wrapper
+                    var ltype = layoutToLLVMType(context, retLoad = ws.layout);
+                    var wtype = layoutToLLVMType(context, ws.wrapper);
+                    target_args[count++] = ret = LLVMBuildAlloca(builder, ltype, "");
+                    ret = LLVMBuildPointerCast(builder, ret, wtype, "");
+                } else if (retStorage instanceof MemoryStorage) {
+                    // pass as pointer argument with "sret" attribute
+                    var sret = stub_args[index++];
+                    LLVMAddAttribute(sret, LLVMStructRetAttribute);
+                    target_args[count++] = LLVMBuildPtrToInt(builder, sret, intptr_t(context), "");
+                } else {
+                    throw shouldNotReachHere();
+                }
+            }
+            for (LLVMStorage storage : stub_descriptor.argumentStorages()) {
+                if (storage instanceof NoStorage ns) {
+                    assert ns.layout != null;
+                    var type = layoutToLLVMType(context, ns.layout);
+                    target_args[count++] = LLVMBuildAlloca(builder, type, "");
+                } else if (storage instanceof RawStorage) {
+                    target_args[count++] = stub_args[index++];
+                } else if (storage instanceof WrapperStorage ws) {
+                    var ltype = layoutToLLVMType(context, ws.layout);
+                    var wtype = layoutToLLVMType(context, ws.wrapper);
+                    var arg = target_args[count++] = LLVMBuildAlloca(builder, ltype, "");
+                    arg = LLVMBuildPointerCast(builder, arg, wtype, "");
+                    var store = LLVMBuildStore(builder, stub_args[index++], arg);
+                    // Note: alignment from layout, not wrapper
+                    LLVMSetAlignment(store, Math.toIntExact(ws.layout.byteAlignment()));
+                } else if (storage instanceof MemoryStorage) {
+                    // pass as pointer with "byval" attribute
+                    var byval = stub_args[index++];
+                    LLVMAddAttribute(byval, LLVMByValAttribute);
+                    target_args[count++] = LLVMBuildPtrToInt(builder, byval, intptr_t(context), "");
+                } else {
+                    throw shouldNotReachHere();
+                }
+            }
+
+            LLVMBuildCall(builder, target, Arrays.copyOf(target_args, count), "");
+
+            // TODO: check exceptions
+            // TODO: destroy env if needed
+
+            if (ret == null) {
+                LLVMBuildRetVoid(builder);
+            } else {
+                LLVMValueRef load = LLVMBuildLoad(builder, ret, "");
+                LLVMSetAlignment(load, Math.toIntExact(retLoad.byteAlignment()));
+                LLVMBuildRet(builder, load);
+            }
+
+            //TODO: delete
+            System.out.println(LLVMPrintModuleToString(module));
+
+            LLVMVerifyModule(module);
+
+            try (var machine = newDefaultMachine()) {
+                LLVMMemoryBufferRef buf = LLVMTargetMachineEmitToMemoryBuffer(
+                        machine, module, LLVMObjectFile);
+                try (var of = LLVMCreateObjectFile(buf)) {
+                    MemorySegment code = getFunctionCode(of, function_name);
+                    return NativeCodeBlob.makeCodeBlob(scope, code)[0];
+                }
+            }
+        } catch (LLVMException e) {
+            throw shouldNotHappen(e);
+        }
+    }
+
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor descriptor, _LinkerOptions options) {
-        //TODO
-        throw new UnsupportedOperationException("Unsuppurted yet!");
+    protected UpcallStubFactory arrangeUpcall(
+            MethodType target_type, FunctionDescriptor descriptor, _LinkerOptions unused) {
+        _FunctionDescriptorImpl descriptor_impl = (_FunctionDescriptorImpl) descriptor;
+        _StorageDescriptor stub_descriptor = _LLVMCallingConvention.computeStorages(descriptor_impl);
+        MemoryLayout ret = descriptor_impl.returnLayoutPlain();
+        _FunctionDescriptorImpl arranger_descriptor = ret == null ? descriptor_impl :
+                descriptor_impl.dropReturnLayout().insertArgumentLayouts(0, ADDRESS.withTargetLayout(ret));
+        MethodType arranger_type = fdToRawMethodType(arranger_descriptor, false);
+        Method stub = generateJavaUpcallStub(arranger_type);
+
+        return (target, arena) -> {
+            MethodHandle arranger;
+            if (target.type().equals(arranger_type)) {
+                arranger = target;
+            } else {
+                throw new UnsupportedOperationException("TODO!");
+            }
+
+            long arranger_id = JNIUtils.NewGlobalRef(arranger, arena);
+            long class_id = JNIUtils.NewGlobalRef(stub.getDeclaringClass(), arena);
+            long function_id = JNIUtils.FromReflectedMethod(stub);
+
+            return generateNativeUpcallStub(arena, stub_descriptor, arranger_id, class_id, function_id);
+        };
     }
 }
