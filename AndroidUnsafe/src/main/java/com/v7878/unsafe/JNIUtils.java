@@ -460,7 +460,7 @@ public class JNIUtils {
 
     public static MemorySegment getJNIInvokeInterfaceFunction(String name) {
         return getJNIInvokeInterface().get(ADDRESS,
-                JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
+                JNI_INVOKE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
     }
 
     @Keep
