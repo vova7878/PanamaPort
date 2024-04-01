@@ -2667,13 +2667,13 @@ public class Core {
 
         @LibrarySymbol("LLVMBuildResume")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildResume(long, long);
+        abstract long LLVMBuildResume(long, long);*/
 
-        @LibrarySymbol("LLVMBuildUnreachable")
+        @LibrarySymbol(name = "LLVMBuildUnreachable")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMBuildUnreachable(long);
+        abstract long LLVMBuildUnreachable(long B);
 
-        @LibrarySymbol("LLVMAddCase")
+        /*@LibrarySymbol("LLVMAddCase")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMAddCase(long, long, long);
 
@@ -6021,9 +6021,11 @@ public class Core {
     //LLVMValueRef LLVMBuildResume(LLVMBuilderRef B, LLVMValueRef Exn) {
     //    return Native.INSTANCE.LLVMBuildResume();
     //}
-    //LLVMValueRef LLVMBuildUnreachable(LLVMBuilderRef) {
-    //    return Native.INSTANCE.LLVMBuildUnreachable();
-    //}
+
+    public static LLVMValueRef LLVMBuildUnreachable(LLVMBuilderRef B) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildUnreachable(B.value()));
+    }
+
     ///* Add a case to the switch instruction */
     //void LLVMAddCase(LLVMValueRef Switch, LLVMValueRef OnVal, LLVMBasicBlockRef Dest) {
     //    return Native.INSTANCE.LLVMAddCase();

@@ -1007,6 +1007,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMBuildUnreachable(LLVMBuilderRef B) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMBuildAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
