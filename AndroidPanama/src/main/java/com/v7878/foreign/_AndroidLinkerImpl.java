@@ -46,6 +46,7 @@ import static com.v7878.llvm.Core.LLVMStructTypeInContext;
 import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
 import static com.v7878.llvm.TargetMachine.LLVMCodeGenFileType.LLVMObjectFile;
 import static com.v7878.llvm.TargetMachine.LLVMTargetMachineEmitToMemoryBuffer;
+import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
@@ -696,17 +697,28 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return LLVMConstInt(int32_t(context), value, false);
     }
 
+    //TODO: cleanup
     private static MemorySegment generateNativeUpcallStub(
             Arena scope, _StorageDescriptor stub_descriptor,
             long arranger_id, long class_id, long function_id) {
         class Holder {
+            private static final Arena SCOPE = Arena.ofAuto();
             private static final SymbolLookup lookup = Linker.nativeLinker().defaultLookup();
 
-            private static final long exit = lookup.find("exit").orElseThrow(Utils::shouldNotReachHere).nativeAddress();
             private static final long jvm = JNIUtils.getJavaVMPtr().nativeAddress();
-            private static final long get_env = JNIUtils.getJNIInvokeInterfaceFunction("GetEnv").nativeAddress();
-            private static final long attach = JNIUtils.getJNIInvokeInterfaceFunction("AttachCurrentThreadAsDaemon").nativeAddress();
-            private static final long call = JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod").nativeAddress();
+            private static final MemorySegment exit = lookup.find("exit").orElseThrow(Utils::shouldNotReachHere);
+            private static final MemorySegment get_env = JNIUtils.getJNIInvokeInterfaceFunction("GetEnv");
+            private static final MemorySegment attach = JNIUtils.getJNIInvokeInterfaceFunction("AttachCurrentThreadAsDaemon");
+            private static final MemorySegment call = JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod");
+
+            private static final MemorySegment functions = SCOPE.allocate(ADDRESS, 4);
+
+            static {
+                functions.setAtIndex(ADDRESS, 0, exit);
+                functions.setAtIndex(ADDRESS, 1, get_env);
+                functions.setAtIndex(ADDRESS, 2, attach);
+                functions.setAtIndex(ADDRESS, 3, call);
+            }
 
             private static LLVMTypeRef ptr(LLVMTypeRef type) {
                 return LLVMPointerType(type, 0);
@@ -715,14 +727,12 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             private static LLVMValueRef const_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value) {
                 var context = getBuilderContext(builder);
                 LLVMTypeRef ptr = LLVMPointerType(type, 0);
-                //TODO: LLVMConstIntToPtr
                 return LLVMBuildIntToPtr(builder, const_intptr(context, value), ptr, "");
             }
 
-            static LLVMValueRef exit(LLVMBuilderRef builder) {
-                var context = getBuilderContext(builder);
-                var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{int32_t(context)}, false);
-                return const_ptr(builder, type, exit);
+            private static LLVMValueRef const_function(LLVMBuilderRef builder, LLVMTypeRef type, long index) {
+                var ptr = const_ptr(builder, ptr(type), functions.nativeAddress() + ADDRESS_SIZE * index);
+                return LLVMBuildLoad(builder, ptr, "");
             }
 
             static LLVMValueRef jvm(LLVMBuilderRef builder) {
@@ -730,18 +740,24 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 return const_ptr(builder, void_t(context), jvm);
             }
 
+            static LLVMValueRef exit(LLVMBuilderRef builder) {
+                var context = getBuilderContext(builder);
+                var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{int32_t(context)}, false);
+                return const_function(builder, type, 0);
+            }
+
             static LLVMValueRef get_env(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var type = LLVMFunctionType(int32_t(context), new LLVMTypeRef[]{void_ptr_t(context),
                         ptr(void_ptr_t(context)), int32_t(context)}, false);
-                return const_ptr(builder, type, get_env);
+                return const_function(builder, type, 1);
             }
 
             static LLVMValueRef call(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var intptr = intptr_t(context);
                 var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{void_ptr_t(context), intptr, intptr}, true);
-                return const_ptr(builder, type, call);
+                return const_function(builder, type, 3);
             }
         }
 
