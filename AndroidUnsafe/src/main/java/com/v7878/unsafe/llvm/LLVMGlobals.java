@@ -22,7 +22,7 @@ import static com.v7878.llvm.Target.LLVMInitializeNativeDisassembler;
 import static com.v7878.llvm.Target.LLVMInitializeNativeTarget;
 import static com.v7878.llvm.Target.LLVMInitializeNativeTargetInfo;
 import static com.v7878.llvm.Target.LLVMInitializeNativeTargetMC;
-import static com.v7878.llvm.TargetMachine.LLVMCodeGenOptLevel.LLVMCodeGenLevelAggressive;
+import static com.v7878.llvm.TargetMachine.LLVMCodeGenOptLevel.LLVMCodeGenLevelDefault;
 import static com.v7878.llvm.TargetMachine.LLVMCodeModel.LLVMCodeModelDefault;
 import static com.v7878.llvm.TargetMachine.LLVMCreateTargetMachine;
 import static com.v7878.llvm.TargetMachine.LLVMGetTargetFromTriple;
@@ -65,7 +65,7 @@ public class LLVMGlobals {
     }
 
     public static LLVMTargetMachineRef newDefaultMachine() {
-        return newHostMachine(LLVMCodeGenLevelAggressive, LLVMRelocDefault, LLVMCodeModelDefault);
+        return newHostMachine(LLVMCodeGenLevelDefault, LLVMRelocDefault, LLVMCodeModelDefault);
     }
 
     public static LLVMTypeRef void_t(LLVMContextRef context) {
