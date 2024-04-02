@@ -32,7 +32,6 @@ import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMBuildStore;
 import static com.v7878.llvm.Core.LLVMBuildUnreachable;
 import static com.v7878.llvm.Core.LLVMConstInt;
-import static com.v7878.llvm.Core.LLVMConstNull;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMGetParams;
@@ -123,6 +122,13 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
     public static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
 
+    private static MemorySegment readSegment(StackFrameAccessor reader, MemoryLayout layout) {
+        long size = layout == null ? 0 : layout.byteSize();
+        long alignment = layout == null ? 1 : layout.byteAlignment();
+        long value = IS64BIT ? reader.nextLong() : reader.nextInt() & 0xffffffffL;
+        return _Utils.longToAddress(value, size, alignment);
+    }
+
     private static class DowncallArranger implements TransformerI {
         private final MethodHandle stub;
         private final Class<?>[] args;
@@ -174,10 +180,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             Class<?> type = layout.carrier();
             if (type == MemorySegment.class) {
                 MemoryLayout target = ((AddressLayout) layout).targetLayout().orElse(null);
-                long size = target == null ? 0 : target.byteSize();
-                long alignment = target == null ? 1 : target.byteAlignment();
-                long value = IS64BIT ? reader.nextLong() : reader.nextInt() & 0xffffffffL;
-                writer.putNextReference(_Utils.longToAddress(value, size, alignment), MemorySegment.class);
+                writer.putNextReference(readSegment(reader, target), MemorySegment.class);
                 return;
             }
             EmulatedStackFrame.copyNext(reader, writer, type);
@@ -336,9 +339,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         } else if (layout instanceof ValueLayout.OfDouble) {
             return double_t(context);
         } else if (layout instanceof AddressLayout addressLayout) {
-            // TODO: it`s ok?
             return LLVMPointerType(getTargetType(context, addressLayout), 0);
         } else if (layout instanceof UnionLayout) {
+            // TODO: it`s ok?
             return LLVMArrayType(int8_t(context), Math.toIntExact(layout.byteSize()));
         } else if (layout instanceof SequenceLayout sequence) {
             return LLVMArrayType(layoutToLLVMType(context, sequence.elementLayout()),
@@ -351,7 +354,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     elements.add(layoutToLLVMType(context, member));
                 }
             }
-            // TODO: check offsets
+            // TODO: check offsets if debug
             return LLVMStructTypeInContext(context, elements.toArray(new LLVMTypeRef[0]), false);
         }
         throw shouldNotReachHere();
@@ -746,7 +749,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
              var module = LLVMModuleCreateWithNameInContext("generic", context)) {
 
-            LLVMValueRef jni_ok = LLVMConstNull(int32_t(context));
+            LLVMValueRef jni_ok = const_int(context, 0);
             LLVMValueRef jni_version = const_int(context, /* JNI_VERSION_1_6 */ 0x00010006);
 
             LLVMTypeRef stub_type = sdToLLVMType(context, stub_descriptor, -1);
@@ -863,6 +866,77 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
     }
 
+    private static class UpcallArranger implements TransformerI {
+        private final MethodHandle stub;
+        private final MemoryLayout[] args;
+        private final MemoryLayout ret;
+
+        public UpcallArranger(MethodHandle stub, _FunctionDescriptorImpl descriptor) {
+            this.stub = stub;
+            this.args = descriptor.argumentLayouts().toArray(new MemoryLayout[0]);
+            this.ret = descriptor.returnLayoutPlain();
+        }
+
+        private static void copyArg(StackFrameAccessor reader, StackFrameAccessor writer, MemoryLayout layout) {
+            if (layout instanceof ValueLayout vl) {
+                Class<?> type = vl.carrier();
+                if (type == MemorySegment.class) {
+                    MemoryLayout target = ((AddressLayout) layout).targetLayout().orElse(null);
+                    writer.putNextReference(readSegment(reader, target), MemorySegment.class);
+                    return;
+                }
+                EmulatedStackFrame.copyNext(reader, writer, type);
+            } else if (layout instanceof GroupLayout gl) {
+                writer.putNextReference(readSegment(reader, gl), MemorySegment.class);
+            } else {
+                throw shouldNotReachHere();
+            }
+        }
+
+        private static void copyRet(StackFrameAccessor reader, MemorySegment ret, MemoryLayout layout) {
+            if (layout instanceof ValueLayout.OfByte bl) {
+                ret.set(bl, 0, reader.nextByte());
+            } else if (layout instanceof ValueLayout.OfBoolean bl) {
+                ret.set(bl, 0, reader.nextBoolean());
+            } else if (layout instanceof ValueLayout.OfShort sl) {
+                ret.set(sl, 0, reader.nextShort());
+            } else if (layout instanceof ValueLayout.OfChar cl) {
+                ret.set(cl, 0, reader.nextChar());
+            } else if (layout instanceof ValueLayout.OfInt il) {
+                ret.set(il, 0, reader.nextInt());
+            } else if (layout instanceof ValueLayout.OfFloat fl) {
+                ret.set(fl, 0, reader.nextFloat());
+            } else if (layout instanceof ValueLayout.OfLong ll) {
+                ret.set(ll, 0, reader.nextLong());
+            } else if (layout instanceof ValueLayout.OfDouble dl) {
+                ret.set(dl, 0, reader.nextDouble());
+            } else if (layout instanceof AddressLayout al) {
+                ret.set(al, 0, reader.nextReference(MemorySegment.class));
+            } else if (layout instanceof GroupLayout gl) {
+                MemorySegment arg = reader.nextReference(MemorySegment.class);
+                MemorySegment.copy(arg, 0, ret, 0, gl.byteSize());
+            } else {
+                throw shouldNotReachHere();
+            }
+        }
+
+        @Override
+        public void transform(EmulatedStackFrame stack) throws Throwable {
+            StackFrameAccessor thiz_acc = stack.createAccessor();
+            EmulatedStackFrame stub_frame = EmulatedStackFrame.create(stub.type());
+            StackFrameAccessor stub_acc = stub_frame.createAccessor();
+            MemorySegment retSeg = ret == null ? null : readSegment(thiz_acc, ret);
+            for (MemoryLayout arg : args) {
+                copyArg(thiz_acc, stub_acc, arg);
+            }
+            invokeExactWithFrameNoChecks(stub, stub_frame);
+            if (ret != null) {
+                stub_acc.moveToReturn();
+                copyRet(stub_acc, retSeg, ret);
+            }
+        }
+    }
+
     @Override
     protected UpcallStubFactory arrangeUpcall(
             MethodType target_type, FunctionDescriptor descriptor, _LinkerOptions unused) {
@@ -879,7 +953,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             if (target.type().equals(arranger_type)) {
                 arranger = target;
             } else {
-                throw new UnsupportedOperationException("TODO!");
+                arranger = Transformers.makeTransformer(arranger_type,
+                        new UpcallArranger(target, descriptor_impl));
             }
 
             long arranger_id = JNIUtils.NewGlobalRef(arranger, arena);
