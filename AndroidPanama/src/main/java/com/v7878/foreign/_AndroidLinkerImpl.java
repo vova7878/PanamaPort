@@ -376,7 +376,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     private static LLVMTypeRef fdToLLVMType(LLVMContextRef context, _FunctionDescriptorImpl descriptor,
-                                            boolean allowsHeapAccess, boolean isCritical) {
+                                            boolean allowsHeapAccess, boolean fullEnv) {
         MemoryLayout retLayout = descriptor.returnLayoutPlain();
         LLVMTypeRef returnType = retLayout == null ? void_t(context) : layoutToLLVMType(context, retLayout);
         List<MemoryLayout> argLayouts = descriptor.argumentLayouts();
@@ -395,14 +395,15 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 throw shouldNotReachHere();
             }
         }
-        if (!isCritical) {
+        if (fullEnv) {
             argTypes.add(0, void_ptr_t(context)); // JNIEnv*
             argTypes.add(1, void_ptr_t(context)); // jclass
         }
         return LLVMFunctionType(returnType, argTypes.toArray(new LLVMTypeRef[0]), false);
     }
 
-    private static LLVMTypeRef sdToLLVMType(LLVMContextRef context, _StorageDescriptor descriptor, int firstVariadicArgIndex) {
+    private static LLVMTypeRef sdToLLVMType(LLVMContextRef context, _StorageDescriptor descriptor,
+                                            int firstVariadicArgIndex) {
         LLVMStorage retStorage = descriptor.returnStorage();
         LLVMStorage[] argStorages = descriptor.argumentStorages();
         if (firstVariadicArgIndex >= 0) {
@@ -451,7 +452,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
              var module = LLVMModuleCreateWithNameInContext("generic", context)) {
 
-            LLVMTypeRef stub_type = fdToLLVMType(context, stub_descriptor, options.allowsHeapAccess(), options.isCritical());
+            LLVMTypeRef stub_type = fdToLLVMType(context, stub_descriptor,
+                    options.allowsHeapAccess(), !options.isCritical());
             LLVMValueRef stub = LLVMAddFunction(module, function_name, stub_type);
 
             LLVMTypeRef target_type = sdToLLVMType(context, target_descriptor, options.firstVariadicArgIndex());
@@ -697,31 +699,33 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return LLVMConstInt(int32_t(context), value, false);
     }
 
-    //TODO: cleanup
+    private static LLVMTypeRef ptr_t(LLVMTypeRef type) {
+        return LLVMPointerType(type, 0);
+    }
+
     private static MemorySegment generateNativeUpcallStub(
             Arena scope, _StorageDescriptor stub_descriptor,
             long arranger_id, long class_id, long function_id) {
         class Holder {
             private static final Arena SCOPE = Arena.ofAuto();
-            private static final SymbolLookup lookup = Linker.nativeLinker().defaultLookup();
+            private static final SymbolLookup LIBC = SymbolLookup.libraryLookup("libc.so", SCOPE);
 
-            private static final long jvm = JNIUtils.getJavaVMPtr().nativeAddress();
-            private static final MemorySegment exit = lookup.find("exit").orElseThrow(Utils::shouldNotReachHere);
-            private static final MemorySegment get_env = JNIUtils.getJNIInvokeInterfaceFunction("GetEnv");
-            private static final MemorySegment attach = JNIUtils.getJNIInvokeInterfaceFunction("AttachCurrentThreadAsDaemon");
-            private static final MemorySegment call = JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod");
+            private static final MemorySegment functions = SCOPE.allocate(ADDRESS, 5);
 
-            private static final MemorySegment functions = SCOPE.allocate(ADDRESS, 4);
+            private enum Symbols {
+                JVM(JNIUtils.getJavaVMPtr()),
+                EXIT(LIBC.find("exit").orElseThrow(Utils::shouldNotReachHere)),
+                GET_ENV(JNIUtils.getJNIInvokeInterfaceFunction("GetEnv")),
+                ATTACH(JNIUtils.getJNIInvokeInterfaceFunction("AttachCurrentThreadAsDaemon")),
+                CALL(JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod"));
 
-            static {
-                functions.setAtIndex(ADDRESS, 0, exit);
-                functions.setAtIndex(ADDRESS, 1, get_env);
-                functions.setAtIndex(ADDRESS, 2, attach);
-                functions.setAtIndex(ADDRESS, 3, call);
-            }
+                final long value;
 
-            private static LLVMTypeRef ptr(LLVMTypeRef type) {
-                return LLVMPointerType(type, 0);
+                Symbols(MemorySegment symbol) {
+                    MemorySegment target = functions.asSlice((long) ADDRESS_SIZE * ordinal());
+                    target.set(ADDRESS, 0, symbol);
+                    value = target.nativeAddress();
+                }
             }
 
             private static LLVMValueRef const_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value) {
@@ -730,34 +734,34 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 return LLVMBuildIntToPtr(builder, const_intptr(context, value), ptr, "");
             }
 
-            private static LLVMValueRef const_function(LLVMBuilderRef builder, LLVMTypeRef type, long index) {
-                var ptr = const_ptr(builder, ptr(type), functions.nativeAddress() + ADDRESS_SIZE * index);
+            private static LLVMValueRef const_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value) {
+                var ptr = const_ptr(builder, ptr_t(type), value);
                 return LLVMBuildLoad(builder, ptr, "");
             }
 
             static LLVMValueRef jvm(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
-                return const_ptr(builder, void_t(context), jvm);
+                return const_load_ptr(builder, void_t(context), Symbols.JVM.value);
             }
 
             static LLVMValueRef exit(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{int32_t(context)}, false);
-                return const_function(builder, type, 0);
+                return const_load_ptr(builder, type, Symbols.EXIT.value);
             }
 
             static LLVMValueRef get_env(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var type = LLVMFunctionType(int32_t(context), new LLVMTypeRef[]{void_ptr_t(context),
-                        ptr(void_ptr_t(context)), int32_t(context)}, false);
-                return const_function(builder, type, 1);
+                        ptr_t(void_ptr_t(context)), int32_t(context)}, false);
+                return const_load_ptr(builder, type, Symbols.GET_ENV.value);
             }
 
             static LLVMValueRef call(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var intptr = intptr_t(context);
                 var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{void_ptr_t(context), intptr, intptr}, true);
-                return const_function(builder, type, 3);
+                return const_load_ptr(builder, type, Symbols.CALL.value);
             }
         }
 
@@ -816,7 +820,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     var ltype = layoutToLLVMType(context, retLoad = ws.layout);
                     var wtype = layoutToLLVMType(context, ws.wrapper);
                     target_args[count++] = ret = LLVMBuildAlloca(builder, ltype, "");
-                    ret = LLVMBuildPointerCast(builder, ret, wtype, "");
+                    ret = LLVMBuildPointerCast(builder, ret, ptr_t(wtype), "");
                 } else if (retStorage instanceof MemoryStorage) {
                     // pass as pointer argument with "sret" attribute
                     var sret = stub_args[index++];
@@ -837,7 +841,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     var ltype = layoutToLLVMType(context, ws.layout);
                     var wtype = layoutToLLVMType(context, ws.wrapper);
                     var arg = target_args[count++] = LLVMBuildAlloca(builder, ltype, "");
-                    arg = LLVMBuildPointerCast(builder, arg, wtype, "");
+                    arg = LLVMBuildPointerCast(builder, arg, ptr_t(wtype), "");
                     var store = LLVMBuildStore(builder, stub_args[index++], arg);
                     // Note: alignment from layout, not wrapper
                     LLVMSetAlignment(store, Math.toIntExact(ws.layout.byteAlignment()));
