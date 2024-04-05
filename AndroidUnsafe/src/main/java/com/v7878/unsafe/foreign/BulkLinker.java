@@ -3,8 +3,10 @@ package com.v7878.unsafe.foreign;
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
+import static com.v7878.dex.bytecode.CodeBuilder.BinOp.AND_LONG;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.VIRTUAL;
+import static com.v7878.dex.bytecode.CodeBuilder.UnOp.INT_TO_LONG;
 import static com.v7878.dex.bytecode.CodeBuilder.UnOp.LONG_TO_INT;
 import static com.v7878.dex.bytecode.CodeBuilder.UnOp.NEG_INT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
@@ -226,7 +228,7 @@ public class BulkLinker {
 
             ProtoId proto = implProto(info.ret, info.args);
             MethodId method_id = new MethodId(impl_id, proto, info.name);
-            final int reserved = 2;
+            final int reserved = 4;
             int locals = reserved + raw_proto.getInputRegistersCount();
             int[] regs = {/* call args */ reserved, /* stub args */ 0};
             EncodedMethod em = new EncodedMethod(method_id, ACC_PUBLIC).withCode(locals, b -> {
@@ -301,7 +303,9 @@ public class BulkLinker {
                             b.return_wide(b.l(0));
                         } else {
                             b.move_result(b.l(0));
-                            b.const_4(b.l(1), 0);
+                            b.unop(INT_TO_LONG, b.l(0), b.l(0));
+                            b.const_wide(b.l(2), 0xffffffffL);
+                            b.binop_2addr(AND_LONG, b.l(0), b.l(2));
                             b.return_wide(b.l(0));
                         }
                     }
