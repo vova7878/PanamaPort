@@ -72,6 +72,9 @@ public class Transformers {
     private static final Constructor<MethodHandle> transformer_constructor;
     private static final InvokerI invoker;
 
+    //TODO: SKIP_CHECK_CAST = !DEBUG
+    private static final boolean SKIP_CHECK_CAST = true;
+
     static {
         TypeId mh = TypeId.of(MethodHandle.class);
         TypeId mt = TypeId.of(MethodType.class);
@@ -322,7 +325,9 @@ public class Transformers {
         invoker_def.getClassData().getVirtualMethods().add(new EncodedMethod(
                 new MethodId(invoker_id, new ProtoId(TypeId.V, mh, TypeId.of(Object.class)),
                         "invokeExactWithFrame"), ACC_PUBLIC).withCode(0, b -> {
-            //b.check_cast(b.p(1), esf) // verified
+            if (!SKIP_CHECK_CAST) {
+                b.check_cast(b.p(1), esf);
+            }
             if (CORRECT_SDK_INT <= 32) {
                 //handle.invoke((dalvik.system.EmulatedStackFrame) stack);
                 b.invoke_polymorphic(new MethodId(mh, new ProtoId(TypeId.of(Object.class),
@@ -349,10 +354,13 @@ public class Transformers {
         invoker_def.getClassData().getVirtualMethods().add(new EncodedMethod(
                 new MethodId(invoker_id, new ProtoId(TypeId.V, TypeId.of(MethodHandle.class),
                         TypeId.of(Object.class)), "transform"),
-                ACC_PUBLIC).withCode(0, b -> b
-                //.check_cast(b.p(1), esf) // verified
-                .invoke(VIRTUAL, MethodId.of(tmp), b.p(0), b.p(1))
-                .return_void()
+                ACC_PUBLIC).withCode(0, b -> {
+                    if (!SKIP_CHECK_CAST) {
+                        b.check_cast(b.p(1), esf);
+                    }
+                    b.invoke(VIRTUAL, MethodId.of(tmp), b.p(0), b.p(1));
+                    b.return_void();
+                }
         ));
 
         DexFile dex = openDexFile(new Dex(transformer_def, invoker_def).compile());
@@ -361,7 +369,9 @@ public class Transformers {
         ClassLoader loader = Transformers.class.getClassLoader();
 
         Class<?> invoker_class = loadClass(dex, invoker_name, loader);
-        setClassStatus(invoker_class, ClassStatus.Verified);
+        if (SKIP_CHECK_CAST) {
+            setClassStatus(invoker_class, ClassStatus.Verified);
+        }
         invoker = (InvokerI) allocateInstance(invoker_class);
 
         Class<?> transformer = loadClass(dex, transformer_name, loader);
