@@ -39,7 +39,6 @@ import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
 import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
 import static com.v7878.llvm.Core.LLVMPointerType;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
-import static com.v7878.llvm.Core.LLVMPrintModuleToString;
 import static com.v7878.llvm.Core.LLVMSetAlignment;
 import static com.v7878.llvm.Core.LLVMSetInstrParamAlignment;
 import static com.v7878.llvm.Core.LLVMStructTypeInContext;
@@ -710,14 +709,17 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             private static final Arena SCOPE = Arena.ofAuto();
             private static final SymbolLookup LIBC = SymbolLookup.libraryLookup("libc.so", SCOPE);
 
-            private static final MemorySegment functions = SCOPE.allocate(ADDRESS, 5);
+            private static final MemorySegment functions = SCOPE.allocate(ADDRESS, 9);
 
             private enum Symbols {
                 JVM(JNIUtils.getJavaVMPtr()),
                 EXIT(LIBC.find("exit").orElseThrow(Utils::shouldNotReachHere)),
                 GET_ENV(JNIUtils.getJNIInvokeInterfaceFunction("GetEnv")),
                 ATTACH(JNIUtils.getJNIInvokeInterfaceFunction("AttachCurrentThreadAsDaemon")),
-                CALL(JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod"));
+                CALL(JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod")),
+                EXCEPTION_CHECK(JNIUtils.getJNINativeInterfaceFunction("ExceptionCheck")),
+                FATAL_ERROR(JNIUtils.getJNINativeInterfaceFunction("FatalError")),
+                UNCAUGHT_EXCEPTION_MESSAGE(SCOPE.allocateFrom("Uncaught exception in upcall stub"));
 
                 final long value;
 
@@ -763,6 +765,24 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{void_ptr_t(context), intptr, intptr}, true);
                 return const_load_ptr(builder, type, Symbols.CALL.value);
             }
+
+            static LLVMValueRef exceptionCheck(LLVMBuilderRef builder) {
+                var context = getBuilderContext(builder);
+                var type = LLVMFunctionType(int1_t(context), new LLVMTypeRef[]{void_ptr_t(context)}, false);
+                return const_load_ptr(builder, type, Symbols.EXCEPTION_CHECK.value);
+            }
+
+            static LLVMValueRef fatalError(LLVMBuilderRef builder) {
+                var context = getBuilderContext(builder);
+                var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{void_ptr_t(context),
+                        ptr_t(int8_t(context))}, false);
+                return const_load_ptr(builder, type, Symbols.FATAL_ERROR.value);
+            }
+
+            static LLVMValueRef uncaughtExceptionMessage(LLVMBuilderRef builder) {
+                var context = getBuilderContext(builder);
+                return const_load_ptr(builder, int8_t(context), Symbols.UNCAUGHT_EXCEPTION_MESSAGE.value);
+            }
         }
 
         final String function_name = "stub";
@@ -777,6 +797,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             var start = LLVMAppendBasicBlock(stub, "");
             var body = LLVMAppendBasicBlock(stub, "");
+            var uncaught_exception = LLVMAppendBasicBlock(stub, "");
+            var end = LLVMAppendBasicBlock(stub, "");
             var exit = LLVMAppendBasicBlock(stub, "");
 
             LLVMPositionBuilderAtEnd(builder, exit);
@@ -794,12 +816,13 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             LLVMAddIncoming(status, jni_status, start);
 
             LLVMPositionBuilderAtEnd(builder, body);
+            var env = LLVMBuildLoad(builder, env_ptr, "");
             int count = 0; // current index in target_args[] and their count
             int index = 0; // current index in stub_args[]
             LLVMValueRef[] stub_args = LLVMGetParams(stub);
             LLVMValueRef target = Holder.call(builder);
             LLVMValueRef[] target_args = new LLVMValueRef[stub_args.length + 5];
-            target_args[count++] = LLVMBuildLoad(builder, env_ptr, "");
+            target_args[count++] = env;
             target_args[count++] = const_intptr(context, class_id);
             target_args[count++] = const_intptr(context, function_id);
             target_args[count++] = const_intptr(context, arranger_id);
@@ -856,10 +879,18 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             }
 
             LLVMBuildCall(builder, target, Arrays.copyOf(target_args, count), "");
+            var test_exceptions = LLVMBuildCall(builder,
+                    Holder.exceptionCheck(builder), new LLVMValueRef[]{env}, "");
+            LLVMBuildCondBr(builder, test_exceptions, uncaught_exception, end);
 
-            // TODO: check exceptions
+            LLVMPositionBuilderAtEnd(builder, uncaught_exception);
+            LLVMBuildCall(builder, Holder.fatalError(builder), new LLVMValueRef[]{env,
+                    Holder.uncaughtExceptionMessage(builder)}, "");
+            LLVMBuildUnreachable(builder);
+
             // TODO: destroy env if needed
 
+            LLVMPositionBuilderAtEnd(builder, end);
             if (ret == null) {
                 LLVMBuildRetVoid(builder);
             } else {
@@ -867,9 +898,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 LLVMSetAlignment(load, Math.toIntExact(retLoad.byteAlignment()));
                 LLVMBuildRet(builder, load);
             }
-
-            //TODO: delete
-            System.out.println(LLVMPrintModuleToString(module));
 
             LLVMVerifyModule(module);
 
