@@ -68,12 +68,16 @@ public class LLVMGlobals {
         return newHostMachine(LLVMCodeGenLevelDefault, LLVMRelocDefault, LLVMCodeModelDefault);
     }
 
+    public static LLVMTypeRef ptr_t(LLVMTypeRef type) {
+        return LLVMPointerType(type, 0);
+    }
+
     public static LLVMTypeRef void_t(LLVMContextRef context) {
         return LLVMVoidTypeInContext(context);
     }
 
     public static LLVMTypeRef void_ptr_t(LLVMContextRef context) {
-        return LLVMPointerType(void_t(context), 0);
+        return ptr_t(void_t(context));
     }
 
     public static LLVMTypeRef int1_t(LLVMContextRef context) {

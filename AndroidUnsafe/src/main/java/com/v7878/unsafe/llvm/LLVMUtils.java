@@ -26,6 +26,7 @@ import static com.v7878.llvm.TargetMachine.LLVMTargetMachineEmitToMemoryBuffer;
 import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.newContext;
 import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
+import static com.v7878.unsafe.llvm.LLVMGlobals.ptr_t;
 
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.LLVMException;
@@ -102,7 +103,7 @@ public class LLVMUtils {
     }
 
     public static LLVMValueRef buildToJvmPointer(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset, LLVMTypeRef type) {
-        return LLVMBuildIntToPtr(builder, buildToJvmAddress(builder, base, offset), LLVMPointerType(type, 0), "");
+        return LLVMBuildIntToPtr(builder, buildToJvmAddress(builder, base, offset), ptr_t(type), "");
     }
 
     public interface Generator {
