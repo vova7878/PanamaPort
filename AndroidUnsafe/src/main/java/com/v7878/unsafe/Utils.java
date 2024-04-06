@@ -5,6 +5,7 @@ import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 
 import androidx.annotation.Keep;
 
@@ -481,5 +482,17 @@ public class Utils {
 
     public static <T> Lock<T> lock(T value, Consumer<T> action) {
         return new Lock<>(value, action);
+    }
+
+    @SuppressWarnings("finally")
+    public static void handleUncaughtException(Throwable th) {
+        String tag = "PANAMA";
+        if (th != null) {
+            try {
+                Log.wtf(tag, "Unrecoverable uncaught exception encountered. The VM will now exit", th);
+            } finally {
+                System.exit(1);
+            }
+        }
     }
 }
