@@ -9,10 +9,10 @@ import static com.v7878.foreign.ValueLayout.JAVA_FLOAT;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 
 import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.access.JavaForeignAccess;
+import com.v7878.unsafe.foreign.ExtraLayouts;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
 
 import java.lang.invoke.MethodHandle;
@@ -83,7 +83,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkLayouts(function);
-        function = stripNames(function);
+        function = stripNames(function, false);
         _LinkerOptions optionSet = _LinkerOptions.forDowncall(function, options);
         validateVariadicLayouts(function, optionSet);
 
@@ -104,7 +104,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         Objects.requireNonNull(function);
         checkLayouts(function);
         //TODO? SharedUtils.checkExceptions(target);
-        function = stripNames(function);
+        function = stripNames(function, true);
         _LinkerOptions optionSet = _LinkerOptions.forUpcall(function, options);
 
         MethodType type = function.toMethodType();
@@ -293,8 +293,9 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                 .toArray(MemoryLayout[]::new));
     }
 
-    private static FunctionDescriptor stripNames(FunctionDescriptor function) {
-        MemoryLayout[] args = stripNames(removeTargets(function.argumentLayouts()), false);
+    private static FunctionDescriptor stripNames(FunctionDescriptor function, boolean forUpcall) {
+        var arg_layouts = function.argumentLayouts();
+        MemoryLayout[] args = stripNames(forUpcall ? arg_layouts : removeTargets(arg_layouts), false);
         return function.returnLayout()
                 .map(rl -> FunctionDescriptor.of(stripNames(rl, false), args))
                 .orElseGet(() -> FunctionDescriptor.ofVoid(args));
@@ -311,8 +312,6 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
             static final Map<String, MemoryLayout> CANONICAL_LAYOUTS;
 
             static {
-                MemoryLayout word = IS64BIT ? JAVA_LONG : JAVA_INT;
-
                 CANONICAL_LAYOUTS = Map.ofEntries(
                         // specified canonical layouts
                         Map.entry("bool", JAVA_BOOLEAN),
@@ -320,11 +319,11 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                         Map.entry("short", JAVA_SHORT),
                         Map.entry("int", JAVA_INT),
                         Map.entry("float", JAVA_FLOAT),
-                        Map.entry("long", word),
+                        Map.entry("long", ExtraLayouts.WORD),
                         Map.entry("long long", JAVA_LONG),
                         Map.entry("double", JAVA_DOUBLE),
                         Map.entry("void*", ADDRESS),
-                        Map.entry("size_t", word),
+                        Map.entry("size_t", ExtraLayouts.WORD),
                         //TODO?: Map.entry("wchar_t", ???),
 
                         // unspecified size-dependent layouts
@@ -332,7 +331,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                         Map.entry("int16_t", JAVA_SHORT),
                         Map.entry("int32_t", JAVA_INT),
                         Map.entry("int64_t", JAVA_LONG),
-                        Map.entry("intptr_t", word),
+                        Map.entry("intptr_t", ExtraLayouts.WORD),
 
                         // unspecified JNI layouts
                         Map.entry("jboolean", JAVA_BOOLEAN),
