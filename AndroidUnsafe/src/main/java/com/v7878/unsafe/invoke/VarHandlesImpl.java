@@ -45,10 +45,10 @@ public final class VarHandlesImpl {
                 target.coordinateTypes().toArray(new Class[0]), (mode, modeHandle) -> {
             int lastParameterPos = modeHandle.type().parameterCount() - 1;
             switch (accessType(mode)) {
-                case GET -> {
+                case GET, GET_ATOMIC -> {
                     return MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
                 }
-                case SET -> {
+                case SET, SET_ATOMIC -> {
                     return MethodHandles.filterArguments(modeHandle, lastParameterPos, filterToTarget);
                 }
                 case COMPARE_AND_SET -> {
@@ -148,8 +148,9 @@ public final class VarHandlesImpl {
 
     private static int numTrailingArgs(AbstractVarHandle.AccessType at) {
         return switch (at) {
-            case GET -> 0;
-            case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC, SET -> 1;
+            case GET, GET_ATOMIC -> 0;
+            case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE,
+                    GET_AND_UPDATE_NUMERIC, SET, SET_ATOMIC -> 1;
             case COMPARE_AND_SET, COMPARE_AND_EXCHANGE -> 2;
         };
     }

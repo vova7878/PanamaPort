@@ -9,6 +9,10 @@ public abstract class AbstractVarHandle extends VarHandle {
     public enum AccessType {
         GET,
         SET,
+
+        GET_ATOMIC,
+        SET_ATOMIC,
+
         COMPARE_AND_SET,
         COMPARE_AND_EXCHANGE,
         GET_AND_UPDATE,

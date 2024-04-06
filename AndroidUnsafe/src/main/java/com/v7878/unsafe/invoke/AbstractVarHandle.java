@@ -155,6 +155,10 @@ public abstract class AbstractVarHandle extends VarHandle {
     public enum AccessType {
         GET,
         SET,
+
+        GET_ATOMIC,
+        SET_ATOMIC,
+
         COMPARE_AND_SET,
         COMPARE_AND_EXCHANGE,
         GET_AND_UPDATE,
@@ -166,12 +170,12 @@ public abstract class AbstractVarHandle extends VarHandle {
             Class<?>[] ps;
             int i;
             switch (this) {
-                case GET -> {
+                case GET, GET_ATOMIC -> {
                     ps = allocateParameters(0, coordinates);
                     fillParameters(ps, coordinates);
                     return MethodType.methodType(value, ps);
                 }
-                case SET -> {
+                case SET, SET_ATOMIC -> {
                     ps = allocateParameters(1, coordinates);
                     i = fillParameters(ps, coordinates);
                     ps[i] = value;

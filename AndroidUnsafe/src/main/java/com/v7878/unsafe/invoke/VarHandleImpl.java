@@ -51,21 +51,19 @@ public class VarHandleImpl extends AbstractVarHandle {
 
     /**
      * BitMask of access modes that do not change the memory referenced by a VarHandle.
-     * An example being a read of a variable with volatile ordering effects.
      */
     public final static int READ_ACCESS_MODES_BIT_MASK;
+    public final static int READ_ATOMIC_ACCESS_MODES_BIT_MASK;
     /**
      * BitMask of access modes that write to the memory referenced by
-     * a VarHandle.  This does not include any compare and update
-     * access modes, nor any bitwise or numeric access modes. An
-     * example being a write to variable with release ordering
-     * effects.
+     * a VarHandle. This does not include any compare and update
+     * access modes, nor any bitwise or numeric access modes.
      */
     public final static int WRITE_ACCESS_MODES_BIT_MASK;
+    public final static int WRITE_ATOMIC_ACCESS_MODES_BIT_MASK;
     /**
      * BitMask of access modes that are applicable to types
-     * supporting for atomic updates.  This includes access modes that
-     * both read and write a variable such as compare-and-set.
+     * supporting for atomic updates.
      */
     public final static int ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK;
     /**
@@ -91,7 +89,9 @@ public class VarHandleImpl extends AbstractVarHandle {
         }
 
         READ_ACCESS_MODES_BIT_MASK = accessTypesToBitMask(EnumSet.of(AccessType.GET));
+        READ_ATOMIC_ACCESS_MODES_BIT_MASK = accessTypesToBitMask(EnumSet.of(AccessType.GET_ATOMIC));
         WRITE_ACCESS_MODES_BIT_MASK = accessTypesToBitMask(EnumSet.of(AccessType.SET));
+        WRITE_ATOMIC_ACCESS_MODES_BIT_MASK = accessTypesToBitMask(EnumSet.of(AccessType.SET_ATOMIC));
         ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK =
                 accessTypesToBitMask(EnumSet.of(AccessType.COMPARE_AND_EXCHANGE,
                         AccessType.COMPARE_AND_SET, AccessType.GET_AND_UPDATE));
@@ -99,7 +99,9 @@ public class VarHandleImpl extends AbstractVarHandle {
                 accessTypesToBitMask(EnumSet.of(AccessType.GET_AND_UPDATE_NUMERIC));
         BITWISE_ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK =
                 accessTypesToBitMask(EnumSet.of(AccessType.GET_AND_UPDATE_BITWISE));
-        ALL_MODES_BIT_MASK = (READ_ACCESS_MODES_BIT_MASK | WRITE_ACCESS_MODES_BIT_MASK |
+
+        ALL_MODES_BIT_MASK = (READ_ACCESS_MODES_BIT_MASK | READ_ATOMIC_ACCESS_MODES_BIT_MASK |
+                WRITE_ACCESS_MODES_BIT_MASK | WRITE_ATOMIC_ACCESS_MODES_BIT_MASK |
                 ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK |
                 NUMERIC_ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK |
                 BITWISE_ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK);
@@ -115,7 +117,26 @@ public class VarHandleImpl extends AbstractVarHandle {
         return m;
     }
 
+    public static int accessModesBitMask(Class<?> varType, boolean allowAtomicAccess) {
+        int bitMask = ALL_MODES_BIT_MASK;
+        if (!allowAtomicAccess) {
+            bitMask &= ~(READ_ATOMIC_ACCESS_MODES_BIT_MASK | WRITE_ATOMIC_ACCESS_MODES_BIT_MASK);
+        }
+        if (!allowAtomicAccess || (varType != byte.class && varType != short.class
+                && varType != char.class && varType != int.class && varType != long.class
+                && varType != float.class && varType != double.class)) {
+            bitMask &= ~NUMERIC_ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK;
+        }
+        if (!allowAtomicAccess || (varType != boolean.class && varType != byte.class
+                && varType != short.class && varType != char.class
+                && varType != int.class && varType != long.class)) {
+            bitMask &= ~BITWISE_ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK;
+        }
+        return bitMask;
+    }
+
     public static boolean isReadOnly(AccessMode accessMode) {
-        return accessType(accessMode) == AccessType.GET;
+        var type = accessType(accessMode);
+        return type == AccessType.GET || type == AccessType.GET_ATOMIC;
     }
 }
