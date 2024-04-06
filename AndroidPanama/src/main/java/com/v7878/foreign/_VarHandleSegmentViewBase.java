@@ -18,10 +18,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
-        //TODO: all modes
-        int accessModesBitMask = (1 << AccessMode.GET.ordinal()) | (1 << AccessMode.SET.ordinal());
 
-        VarHandleTransformer transformer;
+        _VarHandleSegmentViewBase transformer;
         if (carrier == byte.class) {
             transformer = new VarHandleSegmentAsBytes(swap, alignmentMask);
         } else if (carrier == char.class) {
@@ -40,8 +38,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             throw shouldNotReachHere();
         }
 
-        return VarHandleImpl.newVarHandle(accessModesBitMask,
-                transformer, carrier, MemorySegment.class, long.class);
+        long min_align_mask = transformer.length - 1;
+        boolean allowAtomicAccess = (alignmentMask & min_align_mask) == min_align_mask;
+        int modesMask = VarHandleImpl.accessModesBitMask(carrier, allowAtomicAccess);
+        return VarHandleImpl.newVarHandle(modesMask, transformer,
+                carrier, MemorySegment.class, long.class);
     }
 
     /**
@@ -69,23 +70,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         return new IllegalArgumentException("Misaligned access at address: " + _Utils.toHexString(address));
     }
 
-    static UnsupportedOperationException newUnsupportedAccessModeForAlignment(long alignment) {
-        return new UnsupportedOperationException("Unsupported access mode for alignment: " + alignment);
-    }
-
     void checkAddress(_AbstractMemorySegmentImpl ms, long offset, boolean ro) {
         Objects.requireNonNull(ms).checkAccess(offset, length, ro);
     }
 
-    long offsetNonPlain(_AbstractMemorySegmentImpl bb, long offset) {
-        final long min_align_mask = length - 1;
-        if ((alignmentMask & min_align_mask) != min_align_mask) {
-            throw newUnsupportedAccessModeForAlignment(alignmentMask + 1);
-        }
-        return offsetPlain(bb, offset);
-    }
-
-    long offsetPlain(_AbstractMemorySegmentImpl bb, long offset) {
+    long getOffset(_AbstractMemorySegmentImpl bb, long offset) {
         long base = bb.unsafeGetOffset();
         long address = base + offset;
         long maxAlignMask = bb.maxAlignMask();
@@ -111,10 +100,10 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextByte(
                         _ScopedMemoryAccess.getByte(ms.sessionImpl(), ms.unsafeGetBase(),
-                                offsetPlain(ms, offset)));
+                                getOffset(ms, offset)));
                 case SET -> _ScopedMemoryAccess.putByte(ms.sessionImpl(), ms.unsafeGetBase(),
-                        offsetPlain(ms, offset), accessor.nextByte());
-                default -> throw shouldNotReachHere();
+                        getOffset(ms, offset), accessor.nextByte());
+                default -> throw new UnsupportedOperationException("TODO");
             }
         }
     }
@@ -135,11 +124,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextChar(
                         _ScopedMemoryAccess.getCharUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                offsetPlain(ms, offset), swap));
+                                getOffset(ms, offset), swap));
                 case SET -> _ScopedMemoryAccess.putCharUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
-                        offsetPlain(ms, offset), accessor.nextChar(), swap);
-                default -> throw shouldNotReachHere();
+                        getOffset(ms, offset), accessor.nextChar(), swap);
+                default -> throw new UnsupportedOperationException("TODO");
             }
         }
     }
@@ -160,11 +149,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextShort(
                         _ScopedMemoryAccess.getShortUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                offsetPlain(ms, offset), swap));
+                                getOffset(ms, offset), swap));
                 case SET -> _ScopedMemoryAccess.putShortUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
-                        offsetPlain(ms, offset), accessor.nextShort(), swap);
-                default -> throw shouldNotReachHere();
+                        getOffset(ms, offset), accessor.nextShort(), swap);
+                default -> throw new UnsupportedOperationException("TODO");
             }
         }
     }
@@ -185,11 +174,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextInt(
                         _ScopedMemoryAccess.getIntUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                offsetPlain(ms, offset), swap));
+                                getOffset(ms, offset), swap));
                 case SET -> _ScopedMemoryAccess.putIntUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
-                        offsetPlain(ms, offset), accessor.nextInt(), swap);
-                default -> throw shouldNotReachHere();
+                        getOffset(ms, offset), accessor.nextInt(), swap);
+                default -> throw new UnsupportedOperationException("TODO");
             }
         }
     }
@@ -210,11 +199,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextFloat(
                         _ScopedMemoryAccess.getFloatUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                offsetPlain(ms, offset), swap));
+                                getOffset(ms, offset), swap));
                 case SET -> _ScopedMemoryAccess.putFloatUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
-                        offsetPlain(ms, offset), accessor.nextFloat(), swap);
-                default -> throw shouldNotReachHere();
+                        getOffset(ms, offset), accessor.nextFloat(), swap);
+                default -> throw new UnsupportedOperationException("TODO");
             }
         }
     }
@@ -235,11 +224,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextLong(
                         _ScopedMemoryAccess.getLongUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                offsetPlain(ms, offset), swap));
+                                getOffset(ms, offset), swap));
                 case SET -> _ScopedMemoryAccess.putLongUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
-                        offsetPlain(ms, offset), accessor.nextLong(), swap);
-                default -> throw shouldNotReachHere();
+                        getOffset(ms, offset), accessor.nextLong(), swap);
+                default -> throw new UnsupportedOperationException("TODO");
             }
         }
     }
@@ -260,11 +249,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextDouble(
                         _ScopedMemoryAccess.getDoubleUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                offsetPlain(ms, offset), swap));
+                                getOffset(ms, offset), swap));
                 case SET -> _ScopedMemoryAccess.putDoubleUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
-                        offsetPlain(ms, offset), accessor.nextDouble(), swap);
-                default -> throw shouldNotReachHere();
+                        getOffset(ms, offset), accessor.nextDouble(), swap);
+                default -> throw new UnsupportedOperationException("TODO");
             }
         }
     }
