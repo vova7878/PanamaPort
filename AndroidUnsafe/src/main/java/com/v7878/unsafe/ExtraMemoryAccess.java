@@ -316,6 +316,62 @@ public class ExtraMemoryAccess {
             return gen_load_atomic("load_long_atomic", LLVMGlobals::int64_t, 8);
         }
 
+        private static byte[] gen_store_atomic(
+                String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
+            return gen((context, module, builder) -> {
+                LLVMTypeRef var_type = type.apply(context);
+                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), var_type};
+                LLVMTypeRef f_type = LLVMFunctionType(void_t(context), arg_types, false);
+                LLVMValueRef function = LLVMAddFunction(module, name, f_type);
+                LLVMValueRef[] args = LLVMGetParams(function);
+
+                LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
+                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], var_type);
+                LLVMValueRef store = LLVMBuildStore(builder, args[2], pointer);
+                LLVMSetAlignment(store, alignment);
+                LLVMSetOrdering(store, LLVMAtomicOrderingSequentiallyConsistent);
+
+                LLVMBuildRetVoid(builder);
+            }, name);
+        }
+
+        @ASMGenerator(method = "gen_store_byte_atomic")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
+        abstract void store_byte_atomic(Object base, long offset, byte value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_store_byte_atomic() {
+            return gen_store_atomic("store_byte_atomic", LLVMGlobals::int8_t, 1);
+        }
+
+        @ASMGenerator(method = "gen_store_short_atomic")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
+        abstract void store_short_atomic(Object base, long offset, short value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_store_short_atomic() {
+            return gen_store_atomic("store_short_atomic", LLVMGlobals::int16_t, 2);
+        }
+
+        @ASMGenerator(method = "gen_store_int_atomic")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
+        abstract void store_int_atomic(Object base, long offset, int value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_store_int_atomic() {
+            return gen_store_atomic("store_int_atomic", LLVMGlobals::int32_t, 4);
+        }
+
+        @ASMGenerator(method = "gen_store_long_atomic")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
+        abstract void store_long_atomic(Object base, long offset, long value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_store_long_atomic() {
+            //TODO: check alignment on 32-bit platforms
+            return gen_store_atomic("store_long_atomic", LLVMGlobals::int64_t, 8);
+        }
+
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class));
     }
@@ -391,6 +447,26 @@ public class ExtraMemoryAccess {
     public static long loadLongAtomic(Object base, long offset) {
         assert Native.INSTANCE != null;
         return Native.INSTANCE.load_long_atomic(base, offset);
+    }
+
+    public static void storeByteAtomic(Object base, long offset, byte value) {
+        assert Native.INSTANCE != null;
+        Native.INSTANCE.store_byte_atomic(base, offset, value);
+    }
+
+    public static void storeShortAtomic(Object base, long offset, short value) {
+        assert Native.INSTANCE != null;
+        Native.INSTANCE.store_short_atomic(base, offset, value);
+    }
+
+    public static void storeIntAtomic(Object base, long offset, int value) {
+        assert Native.INSTANCE != null;
+        Native.INSTANCE.store_int_atomic(base, offset, value);
+    }
+
+    public static void storeLongAtomic(Object base, long offset, long value) {
+        assert Native.INSTANCE != null;
+        Native.INSTANCE.store_long_atomic(base, offset, value);
     }
 
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
