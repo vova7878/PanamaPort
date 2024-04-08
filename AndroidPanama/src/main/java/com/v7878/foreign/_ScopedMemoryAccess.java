@@ -295,9 +295,21 @@ final class _ScopedMemoryAccess {
         }
     }
 
+    public static void putByteVolatile(_MemorySessionImpl session, Object base, long offset, byte value) {
+        try (var ignored = lock(session)) {
+            ExtraMemoryAccess.storeByteAtomic(base, offset, value);
+        }
+    }
+
     public static short getShortVolatile(_MemorySessionImpl session, Object base, long offset) {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.loadShortAtomic(base, offset);
+        }
+    }
+
+    public static void putShortVolatile(_MemorySessionImpl session, Object base, long offset, short value) {
+        try (var ignored = lock(session)) {
+            ExtraMemoryAccess.storeShortAtomic(base, offset, value);
         }
     }
 
@@ -307,9 +319,21 @@ final class _ScopedMemoryAccess {
         }
     }
 
+    public static void putIntVolatile(_MemorySessionImpl session, Object base, long offset, int value) {
+        try (var ignored = lock(session)) {
+            ExtraMemoryAccess.storeIntAtomic(base, offset, value);
+        }
+    }
+
     public static long getLongVolatile(_MemorySessionImpl session, Object base, long offset) {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.loadLongAtomic(base, offset);
+        }
+    }
+
+    public static void putLongVolatile(_MemorySessionImpl session, Object base, long offset, long value) {
+        try (var ignored = lock(session)) {
+            ExtraMemoryAccess.storeLongAtomic(base, offset, value);
         }
     }
 }

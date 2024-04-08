@@ -107,6 +107,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextByte(
                         _ScopedMemoryAccess.getByteVolatile(session, base, offset));
                 case SET -> _ScopedMemoryAccess.putByte(session, base, offset, accessor.nextByte());
+                case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putByteVolatile(
+                        session, base, offset, accessor.nextByte());
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -135,6 +137,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         convEndian(_ScopedMemoryAccess.getShortVolatile(session, base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putShortUnaligned(
                         session, base, offset, accessor.nextShort(), swap);
+                case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putShortVolatile(
+                        session, base, offset, convEndian(accessor.nextShort(), swap));
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -163,6 +167,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         (char) convEndian(_ScopedMemoryAccess.getShortVolatile(session, base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putCharUnaligned(
                         session, base, offset, accessor.nextChar(), swap);
+                case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putShortVolatile(
+                        session, base, offset, convEndian((short) accessor.nextChar(), swap));
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -191,6 +197,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         convEndian(_ScopedMemoryAccess.getIntVolatile(session, base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putIntUnaligned(
                         session, base, offset, accessor.nextInt(), swap);
+                case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putIntVolatile(
+                        session, base, offset, convEndian(accessor.nextInt(), swap));
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -227,6 +235,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         i2f(swap, _ScopedMemoryAccess.getIntVolatile(session, base, offset)));
                 case SET -> _ScopedMemoryAccess.putFloatUnaligned(
                         session, base, offset, accessor.nextFloat(), swap);
+                case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putIntVolatile(
+                        session, base, offset, f2i(swap, accessor.nextFloat()));
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -255,6 +265,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         convEndian(_ScopedMemoryAccess.getLongVolatile(session, base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putLongUnaligned(
                         session, base, offset, accessor.nextLong(), swap);
+                case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putLongVolatile(
+                        session, base, offset, convEndian(accessor.nextLong(), swap));
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -291,6 +303,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         l2d(swap, _ScopedMemoryAccess.getLongVolatile(session, base, offset)));
                 case SET -> _ScopedMemoryAccess.putDoubleUnaligned(
                         session, base, offset, accessor.nextDouble(), swap);
+                case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putLongVolatile(
+                        session, base, offset, d2l(swap, accessor.nextDouble()));
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
