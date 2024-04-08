@@ -336,4 +336,28 @@ final class _ScopedMemoryAccess {
             ExtraMemoryAccess.storeLongAtomic(base, offset, value);
         }
     }
+
+    public static byte getAndSetByte(_MemorySessionImpl session, Object base, long offset, byte value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicExchangeByte(base, offset, value);
+        }
+    }
+
+    public static short getAndSetShort(_MemorySessionImpl session, Object base, long offset, short value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicExchangeShort(base, offset, value);
+        }
+    }
+
+    public static int getAndSetInt(_MemorySessionImpl session, Object base, long offset, int value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicExchangeInt(base, offset, value);
+        }
+    }
+
+    public static long getAndSetLong(_MemorySessionImpl session, Object base, long offset, long value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicExchangeLong(base, offset, value);
+        }
+    }
 }

@@ -109,6 +109,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case SET -> _ScopedMemoryAccess.putByte(session, base, offset, accessor.nextByte());
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putByteVolatile(
                         session, base, offset, accessor.nextByte());
+                case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.getAndSetByte(session,
+                            base, offset, accessor.nextByte());
+                    accessor.moveToReturn().putNextByte(tmp);
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -139,6 +144,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         session, base, offset, accessor.nextShort(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putShortVolatile(
                         session, base, offset, convEndian(accessor.nextShort(), swap));
+                case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.getAndSetShort(session, base,
+                            offset, convEndian(accessor.nextShort(), swap));
+                    accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -169,6 +179,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         session, base, offset, accessor.nextChar(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putShortVolatile(
                         session, base, offset, convEndian((short) accessor.nextChar(), swap));
+                case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.getAndSetShort(session, base,
+                            offset, convEndian((short) accessor.nextChar(), swap));
+                    accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -199,6 +214,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         session, base, offset, accessor.nextInt(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putIntVolatile(
                         session, base, offset, convEndian(accessor.nextInt(), swap));
+                case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.getAndSetInt(session, base,
+                            offset, convEndian(accessor.nextInt(), swap));
+                    accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -237,6 +257,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         session, base, offset, accessor.nextFloat(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putIntVolatile(
                         session, base, offset, f2i(swap, accessor.nextFloat()));
+                case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.getAndSetInt(session, base,
+                            offset, f2i(swap, accessor.nextFloat()));
+                    accessor.moveToReturn().putNextFloat(i2f(swap, tmp));
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -267,6 +292,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         session, base, offset, accessor.nextLong(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putLongVolatile(
                         session, base, offset, convEndian(accessor.nextLong(), swap));
+                case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.getAndSetLong(session, base,
+                            offset, convEndian(accessor.nextLong(), swap));
+                    accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -305,6 +335,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                         session, base, offset, accessor.nextDouble(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putLongVolatile(
                         session, base, offset, d2l(swap, accessor.nextDouble()));
+                case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.getAndSetLong(session, base,
+                            offset, d2l(swap, accessor.nextDouble()));
+                    accessor.moveToReturn().putNextDouble(l2d(swap, tmp));
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
