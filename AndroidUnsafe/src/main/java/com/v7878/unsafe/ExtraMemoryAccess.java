@@ -4,6 +4,7 @@ import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAddIncoming;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMAtomicOrdering.LLVMAtomicOrderingSequentiallyConsistent;
+import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpAdd;
 import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXchg;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildAtomicRMW;
@@ -430,6 +431,42 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_exchange_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpXchg);
         }
 
+        @ASMGenerator(method = "gen_atomic_fetch_add_byte")
+        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
+        abstract byte atomic_fetch_add_byte(Object base, long offset, byte value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_add_byte() {
+            return gen_atomic_rmw("atomic_fetch_add_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpAdd);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_add_short")
+        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
+        abstract short atomic_fetch_add_short(Object base, long offset, short value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_add_short() {
+            return gen_atomic_rmw("atomic_fetch_add_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpAdd);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_add_int")
+        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
+        abstract int atomic_fetch_add_int(Object base, long offset, int value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_add_int() {
+            return gen_atomic_rmw("atomic_fetch_add_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpAdd);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_add_long")
+        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
+        abstract long atomic_fetch_add_long(Object base, long offset, long value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_add_long() {
+            return gen_atomic_rmw("atomic_fetch_add_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpAdd);
+        }
+
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class));
     }
@@ -546,6 +583,30 @@ public class ExtraMemoryAccess {
         assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_exchange_long(base, offset, value);
     }
+
+    public static byte atomicFetchAddByte(Object base, long offset, byte value) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_fetch_add_byte(base, offset, value);
+    }
+
+    public static short atomicFetchAddShort(Object base, long offset, short value) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_fetch_add_short(base, offset, value);
+    }
+
+    public static int atomicFetchAddInt(Object base, long offset, int value) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_fetch_add_int(base, offset, value);
+    }
+
+    //TODO: atomicFetchAddFloat
+
+    public static long atomicFetchAddLong(Object base, long offset, long value) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_fetch_add_long(base, offset, value);
+    }
+
+    //TODO: atomicFetchAddDouble
 
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
 
