@@ -30,6 +30,7 @@ import static com.v7878.llvm.TargetMachine.LLVMRelocMode.LLVMRelocDefault;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
+import com.v7878.llvm.Core;
 import com.v7878.llvm.TargetMachine.LLVMCodeGenOptLevel;
 import com.v7878.llvm.TargetMachine.LLVMCodeModel;
 import com.v7878.llvm.TargetMachine.LLVMRelocMode;
@@ -39,9 +40,6 @@ import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 
 public class LLVMGlobals {
-    public static final String HOST_TRIPLE = LLVMGetHostTriple();
-    public static final String HOST_CPU_NAME = LLVMGetHostCPUName();
-    public static final String HOST_CPU_FEATURES = LLVMGetHostCPUFeatures();
 
     static {
         LLVMInitializeNativeTarget();
@@ -52,7 +50,11 @@ public class LLVMGlobals {
         LLVMInitializeNativeDisassembler();
     }
 
+    public static final String HOST_TRIPLE = LLVMGetHostTriple();
+    public static final String HOST_CPU_NAME = LLVMGetHostCPUName();
+    public static final String HOST_CPU_FEATURES = LLVMGetHostCPUFeatures();
     public static final LLVMTargetRef HOST_TARGET = nothrows_run(() -> LLVMGetTargetFromTriple(HOST_TRIPLE));
+    public static final LLVMContextRef GLOBAL_CONTEXT = nothrows_run(Core::LLVMGetGlobalContext);
 
     public static LLVMContextRef newContext() {
         return LLVMContextCreate();
