@@ -1,5 +1,6 @@
 package com.v7878.llvm;
 
+import static com.v7878.unsafe.InstructionSet.ARM;
 import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.InstructionSet.X86;
@@ -33,6 +34,8 @@ public class Extra {
             return "+x87,+mmx,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+popcnt";
         if (CURRENT_INSTRUCTION_SET == ARM64)
             return "+fp-armv8,+neon,+v8a,+reserve-x18";
+        if (CURRENT_INSTRUCTION_SET == ARM)
+            return "+armv7-a,+neon,-thumb-mode,+soft-float-abi";
         return "";
     }
 }
