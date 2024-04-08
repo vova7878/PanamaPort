@@ -4,7 +4,9 @@ import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAddIncoming;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMAtomicOrdering.LLVMAtomicOrderingSequentiallyConsistent;
+import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXchg;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
+import static com.v7878.llvm.Core.LLVMBuildAtomicRMW;
 import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildCondBr;
 import static com.v7878.llvm.Core.LLVMBuildICmp;
@@ -55,6 +57,7 @@ import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.ValueLayout;
+import com.v7878.llvm.Core.LLVMAtomicRMWBinOp;
 import com.v7878.llvm.LLVMException;
 import com.v7878.llvm.Types.LLVMBasicBlockRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
@@ -372,6 +375,61 @@ public class ExtraMemoryAccess {
             return gen_store_atomic("store_long_atomic", LLVMGlobals::int64_t, 8);
         }
 
+        //TODO: set alignment?
+        private static byte[] gen_atomic_rmw(
+                String name, Function<LLVMContextRef, LLVMTypeRef> type, LLVMAtomicRMWBinOp op) {
+            return gen((context, module, builder) -> {
+                LLVMTypeRef var_type = type.apply(context);
+                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), var_type};
+                LLVMTypeRef f_type = LLVMFunctionType(var_type, arg_types, false);
+                LLVMValueRef function = LLVMAddFunction(module, name, f_type);
+                LLVMValueRef[] args = LLVMGetParams(function);
+
+                LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
+                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], var_type);
+                LLVMValueRef rmw = LLVMBuildAtomicRMW(builder, op, pointer, args[2],
+                        LLVMAtomicOrderingSequentiallyConsistent, false);
+
+                LLVMBuildRet(builder, rmw);
+            }, name);
+        }
+
+        @ASMGenerator(method = "gen_atomic_exchange_byte")
+        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
+        abstract byte atomic_exchange_byte(Object base, long offset, byte value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_exchange_byte() {
+            return gen_atomic_rmw("atomic_exchange_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpXchg);
+        }
+
+        @ASMGenerator(method = "gen_atomic_exchange_short")
+        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
+        abstract short atomic_exchange_short(Object base, long offset, short value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_exchange_short() {
+            return gen_atomic_rmw("atomic_exchange_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpXchg);
+        }
+
+        @ASMGenerator(method = "gen_atomic_exchange_int")
+        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
+        abstract int atomic_exchange_int(Object base, long offset, int value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_exchange_int() {
+            return gen_atomic_rmw("atomic_exchange_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpXchg);
+        }
+
+        @ASMGenerator(method = "gen_atomic_exchange_long")
+        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
+        abstract long atomic_exchange_long(Object base, long offset, long value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_exchange_long() {
+            return gen_atomic_rmw("atomic_exchange_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpXchg);
+        }
+
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class));
     }
@@ -467,6 +525,26 @@ public class ExtraMemoryAccess {
     public static void storeLongAtomic(Object base, long offset, long value) {
         assert Native.INSTANCE != null;
         Native.INSTANCE.store_long_atomic(base, offset, value);
+    }
+
+    public static byte atomicExchangeByte(Object base, long offset, byte value) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_exchange_byte(base, offset, value);
+    }
+
+    public static short atomicExchangeShort(Object base, long offset, short value) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_exchange_short(base, offset, value);
+    }
+
+    public static int atomicExchangeInt(Object base, long offset, int value) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_exchange_int(base, offset, value);
+    }
+
+    public static long atomicExchangeLong(Object base, long offset, long value) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_exchange_long(base, offset, value);
     }
 
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
