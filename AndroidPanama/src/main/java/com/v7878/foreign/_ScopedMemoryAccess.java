@@ -288,4 +288,28 @@ final class _ScopedMemoryAccess {
             AndroidUnsafe.putDoubleUnaligned(base, offset, value, swap);
         }
     }
+
+    public static byte getByteVolatile(_MemorySessionImpl session, Object base, long offset) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.loadByteAtomic(base, offset);
+        }
+    }
+
+    public static short getShortVolatile(_MemorySessionImpl session, Object base, long offset) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.loadShortAtomic(base, offset);
+        }
+    }
+
+    public static int getIntVolatile(_MemorySessionImpl session, Object base, long offset) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.loadIntAtomic(base, offset);
+        }
+    }
+
+    public static long getLongVolatile(_MemorySessionImpl session, Object base, long offset) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.loadLongAtomic(base, offset);
+        }
+    }
 }

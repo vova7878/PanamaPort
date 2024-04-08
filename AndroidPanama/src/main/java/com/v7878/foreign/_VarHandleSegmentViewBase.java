@@ -1,5 +1,6 @@
 package com.v7878.foreign;
 
+import static com.v7878.misc.Math.convEndian;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.invoke.VarHandleImpl.isReadOnly;
 
@@ -22,10 +23,10 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         _VarHandleSegmentViewBase transformer;
         if (carrier == byte.class) {
             transformer = new VarHandleSegmentAsBytes(swap, alignmentMask);
-        } else if (carrier == char.class) {
-            transformer = new VarHandleSegmentAsChars(swap, alignmentMask);
         } else if (carrier == short.class) {
             transformer = new VarHandleSegmentAsShorts(swap, alignmentMask);
+        } else if (carrier == char.class) {
+            transformer = new VarHandleSegmentAsChars(swap, alignmentMask);
         } else if (carrier == int.class) {
             transformer = new VarHandleSegmentAsInts(swap, alignmentMask);
         } else if (carrier == float.class) {
@@ -98,36 +99,13 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             long offset = accessor.nextLong();
             checkAddress(ms, offset, isReadOnly(mode));
             switch (mode) {
-                case GET -> accessor.moveToReturn().putNextByte(
-                        _ScopedMemoryAccess.getByte(ms.sessionImpl(), ms.unsafeGetBase(),
-                                getOffset(ms, offset)));
-                case SET -> _ScopedMemoryAccess.putByte(ms.sessionImpl(), ms.unsafeGetBase(),
-                        getOffset(ms, offset), accessor.nextByte());
-                default -> throw new UnsupportedOperationException("TODO");
-            }
-        }
-    }
-
-    private static final class VarHandleSegmentAsChars extends _VarHandleSegmentViewBase {
-
-        VarHandleSegmentAsChars(boolean swap, long alignmentMask) {
-            super(swap, 2, alignmentMask);
-        }
-
-        @Override
-        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
-            StackFrameAccessor accessor = stack.createAccessor();
-            _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
-                    accessor.nextReference(MemorySegment.class);
-            long offset = accessor.nextLong();
-            checkAddress(ms, offset, isReadOnly(mode));
-            switch (mode) {
-                case GET -> accessor.moveToReturn().putNextChar(
-                        _ScopedMemoryAccess.getCharUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                getOffset(ms, offset), swap));
-                case SET -> _ScopedMemoryAccess.putCharUnaligned(
-                        ms.sessionImpl(), ms.unsafeGetBase(),
-                        getOffset(ms, offset), accessor.nextChar(), swap);
+                case GET -> accessor.moveToReturn().putNextByte(_ScopedMemoryAccess.getByte(
+                        ms.sessionImpl(), ms.unsafeGetBase(), getOffset(ms, offset)));
+                case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextByte(
+                        _ScopedMemoryAccess.getByteVolatile(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset)));
+                case SET -> _ScopedMemoryAccess.putByte(ms.sessionImpl(),
+                        ms.unsafeGetBase(), getOffset(ms, offset), accessor.nextByte());
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -148,11 +126,42 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             checkAddress(ms, offset, isReadOnly(mode));
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextShort(
-                        _ScopedMemoryAccess.getShortUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                getOffset(ms, offset), swap));
+                        _ScopedMemoryAccess.getShortUnaligned(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset), swap));
+                case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextShort(
+                        convEndian(_ScopedMemoryAccess.getShortVolatile(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset)), swap));
                 case SET -> _ScopedMemoryAccess.putShortUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         getOffset(ms, offset), accessor.nextShort(), swap);
+                default -> throw new UnsupportedOperationException("TODO");
+            }
+        }
+    }
+
+    private static final class VarHandleSegmentAsChars extends _VarHandleSegmentViewBase {
+
+        VarHandleSegmentAsChars(boolean swap, long alignmentMask) {
+            super(swap, 2, alignmentMask);
+        }
+
+        @Override
+        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
+            StackFrameAccessor accessor = stack.createAccessor();
+            _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
+                    accessor.nextReference(MemorySegment.class);
+            long offset = accessor.nextLong();
+            checkAddress(ms, offset, isReadOnly(mode));
+            switch (mode) {
+                case GET -> accessor.moveToReturn().putNextChar(
+                        _ScopedMemoryAccess.getCharUnaligned(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset), swap));
+                case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextChar(
+                        (char) convEndian(_ScopedMemoryAccess.getShortVolatile(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset)), swap));
+                case SET -> _ScopedMemoryAccess.putCharUnaligned(
+                        ms.sessionImpl(), ms.unsafeGetBase(),
+                        getOffset(ms, offset), accessor.nextChar(), swap);
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -173,8 +182,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             checkAddress(ms, offset, isReadOnly(mode));
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextInt(
-                        _ScopedMemoryAccess.getIntUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                getOffset(ms, offset), swap));
+                        _ScopedMemoryAccess.getIntUnaligned(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset), swap));
+                case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextInt(
+                        convEndian(_ScopedMemoryAccess.getIntVolatile(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset)), swap));
                 case SET -> _ScopedMemoryAccess.putIntUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         getOffset(ms, offset), accessor.nextInt(), swap);
@@ -189,6 +201,14 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             super(swap, 4, alignmentMask);
         }
 
+        static float i2f(boolean swap, int n) {
+            return Float.intBitsToFloat(convEndian(n, swap));
+        }
+
+        static int f2i(boolean swap, float n) {
+            return convEndian(Float.floatToRawIntBits(n), swap);
+        }
+
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
@@ -198,8 +218,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             checkAddress(ms, offset, isReadOnly(mode));
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextFloat(
-                        _ScopedMemoryAccess.getFloatUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                getOffset(ms, offset), swap));
+                        _ScopedMemoryAccess.getFloatUnaligned(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset), swap));
+                case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextFloat(
+                        i2f(swap, _ScopedMemoryAccess.getIntVolatile(
+                                ms.sessionImpl(), ms.unsafeGetBase(), getOffset(ms, offset))));
                 case SET -> _ScopedMemoryAccess.putFloatUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         getOffset(ms, offset), accessor.nextFloat(), swap);
@@ -223,8 +246,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             checkAddress(ms, offset, isReadOnly(mode));
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextLong(
-                        _ScopedMemoryAccess.getLongUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                getOffset(ms, offset), swap));
+                        _ScopedMemoryAccess.getLongUnaligned(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset), swap));
+                case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextLong(
+                        convEndian(_ScopedMemoryAccess.getLongVolatile(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset)), swap));
                 case SET -> _ScopedMemoryAccess.putLongUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         getOffset(ms, offset), accessor.nextLong(), swap);
@@ -239,6 +265,14 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             super(swap, 8, alignmentMask);
         }
 
+        static double l2d(boolean swap, long n) {
+            return Double.longBitsToDouble(convEndian(n, swap));
+        }
+
+        static long d2l(boolean swap, double n) {
+            return convEndian(Double.doubleToRawLongBits(n), swap);
+        }
+
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
@@ -248,8 +282,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             checkAddress(ms, offset, isReadOnly(mode));
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextDouble(
-                        _ScopedMemoryAccess.getDoubleUnaligned(ms.sessionImpl(), ms.unsafeGetBase(),
-                                getOffset(ms, offset), swap));
+                        _ScopedMemoryAccess.getDoubleUnaligned(ms.sessionImpl(),
+                                ms.unsafeGetBase(), getOffset(ms, offset), swap));
+                case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextDouble(
+                        l2d(swap, _ScopedMemoryAccess.getLongVolatile(
+                                ms.sessionImpl(), ms.unsafeGetBase(), getOffset(ms, offset))));
                 case SET -> _ScopedMemoryAccess.putDoubleUnaligned(
                         ms.sessionImpl(), ms.unsafeGetBase(),
                         getOffset(ms, offset), accessor.nextDouble(), swap);
