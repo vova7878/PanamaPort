@@ -728,11 +728,11 @@ public class AndroidUnsafe {
     }
 
     public static void putFloatUnaligned(Object o, long offset, float value) {
-        putLongUnaligned(o, offset, Float.floatToRawIntBits(value));
+        putIntUnaligned(o, offset, Float.floatToRawIntBits(value));
     }
 
     public static void putFloatUnaligned(Object o, long offset, float value, boolean swap) {
-        putLongUnaligned(o, offset, Float.floatToRawIntBits(value), swap);
+        putIntUnaligned(o, offset, Float.floatToRawIntBits(value), swap);
     }
 
     public static void putShortUnaligned(Object o, long offset, short value) {
