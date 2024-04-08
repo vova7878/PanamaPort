@@ -3,6 +3,7 @@ package com.v7878.unsafe;
 import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAddIncoming;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
+import static com.v7878.llvm.Core.LLVMAtomicOrdering.LLVMAtomicOrderingSequentiallyConsistent;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildCondBr;
@@ -10,6 +11,7 @@ import static com.v7878.llvm.Core.LLVMBuildICmp;
 import static com.v7878.llvm.Core.LLVMBuildInBoundsGEP;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
 import static com.v7878.llvm.Core.LLVMBuildPhi;
+import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMBuildStore;
 import static com.v7878.llvm.Core.LLVMBuildSub;
@@ -21,6 +23,7 @@ import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
 import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntULT;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Core.LLVMSetAlignment;
+import static com.v7878.llvm.Core.LLVMSetOrdering;
 import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BOOLEAN_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_INDEX_SCALE;
@@ -33,8 +36,11 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BYTE;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT_AS_RAW_INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.SHORT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int16_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
@@ -83,12 +89,12 @@ public class ExtraMemoryAccess {
             }
         }
 
-        @ASMGenerator(method = "generate_memset")
+        @ASMGenerator(method = "gen_memset")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD, BYTE})
         abstract void memset(Object base, long offset, long bytes, byte value);
 
         @SuppressWarnings("unused")
-        private static byte[] generate_memset() {
+        private static byte[] gen_memset() {
             final String name = "memset";
             return gen((context, module, builder) -> {
                 LLVMValueRef one = LLVMConstInt(intptr_t(context), 1, false);
@@ -127,7 +133,7 @@ public class ExtraMemoryAccess {
         }
 
         @SuppressWarnings("SameParameterValue")
-        private static void generate_memmove_modify(
+        private static void gen_memmove_modify(
                 LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder, String name,
                 LLVMTypeRef element_type, int align, Function<LLVMValueRef, LLVMValueRef> action) {
             LLVMValueRef one = LLVMConstInt(intptr_t(context), 1, false);
@@ -193,65 +199,121 @@ public class ExtraMemoryAccess {
             LLVMBuildRetVoid(builder);
         }
 
-        @ASMGenerator(method = "generate_memmove")
+        @ASMGenerator(method = "gen_memmove")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
         @SuppressWarnings("unused")
-        private static byte[] generate_memmove() {
+        private static byte[] gen_memmove() {
             final String name = "memmove";
-            return gen((context, module, builder) -> generate_memmove_modify(context, module, builder, name, int8_t(context), 1, value -> value), name);
+            return gen((context, module, builder) -> gen_memmove_modify(context, module, builder, name, int8_t(context), 1, value -> value), name);
         }
 
-        @ASMGenerator(method = "generate_memmove_swap_shorts")
+        @ASMGenerator(method = "gen_memmove_swap_shorts")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_shorts(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
         @SuppressWarnings("unused")
-        private static byte[] generate_memmove_swap_shorts() {
+        private static byte[] gen_memmove_swap_shorts() {
             final String name = "memmove_swap_shorts";
             return gen((context, module, builder) -> {
                 LLVMTypeRef[] bswap16_args = {int16_t(context)};
                 LLVMTypeRef bswap16_type = LLVMFunctionType(int16_t(context), bswap16_args, false);
                 LLVMValueRef bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
 
-                generate_memmove_modify(context, module, builder, name, int16_t(context), 1,
+                gen_memmove_modify(context, module, builder, name, int16_t(context), 1,
                         value -> LLVMBuildCall(builder, bswap16, new LLVMValueRef[]{value}, ""));
             }, name);
         }
 
-        @ASMGenerator(method = "generate_memmove_swap_ints")
+        @ASMGenerator(method = "gen_memmove_swap_ints")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_ints(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
         @SuppressWarnings("unused")
-        private static byte[] generate_memmove_swap_ints() {
+        private static byte[] gen_memmove_swap_ints() {
             final String name = "memmove_swap_ints";
             return gen((context, module, builder) -> {
                 LLVMTypeRef[] bswap32_args = {int32_t(context)};
                 LLVMTypeRef bswap32_type = LLVMFunctionType(int32_t(context), bswap32_args, false);
                 LLVMValueRef bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
 
-                generate_memmove_modify(context, module, builder, name, int32_t(context), 1,
+                gen_memmove_modify(context, module, builder, name, int32_t(context), 1,
                         value -> LLVMBuildCall(builder, bswap32, new LLVMValueRef[]{value}, ""));
             }, name);
         }
 
-        @ASMGenerator(method = "generate_memmove_swap_longs")
+        @ASMGenerator(method = "gen_memmove_swap_longs")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_longs(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
         @SuppressWarnings("unused")
-        private static byte[] generate_memmove_swap_longs() {
+        private static byte[] gen_memmove_swap_longs() {
             final String name = "memmove_swap_longs";
             return gen((context, module, builder) -> {
                 LLVMTypeRef[] bswap64_args = {int64_t(context)};
                 LLVMTypeRef bswap64_type = LLVMFunctionType(int64_t(context), bswap64_args, false);
                 LLVMValueRef bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
 
-                generate_memmove_modify(context, module, builder, name, int64_t(context), 1,
+                gen_memmove_modify(context, module, builder, name, int64_t(context), 1,
                         value -> LLVMBuildCall(builder, bswap64, new LLVMValueRef[]{value}, ""));
             }, name);
+        }
+
+        private static byte[] gen_load_atomic(
+                String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
+            return gen((context, module, builder) -> {
+                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context)};
+                LLVMTypeRef var_type = type.apply(context);
+                LLVMTypeRef f_type = LLVMFunctionType(var_type, arg_types, false);
+                LLVMValueRef function = LLVMAddFunction(module, name, f_type);
+                LLVMValueRef[] args = LLVMGetParams(function);
+
+                LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
+                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], var_type);
+                LLVMValueRef load = LLVMBuildLoad(builder, pointer, "");
+                LLVMSetAlignment(load, alignment);
+                LLVMSetOrdering(load, LLVMAtomicOrderingSequentiallyConsistent);
+
+                LLVMBuildRet(builder, load);
+            }, name);
+        }
+
+        @ASMGenerator(method = "gen_load_byte_atomic")
+        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
+        abstract byte load_byte_atomic(Object base, long offset);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_load_byte_atomic() {
+            return gen_load_atomic("load_byte_atomic", LLVMGlobals::int8_t, 1);
+        }
+
+        @ASMGenerator(method = "gen_load_short_atomic")
+        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
+        abstract short load_short_atomic(Object base, long offset);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_load_short_atomic() {
+            return gen_load_atomic("load_short_atomic", LLVMGlobals::int16_t, 2);
+        }
+
+        @ASMGenerator(method = "gen_load_int_atomic")
+        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
+        abstract int load_int_atomic(Object base, long offset);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_load_int_atomic() {
+            return gen_load_atomic("load_int_atomic", LLVMGlobals::int32_t, 4);
+        }
+
+        @ASMGenerator(method = "gen_load_long_atomic")
+        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
+        abstract long load_long_atomic(Object base, long offset);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_load_long_atomic() {
+            //TODO: check alignment on 32-bit platforms
+            return gen_load_atomic("load_long_atomic", LLVMGlobals::int64_t, 8);
         }
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
@@ -309,6 +371,26 @@ public class ExtraMemoryAccess {
             case 8 -> swapLongs(srcBase, srcOffset, destBase, destOffset, bytes / 8);
             default -> throw new IllegalArgumentException("Illegal element size: " + elemSize);
         }
+    }
+
+    public static byte loadByteAtomic(Object base, long offset) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.load_byte_atomic(base, offset);
+    }
+
+    public static short loadShortAtomic(Object base, long offset) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.load_short_atomic(base, offset);
+    }
+
+    public static int loadIntAtomic(Object base, long offset) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.load_int_atomic(base, offset);
+    }
+
+    public static long loadLongAtomic(Object base, long offset) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.load_long_atomic(base, offset);
     }
 
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
