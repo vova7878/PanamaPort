@@ -7,9 +7,11 @@ import static com.v7878.llvm.Core.LLVMAtomicOrdering.LLVMAtomicOrderingSequentia
 import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpAdd;
 import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXchg;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
+import static com.v7878.llvm.Core.LLVMBuildAtomicCmpXchg;
 import static com.v7878.llvm.Core.LLVMBuildAtomicRMW;
 import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildCondBr;
+import static com.v7878.llvm.Core.LLVMBuildExtractValue;
 import static com.v7878.llvm.Core.LLVMBuildICmp;
 import static com.v7878.llvm.Core.LLVMBuildInBoundsGEP;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
@@ -46,6 +48,7 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT_AS_RAW_INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.SHORT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int16_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int1_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int64_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int8_t;
@@ -467,6 +470,65 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_add_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpAdd);
         }
 
+        //TODO: weak version?
+        //TODO: set alignment?
+        private static byte[] gen_atomic_compare_and_exchange(
+                String name, Function<LLVMContextRef, LLVMTypeRef> type, boolean ret_value) {
+            return gen((context, module, builder) -> {
+                LLVMTypeRef var_type = type.apply(context);
+                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), var_type, var_type};
+                LLVMTypeRef r_type = ret_value ? var_type : int1_t(context);
+                LLVMTypeRef f_type = LLVMFunctionType(r_type, arg_types, false);
+                LLVMValueRef function = LLVMAddFunction(module, name, f_type);
+                LLVMValueRef[] args = LLVMGetParams(function);
+
+                LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
+                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], var_type);
+                LLVMValueRef cmpxchg = LLVMBuildAtomicCmpXchg(builder, pointer, args[2],
+                        args[3], LLVMAtomicOrderingSequentiallyConsistent,
+                        LLVMAtomicOrderingSequentiallyConsistent, false);
+                LLVMValueRef ret = LLVMBuildExtractValue(builder, cmpxchg, ret_value ? 0 : 1, "");
+
+                LLVMBuildRet(builder, ret);
+            }, name);
+        }
+
+        @ASMGenerator(method = "gen_atomic_compare_and_exchange_byte")
+        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE, BYTE})
+        abstract byte atomic_compare_and_exchange_byte(Object base, long offset, byte expected, byte desired);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_compare_and_exchange_byte() {
+            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_byte", LLVMGlobals::int8_t, true);
+        }
+
+        @ASMGenerator(method = "gen_atomic_compare_and_exchange_short")
+        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT, SHORT})
+        abstract short atomic_compare_and_exchange_short(Object base, long offset, short expected, short desired);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_compare_and_exchange_short() {
+            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_short", LLVMGlobals::int16_t, true);
+        }
+
+        @ASMGenerator(method = "gen_atomic_compare_and_exchange_int")
+        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT, INT})
+        abstract int atomic_compare_and_exchange_int(Object base, long offset, int expected, int desired);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_compare_and_exchange_int() {
+            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_int", LLVMGlobals::int32_t, true);
+        }
+
+        @ASMGenerator(method = "gen_atomic_compare_and_exchange_long")
+        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG, LONG})
+        abstract long atomic_compare_and_exchange_long(Object base, long offset, long expected, long desired);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_compare_and_exchange_long() {
+            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_long", LLVMGlobals::int64_t, true);
+        }
+
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class));
     }
@@ -607,6 +669,26 @@ public class ExtraMemoryAccess {
     }
 
     //TODO: atomicFetchAddDouble
+
+    public static byte atomicCompareAndExchangeByte(Object base, long offset, byte expected, byte desired) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_compare_and_exchange_byte(base, offset, expected, desired);
+    }
+
+    public static short atomicCompareAndExchangeShort(Object base, long offset, short expected, short desired) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_compare_and_exchange_short(base, offset, expected, desired);
+    }
+
+    public static int atomicCompareAndExchangeInt(Object base, long offset, int expected, int desired) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_compare_and_exchange_int(base, offset, expected, desired);
+    }
+
+    public static long atomicCompareAndExchangeLong(Object base, long offset, long expected, long desired) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_compare_and_exchange_long(base, offset, expected, desired);
+    }
 
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
 
