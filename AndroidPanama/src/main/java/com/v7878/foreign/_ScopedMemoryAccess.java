@@ -360,4 +360,28 @@ final class _ScopedMemoryAccess {
             return ExtraMemoryAccess.atomicExchangeLong(base, offset, value);
         }
     }
+
+    public static byte compareAndExchangeByte(_MemorySessionImpl session, Object base, long offset, byte expected, byte desired) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicCompareAndExchangeByte(base, offset, expected, desired);
+        }
+    }
+
+    public static short compareAndExchangeShort(_MemorySessionImpl session, Object base, long offset, short expected, short desired) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicCompareAndExchangeShort(base, offset, expected, desired);
+        }
+    }
+
+    public static int compareAndExchangeInt(_MemorySessionImpl session, Object base, long offset, int expected, int desired) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicCompareAndExchangeInt(base, offset, expected, desired);
+        }
+    }
+
+    public static long compareAndExchangeLong(_MemorySessionImpl session, Object base, long offset, long expected, long desired) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicCompareAndExchangeLong(base, offset, expected, desired);
+        }
+    }
 }
