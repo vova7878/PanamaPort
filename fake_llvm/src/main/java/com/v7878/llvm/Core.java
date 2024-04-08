@@ -1307,6 +1307,54 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMBuildIsNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildIsNotNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildPtrDiff(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildFence(LLVMBuilderRef B, LLVMAtomicOrdering ordering, boolean singleThread, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildAtomicRMW(LLVMBuilderRef B, LLVMAtomicRMWBinOp op, LLVMValueRef PTR, LLVMValueRef Val, LLVMAtomicOrdering ordering, boolean singleThread) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBuildAtomicCmpXchg(LLVMBuilderRef B, LLVMValueRef Ptr, LLVMValueRef Cmp, LLVMValueRef New, LLVMAtomicOrdering SuccessOrdering, LLVMAtomicOrdering FailureOrdering, boolean SingleThread) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsAtomicSingleThread(LLVMValueRef AtomicInst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetAtomicSingleThread(LLVMValueRef AtomicInst, boolean SingleThread) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMAtomicOrdering LLVMGetCmpXchgSuccessOrdering(LLVMValueRef CmpXchgInst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetCmpXchgSuccessOrdering(LLVMValueRef CmpXchgInst, LLVMAtomicOrdering Ordering) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMAtomicOrdering LLVMGetCmpXchgFailureOrdering(LLVMValueRef CmpXchgInst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetCmpXchgFailureOrdering(LLVMValueRef CmpXchgInst, LLVMAtomicOrdering Ordering) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMModuleProviderRef LLVMCreateModuleProviderForExistingModule(LLVMModuleRef M) {
         throw new UnsupportedOperationException("Stub!");
     }

@@ -3013,53 +3013,53 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMBuildInsertValue(long B, long AggVal, long EltVal, int Index, long Name);
 
-        /*@LibrarySymbol("LLVMBuildIsNull")
+        @LibrarySymbol(name = "LLVMBuildIsNull")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildIsNull(long, long, long);
+        abstract long LLVMBuildIsNull(long B, long Val, long Name);
 
-        @LibrarySymbol("LLVMBuildIsNotNull")
+        @LibrarySymbol(name = "LLVMBuildIsNotNull")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildIsNotNull(long, long, long);
+        abstract long LLVMBuildIsNotNull(long B, long Val, long Name);
 
-        @LibrarySymbol("LLVMBuildPtrDiff")
+        @LibrarySymbol(name = "LLVMBuildPtrDiff")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMBuildPtrDiff(long, long, long, long);
+        abstract long LLVMBuildPtrDiff(long B, long LHS, long RHS, long Name);
 
-        @LibrarySymbol("LLVMBuildFence")
+        @LibrarySymbol(name = "LLVMBuildFence")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, BOOL_AS_INT, LONG_AS_WORD})
-        abstract long LLVMBuildFence(long, int, boolean, long);
+        abstract long LLVMBuildFence(long B, int Ordering, boolean SingleThread, long Name);
 
-        @LibrarySymbol("LLVMBuildAtomicRMW")
+        @LibrarySymbol(name = "LLVMBuildAtomicRMW")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
-        abstract long LLVMBuildAtomicRMW(long, int, long, long, int, boolean);
+        abstract long LLVMBuildAtomicRMW(long B, int Op, long Ptr, long Val, int Ordering, boolean SingleThread);
 
-        @LibrarySymbol("LLVMBuildAtomicCmpXchg")
+        @LibrarySymbol(name = "LLVMBuildAtomicCmpXchg")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT, INT, BOOL_AS_INT})
-        abstract long LLVMBuildAtomicCmpXchg(long, long, long, long, int, int, boolean);
+        abstract long LLVMBuildAtomicCmpXchg(long B, long Ptr, long Cmp, long New, int SuccessOrdering, int FailureOrdering, boolean SingleThread);
 
-        @LibrarySymbol("LLVMIsAtomicSingleThread")
+        @LibrarySymbol(name = "LLVMIsAtomicSingleThread")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsAtomicSingleThread(long);
+        abstract boolean LLVMIsAtomicSingleThread(long AtomicInst);
 
-        @LibrarySymbol("LLVMSetAtomicSingleThread")
+        @LibrarySymbol(name = "LLVMSetAtomicSingleThread")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, BOOL_AS_INT})
-        abstract void LLVMSetAtomicSingleThread(long, boolean);
+        abstract void LLVMSetAtomicSingleThread(long AtomicInst, boolean SingleThread);
 
-        @LibrarySymbol("LLVMGetCmpXchgSuccessOrdering")
+        @LibrarySymbol(name = "LLVMGetCmpXchgSuccessOrdering")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetCmpXchgSuccessOrdering(long);
+        abstract int LLVMGetCmpXchgSuccessOrdering(long CmpXchgInst);
 
-        @LibrarySymbol("LLVMSetCmpXchgSuccessOrdering")
+        @LibrarySymbol(name = "LLVMSetCmpXchgSuccessOrdering")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetCmpXchgSuccessOrdering(long, int);
+        abstract void LLVMSetCmpXchgSuccessOrdering(long CmpXchgInst, int Ordering);
 
-        @LibrarySymbol("LLVMGetCmpXchgFailureOrdering")
+        @LibrarySymbol(name = "LLVMGetCmpXchgFailureOrdering")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetCmpXchgFailureOrdering(long);
+        abstract int LLVMGetCmpXchgFailureOrdering(long CmpXchgInst);
 
-        @LibrarySymbol("LLVMSetCmpXchgFailureOrdering")
+        @LibrarySymbol(name = "LLVMSetCmpXchgFailureOrdering")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetCmpXchgFailureOrdering(long, int);*/
+        abstract void LLVMSetCmpXchgFailureOrdering(long CmpXchgInst, int Ordering);
 
         @LibrarySymbol(name = "LLVMCreateModuleProviderForExistingModule")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
@@ -6654,42 +6654,65 @@ public class Core {
         }
     }
 
-    //LLVMValueRef LLVMBuildIsNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
-    //    return Native.INSTANCE.LLVMBuildIsNull();
-    //}
-    //LLVMValueRef LLVMBuildIsNotNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
-    //    return Native.INSTANCE.LLVMBuildIsNotNull();
-    //}
-    //LLVMValueRef LLVMBuildPtrDiff(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
-    //    return Native.INSTANCE.LLVMBuildPtrDiff();
-    //}
-    //LLVMValueRef LLVMBuildFence(LLVMBuilderRef B, LLVMAtomicOrdering ordering, boolean singleThread, String Name) {
-    //    return Native.INSTANCE.LLVMBuildFence();
-    //}
-    //LLVMValueRef LLVMBuildAtomicRMW(LLVMBuilderRef B, LLVMAtomicRMWBinOp op, LLVMValueRef PTR, LLVMValueRef Val, LLVMAtomicOrdering ordering, boolean singleThread) {
-    //    return Native.INSTANCE.LLVMBuildAtomicRMW();
-    //}
-    //LLVMValueRef LLVMBuildAtomicCmpXchg(LLVMBuilderRef B, LLVMValueRef Ptr, LLVMValueRef Cmp, LLVMValueRef New, LLVMAtomicOrdering SuccessOrdering, LLVMAtomicOrdering FailureOrdering, boolean SingleThread) {
-    //    return Native.INSTANCE.LLVMBuildAtomicCmpXchg();
-    //}
-    //boolean LLVMIsAtomicSingleThread(LLVMValueRef AtomicInst) {
-    //    return Native.INSTANCE.LLVMIsAtomicSingleThread();
-    //}
-    //void LLVMSetAtomicSingleThread(LLVMValueRef AtomicInst, boolean SingleThread) {
-    //    return Native.INSTANCE.LLVMSetAtomicSingleThread();
-    //}
-    //LLVMAtomicOrdering LLVMGetCmpXchgSuccessOrdering(LLVMValueRef CmpXchgInst) {
-    //    return Native.INSTANCE.LLVMGetCmpXchgSuccessOrdering();
-    //}
-    //void LLVMSetCmpXchgSuccessOrdering(LLVMValueRef CmpXchgInst, LLVMAtomicOrdering Ordering) {
-    //    return Native.INSTANCE.LLVMSetCmpXchgSuccessOrdering();
-    //}
-    //LLVMAtomicOrdering LLVMGetCmpXchgFailureOrdering(LLVMValueRef CmpXchgInst) {
-    //    return Native.INSTANCE.LLVMGetCmpXchgFailureOrdering();
-    //}
-    //void LLVMSetCmpXchgFailureOrdering(LLVMValueRef CmpXchgInst, LLVMAtomicOrdering Ordering) {
-    //    return Native.INSTANCE.LLVMSetCmpXchgFailureOrdering();
-    //}
+    public static LLVMValueRef LLVMBuildIsNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildIsNull(B.value(), Val.value(), c_Name.nativeAddress()));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildIsNotNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildIsNotNull(B.value(), Val.value(), c_Name.nativeAddress()));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildPtrDiff(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildPtrDiff(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildFence(LLVMBuilderRef B, LLVMAtomicOrdering Ordering, boolean SingleThread, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFence(B.value(), Ordering.value(), SingleThread, c_Name.nativeAddress()));
+        }
+    }
+
+    public static LLVMValueRef LLVMBuildAtomicRMW(LLVMBuilderRef B, LLVMAtomicRMWBinOp Op, LLVMValueRef Ptr, LLVMValueRef Val, LLVMAtomicOrdering Ordering, boolean SingleThread) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAtomicRMW(B.value(), Op.value(), Ptr.value(), Val.value(), Ordering.value(), SingleThread));
+    }
+
+    public static LLVMValueRef LLVMBuildAtomicCmpXchg(LLVMBuilderRef B, LLVMValueRef Ptr, LLVMValueRef Cmp, LLVMValueRef New, LLVMAtomicOrdering SuccessOrdering, LLVMAtomicOrdering FailureOrdering, boolean SingleThread) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAtomicCmpXchg(B.value(), Ptr.value(), Cmp.value(), New.value(), SuccessOrdering.value(), FailureOrdering.value(), SingleThread));
+    }
+
+    public static boolean LLVMIsAtomicSingleThread(LLVMValueRef AtomicInst) {
+        return Native.INSTANCE.LLVMIsAtomicSingleThread(AtomicInst.value());
+    }
+
+    public static void LLVMSetAtomicSingleThread(LLVMValueRef AtomicInst, boolean SingleThread) {
+        Native.INSTANCE.LLVMSetAtomicSingleThread(AtomicInst.value(), SingleThread);
+    }
+
+    public static LLVMAtomicOrdering LLVMGetCmpXchgSuccessOrdering(LLVMValueRef CmpXchgInst) {
+        return LLVMAtomicOrdering.of(Native.INSTANCE.LLVMGetCmpXchgSuccessOrdering(CmpXchgInst.value()));
+    }
+
+    public static void LLVMSetCmpXchgSuccessOrdering(LLVMValueRef CmpXchgInst, LLVMAtomicOrdering Ordering) {
+        Native.INSTANCE.LLVMSetCmpXchgSuccessOrdering(CmpXchgInst.value(), Ordering.value());
+    }
+
+    public static LLVMAtomicOrdering LLVMGetCmpXchgFailureOrdering(LLVMValueRef CmpXchgInst) {
+        return LLVMAtomicOrdering.of(Native.INSTANCE.LLVMGetCmpXchgFailureOrdering(CmpXchgInst.value()));
+    }
+
+    public static void LLVMSetCmpXchgFailureOrdering(LLVMValueRef CmpXchgInst, LLVMAtomicOrdering Ordering) {
+        Native.INSTANCE.LLVMSetCmpXchgFailureOrdering(CmpXchgInst.value(), Ordering.value());
+    }
 
     /*
      * @defgroup LLVMCCoreModuleProvider Module Providers
