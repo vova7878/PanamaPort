@@ -320,7 +320,6 @@ public class ExtraMemoryAccess {
 
         @SuppressWarnings("unused")
         private static byte[] gen_load_long_atomic() {
-            //TODO: check alignment on 32-bit platforms
             return gen_load_atomic("load_long_atomic", LLVMGlobals::int64_t, 8);
         }
 
@@ -376,11 +375,9 @@ public class ExtraMemoryAccess {
 
         @SuppressWarnings("unused")
         private static byte[] gen_store_long_atomic() {
-            //TODO: check alignment on 32-bit platforms
             return gen_store_atomic("store_long_atomic", LLVMGlobals::int64_t, 8);
         }
 
-        //TODO: set alignment?
         private static byte[] gen_atomic_rmw(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, LLVMAtomicRMWBinOp op) {
             return gen((context, module, builder) -> {
@@ -472,7 +469,6 @@ public class ExtraMemoryAccess {
         }
 
         //TODO: weak version?
-        //TODO: set alignment?
         private static byte[] gen_atomic_compare_and_exchange(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, boolean ret_value) {
             return gen((context, module, builder) -> {
@@ -595,17 +591,14 @@ public class ExtraMemoryAccess {
     }
 
     public static void swapShorts(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {
-        assert Native.INSTANCE != null;
         Native.INSTANCE.memmove_swap_shorts(destBase, destOffset, srcBase, srcOffset, elements);
     }
 
     public static void swapInts(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {
-        assert Native.INSTANCE != null;
         Native.INSTANCE.memmove_swap_ints(destBase, destOffset, srcBase, srcOffset, elements);
     }
 
     public static void swapLongs(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {
-        assert Native.INSTANCE != null;
         Native.INSTANCE.memmove_swap_longs(destBase, destOffset, srcBase, srcOffset, elements);
     }
 
@@ -624,126 +617,102 @@ public class ExtraMemoryAccess {
     }
 
     public static byte loadByteAtomic(Object base, long offset) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.load_byte_atomic(base, offset);
     }
 
     public static short loadShortAtomic(Object base, long offset) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.load_short_atomic(base, offset);
     }
 
     public static int loadIntAtomic(Object base, long offset) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.load_int_atomic(base, offset);
     }
 
     public static long loadLongAtomic(Object base, long offset) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.load_long_atomic(base, offset);
     }
 
     public static void storeByteAtomic(Object base, long offset, byte value) {
-        assert Native.INSTANCE != null;
         Native.INSTANCE.store_byte_atomic(base, offset, value);
     }
 
     public static void storeShortAtomic(Object base, long offset, short value) {
-        assert Native.INSTANCE != null;
         Native.INSTANCE.store_short_atomic(base, offset, value);
     }
 
     public static void storeIntAtomic(Object base, long offset, int value) {
-        assert Native.INSTANCE != null;
         Native.INSTANCE.store_int_atomic(base, offset, value);
     }
 
     public static void storeLongAtomic(Object base, long offset, long value) {
-        assert Native.INSTANCE != null;
         Native.INSTANCE.store_long_atomic(base, offset, value);
     }
 
     public static byte atomicExchangeByte(Object base, long offset, byte value) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_exchange_byte(base, offset, value);
     }
 
     public static short atomicExchangeShort(Object base, long offset, short value) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_exchange_short(base, offset, value);
     }
 
     public static int atomicExchangeInt(Object base, long offset, int value) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_exchange_int(base, offset, value);
     }
 
     public static long atomicExchangeLong(Object base, long offset, long value) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_exchange_long(base, offset, value);
     }
 
     public static byte atomicFetchAddByte(Object base, long offset, byte value) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_fetch_add_byte(base, offset, value);
     }
 
     public static short atomicFetchAddShort(Object base, long offset, short value) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_fetch_add_short(base, offset, value);
     }
 
     public static int atomicFetchAddInt(Object base, long offset, int value) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_fetch_add_int(base, offset, value);
     }
 
     //TODO: atomicFetchAddFloat
 
     public static long atomicFetchAddLong(Object base, long offset, long value) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_fetch_add_long(base, offset, value);
     }
 
     //TODO: atomicFetchAddDouble
 
     public static byte atomicCompareAndExchangeByte(Object base, long offset, byte expected, byte desired) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_compare_and_exchange_byte(base, offset, expected, desired);
     }
 
     public static short atomicCompareAndExchangeShort(Object base, long offset, short expected, short desired) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_compare_and_exchange_short(base, offset, expected, desired);
     }
 
     public static int atomicCompareAndExchangeInt(Object base, long offset, int expected, int desired) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_compare_and_exchange_int(base, offset, expected, desired);
     }
 
     public static long atomicCompareAndExchangeLong(Object base, long offset, long expected, long desired) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_compare_and_exchange_long(base, offset, expected, desired);
     }
 
     public static boolean atomicCompareAndSetByte(Object base, long offset, byte expected, byte desired) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_compare_and_set_byte(base, offset, expected, desired);
     }
 
     public static boolean atomicCompareAndSetShort(Object base, long offset, short expected, short desired) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_compare_and_set_short(base, offset, expected, desired);
     }
 
     public static boolean atomicCompareAndSetInt(Object base, long offset, int expected, int desired) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_compare_and_set_int(base, offset, expected, desired);
     }
 
     public static boolean atomicCompareAndSetLong(Object base, long offset, long expected, long desired) {
-        assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_compare_and_set_long(base, offset, expected, desired);
     }
 
