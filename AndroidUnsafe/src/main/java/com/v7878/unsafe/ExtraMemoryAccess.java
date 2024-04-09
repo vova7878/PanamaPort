@@ -40,6 +40,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BYTE;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
@@ -529,6 +530,42 @@ public class ExtraMemoryAccess {
             return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_long", LLVMGlobals::int64_t, true);
         }
 
+        @ASMGenerator(method = "gen_atomic_compare_and_set_byte")
+        @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE, BYTE})
+        abstract boolean atomic_compare_and_set_byte(Object base, long offset, byte expected, byte desired);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_compare_and_set_byte() {
+            return gen_atomic_compare_and_exchange("atomic_compare_and_set_byte", LLVMGlobals::int8_t, false);
+        }
+
+        @ASMGenerator(method = "gen_atomic_compare_and_set_short")
+        @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT, SHORT})
+        abstract boolean atomic_compare_and_set_short(Object base, long offset, short expected, short desired);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_compare_and_set_short() {
+            return gen_atomic_compare_and_exchange("atomic_compare_and_set_short", LLVMGlobals::int16_t, false);
+        }
+
+        @ASMGenerator(method = "gen_atomic_compare_and_set_int")
+        @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT, INT})
+        abstract boolean atomic_compare_and_set_int(Object base, long offset, int expected, int desired);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_compare_and_set_int() {
+            return gen_atomic_compare_and_exchange("atomic_compare_and_set_int", LLVMGlobals::int32_t, false);
+        }
+
+        @ASMGenerator(method = "gen_atomic_compare_and_set_long")
+        @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG, LONG})
+        abstract boolean atomic_compare_and_set_long(Object base, long offset, long expected, long desired);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_compare_and_set_long() {
+            return gen_atomic_compare_and_exchange("atomic_compare_and_set_long", LLVMGlobals::int64_t, false);
+        }
+
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class));
     }
@@ -688,6 +725,26 @@ public class ExtraMemoryAccess {
     public static long atomicCompareAndExchangeLong(Object base, long offset, long expected, long desired) {
         assert Native.INSTANCE != null;
         return Native.INSTANCE.atomic_compare_and_exchange_long(base, offset, expected, desired);
+    }
+
+    public static boolean atomicCompareAndSetByte(Object base, long offset, byte expected, byte desired) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_compare_and_set_byte(base, offset, expected, desired);
+    }
+
+    public static boolean atomicCompareAndSetShort(Object base, long offset, short expected, short desired) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_compare_and_set_short(base, offset, expected, desired);
+    }
+
+    public static boolean atomicCompareAndSetInt(Object base, long offset, int expected, int desired) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_compare_and_set_int(base, offset, expected, desired);
+    }
+
+    public static boolean atomicCompareAndSetLong(Object base, long offset, long expected, long desired) {
+        assert Native.INSTANCE != null;
+        return Native.INSTANCE.atomic_compare_and_set_long(base, offset, expected, desired);
     }
 
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
