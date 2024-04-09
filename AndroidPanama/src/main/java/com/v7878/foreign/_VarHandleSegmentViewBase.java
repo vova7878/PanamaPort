@@ -119,6 +119,12 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, accessor.nextByte(), accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
+                case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
+                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.compareAndSetByte(session, base,
+                            offset, accessor.nextByte(), accessor.nextByte());
+                    accessor.moveToReturn().putNextBoolean(tmp);
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -158,6 +164,12 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.compareAndExchangeShort(session, base, offset,
                             convEndian(accessor.nextShort(), swap), convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
+                }
+                case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
+                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.compareAndSetShort(session, base, offset,
+                            convEndian(accessor.nextShort(), swap), convEndian(accessor.nextShort(), swap));
+                    accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }
@@ -200,6 +212,13 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
+                case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
+                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.compareAndSetShort(session, base, offset,
+                            convEndian((short) accessor.nextChar(), swap),
+                            convEndian((short) accessor.nextChar(), swap));
+                    accessor.moveToReturn().putNextBoolean(tmp);
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -239,6 +258,12 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.compareAndExchangeInt(session, base, offset,
                             convEndian(accessor.nextInt(), swap), convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
+                }
+                case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
+                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.compareAndSetInt(session, base, offset,
+                            convEndian(accessor.nextInt(), swap), convEndian(accessor.nextInt(), swap));
+                    accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }
@@ -288,6 +313,12 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             f2i(swap, accessor.nextFloat()), f2i(swap, accessor.nextFloat()));
                     accessor.moveToReturn().putNextFloat(i2f(swap, tmp));
                 }
+                case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
+                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.compareAndSetInt(session, base, offset,
+                            f2i(swap, accessor.nextFloat()), f2i(swap, accessor.nextFloat()));
+                    accessor.moveToReturn().putNextBoolean(tmp);
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -327,6 +358,12 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.compareAndExchangeLong(session, base, offset,
                             convEndian(accessor.nextLong(), swap), convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
+                }
+                case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
+                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.compareAndSetLong(session, base, offset,
+                            convEndian(accessor.nextLong(), swap), convEndian(accessor.nextLong(), swap));
+                    accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }
@@ -375,6 +412,12 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.compareAndExchangeLong(session, base, offset,
                             d2l(swap, accessor.nextDouble()), d2l(swap, accessor.nextDouble()));
                     accessor.moveToReturn().putNextDouble(l2d(swap, tmp));
+                }
+                case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
+                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                    var tmp = _ScopedMemoryAccess.compareAndSetLong(session, base, offset,
+                            d2l(swap, accessor.nextDouble()), d2l(swap, accessor.nextDouble()));
+                    accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }

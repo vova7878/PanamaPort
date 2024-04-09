@@ -384,4 +384,28 @@ final class _ScopedMemoryAccess {
             return ExtraMemoryAccess.atomicCompareAndExchangeLong(base, offset, expected, desired);
         }
     }
+
+    public static boolean compareAndSetByte(_MemorySessionImpl session, Object base, long offset, byte expected, byte desired) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicCompareAndSetByte(base, offset, expected, desired);
+        }
+    }
+
+    public static boolean compareAndSetShort(_MemorySessionImpl session, Object base, long offset, short expected, short desired) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicCompareAndSetShort(base, offset, expected, desired);
+        }
+    }
+
+    public static boolean compareAndSetInt(_MemorySessionImpl session, Object base, long offset, int expected, int desired) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicCompareAndSetInt(base, offset, expected, desired);
+        }
+    }
+
+    public static boolean compareAndSetLong(_MemorySessionImpl session, Object base, long offset, long expected, long desired) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicCompareAndSetLong(base, offset, expected, desired);
+        }
+    }
 }
