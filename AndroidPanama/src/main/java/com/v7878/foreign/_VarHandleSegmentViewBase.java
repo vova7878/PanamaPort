@@ -125,6 +125,21 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, accessor.nextByte(), accessor.nextByte());
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndByte(session,
+                            base, offset, accessor.nextByte());
+                    accessor.moveToReturn().putNextByte(tmp);
+                }
+                case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrByte(session,
+                            base, offset, accessor.nextByte());
+                    accessor.moveToReturn().putNextByte(tmp);
+                }
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorByte(session,
+                            base, offset, accessor.nextByte());
+                    accessor.moveToReturn().putNextByte(tmp);
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -170,6 +185,21 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.compareAndSetShort(session, base, offset,
                             convEndian(accessor.nextShort(), swap), convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
+                }
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndShort(session, base,
+                            offset, convEndian(accessor.nextShort(), swap));
+                    accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
+                }
+                case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrShort(session, base,
+                            offset, convEndian(accessor.nextShort(), swap));
+                    accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
+                }
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorShort(session, base,
+                            offset, convEndian(accessor.nextShort(), swap));
+                    accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }
@@ -219,6 +249,21 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndShort(session, base,
+                            offset, convEndian((short) accessor.nextChar(), swap));
+                    accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
+                }
+                case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrShort(session, base,
+                            offset, convEndian((short) accessor.nextChar(), swap));
+                    accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
+                }
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorShort(session, base,
+                            offset, convEndian((short) accessor.nextChar(), swap));
+                    accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -264,6 +309,21 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.compareAndSetInt(session, base, offset,
                             convEndian(accessor.nextInt(), swap), convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
+                }
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndInt(session, base,
+                            offset, convEndian(accessor.nextInt(), swap));
+                    accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
+                }
+                case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrInt(session, base,
+                            offset, convEndian(accessor.nextInt(), swap));
+                    accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
+                }
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorInt(session, base,
+                            offset, convEndian(accessor.nextInt(), swap));
+                    accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }
@@ -364,6 +424,21 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.compareAndSetLong(session, base, offset,
                             convEndian(accessor.nextLong(), swap), convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
+                }
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndLong(session, base,
+                            offset, convEndian(accessor.nextLong(), swap));
+                    accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
+                }
+                case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrLong(session, base,
+                            offset, convEndian(accessor.nextLong(), swap));
+                    accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
+                }
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorLong(session, base,
+                            offset, convEndian(accessor.nextLong(), swap));
+                    accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }

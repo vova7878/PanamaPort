@@ -361,6 +361,78 @@ final class _ScopedMemoryAccess {
         }
     }
 
+    public static byte getAndBitwiseAndByte(_MemorySessionImpl session, Object base, long offset, byte value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAndByte(base, offset, value);
+        }
+    }
+
+    public static short getAndBitwiseAndShort(_MemorySessionImpl session, Object base, long offset, short value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAndShort(base, offset, value);
+        }
+    }
+
+    public static int getAndBitwiseAndInt(_MemorySessionImpl session, Object base, long offset, int value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAndInt(base, offset, value);
+        }
+    }
+
+    public static long getAndBitwiseAndLong(_MemorySessionImpl session, Object base, long offset, long value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAndLong(base, offset, value);
+        }
+    }
+
+    public static byte getAndBitwiseOrByte(_MemorySessionImpl session, Object base, long offset, byte value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchOrByte(base, offset, value);
+        }
+    }
+
+    public static short getAndBitwiseOrShort(_MemorySessionImpl session, Object base, long offset, short value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchOrShort(base, offset, value);
+        }
+    }
+
+    public static int getAndBitwiseOrInt(_MemorySessionImpl session, Object base, long offset, int value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchOrInt(base, offset, value);
+        }
+    }
+
+    public static long getAndBitwiseOrLong(_MemorySessionImpl session, Object base, long offset, long value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchOrLong(base, offset, value);
+        }
+    }
+
+    public static byte getAndBitwiseXorByte(_MemorySessionImpl session, Object base, long offset, byte value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchXorByte(base, offset, value);
+        }
+    }
+
+    public static short getAndBitwiseXorShort(_MemorySessionImpl session, Object base, long offset, short value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchXorShort(base, offset, value);
+        }
+    }
+
+    public static int getAndBitwiseXorInt(_MemorySessionImpl session, Object base, long offset, int value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchXorInt(base, offset, value);
+        }
+    }
+
+    public static long getAndBitwiseXorLong(_MemorySessionImpl session, Object base, long offset, long value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchXorLong(base, offset, value);
+        }
+    }
+
     public static byte compareAndExchangeByte(_MemorySessionImpl session, Object base, long offset, byte expected, byte desired) {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.atomicCompareAndExchangeByte(base, offset, expected, desired);
