@@ -4,8 +4,10 @@ import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAddIncoming;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMAtomicOrdering.LLVMAtomicOrderingSequentiallyConsistent;
-import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpAdd;
+import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpAnd;
+import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpOr;
 import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXchg;
+import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXor;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildAtomicCmpXchg;
 import static com.v7878.llvm.Core.LLVMBuildAtomicRMW;
@@ -432,40 +434,112 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_exchange_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpXchg);
         }
 
-        @ASMGenerator(method = "gen_atomic_fetch_add_byte")
+        @ASMGenerator(method = "gen_atomic_fetch_and_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
-        abstract byte atomic_fetch_add_byte(Object base, long offset, byte value);
+        abstract byte atomic_fetch_and_byte(Object base, long offset, byte value);
 
         @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_add_byte() {
-            return gen_atomic_rmw("atomic_fetch_add_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpAdd);
+        private static byte[] gen_atomic_fetch_and_byte() {
+            return gen_atomic_rmw("atomic_fetch_and_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpAnd);
         }
 
-        @ASMGenerator(method = "gen_atomic_fetch_add_short")
+        @ASMGenerator(method = "gen_atomic_fetch_and_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
-        abstract short atomic_fetch_add_short(Object base, long offset, short value);
+        abstract short atomic_fetch_and_short(Object base, long offset, short value);
 
         @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_add_short() {
-            return gen_atomic_rmw("atomic_fetch_add_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpAdd);
+        private static byte[] gen_atomic_fetch_and_short() {
+            return gen_atomic_rmw("atomic_fetch_and_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpAnd);
         }
 
-        @ASMGenerator(method = "gen_atomic_fetch_add_int")
+        @ASMGenerator(method = "gen_atomic_fetch_and_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
-        abstract int atomic_fetch_add_int(Object base, long offset, int value);
+        abstract int atomic_fetch_and_int(Object base, long offset, int value);
 
         @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_add_int() {
-            return gen_atomic_rmw("atomic_fetch_add_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpAdd);
+        private static byte[] gen_atomic_fetch_and_int() {
+            return gen_atomic_rmw("atomic_fetch_and_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpAnd);
         }
 
         @ASMGenerator(method = "gen_atomic_fetch_add_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
-        abstract long atomic_fetch_add_long(Object base, long offset, long value);
+        abstract long atomic_fetch_and_long(Object base, long offset, long value);
 
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_add_long() {
-            return gen_atomic_rmw("atomic_fetch_add_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpAdd);
+            return gen_atomic_rmw("atomic_fetch_and_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpAnd);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_or_byte")
+        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
+        abstract byte atomic_fetch_or_byte(Object base, long offset, byte value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_or_byte() {
+            return gen_atomic_rmw("atomic_fetch_or_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpOr);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_or_short")
+        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
+        abstract short atomic_fetch_or_short(Object base, long offset, short value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_or_short() {
+            return gen_atomic_rmw("atomic_fetch_or_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpOr);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_or_int")
+        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
+        abstract int atomic_fetch_or_int(Object base, long offset, int value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_or_int() {
+            return gen_atomic_rmw("atomic_fetch_or_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpOr);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_or_long")
+        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
+        abstract long atomic_fetch_or_long(Object base, long offset, long value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_or_long() {
+            return gen_atomic_rmw("atomic_fetch_or_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpOr);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_xor_byte")
+        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
+        abstract byte atomic_fetch_xor_byte(Object base, long offset, byte value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_xor_byte() {
+            return gen_atomic_rmw("atomic_fetch_xor_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpXor);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_xor_short")
+        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
+        abstract short atomic_fetch_xor_short(Object base, long offset, short value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_xor_short() {
+            return gen_atomic_rmw("atomic_fetch_xor_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpXor);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_xor_int")
+        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
+        abstract int atomic_fetch_xor_int(Object base, long offset, int value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_xor_int() {
+            return gen_atomic_rmw("atomic_fetch_xor_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpXor);
+        }
+
+        @ASMGenerator(method = "gen_atomic_fetch_xor_long")
+        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
+        abstract long atomic_fetch_xor_long(Object base, long offset, long value);
+
+        @SuppressWarnings("unused")
+        private static byte[] gen_atomic_fetch_xor_long() {
+            return gen_atomic_rmw("atomic_fetch_xor_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpXor);
         }
 
         //TODO: weak version?
@@ -664,25 +738,53 @@ public class ExtraMemoryAccess {
         return Native.INSTANCE.atomic_exchange_long(base, offset, value);
     }
 
-    public static byte atomicFetchAddByte(Object base, long offset, byte value) {
-        return Native.INSTANCE.atomic_fetch_add_byte(base, offset, value);
+    public static byte atomicFetchAndByte(Object base, long offset, byte value) {
+        return Native.INSTANCE.atomic_fetch_and_byte(base, offset, value);
     }
 
-    public static short atomicFetchAddShort(Object base, long offset, short value) {
-        return Native.INSTANCE.atomic_fetch_add_short(base, offset, value);
+    public static short atomicFetchAndShort(Object base, long offset, short value) {
+        return Native.INSTANCE.atomic_fetch_and_short(base, offset, value);
     }
 
-    public static int atomicFetchAddInt(Object base, long offset, int value) {
-        return Native.INSTANCE.atomic_fetch_add_int(base, offset, value);
+    public static int atomicFetchAndInt(Object base, long offset, int value) {
+        return Native.INSTANCE.atomic_fetch_and_int(base, offset, value);
     }
 
-    //TODO: atomicFetchAddFloat
-
-    public static long atomicFetchAddLong(Object base, long offset, long value) {
-        return Native.INSTANCE.atomic_fetch_add_long(base, offset, value);
+    public static long atomicFetchAndLong(Object base, long offset, long value) {
+        return Native.INSTANCE.atomic_fetch_and_long(base, offset, value);
     }
 
-    //TODO: atomicFetchAddDouble
+    public static byte atomicFetchOrByte(Object base, long offset, byte value) {
+        return Native.INSTANCE.atomic_fetch_or_byte(base, offset, value);
+    }
+
+    public static short atomicFetchOrShort(Object base, long offset, short value) {
+        return Native.INSTANCE.atomic_fetch_or_short(base, offset, value);
+    }
+
+    public static int atomicFetchOrInt(Object base, long offset, int value) {
+        return Native.INSTANCE.atomic_fetch_or_int(base, offset, value);
+    }
+
+    public static long atomicFetchOrLong(Object base, long offset, long value) {
+        return Native.INSTANCE.atomic_fetch_or_long(base, offset, value);
+    }
+
+    public static byte atomicFetchXorByte(Object base, long offset, byte value) {
+        return Native.INSTANCE.atomic_fetch_xor_byte(base, offset, value);
+    }
+
+    public static short atomicFetchXorShort(Object base, long offset, short value) {
+        return Native.INSTANCE.atomic_fetch_xor_short(base, offset, value);
+    }
+
+    public static int atomicFetchXorInt(Object base, long offset, int value) {
+        return Native.INSTANCE.atomic_fetch_xor_int(base, offset, value);
+    }
+
+    public static long atomicFetchXorLong(Object base, long offset, long value) {
+        return Native.INSTANCE.atomic_fetch_xor_long(base, offset, value);
+    }
 
     public static byte atomicCompareAndExchangeByte(Object base, long offset, byte expected, byte desired) {
         return Native.INSTANCE.atomic_compare_and_exchange_byte(base, offset, expected, desired);
