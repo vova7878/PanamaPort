@@ -28,9 +28,11 @@
 
 package com.v7878.foreign;
 
+import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
+import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
+
 import com.v7878.dex.TypeId;
 import com.v7878.invoke.VarHandle;
-import com.v7878.unsafe.AndroidUnsafe;
 
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -56,8 +58,6 @@ final class _ValueLayouts {
     }
 
     abstract static sealed class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends _AbstractLayout<V> {
-
-        static final int ADDRESS_SIZE_BYTES = AndroidUnsafe.ADDRESS_SIZE;
 
         private final Class<?> carrier;
         private final ByteOrder order;
@@ -131,7 +131,7 @@ final class _ValueLayouts {
             assert isValidCarrier(carrier);
             assert carrier != MemorySegment.class
                     // MemorySegment byteSize must always equal ADDRESS_SIZE_BYTES
-                    || byteSize == ADDRESS_SIZE_BYTES;
+                    || byteSize == ADDRESS_SIZE;
             assert !carrier.isPrimitive() ||
                     // Primitive class byteSize must always correspond
                     byteSize == (carrier == boolean.class ? 1 :
@@ -273,7 +273,8 @@ final class _ValueLayouts {
         }
 
         public static OfLong of(ByteOrder order) {
-            return new OfLongImpl(order, ADDRESS_SIZE_BYTES, null);
+            // Port-changed: alignment depends on instruction set
+            return new OfLongImpl(order, CURRENT_INSTRUCTION_SET.longAndDoubleAlignment(), null);
         }
     }
 
@@ -289,7 +290,8 @@ final class _ValueLayouts {
         }
 
         public static OfDouble of(ByteOrder order) {
-            return new OfDoubleImpl(order, ADDRESS_SIZE_BYTES, null);
+            // Port-changed: alignment depends on instruction set
+            return new OfDoubleImpl(order, CURRENT_INSTRUCTION_SET.longAndDoubleAlignment(), null);
         }
 
     }
@@ -336,7 +338,7 @@ final class _ValueLayouts {
         }
 
         public static AddressLayout of(ByteOrder order) {
-            return new OfAddressImpl(order, ADDRESS_SIZE_BYTES, ADDRESS_SIZE_BYTES, null, null);
+            return new OfAddressImpl(order, ADDRESS_SIZE, ADDRESS_SIZE, null, null);
         }
 
         // Port-changed

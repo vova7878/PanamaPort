@@ -444,7 +444,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code long},
-     * (platform-dependent) byte alignment set to {@code ADDRESS.byteSize()},
+     * byte alignment set to platform-dependent value,
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfLong JAVA_LONG = _ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder());
@@ -457,7 +457,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code double},
-     * (platform-dependent) byte alignment set to {@code ADDRESS.byteSize()},
+     * byte alignment set to platform-dependent value,
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfDouble JAVA_DOUBLE = _ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder());
