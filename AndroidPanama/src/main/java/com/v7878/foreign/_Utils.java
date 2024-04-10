@@ -43,6 +43,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.Utils.toHexString;
 
 import androidx.annotation.Keep;
 
@@ -367,10 +368,6 @@ final class _Utils {
         } catch (ArithmeticException ex) {
             throw new IllegalArgumentException("Layout size exceeds Long.MAX_VALUE");
         }
-    }
-
-    public static String toHexString(long value) {
-        return "0x" + Long.toHexString(value);
     }
 
     public enum BaseAndScale {

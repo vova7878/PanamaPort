@@ -11,7 +11,6 @@ import static com.v7878.llvm.Core.LLVMGetGlobalParent;
 import static com.v7878.llvm.Core.LLVMGetInsertBlock;
 import static com.v7878.llvm.Core.LLVMGetModuleContext;
 import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
-import static com.v7878.llvm.Core.LLVMPointerType;
 import static com.v7878.llvm.ObjectFile.LLVMGetSectionSegment;
 import static com.v7878.llvm.ObjectFile.LLVMGetSections;
 import static com.v7878.llvm.ObjectFile.LLVMGetSymbolAddress;

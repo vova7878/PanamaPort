@@ -35,6 +35,7 @@ import androidx.annotation.Keep;
 
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
+import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
 
 import java.lang.invoke.MethodHandle;
@@ -45,7 +46,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * This class provide support for constructing layout paths; that is, starting from a root path (see {@link #rootPath(MemoryLayout)}),
@@ -358,8 +358,7 @@ class _LayoutPath {
     }
 
     private String breadcrumbs() {
-        //TODO
-        return Stream.iterate(this, Objects::nonNull, lp -> lp.enclosing)
+        return Utils.iterate(this, Objects::nonNull, lp -> lp.enclosing)
                 .map(_LayoutPath::layout)
                 .map(Object::toString)
                 .collect(joining(", selected from: "));

@@ -10,6 +10,7 @@ import static com.v7878.unsafe.invoke.VarHandleImpl.isReadOnly;
 
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandle.AccessMode;
+import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.VarHandleImpl;
@@ -72,7 +73,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
     }
 
     static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
-        return new IllegalArgumentException("Misaligned access at address: " + _Utils.toHexString(address));
+        return new IllegalArgumentException("Misaligned access at address: " + Utils.toHexString(address));
     }
 
     void checkAddress(_AbstractMemorySegmentImpl ms, long offset, boolean ro) {
