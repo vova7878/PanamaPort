@@ -32,6 +32,7 @@ import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Core.LLVMSetAlignment;
 import static com.v7878.llvm.Core.LLVMSetOrdering;
 import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
+import static com.v7878.misc.Math.convEndian;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BOOLEAN_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_INDEX_SCALE;
@@ -40,6 +41,10 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
+import static com.v7878.unsafe.Utils.d2l;
+import static com.v7878.unsafe.Utils.f2i;
+import static com.v7878.unsafe.Utils.i2f;
+import static com.v7878.unsafe.Utils.l2d;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
@@ -736,6 +741,67 @@ public class ExtraMemoryAccess {
 
     public static long atomicExchangeLong(Object base, long offset, long value) {
         return Native.INSTANCE.atomic_exchange_long(base, offset, value);
+    }
+
+    public static byte atomicFetchAddByteWithCAS(Object base, long offset, byte delta) {
+        byte expectedValue;
+        do {
+            expectedValue = loadByteAtomic(base, offset);
+        } while (/* TODO: weak? */!atomicCompareAndSetByte(base, offset,
+                expectedValue, (byte) (expectedValue + delta)));
+        return expectedValue;
+    }
+
+    public static short atomicFetchAddShortWithCAS(Object base, long offset, short delta, boolean swap) {
+        short nativeExpectedValue, expectedValue;
+        do {
+            nativeExpectedValue = loadShortAtomic(base, offset);
+            expectedValue = convEndian(nativeExpectedValue, swap);
+        } while (/* TODO: weak? */!atomicCompareAndSetShort(base, offset,
+                nativeExpectedValue, convEndian((short) (expectedValue + delta), swap)));
+        return expectedValue;
+    }
+
+    public static int atomicFetchAddIntWithCAS(Object base, long offset, int delta, boolean swap) {
+        int nativeExpectedValue, expectedValue;
+        do {
+            nativeExpectedValue = loadIntAtomic(base, offset);
+            expectedValue = convEndian(nativeExpectedValue, swap);
+        } while (/* TODO: weak? */!atomicCompareAndSetInt(base, offset,
+                nativeExpectedValue, convEndian(expectedValue + delta, swap)));
+        return expectedValue;
+    }
+
+    public static float atomicFetchAddFloatWithCAS(Object base, long offset, float delta, boolean swap) {
+        int nativeExpectedValue;
+        float expectedValue;
+        do {
+            nativeExpectedValue = loadIntAtomic(base, offset);
+            expectedValue = i2f(nativeExpectedValue, swap);
+        } while (/* TODO: weak? */!atomicCompareAndSetInt(base, offset,
+                nativeExpectedValue, f2i(expectedValue + delta, swap)));
+        return expectedValue;
+    }
+
+    public static long atomicFetchAddLongWithCAS(Object base, long offset, long delta, boolean swap) {
+        long nativeExpectedValue, expectedValue;
+        do {
+            nativeExpectedValue = loadLongAtomic(base, offset);
+            expectedValue = convEndian(nativeExpectedValue, swap);
+        } while (/* TODO: weak? */!atomicCompareAndSetLong(base, offset,
+                nativeExpectedValue, convEndian(expectedValue + delta, swap)));
+        return expectedValue;
+    }
+
+    public static double atomicFetchAddDoubleWithCAS(Object base, long offset, double delta, boolean swap) {
+        long nativeExpectedValue;
+        double expectedValue;
+        do {
+            nativeExpectedValue = loadLongAtomic(base, offset);
+            expectedValue = l2d(nativeExpectedValue, swap);
+        } while (/* TODO: weak? */!atomicCompareAndSetLong(base, offset,
+                nativeExpectedValue, d2l(expectedValue + delta, swap)));
+        return expectedValue;
     }
 
     public static byte atomicFetchAndByte(Object base, long offset, byte value) {
