@@ -23,7 +23,9 @@ import com.v7878.foreign._StorageDescriptor.WrapperStorage;
 import java.util.Arrays;
 
 final class _LLVMCallingConvention {
+
     private static class x86_android {
+
         public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
             LLVMStorage retStorage = descriptor.returnLayout()
                     .map(layout -> layout instanceof GroupLayout ?
@@ -307,12 +309,49 @@ final class _LLVMCallingConvention {
         }
     }
 
+    private static class arm32_android {
+
+        private static MemoryLayout getRetWrapper(MemoryLayout layout) {
+            var size = layout.byteSize();
+            if (size == 1) {
+                return JAVA_BYTE;
+            } else if (size == 2) {
+                return JAVA_SHORT;
+            } else if (size == 3 || size == 4) {
+                return JAVA_INT;
+            } else {
+                throw shouldNotReachHere();
+            }
+        }
+
+        private static MemoryLayout getArgWrapper(MemoryLayout layout) {
+            long alignment = layout.byteAlignment() <= 4 ? 4 : 8;
+            MemoryLayout type = alignment == 4 ? JAVA_INT : JAVA_LONG;
+            return MemoryLayout.sequenceLayout((Math.addExact(
+                    layout.byteSize(), alignment - 1)) / alignment, type);
+        }
+
+        public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
+            LLVMStorage retStorage = descriptor.returnLayout()
+                    .map(layout -> layout instanceof GroupLayout ? (layout.byteSize() <= 4 ?
+                            new WrapperStorage(layout, getRetWrapper(layout)) :
+                            new MemoryStorage(layout)) : new RawStorage(layout))
+                    .orElse(new NoStorage(null));
+            LLVMStorage[] argStorages = descriptor.argumentLayouts().stream()
+                    .map(layout -> layout instanceof GroupLayout ?
+                            new WrapperStorage(layout, getArgWrapper(layout)) : new RawStorage(layout))
+                    .toArray(LLVMStorage[]::new);
+            return new _StorageDescriptor(retStorage, argStorages);
+        }
+    }
+
     public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
         return switch (CURRENT_INSTRUCTION_SET) {
             case X86 -> x86_android.computeStorages(descriptor);
             case X86_64 -> x86_64_android.computeStorages(descriptor);
             case ARM64 -> aarch64_android.computeStorages(descriptor);
-            //TODO: arm, riscv64
+            case ARM -> arm32_android.computeStorages(descriptor);
+            //TODO: riscv64
             default -> throw new UnsupportedOperationException("Not supported yet!");
         };
     }
