@@ -1,6 +1,7 @@
 package com.v7878.unsafe;
 
 
+import static com.v7878.misc.Math.convEndian;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
@@ -31,6 +32,23 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class Utils {
+
+    //TODO: move to misc
+    public static float i2f(int n, boolean swap) {
+        return Float.intBitsToFloat(convEndian(n, swap));
+    }
+
+    public static int f2i(float n, boolean swap) {
+        return convEndian(Float.floatToRawIntBits(n), swap);
+    }
+
+    public static double l2d(long n, boolean swap) {
+        return Double.longBitsToDouble(convEndian(n, swap));
+    }
+
+    public static long d2l(double n, boolean swap) {
+        return convEndian(Double.doubleToRawLongBits(n), swap);
+    }
 
     public interface FineClosable extends AutoCloseable {
         void close();

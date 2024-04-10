@@ -1,6 +1,10 @@
 package com.v7878.foreign;
 
 import static com.v7878.misc.Math.convEndian;
+import static com.v7878.unsafe.Utils.d2l;
+import static com.v7878.unsafe.Utils.f2i;
+import static com.v7878.unsafe.Utils.i2f;
+import static com.v7878.unsafe.Utils.l2d;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.invoke.VarHandleImpl.isReadOnly;
 
@@ -336,14 +340,6 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             super(swap, 4, alignmentMask);
         }
 
-        static float i2f(boolean swap, int n) {
-            return Float.intBitsToFloat(convEndian(n, swap));
-        }
-
-        static int f2i(boolean swap, float n) {
-            return convEndian(Float.floatToRawIntBits(n), swap);
-        }
-
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
@@ -358,25 +354,25 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case GET -> accessor.moveToReturn().putNextFloat(
                         _ScopedMemoryAccess.getFloatUnaligned(session, base, offset, swap));
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextFloat(
-                        i2f(swap, _ScopedMemoryAccess.getIntVolatile(session, base, offset)));
+                        i2f(_ScopedMemoryAccess.getIntVolatile(session, base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putFloatUnaligned(
                         session, base, offset, accessor.nextFloat(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putIntVolatile(
-                        session, base, offset, f2i(swap, accessor.nextFloat()));
+                        session, base, offset, f2i(accessor.nextFloat(), swap));
                 case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.getAndSetInt(session, base,
-                            offset, f2i(swap, accessor.nextFloat()));
-                    accessor.moveToReturn().putNextFloat(i2f(swap, tmp));
+                            offset, f2i(accessor.nextFloat(), swap));
+                    accessor.moveToReturn().putNextFloat(i2f(tmp, swap));
                 }
                 case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE, COMPARE_AND_EXCHANGE_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndExchangeInt(session, base, offset,
-                            f2i(swap, accessor.nextFloat()), f2i(swap, accessor.nextFloat()));
-                    accessor.moveToReturn().putNextFloat(i2f(swap, tmp));
+                            f2i(accessor.nextFloat(), swap), f2i(accessor.nextFloat(), swap));
+                    accessor.moveToReturn().putNextFloat(i2f(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
                         WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndSetInt(session, base, offset,
-                            f2i(swap, accessor.nextFloat()), f2i(swap, accessor.nextFloat()));
+                            f2i(accessor.nextFloat(), swap), f2i(accessor.nextFloat(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 default -> throw new UnsupportedOperationException("TODO");
@@ -451,14 +447,6 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             super(swap, 8, alignmentMask);
         }
 
-        static double l2d(boolean swap, long n) {
-            return Double.longBitsToDouble(convEndian(n, swap));
-        }
-
-        static long d2l(boolean swap, double n) {
-            return convEndian(Double.doubleToRawLongBits(n), swap);
-        }
-
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
@@ -473,25 +461,25 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                 case GET -> accessor.moveToReturn().putNextDouble(
                         _ScopedMemoryAccess.getDoubleUnaligned(session, base, offset, swap));
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextDouble(
-                        l2d(swap, _ScopedMemoryAccess.getLongVolatile(session, base, offset)));
+                        l2d(_ScopedMemoryAccess.getLongVolatile(session, base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putDoubleUnaligned(
                         session, base, offset, accessor.nextDouble(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putLongVolatile(
-                        session, base, offset, d2l(swap, accessor.nextDouble()));
+                        session, base, offset, d2l(accessor.nextDouble(), swap));
                 case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.getAndSetLong(session, base,
-                            offset, d2l(swap, accessor.nextDouble()));
-                    accessor.moveToReturn().putNextDouble(l2d(swap, tmp));
+                            offset, d2l(accessor.nextDouble(), swap));
+                    accessor.moveToReturn().putNextDouble(l2d(tmp, swap));
                 }
                 case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE, COMPARE_AND_EXCHANGE_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndExchangeLong(session, base, offset,
-                            d2l(swap, accessor.nextDouble()), d2l(swap, accessor.nextDouble()));
-                    accessor.moveToReturn().putNextDouble(l2d(swap, tmp));
+                            d2l(accessor.nextDouble(), swap), d2l(accessor.nextDouble(), swap));
+                    accessor.moveToReturn().putNextDouble(l2d(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
                         WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndSetLong(session, base, offset,
-                            d2l(swap, accessor.nextDouble()), d2l(swap, accessor.nextDouble()));
+                            d2l(accessor.nextDouble(), swap), d2l(accessor.nextDouble(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 default -> throw new UnsupportedOperationException("TODO");
