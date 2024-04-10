@@ -142,6 +142,7 @@ final class _Utils {
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = IS64BIT ? long.class : int.class;
         } else if (layout.carrier() == boolean.class) {
+            //TODO: disallow NUMERIC_ATOMIC_UPDATE_ACCESS_MODES?
             baseCarrier = byte.class;
         }
 

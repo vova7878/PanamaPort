@@ -8,7 +8,6 @@ import com.v7878.unsafe.access.JavaNioAccess;
 import java.io.FileDescriptor;
 import java.util.function.Supplier;
 
-// TODO: volatile and atomic access
 final class _ScopedMemoryAccess {
 
     /**

@@ -149,7 +149,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
-                default -> throw new UnsupportedOperationException("TODO");
+                default -> shouldNotReachHere();
             }
         }
     }
@@ -215,7 +215,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, accessor.nextShort(), swap);
                     accessor.moveToReturn().putNextShort(tmp);
                 }
-                default -> throw new UnsupportedOperationException("TODO");
+                default -> shouldNotReachHere();
             }
         }
     }
@@ -283,7 +283,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, (short) accessor.nextChar(), swap);
                     accessor.moveToReturn().putNextChar((char) tmp);
                 }
-                default -> throw new UnsupportedOperationException("TODO");
+                default -> shouldNotReachHere();
             }
         }
     }
@@ -349,7 +349,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, accessor.nextInt(), swap);
                     accessor.moveToReturn().putNextInt(tmp);
                 }
-                default -> throw new UnsupportedOperationException("TODO");
+                default -> shouldNotReachHere();
             }
         }
     }
@@ -400,7 +400,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, accessor.nextFloat(), swap);
                     accessor.moveToReturn().putNextFloat(tmp);
                 }
-                default -> throw new UnsupportedOperationException("TODO");
+                default -> shouldNotReachHere();
             }
         }
     }
@@ -466,7 +466,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, accessor.nextLong(), swap);
                     accessor.moveToReturn().putNextLong(tmp);
                 }
-                default -> throw new UnsupportedOperationException("TODO");
+                default -> shouldNotReachHere();
             }
         }
     }
@@ -517,7 +517,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, accessor.nextDouble(), swap);
                     accessor.moveToReturn().putNextDouble(tmp);
                 }
-                default -> throw new UnsupportedOperationException("TODO");
+                default -> shouldNotReachHere();
             }
         }
     }
