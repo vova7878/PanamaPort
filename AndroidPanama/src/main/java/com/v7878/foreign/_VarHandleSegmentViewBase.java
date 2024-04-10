@@ -144,6 +144,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
+                case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndAddByteWithCAS(session,
+                            base, offset, accessor.nextByte());
+                    accessor.moveToReturn().putNextByte(tmp);
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -204,6 +209,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.getAndBitwiseXorShort(session, base,
                             offset, convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
+                }
+                case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndAddShortWithCAS(session,
+                            base, offset, accessor.nextShort(), swap);
+                    accessor.moveToReturn().putNextShort(tmp);
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }
@@ -268,6 +278,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
+                case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndAddShortWithCAS(session,
+                            base, offset, (short) accessor.nextChar(), swap);
+                    accessor.moveToReturn().putNextChar((char) tmp);
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -329,6 +344,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
+                case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndAddIntWithCAS(session,
+                            base, offset, accessor.nextInt(), swap);
+                    accessor.moveToReturn().putNextInt(tmp);
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -374,6 +394,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.compareAndSetInt(session, base, offset,
                             f2i(accessor.nextFloat(), swap), f2i(accessor.nextFloat(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
+                }
+                case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndAddFloatWithCAS(session,
+                            base, offset, accessor.nextFloat(), swap);
+                    accessor.moveToReturn().putNextFloat(tmp);
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }
@@ -436,6 +461,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
+                case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndAddLongWithCAS(session,
+                            base, offset, accessor.nextLong(), swap);
+                    accessor.moveToReturn().putNextLong(tmp);
+                }
                 default -> throw new UnsupportedOperationException("TODO");
             }
         }
@@ -481,6 +511,11 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                     var tmp = _ScopedMemoryAccess.compareAndSetLong(session, base, offset,
                             d2l(accessor.nextDouble(), swap), d2l(accessor.nextDouble(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
+                }
+                case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
+                    var tmp = _ScopedMemoryAccess.getAndAddDoubleWithCAS(session,
+                            base, offset, accessor.nextDouble(), swap);
+                    accessor.moveToReturn().putNextDouble(tmp);
                 }
                 default -> throw new UnsupportedOperationException("TODO");
             }

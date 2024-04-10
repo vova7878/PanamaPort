@@ -361,6 +361,42 @@ final class _ScopedMemoryAccess {
         }
     }
 
+    public static byte getAndAddByteWithCAS(_MemorySessionImpl session, Object base, long offset, byte value) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAddByteWithCAS(base, offset, value);
+        }
+    }
+
+    public static short getAndAddShortWithCAS(_MemorySessionImpl session, Object base, long offset, short value, boolean swap) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAddShortWithCAS(base, offset, value, swap);
+        }
+    }
+
+    public static int getAndAddIntWithCAS(_MemorySessionImpl session, Object base, long offset, int value, boolean swap) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAddIntWithCAS(base, offset, value, swap);
+        }
+    }
+
+    public static float getAndAddFloatWithCAS(_MemorySessionImpl session, Object base, long offset, float value, boolean swap) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAddFloatWithCAS(base, offset, value, swap);
+        }
+    }
+
+    public static long getAndAddLongWithCAS(_MemorySessionImpl session, Object base, long offset, long value, boolean swap) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAddLongWithCAS(base, offset, value, swap);
+        }
+    }
+
+    public static double getAndAddDoubleWithCAS(_MemorySessionImpl session, Object base, long offset, double value, boolean swap) {
+        try (var ignored = lock(session)) {
+            return ExtraMemoryAccess.atomicFetchAddDoubleWithCAS(base, offset, value, swap);
+        }
+    }
+
     public static byte getAndBitwiseAndByte(_MemorySessionImpl session, Object base, long offset, byte value) {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.atomicFetchAndByte(base, offset, value);
