@@ -14,14 +14,11 @@ import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Reflection.getDeclaredMethods;
-import static com.v7878.unsafe.Reflection.setMethodType;
-import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_STATIC;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_VIRTUAL_REPLACE_THIS;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -36,21 +33,20 @@ import com.v7878.foreign.AddressLayout;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.foreign.SymbolLookup;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
+import java.util.Optional;
 
 import dalvik.annotation.optimization.CriticalNative;
-import dalvik.annotation.optimization.FastNative;
 
 public class JNIUtils {
     public static final GroupLayout JNI_NATIVE_INTERFACE_LAYOUT = structLayout(
@@ -400,7 +396,6 @@ public class JNIUtils {
             static final MemorySegment jni_interface;
 
             static {
-                //TODO: get unchecked functions?
                 jni_interface = getCurrentEnvPtr().get(JNIEnv_LAYOUT, 0);
             }
         }
@@ -410,6 +405,16 @@ public class JNIUtils {
     public static MemorySegment getJNINativeInterfaceFunction(String name) {
         return getJNINativeInterface().get(ADDRESS,
                 JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
+    }
+
+    public static SymbolLookup getJNINativeInterfaceLookup() {
+        return (name) -> {
+            try {
+                return Optional.of(getJNINativeInterfaceFunction(name));
+            } catch (Throwable th) {
+                return Optional.empty();
+            }
+        };
     }
 
     public static MemorySegment getJavaVMPtr() {
@@ -451,7 +456,6 @@ public class JNIUtils {
             static final MemorySegment jni_interface;
 
             static {
-                //TODO: get unchecked functions?
                 jni_interface = getJavaVMPtr().get(JavaVM_LAYOUT, 0);
             }
         }
@@ -463,19 +467,40 @@ public class JNIUtils {
                 JNI_INVOKE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
     }
 
+    public static SymbolLookup getJNIInvokeInterfaceLookup() {
+        return (name) -> {
+            try {
+                return Optional.of(getJNIInvokeInterfaceFunction(name));
+            } catch (Throwable th) {
+                return Optional.empty();
+            }
+        };
+    }
+
+    public static MemorySegment getRuntimePtr() {
+        class Holder {
+            static final MemorySegment ptr;
+
+            static {
+                ptr = ART.find("_ZN3art7Runtime9instance_E").orElseThrow(Utils::shouldNotReachHere)
+                        .reinterpret(ADDRESS_SIZE).get(ADDRESS, 0);
+            }
+        }
+        return Holder.ptr;
+    }
+
     @Keep
     private abstract static class Native {
 
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @SymbolGenerator(method = "genDeleteGlobalRef")
+        @LibrarySymbol(name = "NewGlobalRef")
+        @CallSignature(type = FAST_VIRTUAL_REPLACE_THIS, ret = LONG_AS_WORD, args = {OBJECT})
+        abstract long NewGlobalRef(Object obj);
+
+        @LibrarySymbol(name = "DeleteGlobalRef")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void DeleteGlobalRef(long env, long ref);
-
-        @SuppressWarnings("unused")
-        private static MemorySegment genDeleteGlobalRef() {
-            return getJNINativeInterfaceFunction("DeleteGlobalRef");
-        }
 
         @LibrarySymbol(name = "_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, OBJECT_AS_ADDRESS})
@@ -498,54 +523,25 @@ public class JNIUtils {
             return MemorySegment.ofAddress(getExecutableData(method));
         }
 
-        @SymbolGenerator(method = "genPushLocalFrame")
+        @LibrarySymbol(name = "PushLocalFrame")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void PushLocalFrame(long env, int capacity);
 
-        @SuppressWarnings("unused")
-        private static MemorySegment genPushLocalFrame() {
-            return JNIUtils.getJNINativeInterfaceFunction("PushLocalFrame");
-        }
-
         @SuppressWarnings({"SameParameterValue", "UnusedReturnValue"})
-        @SymbolGenerator(method = "genPopLocalFrame")
+        @LibrarySymbol(name = "PopLocalFrame")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long PopLocalFrame(long env, long survivor_ref);
 
-        @SuppressWarnings("unused")
-        private static MemorySegment genPopLocalFrame() {
-            return JNIUtils.getJNINativeInterfaceFunction("PopLocalFrame");
-        }
+        @LibrarySymbol(name = "FromReflectedMethod")
+        @CallSignature(type = FAST_VIRTUAL_REPLACE_THIS, ret = LONG_AS_WORD, args = {OBJECT})
+        abstract long FromReflectedMethod(Object method);
+
+        @LibrarySymbol(name = "FromReflectedField")
+        @CallSignature(type = FAST_VIRTUAL_REPLACE_THIS, ret = LONG_AS_WORD, args = {OBJECT})
+        abstract long FromReflectedField(Object field);
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, ART));
-    }
-
-    // TODO: use BulkLinker
-    @Keep
-    abstract static class RefUtils {
-        @FastNative
-        @SuppressWarnings("unused")
-        private native int NewGlobalRef32();
-
-        @FastNative
-        @SuppressWarnings("unused")
-        private native long NewGlobalRef64();
-
-        public static final MethodHandle newGlobalRef;
-
-        static {
-            Class<?> word = IS64BIT ? long.class : int.class;
-            String suffix = IS64BIT ? "64" : "32";
-
-            Method[] methods = getDeclaredMethods(RefUtils.class);
-
-            Method ngr = searchMethod(methods, "NewGlobalRef" + suffix);
-            registerNativeMethod(ngr, getJNINativeInterfaceFunction("NewGlobalRef").nativeAddress());
-
-            newGlobalRef = unreflectDirect(ngr);
-            setMethodType(newGlobalRef, MethodType.methodType(word, Object.class));
-        }
+                BulkLinker.processSymbols(SCOPE, Native.class, ART.or(getJNINativeInterfaceLookup())));
     }
 
     public static long NewLocalRef(Object obj) {
@@ -569,14 +565,7 @@ public class JNIUtils {
     }
 
     public static long NewGlobalRef(Object obj) {
-        return nothrows_run(() -> {
-            MethodHandle h = RefUtils.newGlobalRef;
-            if (IS64BIT) {
-                return (long) h.invokeExact(obj);
-            } else {
-                return ((int) h.invokeExact(obj)) & 0xffffffffL;
-            }
-        });
+        return Native.INSTANCE.NewGlobalRef(obj);
     }
 
     public static void DeleteGlobalRef(long ref) {
@@ -597,79 +586,11 @@ public class JNIUtils {
         return arr[0];
     }
 
-    // TODO: use BulkLinker
-    @Keep
-    private static class IDUtils {
-        @FastNative
-        @SuppressWarnings("unused")
-        private native int FromReflectedMethod32();
-
-        @FastNative
-        @SuppressWarnings("unused")
-        private native long FromReflectedMethod64();
-
-        @FastNative
-        @SuppressWarnings("unused")
-        private native int FromReflectedField32();
-
-        @FastNative
-        @SuppressWarnings("unused")
-        private native long FromReflectedField64();
-
-        public static final MethodHandle fromReflectedMethod;
-        public static final MethodHandle fromReflectedField;
-
-        static {
-            Class<?> word = IS64BIT ? long.class : int.class;
-            String suffix = IS64BIT ? "64" : "32";
-
-            Method[] methods = getDeclaredMethods(IDUtils.class);
-
-            Method frm = searchMethod(methods, "FromReflectedMethod" + suffix);
-            registerNativeMethod(frm, getJNINativeInterfaceFunction("FromReflectedMethod").nativeAddress());
-
-            fromReflectedMethod = unreflectDirect(frm);
-            setMethodType(fromReflectedMethod, MethodType.methodType(word, Method.class));
-
-            Method frf = searchMethod(methods, "FromReflectedField" + suffix);
-            registerNativeMethod(frf, getJNINativeInterfaceFunction("FromReflectedField").nativeAddress());
-
-            fromReflectedField = unreflectDirect(frf);
-            setMethodType(fromReflectedField, MethodType.methodType(word, Field.class));
-        }
-    }
-
     public static long FromReflectedMethod(Method method) {
-        return nothrows_run(() -> {
-            MethodHandle h = IDUtils.fromReflectedMethod;
-            if (IS64BIT) {
-                return (long) h.invokeExact(method);
-            } else {
-                return ((int) h.invokeExact(method)) & 0xffffffffL;
-            }
-        });
+        return Native.INSTANCE.FromReflectedMethod(method);
     }
 
     public static long FromReflectedField(Field field) {
-        return nothrows_run(() -> {
-            MethodHandle h = IDUtils.fromReflectedField;
-            if (IS64BIT) {
-                return (long) h.invokeExact(field);
-            } else {
-                return ((int) h.invokeExact(field)) & 0xffffffffL;
-            }
-        });
-    }
-
-    public static MemorySegment getRuntimePtr() {
-        class Holder {
-            static final MemorySegment ptr;
-
-            static {
-                ptr = ART.find("_ZN3art7Runtime9instance_E").orElseThrow(Utils::shouldNotReachHere)
-                        .reinterpret(ADDRESS_SIZE).get(ADDRESS, 0);
-            }
-        }
-        return Holder.ptr;
+        return Native.INSTANCE.FromReflectedField(field);
     }
 }
