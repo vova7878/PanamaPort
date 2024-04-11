@@ -1,11 +1,12 @@
 package com.v7878.unsafe.foreign;
 
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
+import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
 import static com.v7878.dex.bytecode.CodeBuilder.BinOp.AND_LONG;
+import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.VIRTUAL;
 import static com.v7878.dex.bytecode.CodeBuilder.UnOp.INT_TO_LONG;
 import static com.v7878.dex.bytecode.CodeBuilder.UnOp.LONG_TO_INT;
 import static com.v7878.dex.bytecode.CodeBuilder.UnOp.NEG_INT;
@@ -103,24 +104,6 @@ public class BulkLinker {
         }
     }
 
-    private static ProtoId stubProto(MapType ret, MapType[] args) {
-        return new ProtoId(TypeId.of(ret.forStub), Arrays.stream(args)
-                .map(lt -> TypeId.of(lt.forStub)).toArray(TypeId[]::new));
-    }
-
-    private static ProtoId implProto(MapType ret, MapType[] args) {
-        return new ProtoId(TypeId.of(ret.forImpl), Arrays.stream(args)
-                .map(lt -> TypeId.of(lt.forImpl)).toArray(TypeId[]::new));
-    }
-
-    private static Class<?>[] stubArgs(MapType[] args) {
-        return Arrays.stream(args).map(lt -> lt.forStub).toArray(Class[]::new);
-    }
-
-    private static Class<?>[] implArgs(MapType[] args) {
-        return Arrays.stream(args).map(lt -> lt.forImpl).toArray(Class[]::new);
-    }
-
     private abstract static sealed class SymbolSource
             permits ASMSource, SegmentSource {
     }
@@ -152,22 +135,24 @@ public class BulkLinker {
     }
 
     public enum CallType {
-        NATIVE_STATIC(true, ACC_NATIVE | ACC_STATIC, null),
-        NATIVE_VIRTUAL(false, ACC_NATIVE, null),
-        /*TODO: NATIVE_VIRTUAL_REPLACE_THIS,*/
-        FAST_STATIC(true, ACC_NATIVE | ACC_STATIC, AnnotationItem.FastNative()),
-        FAST_VIRTUAL(false, ACC_NATIVE, AnnotationItem.FastNative()),
-        /*TODO: FAST_VIRTUAL_REPLACE_THIS,*/
-        CRITICAL(true, ACC_NATIVE | ACC_STATIC, AnnotationItem.CriticalNative());
+        NATIVE_STATIC(false, true, ACC_NATIVE | ACC_STATIC),
+        NATIVE_VIRTUAL(false, false, ACC_NATIVE),
+        NATIVE_VIRTUAL_REPLACE_THIS(true, false, ACC_NATIVE),
+        FAST_STATIC(false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.FastNative()),
+        FAST_VIRTUAL(false, false, ACC_NATIVE, AnnotationItem.FastNative()),
+        FAST_VIRTUAL_REPLACE_THIS(true, false, ACC_NATIVE, AnnotationItem.FastNative()),
+        CRITICAL(false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.CriticalNative());
 
+        final boolean replaceThis;
         final boolean isStatic;
         final int flags;
         final AnnotationSet annotations;
 
-        CallType(boolean isStatic, int flags, AnnotationItem annotation) {
+        CallType(boolean replaceThis, boolean isStatic, int flags, AnnotationItem... annotations) {
+            this.replaceThis = replaceThis;
             this.isStatic = isStatic;
-            this.flags = flags;
-            this.annotations = annotation == null ? null : new AnnotationSet(annotation);
+            this.flags = flags | ACC_PRIVATE;
+            this.annotations = new AnnotationSet(annotations);
         }
     }
 
@@ -187,14 +172,46 @@ public class BulkLinker {
             this.call_type = call_type;
         }
 
-        public static SymbolInfo of(String name, CallType call_type, SymbolSource source,
-                                    MapType ret, MapType... args) {
+        static SymbolInfo of(String name, CallType call_type, SymbolSource source,
+                             MapType ret, MapType... args) {
             Objects.requireNonNull(name);
             Objects.requireNonNull(ret);
             Objects.requireNonNull(args);
             Objects.requireNonNull(source);
             Objects.requireNonNull(call_type);
+            if (call_type.replaceThis && (args.length < 1 || args[0] != MapType.OBJECT)) {
+                throw new IllegalArgumentException("call_type requires first object parameter");
+            }
             return new SymbolInfo(name, ret, args.clone(), source, call_type);
+        }
+
+        ProtoId stubProto() {
+            return new ProtoId(TypeId.of(ret.forStub),
+                    Arrays.stream(args, call_type.replaceThis ? 1 : 0, args.length)
+                            .map(lt -> TypeId.of(lt.forStub)).toArray(TypeId[]::new));
+        }
+
+        ProtoId implProto() {
+            return new ProtoId(TypeId.of(ret.forImpl), Arrays.stream(args)
+                    .map(lt -> TypeId.of(lt.forImpl)).toArray(TypeId[]::new));
+        }
+
+        Class<?>[] stubArgs() {
+            return Arrays.stream(args, call_type.replaceThis ? 1 : 0, args.length)
+                    .map(lt -> lt.forStub).toArray(Class[]::new);
+        }
+
+        Class<?>[] implArgs() {
+            return Arrays.stream(args).map(lt -> lt.forImpl).toArray(Class[]::new);
+        }
+
+        void checkImplSignature(Method method) {
+            if (method.getReturnType() == ret.forImpl) {
+                if (Utils.arrayContentsEq(method.getParameterTypes(), implArgs())) {
+                    return;
+                }
+            }
+            throw new IllegalStateException(method + " has wrong signature");
         }
     }
 
@@ -216,23 +233,20 @@ public class BulkLinker {
         }
 
         for (SymbolInfo info : infos) {
-            ProtoId raw_proto = stubProto(info.ret, info.args);
+            ProtoId raw_proto = info.stubProto();
             MethodId raw_method_id = new MethodId(impl_id, raw_proto, prefix + info.name);
             EncodedMethod raw_em = new EncodedMethod(raw_method_id, info.call_type.flags,
                     info.call_type.annotations, null, null);
-            if (info.call_type.isStatic) {
-                impl_def.getClassData().getDirectMethods().add(raw_em);
-            } else {
-                impl_def.getClassData().getVirtualMethods().add(raw_em);
-            }
+            impl_def.getClassData().getDirectMethods().add(raw_em);
 
-            ProtoId proto = implProto(info.ret, info.args);
+            ProtoId proto = info.implProto();
             MethodId method_id = new MethodId(impl_id, proto, info.name);
             final int reserved = 4;
-            int locals = reserved + raw_proto.getInputRegistersCount();
+            int locals = reserved + raw_proto.getInputRegistersCount() +
+                    /* this */ (info.call_type.isStatic ? 0 : 1);
             int[] regs = {/* call args */ reserved, /* stub args */ 0};
             EncodedMethod em = new EncodedMethod(method_id, ACC_PUBLIC).withCode(locals, b -> {
-                if (!info.call_type.isStatic) {
+                if (!info.call_type.isStatic && !info.call_type.replaceThis) {
                     b.move_object_16(b.l(regs[0]++), b.this_());
                 }
                 for (MapType type : info.args) {
@@ -266,7 +280,9 @@ public class BulkLinker {
                                 b.unop(NEG_INT, b.l(0), b.l(0));
                             }
                             if (IS64BIT) {
-                                b.const_4(b.l(1), 0);
+                                b.unop(INT_TO_LONG, b.l(0), b.l(0));
+                                b.const_wide(b.l(2), 0xffffffffL);
+                                b.binop_2addr(AND_LONG, b.l(0), b.l(2));
                                 b.move_wide_16(b.l(regs[0]), b.l(0));
                                 regs[0] += 2;
                             } else {
@@ -280,11 +296,11 @@ public class BulkLinker {
                 }
 
                 int call_regs = regs[0] - reserved;
+                var kind = info.call_type.isStatic ? STATIC : DIRECT;
                 if (call_regs == 0) {
-                    b.invoke(info.call_type.isStatic ? STATIC : VIRTUAL, raw_method_id);
+                    b.invoke(kind, raw_method_id);
                 } else {
-                    b.invoke_range(info.call_type.isStatic ? STATIC : VIRTUAL,
-                            raw_method_id, call_regs, b.l(reserved));
+                    b.invoke_range(kind, raw_method_id, call_regs, b.l(reserved));
                 }
 
                 switch (info.ret) {
@@ -316,7 +332,12 @@ public class BulkLinker {
                     case OBJECT_AS_ADDRESS -> {
                         // note: it's broken - pointer is cast to object
                         // TODO: check how will GC react to this?
-                        b.move_result_wide(b.l(0));
+                        if (IS64BIT) {
+                            b.move_result_wide(b.l(0));
+                            b.unop(LONG_TO_INT, b.l(0), b.l(0));
+                        } else {
+                            b.move_result(b.l(0));
+                        }
                         if (VM.isPoisonReferences()) {
                             b.unop(NEG_INT, b.l(0), b.l(0));
                         }
@@ -369,7 +390,7 @@ public class BulkLinker {
             Method[] methods = getDeclaredMethods(impl);
             for (int i = 0; i < infos.length; i++) {
                 SymbolInfo info = infos[i];
-                Method method = searchMethod(methods, prefix + info.name, stubArgs(info.args));
+                Method method = searchMethod(methods, prefix + info.name, info.stubArgs());
                 registerNativeMethod(method, symbols[i].nativeAddress());
             }
         }
@@ -451,15 +472,6 @@ public class BulkLinker {
         MapType ret();
 
         MapType[] args();
-    }
-
-    private static void checkSignature(Method method, CallSignature signature) {
-        if (method.getReturnType() == signature.ret().forImpl) {
-            if (Utils.arrayContentsEq(method.getParameterTypes(), implArgs(signature.args()))) {
-                return;
-            }
-        }
-        throw new IllegalStateException(method + " has wrong signature");
     }
 
     private static byte[] getCode(ASM asm) {
@@ -623,10 +635,10 @@ public class BulkLinker {
                 throw new IllegalStateException("ASM or Symbol sources are present, but signeture isn`t for method" + method);
             }
 
-            checkSignature(method, signature);
-
             SymbolSource source = asm_source == null ? sym_source : asm_source;
-            infos.add(SymbolInfo.of(method.getName(), signature.type(), source, signature.ret(), signature.args()));
+            var info = SymbolInfo.of(method.getName(), signature.type(), source, signature.ret(), signature.args());
+            info.checkImplSignature(method);
+            infos.add(info);
         }
 
         return processSymbols(arena, clazz, loader, infos.toArray(new SymbolInfo[0]));
