@@ -14,7 +14,6 @@ import android.system.ErrnoException;
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
-import com.v7878.foreign.Linker;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
@@ -113,7 +112,7 @@ class MappedMemoryUtils {
         abstract int madvise(long address, long length, int advice);
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, Linker.nativeLinker().defaultLookup()));
+                BulkLinker.processSymbols(SCOPE, Native.class));
     }
 
     private static int madvise(long address, long length, int advice) {

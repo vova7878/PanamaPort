@@ -1,42 +1,36 @@
 package com.v7878.unsafe.foreign;
 
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
-import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 
 import android.system.Os;
 
 import androidx.annotation.Keep;
 
-import com.v7878.foreign.Linker;
-import com.v7878.foreign.MemorySegment;
+import com.v7878.foreign.Arena;
+import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
-import java.lang.reflect.Method;
-
-import dalvik.annotation.optimization.CriticalNative;
-
-// TODO: use BulkLinker
 public class Errno {
 
-    static {
-        MemorySegment __errno = Linker.nativeLinker().defaultLookup()
-                .find("__errno").orElseThrow(ExceptionInInitializerError::new);
-        Method __errno_m = getDeclaredMethod(Errno.class, IS64BIT ? "__errno64" : "__errno32");
-        registerNativeMethod(__errno_m, __errno.nativeAddress());
+    @Keep
+    private abstract static class Native {
+
+        private static final Arena SCOPE = Arena.ofAuto();
+
+        @LibrarySymbol(name = "__errno")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
+        abstract long __errno();
+
+        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, Native.class));
     }
 
-    @Keep
-    @CriticalNative
-    private static native long __errno64();
-
-    @Keep
-    @CriticalNative
-    private static native int __errno32();
-
     public static long __errno() {
-        return IS64BIT ? __errno64() : __errno32() & 0xffffffffL;
+        return Native.INSTANCE.__errno();
     }
 
     public static int errno() {
