@@ -21,6 +21,7 @@ import com.v7878.unsafe.foreign.ELF.SymTab;
 import com.v7878.unsafe.foreign.MMap.MMapEntry;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class LibDL {
     public static final int RTLD_LOCAL = 0;
@@ -161,7 +162,7 @@ public class LibDL {
         }
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class));
+                BulkLinker.processSymbols(SCOPE, Native.class, unused -> Optional.empty()));
     }
 
     public static long dlopen(String filename, int flags) {

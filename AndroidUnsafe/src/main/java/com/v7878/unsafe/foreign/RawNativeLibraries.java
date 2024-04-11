@@ -1,6 +1,5 @@
 package com.v7878.unsafe.foreign;
 
-import static com.v7878.unsafe.foreign.LibDL.RTLD_DEFAULT;
 import static com.v7878.unsafe.foreign.LibDL.dlclose;
 import static com.v7878.unsafe.foreign.LibDL.dlerror;
 import static com.v7878.unsafe.foreign.LibDL.dlopen;
@@ -16,7 +15,7 @@ import java.util.Objects;
 
 public class RawNativeLibraries {
 
-    public static final NativeLibrary DEFAULT = load(RTLD_DEFAULT);
+    public static final NativeLibrary DEFAULT = load("libc.so");
 
     public static long findNative(ClassLoader loader, String name) {
         Objects.requireNonNull(name);
@@ -36,7 +35,7 @@ public class RawNativeLibraries {
         if (out[0] != 0) {
             return out[0];
         }
-        return dlsym_nochecks(RTLD_DEFAULT, name);
+        return DEFAULT.find(name);
     }
 
     private static String format_dlerror(String msg) {
