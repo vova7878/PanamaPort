@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 package com.v7878.foreign;
 
-import com.v7878.foreign._LayoutPath.PathElementImpl.PathKind;
 import com.v7878.invoke.VarHandle;
 
 import java.lang.invoke.MethodHandle;
@@ -832,7 +831,12 @@ public sealed interface MemoryLayout
      * @implSpec Implementations of this interface are immutable, thread-safe and
      * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
      */
-    sealed interface PathElement permits _LayoutPath.PathElementImpl {
+    sealed interface PathElement permits _LayoutPath.DereferenceElement,
+            _LayoutPath.GroupElementByIndex,
+            _LayoutPath.GroupElementByName,
+            _LayoutPath.SequenceElement,
+            _LayoutPath.SequenceElementByIndex,
+            _LayoutPath.SequenceElementByRange {
 
         /**
          * {@return a path element which selects a member layout with the given name in a
@@ -846,9 +850,7 @@ public sealed interface MemoryLayout
          * preferable.
          */
         static PathElement groupElement(String name) {
-            Objects.requireNonNull(name);
-            return new _LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
-                    path -> path.groupElement(name));
+            return new _LayoutPath.GroupElementByName(name);
         }
 
         /**
@@ -859,11 +861,7 @@ public sealed interface MemoryLayout
          * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement groupElement(long index) {
-            if (index < 0) {
-                throw new IllegalArgumentException("Index < 0");
-            }
-            return new _LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
-                    path -> path.groupElement(index));
+            return new _LayoutPath.GroupElementByIndex(index);
         }
 
         /**
@@ -874,11 +872,7 @@ public sealed interface MemoryLayout
          * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement sequenceElement(long index) {
-            if (index < 0) {
-                throw new IllegalArgumentException("Index must be positive: " + index);
-            }
-            return new _LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT_INDEX,
-                    path -> path.sequenceElement(index));
+            return new _LayoutPath.SequenceElementByIndex(index);
         }
 
         /**
@@ -904,14 +898,7 @@ public sealed interface MemoryLayout
          * @throws IllegalArgumentException if {@code start < 0}, or {@code step == 0}
          */
         static PathElement sequenceElement(long start, long step) {
-            if (start < 0) {
-                throw new IllegalArgumentException("Start index must be positive: " + start);
-            }
-            if (step == 0) {
-                throw new IllegalArgumentException("Step must be != 0: " + step);
-            }
-            return new _LayoutPath.PathElementImpl(PathKind.SEQUENCE_RANGE,
-                    path -> path.sequenceElement(start, step));
+            return new _LayoutPath.SequenceElementByRange(start, step);
         }
 
         /**
@@ -923,8 +910,7 @@ public sealed interface MemoryLayout
          * {@code 0 <= I < C}.
          */
         static PathElement sequenceElement() {
-            return new _LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT,
-                    _LayoutPath::sequenceElement);
+            return _LayoutPath.SequenceElement.instance();
         }
 
         /**
@@ -932,8 +918,7 @@ public sealed interface MemoryLayout
          * {@linkplain AddressLayout#targetLayout() target layout} (where set)}
          */
         static PathElement dereferenceElement() {
-            return new _LayoutPath.PathElementImpl(PathKind.DEREF_ELEMENT,
-                    _LayoutPath::derefElement);
+            return _LayoutPath.DereferenceElement.instance();
         }
     }
 
