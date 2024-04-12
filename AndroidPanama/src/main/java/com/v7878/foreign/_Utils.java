@@ -115,7 +115,7 @@ final class _Utils {
     private static VarHandle makeRawSegmentViewVarHandle(
             Class<?> carrier, long alignmentMask, ByteOrder order) {
         return _VarHandleSegmentViewBase.makeRawSegmentViewVarHandle(carrier,
-                alignmentMask, ByteOrder.nativeOrder().equals(order));
+                alignmentMask, !ByteOrder.nativeOrder().equals(order));
     }
 
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
