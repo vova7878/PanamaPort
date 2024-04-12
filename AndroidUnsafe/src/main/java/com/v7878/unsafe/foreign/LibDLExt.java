@@ -207,19 +207,8 @@ public class LibDLExt {
         public static final long TYPE_SHARED_ISOLATED = SHARED | ISOLATED;
     }
 
-    private static class dlextinfo {
-        final long flags;
-        final int library_fd;
-        final long library_fd_offset;
-        final long library_namespace;
-
-        dlextinfo(long flags, int library_fd,
-                  long library_fd_offset, long library_namespace) {
-            this.flags = flags;
-            this.library_fd = library_fd;
-            this.library_fd_offset = library_fd_offset;
-            this.library_namespace = library_namespace;
-        }
+    private record dlextinfo(long flags, int library_fd,
+                             long library_fd_offset, long library_namespace) {
     }
 
     @Keep

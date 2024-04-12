@@ -148,12 +148,7 @@ class _LinkerOptions {
         }
     }
 
-    public static final class FirstVariadicArg implements LinkerOptionImpl {
-        private final int index;
-
-        public FirstVariadicArg(int index) {
-            this.index = index;
-        }
+    public record FirstVariadicArg(int index) implements LinkerOptionImpl {
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
@@ -161,17 +156,10 @@ class _LinkerOptions {
                 throw new IllegalArgumentException("Index '" + index + "' not in bounds for descriptor: " + descriptor);
             }
         }
-
-        public int index() {
-            return index;
-        }
     }
 
-    public static final class ReturnInMemory implements LinkerOptionImpl {
+    public record ReturnInMemory() implements LinkerOptionImpl {
         public static final ReturnInMemory INSTANCE = new ReturnInMemory();
-
-        private ReturnInMemory() {
-        }
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
@@ -179,40 +167,21 @@ class _LinkerOptions {
         }
     }
 
-    public static final class CaptureCallState implements LinkerOptionImpl {
-        private final Set<_CapturableState> saved;
-
-        public CaptureCallState(Set<_CapturableState> saved) {
-            this.saved = saved;
-        }
+    public record CaptureCallState(Set<_CapturableState> saved) implements LinkerOptionImpl {
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // done during construction
         }
-
-        public Set<_CapturableState> saved() {
-            return saved;
-        }
     }
 
-    public enum Critical implements LinkerOptionImpl {
-        ALLOW_HEAP(true),
-        DONT_ALLOW_HEAP(false);
-
-        private final boolean allowHeapAccess;
-
-        Critical(boolean allowHeapAccess) {
-            this.allowHeapAccess = allowHeapAccess;
-        }
+    public record Critical(boolean allowHeapAccess) implements LinkerOptionImpl {
+        public static final Critical ALLOW_HEAP = new Critical(true);
+        public static final Critical DONT_ALLOW_HEAP = new Critical(false);
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // always allowed
-        }
-
-        public boolean allowHeapAccess() {
-            return allowHeapAccess;
         }
     }
 }

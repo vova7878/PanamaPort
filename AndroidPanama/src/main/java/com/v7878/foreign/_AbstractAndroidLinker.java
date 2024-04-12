@@ -30,42 +30,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         MemorySegment makeStub(MethodHandle target, Arena arena);
     }
 
-    private static final class LinkRequest {
-        private final FunctionDescriptor descriptor;
-        private final _LinkerOptions options;
-
-        private LinkRequest(FunctionDescriptor descriptor, _LinkerOptions options) {
-            this.descriptor = descriptor;
-            this.options = options;
-        }
-
-        public FunctionDescriptor descriptor() {
-            return descriptor;
-        }
-
-        public _LinkerOptions options() {
-            return options;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) return true;
-            return o instanceof LinkRequest that &&
-                    Objects.equals(this.descriptor, that.descriptor) &&
-                    Objects.equals(this.options, that.options);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(descriptor, options);
-        }
-
-        @Override
-        public String toString() {
-            return "LinkRequest[" +
-                    "descriptor=" + descriptor + ", " +
-                    "options=" + options + ']';
-        }
+    private record LinkRequest(FunctionDescriptor descriptor, _LinkerOptions options) {
     }
 
     private final SoftReferenceCache<LinkRequest, MethodHandle> DOWNCALL_CACHE = new SoftReferenceCache<>();

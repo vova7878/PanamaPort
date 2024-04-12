@@ -156,21 +156,8 @@ public class BulkLinker {
         }
     }
 
-    private static class SymbolInfo {
-        final String name;
-        final MapType ret;
-        final MapType[] args;
-        final SymbolSource source;
-        final CallType call_type;
-
-        private SymbolInfo(String name, MapType ret, MapType[] args,
-                           SymbolSource source, CallType call_type) {
-            this.name = name;
-            this.ret = ret;
-            this.args = args;
-            this.source = source;
-            this.call_type = call_type;
-        }
+    private record SymbolInfo(String name, MapType ret, MapType[] args,
+                              SymbolSource source, CallType call_type) {
 
         static SymbolInfo of(String name, CallType call_type, SymbolSource source,
                              MapType ret, MapType... args) {

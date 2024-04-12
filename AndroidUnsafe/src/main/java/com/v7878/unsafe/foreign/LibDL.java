@@ -89,17 +89,17 @@ public class LibDL {
 
     static {
         MMapEntry libdl = MMap.findFirstByPath("/\\S+/libdl.so");
-        SymTab symbols = ELF.readSymTab(libdl.path, true);
+        SymTab symbols = ELF.readSymTab(libdl.path(), true);
 
-        s_dladdr = symbols.findFunction("dladdr", libdl.start);
-        s_dlclose = symbols.findFunction("dlclose", libdl.start);
-        s_dlerror = symbols.findFunction("dlerror", libdl.start);
-        s_dlopen = symbols.findFunction("dlopen", libdl.start);
-        s_dlvsym = symbols.findFunction("dlvsym", libdl.start);
-        s_dlsym = symbols.findFunction("dlsym", libdl.start);
+        s_dladdr = symbols.findFunction("dladdr", libdl.start());
+        s_dlclose = symbols.findFunction("dlclose", libdl.start());
+        s_dlerror = symbols.findFunction("dlerror", libdl.start());
+        s_dlopen = symbols.findFunction("dlopen", libdl.start());
+        s_dlvsym = symbols.findFunction("dlvsym", libdl.start());
+        s_dlsym = symbols.findFunction("dlsym", libdl.start());
 
         // for LibDLExt
-        s_android_dlopen_ext = symbols.findFunction("android_dlopen_ext", libdl.start);
+        s_android_dlopen_ext = symbols.findFunction("android_dlopen_ext", libdl.start());
     }
 
     @Keep

@@ -563,6 +563,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
     }
 
+    @SuppressWarnings("ClassCanBeRecord")
     private static class ReturnWrapper implements TransformerI {
         private final MethodHandle handle;
         private final MemoryLayout ret_layout;

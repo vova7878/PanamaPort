@@ -40,14 +40,10 @@ final class _ScopedMemoryAccess {
     private _ScopedMemoryAccess() {
     }
 
-    private static final class SessionScopedLock implements FineClosable {
-        private final _MemorySessionImpl session;
-
-        public SessionScopedLock(_MemorySessionImpl session) {
+    private record SessionScopedLock(_MemorySessionImpl session) implements FineClosable {
+        private SessionScopedLock {
             session.acquire0();
-            this.session = session;
         }
-
 
         @Override
         public void close() {

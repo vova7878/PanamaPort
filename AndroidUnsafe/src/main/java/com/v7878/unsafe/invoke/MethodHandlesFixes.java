@@ -215,6 +215,7 @@ public class MethodHandlesFixes {
         return exact_invokers_cache.get(type, t -> newInvoker(t, true));
     }
 
+    @SuppressWarnings("ClassCanBeRecord")
     private static class JustInvoke implements TransformerI {
         private final MethodHandle target;
 

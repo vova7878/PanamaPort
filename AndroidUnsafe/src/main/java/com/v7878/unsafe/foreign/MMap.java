@@ -8,14 +8,7 @@ import java.util.regex.Pattern;
 
 class MMap {
 
-    public static class MMapEntry {
-        public final long start;
-        public final String path;
-
-        public MMapEntry(long start, String path) {
-            this.start = start;
-            this.path = path;
-        }
+    public record MMapEntry(long start, String path) {
     }
 
     private static final String PATTERN =
