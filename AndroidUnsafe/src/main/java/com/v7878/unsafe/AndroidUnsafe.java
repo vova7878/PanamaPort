@@ -891,24 +891,4 @@ public class AndroidUnsafe {
     public static Object getAndSetObject(Object obj, long offset, Object newValue) {
         return SunUnsafe.getAndSetObject(obj, offset, newValue);
     }
-
-    /*public static void putOrderedInt(Object obj, long offset, int newValue) {
-        unsafe.putOrderedInt(obj, offset, newValue);
-    }
-
-    public static void putOrderedLong(Object obj, long offset, long newValue) {
-        unsafe.putOrderedLong(obj, offset, newValue);
-    }
-
-    public static void putOrderedObject(Object obj, long offset, Object newValue) {
-        unsafe.putOrderedObject(obj, offset, newValue);
-    }
-
-    public static final int getAndAddInt(Object o, long offset, int delta) {
-        return unsafe.getAndAddInt(o, offset, delta);
-    }
-
-    public static final long getAndAddLong(Object o, long offset, long delta) {
-        return unsafe.getAndAddLong(o, offset, delta);
-    }*/
 }
