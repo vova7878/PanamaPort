@@ -37,10 +37,10 @@ dependencies {
     compileOnly project(':fake_panama')
     compileOnly project(':fake_llvm')
 
-    api 'com.github.vova7878:DexFile:v0.0.4'
+    api 'com.github.vova7878:DexFile:v0.0.5'
 
     implementation 'com.github.vova7878:SunUnsafeWrapper:v0.0.1'
-    implementation 'com.github.vova7878:AndroidMisc:v0.0.2'
+    implementation 'com.github.vova7878:AndroidMisc:v0.0.3'
 
     //TODO: runtimeOnlyApi?
     runtimeOnly project(':AndroidPanama')
