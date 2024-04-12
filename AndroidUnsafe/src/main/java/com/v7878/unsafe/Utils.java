@@ -3,6 +3,7 @@ package com.v7878.unsafe;
 
 import static com.v7878.misc.Math.convEndian;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.BuildConfig.DEBUG;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
 import android.annotation.SuppressLint;
@@ -38,6 +39,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class Utils {
+
+    public static final boolean DEBUG_BUILD = DEBUG;
 
     //TODO: move to misc
     public static float i2f(int n, boolean swap) {

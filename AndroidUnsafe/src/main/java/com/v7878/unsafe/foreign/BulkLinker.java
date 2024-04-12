@@ -510,6 +510,7 @@ public class BulkLinker {
                 checkPoisoning(cond.poisoning());
     }
 
+    //TODO: check if DEBUG_BUILD
     private static ASMSource getASMSource(
             ASM[] asms, ASMGenerator generator, Class<?> clazz,
             Map<Class<?>, Method[]> cached_methods, Method method) {
@@ -552,6 +553,7 @@ public class BulkLinker {
         return nothrows_run(() -> (MemorySegment) unreflect(method).invokeExact());
     }
 
+    //TODO: check if DEBUG_BUILD
     private static SegmentSource getSegmentSource(
             LibrarySymbol[] syms, SymbolGenerator generator, SymbolLookup lookup,
             Class<?> clazz, Map<Class<?>, Method[]> cached_methods, Method method) {

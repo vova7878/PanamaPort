@@ -25,6 +25,7 @@ import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
+import static com.v7878.unsafe.Utils.DEBUG_BUILD;
 import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
@@ -72,8 +73,7 @@ public class Transformers {
     private static final Constructor<MethodHandle> transformer_constructor;
     private static final InvokerI invoker;
 
-    //TODO: SKIP_CHECK_CAST = !DEBUG
-    private static final boolean SKIP_CHECK_CAST = true;
+    private static final boolean SKIP_CHECK_CAST = !DEBUG_BUILD;
 
     static {
         TypeId mh = TypeId.of(MethodHandle.class);
