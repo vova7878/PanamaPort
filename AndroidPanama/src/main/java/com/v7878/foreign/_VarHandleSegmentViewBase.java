@@ -1,10 +1,10 @@
 package com.v7878.foreign;
 
 import static com.v7878.misc.Math.convEndian;
-import static com.v7878.unsafe.Utils.d2l;
-import static com.v7878.unsafe.Utils.f2i;
-import static com.v7878.unsafe.Utils.i2f;
-import static com.v7878.unsafe.Utils.l2d;
+import static com.v7878.misc.Math.d2l;
+import static com.v7878.misc.Math.f2i;
+import static com.v7878.misc.Math.i2f;
+import static com.v7878.misc.Math.l2d;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.invoke.VarHandleImpl.isReadOnly;
 
