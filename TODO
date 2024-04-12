@@ -1,3 +1,3 @@
 1) Cache all BulkLinker usages as much as possible
 2) Strange segfaults in methodhandles (on all apis, but 26-28 especially)
-3) invert swap parameter in unsafe access
+3) Fix Xlint:unchecked warnings
