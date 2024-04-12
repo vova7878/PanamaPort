@@ -22,18 +22,24 @@ public enum InstructionSet {
     }
 
     private final int code_alignment;
-    private final int long_and_double_alignment;
+    private final int alignof_long_long;
+    private final int alignof_double;
 
-    InstructionSet(int code_alignment, int long_and_double_alignment) {
+    InstructionSet(int code_alignment, int alignof_ll_and_d) {
         this.code_alignment = code_alignment;
-        this.long_and_double_alignment = long_and_double_alignment;
+        this.alignof_long_long = alignof_ll_and_d;
+        this.alignof_double = alignof_ll_and_d;
     }
 
     public int codeAlignment() {
         return code_alignment;
     }
 
-    public int longAndDoubleAlignment() {
-        return long_and_double_alignment;
+    public int alignofLongLong() {
+        return alignof_long_long;
+    }
+
+    public int alignofDouble() {
+        return alignof_double;
     }
 }

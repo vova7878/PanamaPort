@@ -29,7 +29,6 @@
 package com.v7878.foreign;
 
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
-import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 
 import com.v7878.dex.TypeId;
 import com.v7878.invoke.VarHandle;
@@ -273,8 +272,7 @@ final class _ValueLayouts {
         }
 
         public static OfLong of(ByteOrder order) {
-            // Port-changed: alignment depends on instruction set
-            return new OfLongImpl(order, CURRENT_INSTRUCTION_SET.longAndDoubleAlignment(), null);
+            return new OfLongImpl(order, Long.BYTES, null);
         }
     }
 
@@ -290,8 +288,7 @@ final class _ValueLayouts {
         }
 
         public static OfDouble of(ByteOrder order) {
-            // Port-changed: alignment depends on instruction set
-            return new OfDoubleImpl(order, CURRENT_INSTRUCTION_SET.longAndDoubleAlignment(), null);
+            return new OfDoubleImpl(order, Double.BYTES, null);
         }
 
     }

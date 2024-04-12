@@ -4,10 +4,8 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BOOLEAN;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_CHAR;
-import static com.v7878.foreign.ValueLayout.JAVA_DOUBLE;
 import static com.v7878.foreign.ValueLayout.JAVA_FLOAT;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
-import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 
 import com.v7878.unsafe.Utils.SoftReferenceCache;
@@ -285,8 +283,8 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                         Map.entry("int", JAVA_INT),
                         Map.entry("float", JAVA_FLOAT),
                         Map.entry("long", ExtraLayouts.WORD),
-                        Map.entry("long long", JAVA_LONG),
-                        Map.entry("double", JAVA_DOUBLE),
+                        Map.entry("long long", ExtraLayouts.C_LONG_LONG),
+                        Map.entry("double", ExtraLayouts.C_DOUBLE),
                         Map.entry("void*", ADDRESS),
                         Map.entry("size_t", ExtraLayouts.WORD),
                         //TODO?: Map.entry("wchar_t", ???),
@@ -295,7 +293,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                         Map.entry("int8_t", JAVA_BYTE),
                         Map.entry("int16_t", JAVA_SHORT),
                         Map.entry("int32_t", JAVA_INT),
-                        Map.entry("int64_t", JAVA_LONG),
+                        Map.entry("int64_t", ExtraLayouts.C_LONG_LONG),
                         Map.entry("intptr_t", ExtraLayouts.WORD),
 
                         // unspecified JNI layouts
@@ -304,9 +302,9 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                         Map.entry("jbyte", JAVA_BYTE),
                         Map.entry("jshort", JAVA_SHORT),
                         Map.entry("jint", JAVA_INT),
-                        Map.entry("jlong", JAVA_LONG),
+                        Map.entry("jlong", ExtraLayouts.C_LONG_LONG),
                         Map.entry("jfloat", JAVA_FLOAT),
-                        Map.entry("jdouble", JAVA_DOUBLE)
+                        Map.entry("jdouble", ExtraLayouts.C_DOUBLE)
                 );
             }
         }
