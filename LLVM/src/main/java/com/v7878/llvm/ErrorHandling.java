@@ -83,6 +83,10 @@ public class ErrorHandling {
      * call to exit(1).
      */
     public static void LLVMInstallFatalErrorHandler(LLVMFatalErrorHandler Handler) {
+        if (Handler == null) {
+            LLVMResetFatalErrorHandler();
+            return;
+        }
         ErrorHandlerHolder.JAVA_HANDLER = Handler;
         Native.INSTANCE.LLVMInstallFatalErrorHandler(
                 ErrorHandlerHolder.NATIVE_HANDLER.nativeAddress());
