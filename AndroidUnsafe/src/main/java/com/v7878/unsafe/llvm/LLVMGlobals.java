@@ -13,6 +13,7 @@ import static com.v7878.llvm.Core.LLVMInt64TypeInContext;
 import static com.v7878.llvm.Core.LLVMInt8TypeInContext;
 import static com.v7878.llvm.Core.LLVMPointerType;
 import static com.v7878.llvm.Core.LLVMVoidTypeInContext;
+import static com.v7878.llvm.ErrorHandling.LLVMEnablePrettyStackTrace;
 import static com.v7878.llvm.Extra.LLVMGetHostCPUFeatures;
 import static com.v7878.llvm.Extra.LLVMGetHostCPUName;
 import static com.v7878.llvm.Extra.LLVMGetHostTriple;
@@ -28,6 +29,7 @@ import static com.v7878.llvm.TargetMachine.LLVMCreateTargetMachine;
 import static com.v7878.llvm.TargetMachine.LLVMGetTargetFromTriple;
 import static com.v7878.llvm.TargetMachine.LLVMRelocMode.LLVMRelocDefault;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.Utils.DEBUG_BUILD;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.llvm.Core;
@@ -42,6 +44,10 @@ import com.v7878.llvm.Types.LLVMTypeRef;
 public class LLVMGlobals {
 
     static {
+        if (DEBUG_BUILD) {
+            LLVMEnablePrettyStackTrace();
+        }
+
         LLVMInitializeNativeTarget();
         LLVMInitializeNativeTargetInfo();
         LLVMInitializeNativeTargetMC();
