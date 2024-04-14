@@ -38,6 +38,12 @@ import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
+/*===-- llvm-c/Core.h - Core Library C Interface ------------------*- C -*-===*\
+|*                                                                            *|
+|* This header declares the C interface to libLLVMCore.a, which implements    *|
+|* the LLVM intermediate representation.                                      *|
+|*                                                                            *|
+\*===----------------------------------------------------------------------===*/
 public class Core {
 
     public static class LLVMAttribute {

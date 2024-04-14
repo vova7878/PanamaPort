@@ -21,6 +21,16 @@ import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
+/*===-- llvm-c/Object.h - Object Lib C Iface --------------------*- C++ -*-===*/
+/*                                                                            */
+/* This header declares the C interface to libLLVMObject.a, which             */
+/* implements object file reading and writing.                                */
+/*                                                                            */
+/* Many exotic languages can interoperate with C code but have a harder time  */
+/* with C++ due to name mangling. So in addition to C, this interface enables */
+/* tools written in such languages.                                           */
+/*                                                                            */
+/*===----------------------------------------------------------------------===*/
 public class ObjectFile {
 
     /*

@@ -30,6 +30,16 @@ import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.Conditions;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
+/*===-- llvm-c/Target.h - Target Lib C Iface --------------------*- C++ -*-===*/
+/*                                                                            */
+/* This header declares the C interface to libLLVMTarget.a, which             */
+/* implements target information.                                             */
+/*                                                                            */
+/* Many exotic languages can interoperate with C code but have a harder time  */
+/* with C++ due to name mangling. So in addition to C, this interface enables */
+/* tools written in such languages.                                           */
+/*                                                                            */
+/*===----------------------------------------------------------------------===*/
 public class Target {
 
     /*

@@ -32,6 +32,16 @@ import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
 import java.util.function.Consumer;
 
+/*===-- llvm-c/ExecutionEngine.h - ExecutionEngine Lib C Iface --*- C++ -*-===*\
+|*                                                                            *|
+|* This header declares the C interface to libLLVMExecutionEngine.o, which    *|
+|* implements various analyses of the LLVM IR.                                *|
+|*                                                                            *|
+|* Many exotic languages can interoperate with C code but have a harder time  *|
+|* with C++ due to name mangling. So in addition to C, this interface enables *|
+|* tools written in such languages.                                           *|
+|*                                                                            *|
+\*===----------------------------------------------------------------------===*/
 @TargetApi(Build.VERSION_CODES.O_MR1)
 public class ExecutionEngine {
 

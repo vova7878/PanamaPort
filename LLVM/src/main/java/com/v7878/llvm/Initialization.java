@@ -14,6 +14,13 @@ import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
+/*===-- llvm-c/Initialization.h - Initialization C Interface ------*- C -*-===*\
+|*                                                                            *|
+|* This header declares the C interface to LLVM initialization routines,      *|
+|* which must be called before you can use the functionality provided by      *|
+|* the corresponding LLVM library.                                            *|
+|*                                                                            *|
+\*===----------------------------------------------------------------------===*/
 public class Initialization {
 
     @Keep

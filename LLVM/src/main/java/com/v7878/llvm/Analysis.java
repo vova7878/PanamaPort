@@ -22,6 +22,16 @@ import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
 import java.util.function.Consumer;
 
+/*===-- llvm-c/Analysis.h - Analysis Library C Interface --------*- C++ -*-===*\
+|*                                                                            *|
+|* This header declares the C interface to libLLVMAnalysis.a, which           *|
+|* implements various analyses of the LLVM IR.                                *|
+|*                                                                            *|
+|* Many exotic languages can interoperate with C code but have a harder time  *|
+|* with C++ due to name mangling. So in addition to C, this interface enables *|
+|* tools written in such languages.                                           *|
+|*                                                                            *|
+\*===----------------------------------------------------------------------===*/
 public class Analysis {
 
     /*

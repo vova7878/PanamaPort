@@ -12,6 +12,11 @@ import com.v7878.unsafe.Utils.FineClosable;
 
 import java.util.Objects;
 
+/*===-- llvm-c/Support.h - C Interface Types declarations ---------*- C -*-===*\
+|*                                                                            *|
+|* This file defines types used by the the C interface to LLVM.               *|
+|*                                                                            *|
+\*===----------------------------------------------------------------------===*/
 public final class Types {
     private Types() {
     }

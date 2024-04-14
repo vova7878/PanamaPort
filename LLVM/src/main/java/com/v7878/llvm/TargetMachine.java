@@ -28,6 +28,16 @@ import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
 import java.util.function.Consumer;
 
+/*===-- llvm-c/TargetMachine.h - Target Machine Library C Interface - C++ -*-=*\
+|*                                                                            *|
+|* This header declares the C interface to the Target and TargetMachine       *|
+|* classes, which can be used to generate assembly or object files.           *|
+|*                                                                            *|
+|* Many exotic languages can interoperate with C code but have a harder time  *|
+|* with C++ due to name mangling. So in addition to C, this interface enables *|
+|* tools written in such languages.                                           *|
+|*                                                                            *|
+\*===----------------------------------------------------------------------===*/
 public class TargetMachine {
 
     public static final class LLVMTargetMachineRef extends AddressValue implements FineClosable {
