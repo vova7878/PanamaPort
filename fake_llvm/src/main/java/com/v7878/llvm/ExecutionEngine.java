@@ -126,6 +126,58 @@ public class ExecutionEngine {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMFreeMachineCodeForFunction(LLVMExecutionEngineRef EE, LLVMValueRef F) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddModule(LLVMExecutionEngineRef EE, LLVMModuleRef M) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMRemoveModule(LLVMExecutionEngineRef EE, LLVMModuleRef M, Consumer<LLVMModuleRef> OutMod, Consumer<String> OutError) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMModuleRef LLVMRemoveModule(LLVMExecutionEngineRef EE, LLVMModuleRef M) throws LLVMException {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMFindFunction(LLVMExecutionEngineRef EE, String Name, Consumer<LLVMValueRef> OutFn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMFindFunction(LLVMExecutionEngineRef EE, String Name) throws LLVMException {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static MemorySegment LLVMRecompileAndRelinkFunction(LLVMExecutionEngineRef EE, LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static Target.LLVMTargetDataRef LLVMGetExecutionEngineTargetData(LLVMExecutionEngineRef EE) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static TargetMachine.LLVMTargetMachineRef LLVMGetExecutionEngineTargetMachine(LLVMExecutionEngineRef EE) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddGlobalMapping(LLVMExecutionEngineRef EE, LLVMValueRef Global, MemorySegment Addr) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static MemorySegment LLVMGetPointerToGlobal(LLVMExecutionEngineRef EE, LLVMValueRef Global) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static MemorySegment LLVMGetGlobalValueAddress(LLVMExecutionEngineRef EE, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static MemorySegment LLVMGetFunctionAddress(LLVMExecutionEngineRef EE, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMDisposeMCJITMemoryManager(LLVMMCJITMemoryManagerRef MM) {
         throw new UnsupportedOperationException("Stub!");
     }
