@@ -36,10 +36,11 @@ public class Reflection {
         assert_(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 35, AssertionError::new);
     }
 
+    //TODO: make private
     @Keep
     @ApiSensitive
-    public static class ClassMirror {
-
+    @SuppressWarnings("unused")
+    static class ClassMirror {
         public ClassLoader classLoader;
         public Class<?> componentType;
         public Object dexCache;
@@ -70,15 +71,14 @@ public class Reflection {
 
     @Keep
     @ApiSensitive
-    public static class AccessibleObjectMirror {
-
+    private static class AccessibleObjectMirror {
         public boolean override;
     }
 
     @Keep
     @ApiSensitive
-    public static class FieldMirror extends AccessibleObjectMirror {
-
+    @SuppressWarnings("unused")
+    private static class FieldMirror extends AccessibleObjectMirror {
         public int accessFlags;
         public Class<?> declaringClass;
         public int artFieldIndex;
@@ -88,8 +88,7 @@ public class Reflection {
 
     @Keep
     @ApiSensitive
-    public static class ExecutableMirror extends AccessibleObjectMirror {
-
+    private static class ExecutableMirror extends AccessibleObjectMirror {
         public volatile boolean hasRealParameterData;
         @SuppressWarnings("VolatileArrayField")
         public volatile Parameter[] parameters;
@@ -102,8 +101,8 @@ public class Reflection {
 
     @Keep
     @ApiSensitive
-    public static class MethodHandleMirror {
-
+    @SuppressWarnings("unused")
+    private static class MethodHandleMirror {
         public MethodType type;
         public Object different1;
         public Object different2;
@@ -113,15 +112,14 @@ public class Reflection {
 
     @Keep
     @ApiSensitive
-    public static final class MethodHandleImplMirror extends MethodHandleMirror {
-
+    private static final class MethodHandleImplMirror extends MethodHandleMirror {
         public HandleInfoMirror info;
     }
 
     @Keep
     @ApiSensitive
-    public static final class HandleInfoMirror {
-
+    @SuppressWarnings("unused")
+    private static final class HandleInfoMirror {
         public Member member;
         public MethodHandleImplMirror handle;
     }
@@ -412,18 +410,23 @@ public class Reflection {
         setAccessible(m, true);
         MethodHandle out = nothrows_run(() -> MethodHandles.publicLookup().unreflect(m));
 
-        MethodHandleMirror[] mhm = arrayCast(MethodHandleMirror.class, out);
-        mhm[0].handleKind = /*INVOKE_DIRECT*/ 2;
+        setMethodHandleKind(out, /*INVOKE_DIRECT*/ 2);
 
         return out;
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static MethodHandle setMethodType(MethodHandle handle, MethodType type) {
+    public static void setMethodType(MethodHandle handle, MethodType type) {
         Objects.requireNonNull(handle);
         Objects.requireNonNull(type);
         MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, handle);
         mirror[0].type = type;
-        return handle;
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setMethodHandleKind(MethodHandle handle, int kind) {
+        Objects.requireNonNull(handle);
+        MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, handle);
+        mirror[0].handleKind = kind;
     }
 }

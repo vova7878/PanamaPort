@@ -777,7 +777,6 @@ public class AndroidUnsafe {
         if (bytes == 0) {
             return;
         }
-        //maybe it can be done better?
         if (srcBase == null) {
             if (destBase == null) {
                 copyMemory(srcOffset, destOffset, bytes);
@@ -794,7 +793,6 @@ public class AndroidUnsafe {
             }
             return;
         }
-        //TODO: use builtin functions for primitive arrays
         for (long i = 0; i < bytes; i++) {
             putByteO(destBase, destOffset + i, getByteO(srcBase, srcOffset + i));
         }
@@ -804,7 +802,6 @@ public class AndroidUnsafe {
         if (bytes == 0) {
             return;
         }
-        //maybe it can be done better?
         if (base == null) {
             setMemory(offset, bytes, value);
             return;

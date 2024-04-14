@@ -42,24 +42,25 @@ import java.util.function.BooleanSupplier;
 
 public class VM {
     @Keep
-    public static class ArrayMirror {
+    private static class ArrayMirror {
 
         public int length;
     }
 
     @Keep
-    public static class StringMirror {
+    @SuppressWarnings("unused")
+    private static class StringMirror {
 
-        public static final boolean COMPACT_STRINGS = nothrows_run(() -> {
-            StringMirror[] test = arrayCast(StringMirror.class, "\uffff");
-            if (test[0].count == 3) {
-                return true;
-            }
-            if (test[0].count == 1) {
-                return false;
-            }
-            throw new IllegalStateException(String.valueOf(test[0].count));
-        });
+        public static final boolean COMPACT_STRINGS;
+
+        static {
+            int test = arrayCast(StringMirror.class, "\uffff")[0].count;
+            COMPACT_STRINGS = switch (test) {
+                case 3 -> true;
+                case 1 -> false;
+                default -> throw new IllegalStateException("unknown test value: " + test);
+            };
+        }
 
         public int count;
         public int hash;
@@ -376,10 +377,5 @@ public class VM {
             }
         }
         return Holder.isDebuggable;
-    }
-
-    @TargetApi(Build.VERSION_CODES.P)
-    public static boolean isDebuggable() {
-        return isNativeDebuggable() || isJavaDebuggable();
     }
 }
