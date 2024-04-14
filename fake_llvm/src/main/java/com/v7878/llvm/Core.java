@@ -10,6 +10,7 @@ import static com.v7878.llvm.Types.LLVMPassRegistryRef;
 import static com.v7878.llvm.Types.LLVMTypeRef;
 import static com.v7878.llvm.Types.LLVMValueRef;
 
+import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
 import com.v7878.llvm.Types.LLVMModuleProviderRef;
@@ -403,6 +404,16 @@ public class Core {
         public static final int LLVMAttributeFirstArgIndex = stub();
     }
 
+    @FunctionalInterface
+    public interface LLVMDiagnosticHandler {
+        void invoke(LLVMDiagnosticInfoRef info);
+    }
+
+    @FunctionalInterface
+    public interface LLVMYieldCallback {
+        void invoke(LLVMContextRef context);
+    }
+
     public static void LLVMInitializeCore(LLVMPassRegistryRef R) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -416,6 +427,14 @@ public class Core {
     }
 
     public static LLVMContextRef LLVMGetGlobalContext() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMContextSetDiagnosticHandler(LLVMContextRef C, Arena arena, LLVMDiagnosticHandler Handler) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMContextSetYieldCallback(LLVMContextRef C, Arena arena, LLVMYieldCallback Callback) {
         throw new UnsupportedOperationException("Stub!");
     }
 

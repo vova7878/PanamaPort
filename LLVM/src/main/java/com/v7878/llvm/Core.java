@@ -18,16 +18,20 @@ import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.llvm._Utils.arrayLength;
 import static com.v7878.llvm._Utils.readPointerArray;
 import static com.v7878.llvm._Utils.stringLength;
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL_AS_INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
+import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
+import com.v7878.foreign.FunctionDescriptor;
+import com.v7878.foreign.Linker;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
 import com.v7878.llvm.Types.LLVMModuleProviderRef;
@@ -37,6 +41,11 @@ import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
+import com.v7878.unsafe.invoke.Transformers;
+import com.v7878.unsafe.invoke.Transformers.TransformerI;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 
 /*===-- llvm-c/Core.h - Core Library C Interface ------------------*- C -*-===*\
 |*                                                                            *|
@@ -834,6 +843,40 @@ public class Core {
         public static final int LLVMAttributeFirstArgIndex = 1;
     }
 
+    @FunctionalInterface
+    public interface LLVMDiagnosticHandler {
+        void invoke(LLVMDiagnosticInfoRef info);
+    }
+
+    private static final FunctionDescriptor DIAGNOSTIC_HANDLER_DESCRIPTOR =
+            FunctionDescriptor.ofVoid(WORD, WORD);
+
+    private static MethodHandle invoker(LLVMDiagnosticHandler handler) {
+        return Transformers.makeTransformer(MethodType.methodType(
+                void.class, WORD.carrier(), WORD.carrier()), (TransformerI) stack -> {
+            var accessor = stack.createAccessor();
+            var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
+            handler.invoke(LLVMDiagnosticInfoRef.ofNullable(value));
+        });
+    }
+
+    @FunctionalInterface
+    public interface LLVMYieldCallback {
+        void invoke(LLVMContextRef context);
+    }
+
+    private static final FunctionDescriptor YIELD_CALLBACK_DESCRIPTOR =
+            FunctionDescriptor.ofVoid(WORD, WORD);
+
+    private static MethodHandle invoker(LLVMYieldCallback callback) {
+        return Transformers.makeTransformer(MethodType.methodType(
+                void.class, WORD.carrier(), WORD.carrier()), (TransformerI) stack -> {
+            var accessor = stack.createAccessor();
+            var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
+            callback.invoke(LLVMContextRef.ofNullable(value));
+        });
+    }
+
     @Keep
     private abstract static class Native {
 
@@ -863,21 +906,21 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMGetGlobalContext();
 
-        /*@LibrarySymbol("LLVMContextSetDiagnosticHandler")
+        @LibrarySymbol(name = "LLVMContextSetDiagnosticHandler")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMContextSetDiagnosticHandler(long, long, long);
+        abstract void LLVMContextSetDiagnosticHandler(long C, long Handler, long DiagnosticContext);
 
-        @LibrarySymbol("LLVMContextGetDiagnosticHandler")
+        @LibrarySymbol(name = "LLVMContextGetDiagnosticHandler")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMContextGetDiagnosticHandler(long);
+        abstract long LLVMContextGetDiagnosticHandler(long C);
 
-        @LibrarySymbol("LLVMContextGetDiagnosticContext")
+        @LibrarySymbol(name = "LLVMContextGetDiagnosticContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMContextGetDiagnosticContext(long);
+        abstract long LLVMContextGetDiagnosticContext(long C);
 
-        @LibrarySymbol("LLVMContextSetYieldCallback")
+        @LibrarySymbol(name = "LLVMContextSetYieldCallback")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMContextSetYieldCallback(long, long, long);*/
+        abstract void LLVMContextSetYieldCallback(long C, long Callback, long OpaqueHandle);
 
         @LibrarySymbol(name = "LLVMContextDispose")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
@@ -3208,25 +3251,71 @@ public class Core {
         return LLVMContextRef.ofNullable(Native.INSTANCE.LLVMGetGlobalContext());
     }
 
-    //TODO:
-    ///**
-    // * Set the diagnostic handler for this context.
-    // */
-    //void LLVMContextSetDiagnosticHandler(LLVMContextRef C, LLVMDiagnosticHandler Handler, void *DiagnosticContext);
-    ///**
-    // * Get the diagnostic handler of this context.
-    // */
-    //LLVMDiagnosticHandler LLVMContextGetDiagnosticHandler(LLVMContextRef C);
-    ///**
-    // * Get the diagnostic context of this context.
-    // */
-    //void *LLVMContextGetDiagnosticContext(LLVMContextRef C);
-    ///**
-    // * Set the yield callback function for this context.
-    // *
-    // * @see LLVMContext::setYieldCallback()
-    // */
-    //void LLVMContextSetYieldCallback(LLVMContextRef C, LLVMYieldCallback Callback, void *OpaqueHandle);
+    /**
+     * Set the diagnostic handler for this context.
+     */
+    /* package-private */
+    @SuppressWarnings("SameParameterValue")
+    static void nLLVMContextSetDiagnosticHandler(LLVMContextRef C, long /* LLVMDiagnosticHandler */ Handler, long /* void* */ DiagnosticContext) {
+        Native.INSTANCE.LLVMContextSetDiagnosticHandler(C.value(), Handler, DiagnosticContext);
+    }
+
+    /**
+     * Set the diagnostic handler for this context.
+     */
+    // Port-added
+    public static void LLVMContextSetDiagnosticHandler(LLVMContextRef C, Arena arena, LLVMDiagnosticHandler Handler) {
+        if (Handler == null) {
+            nLLVMContextSetDiagnosticHandler(C, 0, 0);
+            return;
+        }
+        var linker = Linker.nativeLinker();
+        var native_handler = linker.upcallStub(invoker(Handler), DIAGNOSTIC_HANDLER_DESCRIPTOR, arena);
+        nLLVMContextSetDiagnosticHandler(C, native_handler.nativeAddress(), 0);
+    }
+
+    /**
+     * Get the diagnostic handler of this context.
+     */
+    /* package-private */
+    //TODO: make public version
+    @SuppressWarnings("unused")
+    static long /* LLVMDiagnosticHandler */ nLLVMContextGetDiagnosticHandler(LLVMContextRef C) {
+        return Native.INSTANCE.LLVMContextGetDiagnosticHandler(C.value());
+    }
+
+    /**
+     * Get the diagnostic context of this context.
+     */
+    /* package-private */
+    //TODO: make public version
+    @SuppressWarnings("unused")
+    static long /* void* */ nLLVMContextGetDiagnosticContext(LLVMContextRef C) {
+        return Native.INSTANCE.LLVMContextGetDiagnosticContext(C.value());
+    }
+
+    /**
+     * Set the yield callback function for this context.
+     */
+    /* package-private */
+    @SuppressWarnings("SameParameterValue")
+    static void nLLVMContextSetYieldCallback(LLVMContextRef C, long /* LLVMYieldCallback */ Callback, long /* void* */ OpaqueHandle) {
+        Native.INSTANCE.LLVMContextSetYieldCallback(C.value(), Callback, OpaqueHandle);
+    }
+
+    /**
+     * Set the yield callback function for this context.
+     */
+    // Port-added
+    public static void LLVMContextSetYieldCallback(LLVMContextRef C, Arena arena, LLVMYieldCallback Callback) {
+        if (Callback == null) {
+            nLLVMContextSetYieldCallback(C, 0, 0);
+            return;
+        }
+        var linker = Linker.nativeLinker();
+        var native_callback = linker.upcallStub(invoker(Callback), YIELD_CALLBACK_DESCRIPTOR, arena);
+        nLLVMContextSetYieldCallback(C, native_callback.nativeAddress(), 0);
+    }
 
     /**
      * Destroy a context instance.
