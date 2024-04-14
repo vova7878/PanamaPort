@@ -58,7 +58,7 @@ public class ErrorHandling {
     private static class ErrorHandlerHolder {
         private static final Arena SCOPE = Arena.ofAuto();
         public static final MemorySegment NATIVE_HANDLER;
-        public static LLVMFatalErrorHandler JAVA_HANDLER;
+        public static volatile LLVMFatalErrorHandler JAVA_HANDLER;
 
         static {
             MethodHandle target = unreflect(getDeclaredMethod(
@@ -87,9 +87,11 @@ public class ErrorHandling {
             LLVMResetFatalErrorHandler();
             return;
         }
-        ErrorHandlerHolder.JAVA_HANDLER = Handler;
-        Native.INSTANCE.LLVMInstallFatalErrorHandler(
-                ErrorHandlerHolder.NATIVE_HANDLER.nativeAddress());
+        synchronized (ErrorHandlerHolder.class) {
+            ErrorHandlerHolder.JAVA_HANDLER = Handler;
+            Native.INSTANCE.LLVMInstallFatalErrorHandler(
+                    ErrorHandlerHolder.NATIVE_HANDLER.nativeAddress());
+        }
     }
 
     /**
@@ -97,8 +99,10 @@ public class ErrorHandling {
      * behavior to the default.
      */
     public static void LLVMResetFatalErrorHandler() {
-        Native.INSTANCE.LLVMResetFatalErrorHandler();
-        ErrorHandlerHolder.JAVA_HANDLER = null;
+        synchronized (ErrorHandlerHolder.class) {
+            Native.INSTANCE.LLVMResetFatalErrorHandler();
+            ErrorHandlerHolder.JAVA_HANDLER = null;
+        }
     }
 
     /**
