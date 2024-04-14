@@ -31,7 +31,7 @@ public class ErrorHandling {
 
     @FunctionalInterface
     public interface LLVMFatalErrorHandler {
-        void handle(String Reason);
+        void invoke(String reason);
     }
 
     @Keep
@@ -62,16 +62,16 @@ public class ErrorHandling {
 
         static {
             MethodHandle target = unreflect(getDeclaredMethod(
-                    ErrorHandlerHolder.class, "handle", MemorySegment.class));
+                    ErrorHandlerHolder.class, "invoke", MemorySegment.class));
             NATIVE_HANDLER = Linker.nativeLinker().upcallStub(target, FunctionDescriptor.ofVoid(
                     ADDRESS.withTargetLayout(paddingLayout(Long.MAX_VALUE))), SCOPE);
         }
 
         @Keep
         @SuppressWarnings("unused")
-        private static void handle(MemorySegment msg) {
+        private static void invoke(MemorySegment msg) {
             String jmsg = msg.getString(0);
-            JAVA_HANDLER.handle(jmsg);
+            JAVA_HANDLER.invoke(jmsg);
         }
     }
 
