@@ -3704,7 +3704,7 @@ public class Core {
     }
 
     /**
-     * Advance a Function iterator to the next Native.INSTANCE.
+     * Advance a Function iterator to the next function.
      * <p>
      * Returns NULL if the iterator was already at the end and there are no more
      * functions.
@@ -3714,7 +3714,7 @@ public class Core {
     }
 
     /**
-     * Decrement a Function iterator to the previous Native.INSTANCE.
+     * Decrement a Function iterator to the previous function.
      * <p>
      * Returns NULL if the iterator was already at the beginning and there are
      * no previous functions.
@@ -5017,7 +5017,7 @@ public class Core {
     //    return Native.INSTANCE.LLVMDeleteFunction();
     //}
     ///**
-    // * Check whether the given function has a personality Native.INSTANCE.
+    // * Check whether the given function has a personality function.
     // *
     // * @see llvm::Function::hasPersonalityFn()
     // */
@@ -5025,7 +5025,7 @@ public class Core {
     //    return Native.INSTANCE.LLVMHasPersonalityFn();
     //}
     ///**
-    // * Obtain the personality function attached to the Native.INSTANCE.
+    // * Obtain the personality function attached to the function.
     // *
     // * @see llvm::Function::getPersonalityFn()
     // */
@@ -5033,7 +5033,7 @@ public class Core {
     //    return Native.INSTANCE.LLVMGetPersonalityFn();
     //}
     ///**
-    // * Set the personality function attached to the Native.INSTANCE.
+    // * Set the personality function attached to the function.
     // *
     // * @see llvm::Function::setPersonalityFn()
     // */
@@ -5050,7 +5050,7 @@ public class Core {
     //}
 
     /**
-     * Obtain the calling function of a Native.INSTANCE.
+     * Obtain the calling function of a function.
      * <p>
      * The returned value corresponds to the LLVMCallConv enumeration.
      */
@@ -5059,7 +5059,7 @@ public class Core {
     }
 
     /**
-     * Set the calling convention of a Native.INSTANCE.
+     * Set the calling convention of a function.
      *
      * @param Fn Function to operate on
      * @param CC LLVMCallConv to set calling convention to
@@ -5087,7 +5087,7 @@ public class Core {
     }
 
     /**
-     * Add an attribute to a Native.INSTANCE.
+     * Add an attribute to a function.
      */
     public static void LLVMAddFunctionAttr(LLVMValueRef Fn, int /* LLVMAttribute */ PA) {
         Native.INSTANCE.LLVMAddFunctionAttr(Fn.value(), PA);
@@ -5117,7 +5117,7 @@ public class Core {
     //    return Native.INSTANCE.LLVMAddTargetDependentFunctionAttr();
     //}
     ///**
-    // * Obtain an attribute from a Native.INSTANCE.
+    // * Obtain an attribute from a function.
     // *
     // * @see llvm::Function::getAttributes()
     // */
@@ -5125,7 +5125,7 @@ public class Core {
     //    return Native.INSTANCE.LLVMGetFunctionAttr();
     //}
     ///**
-    // * Remove an attribute from a Native.INSTANCE.
+    // * Remove an attribute from a function.
     // */
     //void LLVMRemoveFunctionAttr(LLVMValueRef Fn, LLVMAttribute PA) {
     //    return Native.INSTANCE.LLVMRemoveFunctionAttr();
@@ -5141,14 +5141,14 @@ public class Core {
      */
 
     /**
-     * Obtain the number of parameters in a Native.INSTANCE.
+     * Obtain the number of parameters in a function.
      */
     public static int /* unsigned */ LLVMCountParams(LLVMValueRef Fn) {
         return Native.INSTANCE.LLVMCountParams(Fn.value());
     }
 
     /**
-     * Obtain the parameters in a Native.INSTANCE.
+     * Obtain the parameters in a function.
      * <p>
      * The takes a pointer to a pre-allocated array of LLVMValueRef that is
      * at least LLVMCountParams() long. This array will be filled with
@@ -5162,7 +5162,7 @@ public class Core {
     }
 
     /**
-     * Obtain the parameters in a Native.INSTANCE.
+     * Obtain the parameters in a function.
      * <p>
      * Return array will be filled with LLVMValueRef instances which correspond
      * to the parameters the function receives. Each LLVMValueRef corresponds
@@ -5204,21 +5204,21 @@ public class Core {
     }
 
     /**
-     * Obtain the first parameter to a Native.INSTANCE.
+     * Obtain the first parameter to a function.
      */
     public static LLVMValueRef LLVMGetFirstParam(LLVMValueRef Fn) {
         return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetFirstParam(Fn.value()));
     }
 
     /**
-     * Obtain the last parameter to a Native.INSTANCE.
+     * Obtain the last parameter to a function.
      */
     public static LLVMValueRef LLVMGetLastParam(LLVMValueRef Fn) {
         return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetLastParam(Fn.value()));
     }
 
     /**
-     * Obtain the next parameter to a Native.INSTANCE.
+     * Obtain the next parameter to a function.
      * <p>
      * This takes an LLVMValueRef obtained from LLVMGetFirstParam() (which is
      * actually a wrapped iterator) and obtains the next parameter from the
@@ -5229,7 +5229,7 @@ public class Core {
     }
 
     /**
-     * Obtain the previous parameter to a Native.INSTANCE.
+     * Obtain the previous parameter to a function.
      * <p>
      * This is the opposite of LLVMGetNextParam().
      */
@@ -5509,7 +5509,7 @@ public class Core {
     }
 
     /**
-     * Remove a basic block from a Native.INSTANCE.
+     * Remove a basic block from a function.
      * <p>
      * This deletes the basic block from its containing function but keep
      * the basic block alive.
@@ -7045,7 +7045,7 @@ public class Core {
 
     /**
      * Executes all of the function passes scheduled in the function pass manager
-     * on the provided Native.INSTANCE. Returns 1 if any of the passes modified the
+     * on the provided function. Returns 1 if any of the passes modified the
      * function, false otherwise.
      */
     public static boolean LLVMRunFunctionPassManager(LLVMPassManagerRef FPM, LLVMValueRef F) {
