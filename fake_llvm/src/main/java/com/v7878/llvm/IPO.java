@@ -3,6 +3,9 @@ package com.v7878.llvm;
 import com.v7878.llvm.Types.LLVMPassManagerRef;
 
 public class IPO {
+    public static void LLVMAddAlwaysInlinerPass(LLVMPassManagerRef PM) {
+        throw new UnsupportedOperationException("Stub!");
+    }
 
     public static void LLVMAddArgumentPromotionPass(LLVMPassManagerRef PM) {
         throw new UnsupportedOperationException("Stub!");
@@ -24,10 +27,6 @@ public class IPO {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static void LLVMAddAlwaysInlinerPass(LLVMPassManagerRef PM) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public static void LLVMAddGlobalDCEPass(LLVMPassManagerRef PM) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -40,15 +39,15 @@ public class IPO {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static void LLVMAddPruneEHPass(LLVMPassManagerRef PM) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public static void LLVMAddIPSCCPPass(LLVMPassManagerRef PM) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static void LLVMAddInternalizePass(LLVMPassManagerRef PM, int /* unsigned */ AllButMain) {
+    public static void LLVMAddInternalizePass(LLVMPassManagerRef PM, int AllButMain) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddPruneEHPass(LLVMPassManagerRef PM) {
         throw new UnsupportedOperationException("Stub!");
     }
 

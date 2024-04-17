@@ -1,8 +1,7 @@
 package com.v7878.llvm;
 
 public class Extra {
-
-    public static String LLVMGetHostTriple() {
+    public static String LLVMGetHostCPUFeatures() {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -10,7 +9,7 @@ public class Extra {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static String LLVMGetHostCPUFeatures() {
+    public static String LLVMGetHostTriple() {
         throw new UnsupportedOperationException("Stub!");
     }
 }

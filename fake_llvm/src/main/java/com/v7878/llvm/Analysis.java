@@ -11,28 +11,16 @@ public class Analysis {
         LLVMPrintMessageAction,
         LLVMReturnStatusAction;
 
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
         public static LLVMVerifierFailureAction of(int value) {
             throw new UnsupportedOperationException("Stub!");
         }
+
+        public int value() {
+            throw new UnsupportedOperationException("Stub!");
+        }
     }
 
-    public static boolean LLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action, Consumer<String> OutMessage) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public static void LLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action) throws LLVMException {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public static void LLVMVerifyModule(LLVMModuleRef M) throws LLVMException {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public static boolean nLLVMVerifyFunction(LLVMValueRef Fn, LLVMVerifierFailureAction Action) {
+    public static void LLVMVerifyFunction(LLVMValueRef Fn) throws LLVMException {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -40,7 +28,15 @@ public class Analysis {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static void LLVMVerifyFunction(LLVMValueRef Fn) throws LLVMException {
+    public static void LLVMVerifyModule(LLVMModuleRef M) throws LLVMException {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action) throws LLVMException {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action, Consumer<String> OutMessage) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -49,6 +45,10 @@ public class Analysis {
     }
 
     public static void LLVMViewFunctionCFGOnly(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean nLLVMVerifyFunction(LLVMValueRef Fn, LLVMVerifierFailureAction Action) {
         throw new UnsupportedOperationException("Stub!");
     }
 }

@@ -1,10 +1,13 @@
 package com.v7878.llvm;
 
 public class ErrorHandling {
-
     @FunctionalInterface
     public interface LLVMFatalErrorHandler {
-        void handle(String Reason);
+        void invoke(String reason);
+    }
+
+    public static void LLVMEnablePrettyStackTrace() {
+        throw new UnsupportedOperationException("Stub!");
     }
 
     public static void LLVMInstallFatalErrorHandler(LLVMFatalErrorHandler Handler) {
@@ -12,10 +15,6 @@ public class ErrorHandling {
     }
 
     public static void LLVMResetFatalErrorHandler() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public static void LLVMEnablePrettyStackTrace() {
         throw new UnsupportedOperationException("Stub!");
     }
 }
