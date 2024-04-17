@@ -33,10 +33,10 @@ public class TargetMachine {
     }
 
     public enum LLVMCodeGenOptLevel {
-        LLVMCodeGenLevelAggressive,
-        LLVMCodeGenLevelDefault,
+        LLVMCodeGenLevelNone,
         LLVMCodeGenLevelLess,
-        LLVMCodeGenLevelNone;
+        LLVMCodeGenLevelDefault,
+        LLVMCodeGenLevelAggressive;
 
         public static LLVMCodeGenOptLevel of(int value) {
             throw new UnsupportedOperationException("Stub!");
@@ -49,9 +49,9 @@ public class TargetMachine {
 
     public enum LLVMRelocMode {
         LLVMRelocDefault,
-        LLVMRelocDynamicNoPic,
+        LLVMRelocStatic,
         LLVMRelocPIC,
-        LLVMRelocStatic;
+        LLVMRelocDynamicNoPic;
 
         public static LLVMRelocMode of(int value) {
             throw new UnsupportedOperationException("Stub!");
@@ -65,10 +65,10 @@ public class TargetMachine {
     public enum LLVMCodeModel {
         LLVMCodeModelDefault,
         LLVMCodeModelJITDefault,
+        LLVMCodeModelSmall,
         LLVMCodeModelKernel,
-        LLVMCodeModelLarge,
         LLVMCodeModelMedium,
-        LLVMCodeModelSmall;
+        LLVMCodeModelLarge;
 
         public static LLVMCodeModel of(int value) {
             throw new UnsupportedOperationException("Stub!");
@@ -80,7 +80,7 @@ public class TargetMachine {
     }
 
     public enum LLVMCodeGenFileType {
-        LLVMCodeGenFileType,
+        LLVMAssemblyFile,
         LLVMObjectFile;
 
         public static LLVMCodeGenFileType of(int value) {
