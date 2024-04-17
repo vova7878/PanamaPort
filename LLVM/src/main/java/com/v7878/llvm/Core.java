@@ -1033,9 +1033,9 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDumpModule(long M);
 
-        /*@LibrarySymbol("LLVMPrintModuleToFile")
+        @LibrarySymbol(name = "LLVMPrintModuleToFile")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract boolean LLVMPrintModuleToFile(long, long, long);*/
+        abstract boolean LLVMPrintModuleToFile(long M, long Filename, long ErrorMessage);
 
         @LibrarySymbol(name = "LLVMPrintModuleToString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
@@ -1053,17 +1053,17 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMGetTypeByName(long M, long Name);
 
-        /*@LibrarySymbol("LLVMGetNamedMetadataNumOperands")
+        @LibrarySymbol(name = "LLVMGetNamedMetadataNumOperands")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract int LLVMGetNamedMetadataNumOperands(long, long);
+        abstract int LLVMGetNamedMetadataNumOperands(long M, long Name);
 
-        @LibrarySymbol("LLVMGetNamedMetadataOperands")
+        @LibrarySymbol(name = "LLVMGetNamedMetadataOperands")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMGetNamedMetadataOperands(long, long, long);
+        abstract void LLVMGetNamedMetadataOperands(long M, long Name, long Dest);
 
-        @LibrarySymbol("LLVMAddNamedMetadataOperand")
+        @LibrarySymbol(name = "LLVMAddNamedMetadataOperand")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMAddNamedMetadataOperand(long, long, long);*/
+        abstract void LLVMAddNamedMetadataOperand(long M, long Name, long Val);
 
         @LibrarySymbol(name = "LLVMAddFunction")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
@@ -1229,13 +1229,13 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetReturnType(long FunctionTy);
 
-        /*@LibrarySymbol("LLVMCountParamTypes")
+        @LibrarySymbol(name = "LLVMCountParamTypes")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMCountParamTypes(long);
+        abstract int LLVMCountParamTypes(long FunctionTy);
 
-        @LibrarySymbol("LLVMGetParamTypes")
+        @LibrarySymbol(name = "LLVMGetParamTypes")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMGetParamTypes(long, long);*/
+        abstract void LLVMGetParamTypes(long FunctionTy, long Dest);
 
         @LibrarySymbol(name = "LLVMStructTypeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
@@ -1257,17 +1257,17 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
         abstract void LLVMStructSetBody(long StructTy, long ElementTypes, int ElementCount, boolean Packed);
 
-        /*@LibrarySymbol("LLVMCountStructElementTypes")
+        @LibrarySymbol(name = "LLVMCountStructElementTypes")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMCountStructElementTypes(long);
+        abstract int LLVMCountStructElementTypes(long StructTy);
 
-        @LibrarySymbol("LLVMGetStructElementTypes")
+        @LibrarySymbol(name = "LLVMGetStructElementTypes")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMGetStructElementTypes(long, long);
+        abstract void LLVMGetStructElementTypes(long StructTy, long Dest);
 
-        @LibrarySymbol("LLVMStructGetTypeAtIndex")
+        @LibrarySymbol(name = "LLVMStructGetTypeAtIndex")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMStructGetTypeAtIndex(long, int);*/
+        abstract long LLVMStructGetTypeAtIndex(long StructTy, int Idx);
 
         @LibrarySymbol(name = "LLVMIsPackedStruct")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
@@ -2377,13 +2377,13 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetBasicBlockTerminator(long BB);
 
-        /*@LibrarySymbol("LLVMCountBasicBlocks")
+        @LibrarySymbol(name = "LLVMCountBasicBlocks")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMCountBasicBlocks(long);
+        abstract int LLVMCountBasicBlocks(long Fn);
 
-        @LibrarySymbol("LLVMGetBasicBlocks")
+        @LibrarySymbol(name = "LLVMGetBasicBlocks")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMGetBasicBlocks(long, long);*/
+        abstract void LLVMGetBasicBlocks(long Fn, long BasicBlocks);
 
         @LibrarySymbol(name = "LLVMGetFirstBasicBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
@@ -2621,13 +2621,13 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long LLVMGetIncomingBlock(long PhiNode, int Index);
 
-        /*@LibrarySymbol("LLVMGetNumIndices")
+        @LibrarySymbol(name = "LLVMGetNumIndices")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetNumIndices(long);
+        abstract int LLVMGetNumIndices(long Inst);
 
-        @LibrarySymbol("LLVMGetIndices")
+        @LibrarySymbol(name = "LLVMGetIndices")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetIndices(long);*/
+        abstract long LLVMGetIndices(long Inst);
 
         @LibrarySymbol(name = "LLVMCreateBuilderInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
@@ -3590,14 +3590,33 @@ public class Core {
         Native.INSTANCE.LLVMDumpModule(M.value());
     }
 
-    //TODO
-    ///**
-    // * Print a representation of a module to a file. The ErrorMessage needs to be
-    // * disposed with LLVMDisposeMessage. Returns 0 on success, 1 otherwise.
-    // */
-    //boolean LLVMPrintModuleToFile(LLVMModuleRef M, String Filename, LLVMString *ErrorMessage) {
-    //    return Native.INSTANCE.LLVMPrintModuleToFile();
-    //}
+    /**
+     * Print a representation of a module to a file. The ErrorMessage needs to be
+     * disposed with LLVMDisposeMessage. Returns 0 on success, 1 otherwise.
+     */
+    public static boolean LLVMPrintModuleToFile(LLVMModuleRef M, String Filename, Consumer<String> ErrorMessage) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Filename = allocString(arena, Filename);
+            MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
+            boolean err = Native.INSTANCE.LLVMPrintModuleToFile(M.value(),
+                    c_Filename.nativeAddress(), c_ErrorMessage.nativeAddress());
+            if (err) {
+                ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
+            }
+            return err;
+        }
+    }
+
+    /**
+     * Print a representation of a module to a file.
+     */
+    // Port-added
+    public static void LLVMPrintModuleToFile(LLVMModuleRef M, String Filename) throws LLVMException {
+        String[] err = new String[1];
+        if (LLVMPrintModuleToFile(M, Filename, E -> err[0] = E)) {
+            throw new LLVMException(err[0]);
+        }
+    }
 
     /**
      * Return a string representation of the module.
@@ -3633,37 +3652,60 @@ public class Core {
         }
     }
 
-    ///**
-    // * Obtain the number of operands for named metadata in a module.
-    // *
-    // * @see llvm::Module::getNamedMetadata()
-    // */
-    //int /* unsigned */ LLVMGetNamedMetadataNumOperands(LLVMModuleRef M, String Name) {
-    //    return Native.INSTANCE.LLVMGetNamedMetadataNumOperands();
-    //}
-    ///**
-    // * Obtain the named metadata operands for a module.
-    // *
-    // * The passed LLVMValueRef pointer should refer to an array of
-    // * LLVMValueRef at least LLVMGetNamedMetadataNumOperands long. This
-    // * array will be populated with the LLVMValueRef instances. Each
-    // * instance corresponds to a llvm::MDNode.
-    // *
-    // * @see llvm::Module::getNamedMetadata()
-    // * @see llvm::MDNode::getOperand()
-    // */
-    //void LLVMGetNamedMetadataOperands(LLVMModuleRef M, String Name, LLVMValueRef *Dest) {
-    //    return Native.INSTANCE.LLVMGetNamedMetadataOperands();
-    //}
-    ///**
-    // * Add an operand to named metadata.
-    // *
-    // * @see llvm::Module::getNamedMetadata()
-    // * @see llvm::MDNode::addOperand()
-    // */
-    //void LLVMAddNamedMetadataOperand(LLVMModuleRef M, String Name, LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMAddNamedMetadataOperand();
-    //}
+    /**
+     * Obtain the number of operands for named metadata in a module.
+     */
+    public static int /* unsigned */ LLVMGetNamedMetadataNumOperands(LLVMModuleRef M, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            return Native.INSTANCE.LLVMGetNamedMetadataNumOperands(M.value(), c_Name.nativeAddress());
+        }
+    }
+
+    /**
+     * Obtain the named metadata operands for a module.
+     * <p>
+     * The passed LLVMValueRef pointer should refer to an array of
+     * LLVMValueRef at least LLVMGetNamedMetadataNumOperands long. This
+     * array will be populated with the LLVMValueRef instances. Each
+     * instance corresponds to a llvm::MDNode.
+     */
+    /* package-private */
+    static void LLVMGetNamedMetadataOperands(LLVMModuleRef M, String Name, long Dest) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            Native.INSTANCE.LLVMGetNamedMetadataOperands(M.value(), c_Name.nativeAddress(), Dest);
+        }
+    }
+
+    /**
+     * Obtain the named metadata operands for a module.
+     * <p>
+     * Return array will be populated with the LLVMValueRef instances.
+     * Each instance corresponds to a llvm::MDNode.
+     */
+    // Port-added
+    public static LLVMValueRef[] LLVMGetNamedMetadataOperands(LLVMModuleRef M, String Name) {
+        int /* unsigned */ count = LLVMGetNamedMetadataNumOperands(M, Name);
+        if (count == 0) {
+            return new LLVMValueRef[0];
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Dest = allocPointerArray(arena, count);
+            LLVMGetNamedMetadataOperands(M, Name, c_Dest.nativeAddress());
+            return readPointerArray(c_Dest, LLVMValueRef.class, LLVMValueRef::ofNullable);
+        }
+    }
+
+    /**
+     * Add an operand to named metadata.
+     */
+    public static void LLVMAddNamedMetadataOperand(LLVMModuleRef M, String Name, LLVMValueRef Val) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            Native.INSTANCE.LLVMAddNamedMetadataOperand(M.value(), c_Name.nativeAddress(), Val.value());
+        }
+    }
 
     /**
      * Add a function to a module under a specified name.
@@ -3969,26 +4011,48 @@ public class Core {
         return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMGetReturnType(FunctionTy.value()));
     }
 
-    ///**
-    // * Obtain the number of parameters this function accepts.
-    // */
-    //int /* unsigned */ LLVMCountParamTypes(LLVMTypeRef FunctionTy) {
-    //    return Native.INSTANCE.LLVMCountParamTypes();
-    //}
-    ///**
-    // * Obtain the types of a function's parameters.
-    // *
-    // * The Dest parameter should point to a pre-allocated array of
-    // * LLVMTypeRef at least LLVMCountParamTypes() large. On return, the
-    // * first LLVMCountParamTypes() entries in the array will be populated
-    // * with LLVMTypeRef instances.
-    // *
-    // * @param FunctionTy The function type to operate on.
-    // * @param Dest Memory address of an array to be filled with result.
-    // */
-    //void LLVMGetParamTypes(LLVMTypeRef FunctionTy, LLVMTypeRef *Dest) {
-    //    return Native.INSTANCE.LLVMGetParamTypes();
-    //}
+    /**
+     * Obtain the number of parameters this function accepts.
+     */
+    public static int /* unsigned */ LLVMCountParamTypes(LLVMTypeRef FunctionTy) {
+        return Native.INSTANCE.LLVMCountParamTypes(FunctionTy.value());
+    }
+
+    /**
+     * Obtain the types of a function's parameters.
+     * <p>
+     * The Dest parameter should point to a pre-allocated array of
+     * LLVMTypeRef at least LLVMCountParamTypes() large. On return, the
+     * first LLVMCountParamTypes() entries in the array will be populated
+     * with LLVMTypeRef instances.
+     *
+     * @param FunctionTy The function type to operate on.
+     * @param Dest       Memory address of an array to be filled with result.
+     */
+    /* package-private */
+    static void LLVMGetParamTypes(LLVMTypeRef FunctionTy, long Dest) {
+        Native.INSTANCE.LLVMGetParamTypes(FunctionTy.value(), Dest);
+    }
+
+    /**
+     * Obtain the types of a function's parameters.
+     * <p>
+     * Return array will be populated with LLVMTypeRef instances.
+     *
+     * @param FunctionTy The function type to operate on.
+     */
+    // Port-added
+    public static LLVMTypeRef[] LLVMGetParamTypes(LLVMTypeRef FunctionTy) {
+        int /* unsigned */ count = LLVMCountParamTypes(FunctionTy);
+        if (count == 0) {
+            return new LLVMTypeRef[0];
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Dest = allocPointerArray(arena, count);
+            LLVMGetParamTypes(FunctionTy, c_Dest.nativeAddress());
+            return readPointerArray(c_Dest, LLVMTypeRef.class, LLVMTypeRef::ofNullable);
+        }
+    }
 
     /*
      * @defgroup LLVMCCoreTypeStruct Structure Types
@@ -4052,35 +4116,54 @@ public class Core {
         }
     }
 
-    ///**
-    // * Get the number of elements defined inside the structure.
-    // *
-    // * @see llvm::StructType::getNumElements()
-    // */
-    //int /* unsigned */ LLVMCountStructElementTypes(LLVMTypeRef StructTy) {
-    //    return Native.INSTANCE.LLVMCountStructElementTypes();
-    //}
-    ///**
-    // * Get the elements within a structure.
-    // *
-    // * The function is passed the address of a pre-allocated array of
-    // * LLVMTypeRef at least LLVMCountStructElementTypes() long. After
-    // * invocation, this array will be populated with the structure's
-    // * elements. The objects in the destination array will have a lifetime
-    // * of the structure type itself, which is the lifetime of the context it
-    // * is contained in.
-    // */
-    //void LLVMGetStructElementTypes(LLVMTypeRef StructTy, LLVMTypeRef *Dest) {
-    //    return Native.INSTANCE.LLVMGetStructElementTypes();
-    //}
-    ///**
-    // * Get the type of the element at a given index in the structure.
-    // *
-    // * @see llvm::StructType::getTypeAtIndex()
-    // */
-    //LLVMTypeRef LLVMStructGetTypeAtIndex(LLVMTypeRef StructTy, int /* unsigned */ i) {
-    //    return Native.INSTANCE.LLVMStructGetTypeAtIndex();
-    //}
+    /**
+     * Get the number of elements defined inside the structure.
+     */
+    public static int /* unsigned */ LLVMCountStructElementTypes(LLVMTypeRef StructTy) {
+        return Native.INSTANCE.LLVMCountStructElementTypes(StructTy.value());
+    }
+
+    /**
+     * Get the elements within a structure.
+     * <p>
+     * The function is passed the address of a pre-allocated array of
+     * LLVMTypeRef at least LLVMCountStructElementTypes() long. After
+     * invocation, this array will be populated with the structure's
+     * elements. The objects in the destination array will have a lifetime
+     * of the structure type itself, which is the lifetime of the context it
+     * is contained in.
+     */
+    /* package-private */
+    static void LLVMGetStructElementTypes(LLVMTypeRef StructTy, long Dest) {
+        Native.INSTANCE.LLVMGetStructElementTypes(StructTy.value(), Dest);
+    }
+
+    /**
+     * Get the elements within a structure.
+     * <p>
+     * Return array will be populated with the structure's elements.
+     * The objects in the destination array will have a lifetime of the structure type
+     * itself, which is the lifetime of the context it is contained in.
+     */
+    // Port-added
+    public static LLVMTypeRef[] LLVMGetStructElementTypes(LLVMTypeRef StructTy) {
+        int /* unsigned */ count = LLVMCountStructElementTypes(StructTy);
+        if (count == 0) {
+            return new LLVMTypeRef[0];
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Dest = allocPointerArray(arena, count);
+            LLVMGetStructElementTypes(StructTy, c_Dest.nativeAddress());
+            return readPointerArray(c_Dest, LLVMTypeRef.class, LLVMTypeRef::ofNullable);
+        }
+    }
+
+    /**
+     * Get the type of the element at a given index in the structure.
+     */
+    public static LLVMTypeRef LLVMStructGetTypeAtIndex(LLVMTypeRef StructTy, int /* unsigned */ Idx) {
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMStructGetTypeAtIndex(StructTy.value(), Idx));
+    }
 
     /**
      * Determine whether a structure is packed.
@@ -5395,25 +5478,45 @@ public class Core {
         return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetBasicBlockTerminator(BB.value()));
     }
 
-    ///**
-    // * Obtain the number of basic blocks in a function.
-    // *
-    // * @param Fn Function value to operate on.
-    // */
-    //int /* unsigned */ LLVMCountBasicBlocks(LLVMValueRef Fn) {
-    //    return Native.INSTANCE.LLVMCountBasicBlocks();
-    //}
-    ///**
-    // * Obtain all of the basic blocks in a function.
-    // * <p>
-    // * This operates on a function value. The BasicBlocks parameter is a
-    // * pointer to a pre-allocated array of LLVMBasicBlockRef of at least
-    // * LLVMCountBasicBlocks() in length. This array is populated with
-    // * LLVMBasicBlockRef instances.
-    // */
-    //void LLVMGetBasicBlocks(LLVMValueRef Fn, LLVMBasicBlockRef *BasicBlocks) {
-    //    return Native.INSTANCE.LLVMGetBasicBlocks();
-    //}
+    /**
+     * Obtain the number of basic blocks in a function.
+     *
+     * @param Fn Function value to operate on.
+     */
+    public static int /* unsigned */ LLVMCountBasicBlocks(LLVMValueRef Fn) {
+        return Native.INSTANCE.LLVMCountBasicBlocks(Fn.value());
+    }
+
+    /**
+     * Obtain all of the basic blocks in a function.
+     * <p>
+     * This operates on a function value. The BasicBlocks parameter is a
+     * pointer to a pre-allocated array of LLVMBasicBlockRef of at least
+     * LLVMCountBasicBlocks() in length. This array is populated with
+     * LLVMBasicBlockRef instances.
+     */
+    /* package-private */
+    static void LLVMGetBasicBlocks(LLVMValueRef Fn, long BasicBlocks) {
+        Native.INSTANCE.LLVMGetBasicBlocks(Fn.value(), BasicBlocks);
+    }
+
+    /**
+     * Obtain all of the basic blocks in a function.
+     * <p>
+     * Return array is populated with LLVMBasicBlockRef instances.
+     */
+    // Port-added
+    public static LLVMBasicBlockRef[] LLVMGetBasicBlocks(LLVMValueRef Fn) {
+        int /* unsigned */ count = LLVMCountBasicBlocks(Fn);
+        if (count == 0) {
+            return new LLVMBasicBlockRef[0];
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_BasicBlocks = allocPointerArray(arena, count);
+            LLVMGetBasicBlocks(Fn, c_BasicBlocks.nativeAddress());
+            return readPointerArray(c_BasicBlocks, LLVMBasicBlockRef.class, LLVMBasicBlockRef::ofNullable);
+        }
+    }
 
     /**
      * Obtain the first basic block in a function.
@@ -5999,19 +6102,20 @@ public class Core {
      * llvm::ExtractValue and llvm::InsertValue instances.
      */
 
-    ///**
-    // * Obtain the number of indices.
-    // * NB: This also works on GEP.
-    // */
-    //int /* unsigned */ LLVMGetNumIndices(LLVMValueRef Inst) {
-    //    return Native.INSTANCE.LLVMGetNumIndices();
-    //}
-    ///**
-    // * Obtain the indices as an array.
-    // */
-    //const int /* unsigned */ *LLVMGetIndices(LLVMValueRef Inst) {
-    //    return Native.INSTANCE.*LLVMGetIndices();
-    //}
+    /**
+     * Obtain the number of indices.
+     * NB: This also works on GEP.
+     */
+    public static int /* unsigned */ LLVMGetNumIndices(LLVMValueRef Inst) {
+        return Native.INSTANCE.LLVMGetNumIndices(Inst.value());
+    }
+
+    /**
+     * Obtain the indices as an array.
+     */
+    public static int[] /* unsigned* */ LLVMGetIndices(LLVMValueRef Inst) {
+        return _Utils.readIntArray(Native.INSTANCE.LLVMGetIndices(Inst.value()), LLVMGetNumIndices(Inst));
+    }
 
     /*
      * @defgroup LLVMCCoreInstructionBuilder Instruction Builders
