@@ -1,6 +1,5 @@
 package com.v7878.unsafe;
 
-
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.BuildConfig.DEBUG;
 import static com.v7878.unsafe.Stack.getStackClass1;
