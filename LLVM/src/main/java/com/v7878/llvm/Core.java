@@ -1,5 +1,6 @@
 package com.v7878.llvm;
 
+import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.llvm.Types.LLVMAttributeRef;
@@ -47,6 +48,7 @@ import com.v7878.unsafe.invoke.Transformers.TransformerI;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.function.Consumer;
 
 /*===-- llvm-c/Core.h - Core Library C Interface ------------------*- C -*-===*\
 |*                                                                            *|
@@ -3119,13 +3121,13 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMDisposeModuleProvider(long M);
 
-        /*@LibrarySymbol("LLVMCreateMemoryBufferWithContentsOfFile")
+        @LibrarySymbol(name = "LLVMCreateMemoryBufferWithContentsOfFile")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract boolean LLVMCreateMemoryBufferWithContentsOfFile(long, long, long);
+        abstract boolean LLVMCreateMemoryBufferWithContentsOfFile(long Path, long OutMemBuf, long OutMessage);
 
-        @LibrarySymbol("LLVMCreateMemoryBufferWithSTDIN")
+        @LibrarySymbol(name = "LLVMCreateMemoryBufferWithSTDIN")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract boolean LLVMCreateMemoryBufferWithSTDIN(long, long);*/
+        abstract boolean LLVMCreateMemoryBufferWithSTDIN(long OutMemBuf, long OutMessage);
 
         @LibrarySymbol(name = "LLVMCreateMemoryBufferWithMemoryRange")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, BOOL_AS_INT})
@@ -6880,12 +6882,54 @@ public class Core {
      * @defgroup LLVMCCoreMemoryBuffers Memory Buffers
      */
 
-    //boolean LLVMCreateMemoryBufferWithContentsOfFile(String Path, LLVMMemoryBufferRef *OutMemBuf, LLVMString *OutMessage) {
-    //    return Native.INSTANCE.LLVMCreateMemoryBufferWithContentsOfFile();
-    //}
-    //boolean LLVMCreateMemoryBufferWithSTDIN(LLVMMemoryBufferRef *OutMemBuf, LLVMString *OutMessage) {
-    //    return Native.INSTANCE.LLVMCreateMemoryBufferWithSTDIN();
-    //}
+    public static boolean LLVMCreateMemoryBufferWithContentsOfFile(String Path, Consumer<LLVMMemoryBufferRef> OutMemBuf, Consumer<String> OutMessage) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Path = allocString(arena, Path);
+            MemorySegment c_OutMemBuf = arena.allocate(ADDRESS);
+            MemorySegment c_OutMessage = arena.allocate(ADDRESS);
+            boolean err = Native.INSTANCE.LLVMCreateMemoryBufferWithContentsOfFile(c_Path.nativeAddress(), c_OutMemBuf.nativeAddress(), c_OutMessage.nativeAddress());
+            if (!err) {
+                OutMemBuf.accept(LLVMMemoryBufferRef.ofNullable(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
+            } else {
+                OutMessage.accept(addressToLLVMString(c_OutMessage.get(ADDRESS, 0).nativeAddress()));
+            }
+            return err;
+        }
+    }
+
+    // Port-added
+    public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithContentsOfFile(String Path) throws LLVMException {
+        String[] err = new String[1];
+        LLVMMemoryBufferRef[] out = new LLVMMemoryBufferRef[1];
+        if (LLVMCreateMemoryBufferWithContentsOfFile(Path, O -> out[0] = O, E -> err[0] = E)) {
+            throw new LLVMException(err[0]);
+        }
+        return out[0];
+    }
+
+    public static boolean LLVMCreateMemoryBufferWithSTDIN(Consumer<LLVMMemoryBufferRef> OutMemBuf, Consumer<String> OutMessage) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_OutMemBuf = arena.allocate(ADDRESS);
+            MemorySegment c_OutMessage = arena.allocate(ADDRESS);
+            boolean err = Native.INSTANCE.LLVMCreateMemoryBufferWithSTDIN(c_OutMemBuf.nativeAddress(), c_OutMessage.nativeAddress());
+            if (!err) {
+                OutMemBuf.accept(LLVMMemoryBufferRef.ofNullable(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
+            } else {
+                OutMessage.accept(addressToLLVMString(c_OutMessage.get(ADDRESS, 0).nativeAddress()));
+            }
+            return err;
+        }
+    }
+
+    // Port-added
+    public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSTDIN() throws LLVMException {
+        String[] err = new String[1];
+        LLVMMemoryBufferRef[] out = new LLVMMemoryBufferRef[1];
+        if (LLVMCreateMemoryBufferWithSTDIN(O -> out[0] = O, E -> err[0] = E)) {
+            throw new LLVMException(err[0]);
+        }
+        return out[0];
+    }
 
     /* package-private */
     static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithMemoryRange(
