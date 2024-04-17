@@ -96,6 +96,13 @@ final class _Utils {
         }
     }
 
+    public static int[] readIntArray(long address, int count) {
+        if (count == 0) return new int[0];
+        if (address == 0) throw shouldNotReachHere();
+        var data = MemorySegment.ofAddress(address).reinterpret(JAVA_INT.byteSize() * count);
+        return data.toArray(JAVA_INT);
+    }
+
     public static MemorySegment allocArray(Arena scope, long... values) {
         if (values == null || values.length == 0) {
             return MemorySegment.NULL;
