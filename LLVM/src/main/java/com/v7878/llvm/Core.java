@@ -29,6 +29,8 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
@@ -38,6 +40,7 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
 import com.v7878.llvm.Types.LLVMModuleProviderRef;
 import com.v7878.llvm.Types.LLVMPassManagerRef;
+import com.v7878.llvm.Types.LLVMUseRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker;
@@ -56,6 +59,7 @@ import java.util.function.Consumer;
 |* the LLVM intermediate representation.                                      *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
+@SuppressLint("WrongCommentType")
 public class Core {
 
     public static class LLVMAttribute {
@@ -1329,393 +1333,393 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long LLVMX86MMXType();
 
-        /*@LibrarySymbol("LLVMIsAArgument")
+        @LibrarySymbol(name = "LLVMTypeOf")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAArgument(long);
+        abstract long LLVMTypeOf(long Val);
 
-        @LibrarySymbol("LLVMIsABasicBlock")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsABasicBlock(long);
-
-        @LibrarySymbol("LLVMIsAInlineAsm")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAInlineAsm(long);
-
-        @LibrarySymbol("LLVMIsAUser")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAUser(long);
-
-        @LibrarySymbol("LLVMIsAConstant")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstant(long);
-
-        @LibrarySymbol("LLVMIsABlockAddress")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsABlockAddress(long);
-
-        @LibrarySymbol("LLVMIsAConstantAggregateZero")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantAggregateZero(long);
-
-        @LibrarySymbol("LLVMIsAConstantArray")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantArray(long);
-
-        @LibrarySymbol("LLVMIsAConstantDataSequential")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantDataSequential(long);
-
-        @LibrarySymbol("LLVMIsAConstantDataArray")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantDataArray(long);
-
-        @LibrarySymbol("LLVMIsAConstantDataVector")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantDataVector(long);
-
-        @LibrarySymbol("LLVMIsAConstantExpr")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantExpr(long);
-
-        @LibrarySymbol("LLVMIsAConstantFP")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantFP(long);
-
-        @LibrarySymbol("LLVMIsAConstantInt")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantInt(long);
-
-        @LibrarySymbol("LLVMIsAConstantPointerNull")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantPointerNull(long);
-
-        @LibrarySymbol("LLVMIsAConstantStruct")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantStruct(long);
-
-        @LibrarySymbol("LLVMIsAConstantTokenNone")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantTokenNone(long);
-
-        @LibrarySymbol("LLVMIsAConstantVector")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAConstantVector(long);
-
-        @LibrarySymbol("LLVMIsAGlobalValue")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAGlobalValue(long);
-
-        @LibrarySymbol("LLVMIsAGlobalAlias")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAGlobalAlias(long);
-
-        @LibrarySymbol("LLVMIsAGlobalObject")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAGlobalObject(long);
-
-        @LibrarySymbol("LLVMIsAFunction")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAFunction(long);
-
-        @LibrarySymbol("LLVMIsAGlobalVariable")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAGlobalVariable(long);
-
-        @LibrarySymbol("LLVMIsAUndefValue")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAUndefValue(long);
-
-        @LibrarySymbol("LLVMIsAInstruction")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAInstruction(long);
-
-        @LibrarySymbol("LLVMIsABinaryOperator")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsABinaryOperator(long);
-
-        @LibrarySymbol("LLVMIsACallInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsACallInst(long);
-
-        @LibrarySymbol("LLVMIsAIntrinsicInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAIntrinsicInst(long);
-
-        @LibrarySymbol("LLVMIsADbgInfoIntrinsic")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsADbgInfoIntrinsic(long);
-
-        @LibrarySymbol("LLVMIsADbgDeclareInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsADbgDeclareInst(long);
-
-        @LibrarySymbol("LLVMIsAMemIntrinsic")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAMemIntrinsic(long);
-
-        @LibrarySymbol("LLVMIsAMemCpyInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAMemCpyInst(long);
-
-        @LibrarySymbol("LLVMIsAMemMoveInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAMemMoveInst(long);
-
-        @LibrarySymbol("LLVMIsAMemSetInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAMemSetInst(long);
-
-        @LibrarySymbol("LLVMIsACmpInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsACmpInst(long);
-
-        @LibrarySymbol("LLVMIsAFCmpInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAFCmpInst(long);
-
-        @LibrarySymbol("LLVMIsAICmpInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAICmpInst(long);
-
-        @LibrarySymbol("LLVMIsAExtractElementInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAExtractElementInst(long);
-
-        @LibrarySymbol("LLVMIsAGetElementPtrInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAGetElementPtrInst(long);
-
-        @LibrarySymbol("LLVMIsAInsertElementInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAInsertElementInst(long);
-
-        @LibrarySymbol("LLVMIsAInsertValueInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAInsertValueInst(long);
-
-        @LibrarySymbol("LLVMIsALandingPadInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsALandingPadInst(long);
-
-        @LibrarySymbol("LLVMIsAPHINode")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAPHINode(long);
-
-        @LibrarySymbol("LLVMIsASelectInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsASelectInst(long);
-
-        @LibrarySymbol("LLVMIsAShuffleVectorInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAShuffleVectorInst(long);
-
-        @LibrarySymbol("LLVMIsAStoreInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAStoreInst(long);
-
-        @LibrarySymbol("LLVMIsATerminatorInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsATerminatorInst(long);
-
-        @LibrarySymbol("LLVMIsABranchInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsABranchInst(long);
-
-        @LibrarySymbol("LLVMIsAIndirectBrInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAIndirectBrInst(long);
-
-        @LibrarySymbol("LLVMIsAInvokeInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAInvokeInst(long);
-
-        @LibrarySymbol("LLVMIsAReturnInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAReturnInst(long);
-
-        @LibrarySymbol("LLVMIsASwitchInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsASwitchInst(long);
-
-        @LibrarySymbol("LLVMIsAUnreachableInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAUnreachableInst(long);
-
-        @LibrarySymbol("LLVMIsAResumeInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAResumeInst(long);
-
-        @LibrarySymbol("LLVMIsACleanupReturnInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsACleanupReturnInst(long);
-
-        @LibrarySymbol("LLVMIsACatchReturnInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsACatchReturnInst(long);
-
-        @LibrarySymbol("LLVMIsAFuncletPadInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAFuncletPadInst(long);
-
-        @LibrarySymbol("LLVMIsACatchPadInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsACatchPadInst(long);
-
-        @LibrarySymbol("LLVMIsACleanupPadInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsACleanupPadInst(long);
-
-        @LibrarySymbol("LLVMIsAUnaryInstruction")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAUnaryInstruction(long);
-
-        @LibrarySymbol("LLVMIsAAllocaInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAAllocaInst(long);
-
-        @LibrarySymbol("LLVMIsACastInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsACastInst(long);
-
-        @LibrarySymbol("LLVMIsAAddrSpaceCastInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAAddrSpaceCastInst(long);
-
-        @LibrarySymbol("LLVMIsABitCastInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsABitCastInst(long);
-
-        @LibrarySymbol("LLVMIsAFPExtInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAFPExtInst(long);
-
-        @LibrarySymbol("LLVMIsAFPToSIInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAFPToSIInst(long);
-
-        @LibrarySymbol("LLVMIsAFPToUIInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAFPToUIInst(long);
-
-        @LibrarySymbol("LLVMIsAFPTruncInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAFPTruncInst(long);
-
-        @LibrarySymbol("LLVMIsAIntToPtrInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAIntToPtrInst(long);
-
-        @LibrarySymbol("LLVMIsAPtrToIntInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAPtrToIntInst(long);
-
-        @LibrarySymbol("LLVMIsASExtInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsASExtInst(long);
-
-        @LibrarySymbol("LLVMIsASIToFPInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsASIToFPInst(long);
-
-        @LibrarySymbol("LLVMIsATruncInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsATruncInst(long);
-
-        @LibrarySymbol("LLVMIsAUIToFPInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAUIToFPInst(long);
-
-        @LibrarySymbol("LLVMIsAZExtInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAZExtInst(long);
-
-        @LibrarySymbol("LLVMIsAExtractValueInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAExtractValueInst(long);
-
-        @LibrarySymbol("LLVMIsALoadInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsALoadInst(long);
-
-        @LibrarySymbol("LLVMIsAVAArgInst")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAVAArgInst(long);
-
-        @LibrarySymbol("LLVMTypeOf")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMTypeOf(long);
-
-        @LibrarySymbol("LLVMGetValueKind")
+        @LibrarySymbol(name = "LLVMGetValueKind")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetValueKind(long);
+        abstract int LLVMGetValueKind(long Val);
 
-        @LibrarySymbol("LLVMGetValueName")
+        @LibrarySymbol(name = "LLVMGetValueName")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetValueName(long);
+        abstract long LLVMGetValueName(long Val);
 
-        @LibrarySymbol("LLVMSetValueName")
+        @LibrarySymbol(name = "LLVMSetValueName")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMSetValueName(long, long);
+        abstract void LLVMSetValueName(long Val, long Name);
 
-        @LibrarySymbol("LLVMDumpValue")
+        @LibrarySymbol(name = "LLVMDumpValue")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
-        abstract void LLVMDumpValue(long);*/
+        abstract void LLVMDumpValue(long Val);
 
         @LibrarySymbol(name = "LLVMPrintValueToString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMPrintValueToString(long Val);
 
-        /*@LibrarySymbol("LLVMReplaceAllUsesWith")
+        @LibrarySymbol(name = "LLVMReplaceAllUsesWith")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMReplaceAllUsesWith(long, long);
+        abstract void LLVMReplaceAllUsesWith(long OldVal, long NewVal);
 
-        @LibrarySymbol("LLVMIsConstant")
+        @LibrarySymbol(name = "LLVMIsConstant")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsConstant(long);
+        abstract boolean LLVMIsConstant(long Val);
 
-        @LibrarySymbol("LLVMIsUndef")
+        @LibrarySymbol(name = "LLVMIsUndef")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsUndef(long);
+        abstract boolean LLVMIsUndef(long Val);
 
-        @LibrarySymbol("LLVMIsAMDNode")
+        @LibrarySymbol(name = "LLVMIsAArgument")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAMDNode(long);
+        abstract long LLVMIsAArgument(long Val);
 
-        @LibrarySymbol("LLVMIsAMDString")
+        @LibrarySymbol(name = "LLVMIsABasicBlock")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMIsAMDString(long);
+        abstract long LLVMIsABasicBlock(long Val);
 
-        @LibrarySymbol("LLVMGetFirstUse")
+        @LibrarySymbol(name = "LLVMIsAInlineAsm")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetFirstUse(long);
+        abstract long LLVMIsAInlineAsm(long Val);
 
-        @LibrarySymbol("LLVMGetNextUse")
+        @LibrarySymbol(name = "LLVMIsAUser")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetNextUse(long);
+        abstract long LLVMIsAUser(long Val);
 
-        @LibrarySymbol("LLVMGetUser")
+        @LibrarySymbol(name = "LLVMIsAConstant")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetUser(long);
+        abstract long LLVMIsAConstant(long Val);
 
-        @LibrarySymbol("LLVMGetUsedValue")
+        @LibrarySymbol(name = "LLVMIsABlockAddress")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMGetUsedValue(long);
+        abstract long LLVMIsABlockAddress(long Val);
 
-        @LibrarySymbol("LLVMGetOperand")
+        @LibrarySymbol(name = "LLVMIsAConstantAggregateZero")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantAggregateZero(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantArray")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantArray(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantDataSequential")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantDataSequential(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantDataArray")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantDataArray(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantDataVector")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantDataVector(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantExpr")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantExpr(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantFP")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantFP(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantInt")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantInt(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantPointerNull")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantPointerNull(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantStruct")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantStruct(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantTokenNone")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantTokenNone(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAConstantVector")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAConstantVector(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAGlobalValue")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAGlobalValue(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAGlobalAlias")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAGlobalAlias(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAGlobalObject")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAGlobalObject(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAFunction")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAFunction(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAGlobalVariable")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAGlobalVariable(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAUndefValue")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAUndefValue(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAInstruction")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAInstruction(long Val);
+
+        @LibrarySymbol(name = "LLVMIsABinaryOperator")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsABinaryOperator(long Val);
+
+        @LibrarySymbol(name = "LLVMIsACallInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsACallInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAIntrinsicInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAIntrinsicInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsADbgInfoIntrinsic")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsADbgInfoIntrinsic(long Val);
+
+        @LibrarySymbol(name = "LLVMIsADbgDeclareInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsADbgDeclareInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAMemIntrinsic")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAMemIntrinsic(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAMemCpyInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAMemCpyInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAMemMoveInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAMemMoveInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAMemSetInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAMemSetInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsACmpInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsACmpInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAFCmpInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAFCmpInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAICmpInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAICmpInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAExtractElementInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAExtractElementInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAGetElementPtrInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAGetElementPtrInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAInsertElementInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAInsertElementInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAInsertValueInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAInsertValueInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsALandingPadInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsALandingPadInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAPHINode")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAPHINode(long Val);
+
+        @LibrarySymbol(name = "LLVMIsASelectInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsASelectInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAShuffleVectorInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAShuffleVectorInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAStoreInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAStoreInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsATerminatorInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsATerminatorInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsABranchInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsABranchInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAIndirectBrInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAIndirectBrInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAInvokeInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAInvokeInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAReturnInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAReturnInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsASwitchInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsASwitchInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAUnreachableInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAUnreachableInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAResumeInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAResumeInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsACleanupReturnInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsACleanupReturnInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsACatchReturnInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsACatchReturnInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAFuncletPadInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAFuncletPadInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsACatchPadInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsACatchPadInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsACleanupPadInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsACleanupPadInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAUnaryInstruction")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAUnaryInstruction(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAAllocaInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAAllocaInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsACastInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsACastInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAAddrSpaceCastInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAAddrSpaceCastInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsABitCastInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsABitCastInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAFPExtInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAFPExtInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAFPToSIInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAFPToSIInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAFPToUIInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAFPToUIInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAFPTruncInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAFPTruncInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAIntToPtrInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAIntToPtrInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAPtrToIntInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAPtrToIntInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsASExtInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsASExtInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsASIToFPInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsASIToFPInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsATruncInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsATruncInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAUIToFPInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAUIToFPInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAZExtInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAZExtInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAExtractValueInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAExtractValueInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsALoadInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsALoadInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAVAArgInst")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAVAArgInst(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAMDNode")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAMDNode(long Val);
+
+        @LibrarySymbol(name = "LLVMIsAMDString")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMIsAMDString(long Val);
+
+        @LibrarySymbol(name = "LLVMGetFirstUse")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetFirstUse(long Val);
+
+        @LibrarySymbol(name = "LLVMGetNextUse")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetNextUse(long U);
+
+        @LibrarySymbol(name = "LLVMGetUser")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetUser(long U);
+
+        @LibrarySymbol(name = "LLVMGetUsedValue")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
+        abstract long LLVMGetUsedValue(long U);
+
+        @LibrarySymbol(name = "LLVMGetOperand")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMGetOperand(long, int);
+        abstract long LLVMGetOperand(long Val, int Index);
 
-        @LibrarySymbol("LLVMGetOperandUse")
+        @LibrarySymbol(name = "LLVMGetOperandUse")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMGetOperandUse(long, int);
+        abstract long LLVMGetOperandUse(long Val, int Index);
 
-        @LibrarySymbol("LLVMSetOperand")
+        @LibrarySymbol(name = "LLVMSetOperand")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract void LLVMSetOperand(long, int, long);
+        abstract void LLVMSetOperand(long User, int Index, long Val);
 
-        @LibrarySymbol("LLVMGetNumOperands")
+        @LibrarySymbol(name = "LLVMGetNumOperands")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetNumOperands(long);*/
+        abstract int LLVMGetNumOperands(long Val);
 
         @LibrarySymbol(name = "LLVMConstNull")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
@@ -3215,6 +3219,7 @@ public class Core {
     /*===-- Error handling ----------------------------------------------------===*/
 
     /* package-private */
+    @SuppressWarnings("unused")
     static long LLVMCreateMessage(String Message) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Message = allocString(arena, Message);
@@ -4307,46 +4312,43 @@ public class Core {
      * on llvm::Value.
      */
 
-    ///**
-    // * Obtain the type of a value.
-    // *
-    // * @see llvm::Value::getType()
-    // */
-    //LLVMTypeRef LLVMTypeOf(LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMTypeOf();
-    //}
-    ///**
-    // * Obtain the enumerated type of a Value instance.
-    // *
-    // * @see llvm::Value::getValueID()
-    // */
-    //LLVMValueKind LLVMGetValueKind(LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMGetValueKind();
-    //}
-    ///**
-    // * Obtain the string name of a value.
-    // *
-    // * @see llvm::Value::getName()
-    // */
-    //String LLVMGetValueName(LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMGetValueName();
-    //}
-    ///**
-    // * Set the string name of a value.
-    // *
-    // * @see llvm::Value::setName()
-    // */
-    //void LLVMSetValueName(LLVMValueRef Val, String Name) {
-    //    return Native.INSTANCE.LLVMSetValueName();
-    //}
-    ///**
-    // * Dump a representation of a value to stderr.
-    // *
-    // * @see llvm::Value::dump()
-    // */
-    //void LLVMDumpValue(LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMDumpValue();
-    //}
+    /**
+     * Obtain the type of a value.
+     */
+    public static LLVMTypeRef LLVMTypeOf(LLVMValueRef Val) {
+        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMTypeOf(Val.value()));
+    }
+
+    /**
+     * Obtain the enumerated type of a Value instance.
+     */
+    public static LLVMValueKind LLVMGetValueKind(LLVMValueRef Val) {
+        return LLVMValueKind.of(Native.INSTANCE.LLVMGetValueKind(Val.value()));
+    }
+
+    /**
+     * Obtain the string name of a value.
+     */
+    public static String LLVMGetValueName(LLVMValueRef Val) {
+        return addressToString(Native.INSTANCE.LLVMGetValueName(Val.value()));
+    }
+
+    /**
+     * Set the string name of a value.
+     */
+    public static void LLVMSetValueName(LLVMValueRef Val, String Name) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Name = allocString(arena, Name);
+            Native.INSTANCE.LLVMSetValueName(Val.value(), c_Name.nativeAddress());
+        }
+    }
+
+    /**
+     * Dump a representation of a value to stderr.
+     */
+    public static void LLVMDumpValue(LLVMValueRef Val) {
+        Native.INSTANCE.LLVMDumpValue(Val.value());
+    }
 
     /**
      * Return a string representation of the value. Use
@@ -4356,26 +4358,355 @@ public class Core {
         return addressToLLVMString(Native.INSTANCE.LLVMPrintValueToString(Val.value()));
     }
 
-    ///**
-    // * Replace all uses of a value with another one.
-    // *
-    // * @see llvm::Value::replaceAllUsesWith()
-    // */
-    //void LLVMReplaceAllUsesWith(LLVMValueRef OldVal, LLVMValueRef NewVal) {
-    //    return Native.INSTANCE.LLVMReplaceAllUsesWith();
-    //}
-    ///**
-    // * Determine whether the specified value instance is constant.
-    // */
-    //boolean LLVMIsConstant(LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMIsConstant();
-    //}
-    ///**
-    // * Determine whether a value instance is undefined.
-    // */
-    //boolean LLVMIsUndef(LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMIsUndef();
-    //}
+    /**
+     * Replace all uses of a value with another one.
+     */
+    public static void LLVMReplaceAllUsesWith(LLVMValueRef OldVal, LLVMValueRef NewVal) {
+        Native.INSTANCE.LLVMReplaceAllUsesWith(OldVal.value(), NewVal.value());
+    }
+
+    /**
+     * Determine whether the specified value instance is constant.
+     */
+    public static boolean LLVMIsConstant(LLVMValueRef Val) {
+        return Native.INSTANCE.LLVMIsConstant(Val.value());
+    }
+
+    /**
+     * Determine whether a value instance is undefined.
+     */
+    public static boolean LLVMIsUndef(LLVMValueRef Val) {
+        return Native.INSTANCE.LLVMIsUndef(Val.value());
+    }
+
+    /**
+     * Convert value instances between types.
+     * <p>
+     * Internally, an LLVMValueRef is "pinned" to a specific type. This
+     * series of functions allows you to cast an instance to a specific
+     * type.
+     * <p>
+     * If the cast is not valid for the specified type, NULL is returned.
+     */
+    public static LLVMValueRef LLVMIsAArgument(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAArgument(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsABasicBlock(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABasicBlock(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAInlineAsm(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInlineAsm(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAUser(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUser(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstant(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstant(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsABlockAddress(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABlockAddress(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantAggregateZero(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantAggregateZero(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantArray(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantArray(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantDataSequential(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantDataSequential(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantDataArray(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantDataArray(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantDataVector(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantDataVector(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantExpr(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantExpr(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantFP(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantFP(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantInt(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantInt(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantPointerNull(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantPointerNull(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantStruct(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantStruct(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantTokenNone(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantTokenNone(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAConstantVector(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantVector(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAGlobalValue(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGlobalValue(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAGlobalAlias(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGlobalAlias(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAGlobalObject(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGlobalObject(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAFunction(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFunction(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAGlobalVariable(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGlobalVariable(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAUndefValue(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUndefValue(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAInstruction(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInstruction(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsABinaryOperator(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABinaryOperator(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsACallInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACallInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAIntrinsicInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAIntrinsicInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsADbgInfoIntrinsic(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsADbgInfoIntrinsic(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsADbgDeclareInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsADbgDeclareInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAMemIntrinsic(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMemIntrinsic(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAMemCpyInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMemCpyInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAMemMoveInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMemMoveInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAMemSetInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMemSetInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsACmpInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACmpInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAFCmpInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFCmpInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAICmpInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAICmpInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAExtractElementInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAExtractElementInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAGetElementPtrInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGetElementPtrInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAInsertElementInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInsertElementInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAInsertValueInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInsertValueInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsALandingPadInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsALandingPadInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAPHINode(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAPHINode(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsASelectInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsASelectInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAShuffleVectorInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAShuffleVectorInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAStoreInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAStoreInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsATerminatorInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsATerminatorInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsABranchInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABranchInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAIndirectBrInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAIndirectBrInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAInvokeInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInvokeInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAReturnInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAReturnInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsASwitchInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsASwitchInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAUnreachableInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUnreachableInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAResumeInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAResumeInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsACleanupReturnInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACleanupReturnInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsACatchReturnInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACatchReturnInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAFuncletPadInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFuncletPadInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsACatchPadInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACatchPadInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsACleanupPadInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACleanupPadInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAUnaryInstruction(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUnaryInstruction(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAAllocaInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAAllocaInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsACastInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACastInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAAddrSpaceCastInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAAddrSpaceCastInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsABitCastInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABitCastInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAFPExtInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFPExtInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAFPToSIInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFPToSIInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAFPToUIInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFPToUIInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAFPTruncInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFPTruncInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAIntToPtrInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAIntToPtrInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAPtrToIntInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAPtrToIntInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsASExtInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsASExtInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsASIToFPInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsASIToFPInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsATruncInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsATruncInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAUIToFPInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUIToFPInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAZExtInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAZExtInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAExtractValueInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAExtractValueInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsALoadInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsALoadInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAVAArgInst(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAVAArgInst(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAMDNode(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMDNode(Val.value()));
+    }
+
+    public static LLVMValueRef LLVMIsAMDString(LLVMValueRef Val) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMDString(Val.value()));
+    }
 
     /*
      * @defgroup LLVMCCoreValueUses Usage
@@ -4388,46 +4719,43 @@ public class Core {
      * llvm::User and llvm::Value.
      */
 
-    ///**
-    // * Obtain the first use of a value.
-    // *
-    // * Uses are obtained in an iterator fashion. First, call this function
-    // * to obtain a reference to the first use. Then, call LLVMGetNextUse()
-    // * on that instance and all subsequently obtained instances until
-    // * LLVMGetNextUse() returns NULL.
-    // *
-    // * @see llvm::Value::use_begin()
-    // */
-    //LLVMUseRef LLVMGetFirstUse(LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMGetFirstUse();
-    //}
-    ///**
-    // * Obtain the next use of a value.
-    // *
-    // * This effectively advances the iterator. It returns NULL if you are on
-    // * the final use and no more are available.
-    // */
-    //LLVMUseRef LLVMGetNextUse(LLVMUseRef U) {
-    //    return Native.INSTANCE.LLVMGetNextUse();
-    //}
-    ///**
-    // * Obtain the user value for a user.
-    // *
-    // * The returned value corresponds to a llvm::User type.
-    // *
-    // * @see llvm::Use::getUser()
-    // */
-    //LLVMValueRef LLVMGetUser(LLVMUseRef U) {
-    //    return Native.INSTANCE.LLVMGetUser();
-    //}
-    ///**
-    // * Obtain the value this use corresponds to.
-    // *
-    // * @see llvm::Use::get().
-    // */
-    //LLVMValueRef LLVMGetUsedValue(LLVMUseRef U) {
-    //    return Native.INSTANCE.LLVMGetUsedValue();
-    //}
+    /**
+     * Obtain the first use of a value.
+     * <p>
+     * Uses are obtained in an iterator fashion. First, call this function
+     * to obtain a reference to the first use. Then, call LLVMGetNextUse()
+     * on that instance and all subsequently obtained instances until
+     * LLVMGetNextUse() returns NULL.
+     */
+    public static LLVMUseRef LLVMGetFirstUse(LLVMValueRef Val) {
+        return LLVMUseRef.ofNullable(Native.INSTANCE.LLVMGetFirstUse(Val.value()));
+    }
+
+    /**
+     * Obtain the next use of a value.
+     * <p>
+     * This effectively advances the iterator. It returns NULL if you are on
+     * the final use and no more are available.
+     */
+    public static LLVMUseRef LLVMGetNextUse(LLVMUseRef U) {
+        return LLVMUseRef.ofNullable(Native.INSTANCE.LLVMGetNextUse(U.value()));
+    }
+
+    /**
+     * Obtain the user value for a user.
+     * <p>
+     * The returned value corresponds to a llvm::User type.
+     */
+    public static LLVMValueRef LLVMGetUser(LLVMUseRef U) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetUser(U.value()));
+    }
+
+    /**
+     * Obtain the value this use corresponds to.
+     */
+    public static LLVMValueRef LLVMGetUsedValue(LLVMUseRef U) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetUsedValue(U.value()));
+    }
 
     /*
      * @defgroup LLVMCCoreValueUser User value
@@ -4437,38 +4765,33 @@ public class Core {
      * operators.
      */
 
-    ///**
-    // * Obtain an operand at a specific index in a llvm::User value.
-    // *
-    // * @see llvm::User::getOperand()
-    // */
-    //LLVMValueRef LLVMGetOperand(LLVMValueRef Val, int /* unsigned */ Index) {
-    //    return Native.INSTANCE.LLVMGetOperand();
-    //}
-    ///**
-    // * Obtain the use of an operand at a specific index in a llvm::User value.
-    // *
-    // * @see llvm::User::getOperandUse()
-    // */
-    //LLVMUseRef LLVMGetOperandUse(LLVMValueRef Val, int /* unsigned */ Index) {
-    //    return Native.INSTANCE.LLVMGetOperandUse();
-    //}
-    ///**
-    // * Set an operand at a specific index in a llvm::User value.
-    // *
-    // * @see llvm::User::setOperand()
-    // */
-    //void LLVMSetOperand(LLVMValueRef User, int /* unsigned */ Index, LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMSetOperand();
-    //}
-    ///**
-    // * Obtain the number of operands in a llvm::User value.
-    // *
-    // * @see llvm::User::getNumOperands()
-    // */
-    //int LLVMGetNumOperands(LLVMValueRef Val) {
-    //    return Native.INSTANCE.LLVMGetNumOperands();
-    //}
+    /**
+     * Obtain an operand at a specific index in a llvm::User value.
+     */
+    public static LLVMValueRef LLVMGetOperand(LLVMValueRef Val, int /* unsigned */ Index) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetOperand(Val.value(), Index));
+    }
+
+    /**
+     * Obtain the use of an operand at a specific index in a llvm::User value.
+     */
+    public static LLVMUseRef LLVMGetOperandUse(LLVMValueRef Val, int /* unsigned */ Index) {
+        return LLVMUseRef.ofNullable(Native.INSTANCE.LLVMGetOperandUse(Val.value(), Index));
+    }
+
+    /**
+     * Set an operand at a specific index in a llvm::User value.
+     */
+    public static void LLVMSetOperand(LLVMValueRef User, int /* unsigned */ Index, LLVMValueRef Val) {
+        Native.INSTANCE.LLVMSetOperand(User.value(), Index, Val.value());
+    }
+
+    /**
+     * Obtain the number of operands in a llvm::User value.
+     */
+    public static int LLVMGetNumOperands(LLVMValueRef Val) {
+        return Native.INSTANCE.LLVMGetNumOperands(Val.value());
+    }
 
     /*
      * @defgroup LLVMCCoreValueConstant Constants
