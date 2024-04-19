@@ -1833,141 +1833,141 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMSizeOf(long Ty);
 
-        /*@LibrarySymbol("LLVMConstNeg")
+        @LibrarySymbol(name = "LLVMConstNeg")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMConstNeg(long);
+        abstract long LLVMConstNeg(long ConstantVal);
 
-        @LibrarySymbol("LLVMConstNSWNeg")
+        @LibrarySymbol(name = "LLVMConstNSWNeg")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMConstNSWNeg(long);
+        abstract long LLVMConstNSWNeg(long ConstantVal);
 
-        @LibrarySymbol("LLVMConstNUWNeg")
+        @LibrarySymbol(name = "LLVMConstNUWNeg")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMConstNUWNeg(long);
+        abstract long LLVMConstNUWNeg(long ConstantVal);
 
-        @LibrarySymbol("LLVMConstFNeg")
+        @LibrarySymbol(name = "LLVMConstFNeg")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMConstFNeg(long);
+        abstract long LLVMConstFNeg(long ConstantVal);
 
-        @LibrarySymbol("LLVMConstNot")
+        @LibrarySymbol(name = "LLVMConstNot")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
-        abstract long LLVMConstNot(long);
+        abstract long LLVMConstNot(long ConstantVal);
 
-        @LibrarySymbol("LLVMConstAdd")
+        @LibrarySymbol(name = "LLVMConstAdd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstAdd(long, long);
+        abstract long LLVMConstAdd(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstNSWAdd")
+        @LibrarySymbol(name = "LLVMConstNSWAdd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstNSWAdd(long, long);
+        abstract long LLVMConstNSWAdd(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstNUWAdd")
+        @LibrarySymbol(name = "LLVMConstNUWAdd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstNUWAdd(long, long);
+        abstract long LLVMConstNUWAdd(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstFAdd")
+        @LibrarySymbol(name = "LLVMConstFAdd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstFAdd(long, long);
+        abstract long LLVMConstFAdd(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstSub")
+        @LibrarySymbol(name = "LLVMConstSub")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstSub(long, long);
+        abstract long LLVMConstSub(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstNSWSub")
+        @LibrarySymbol(name = "LLVMConstNSWSub")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstNSWSub(long, long);
+        abstract long LLVMConstNSWSub(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstNUWSub")
+        @LibrarySymbol(name = "LLVMConstNUWSub")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstNUWSub(long, long);
+        abstract long LLVMConstNUWSub(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstFSub")
+        @LibrarySymbol(name = "LLVMConstFSub")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstFSub(long, long);
+        abstract long LLVMConstFSub(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstMul")
+        @LibrarySymbol(name = "LLVMConstMul")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstMul(long, long);
+        abstract long LLVMConstMul(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstNSWMul")
+        @LibrarySymbol(name = "LLVMConstNSWMul")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstNSWMul(long, long);
+        abstract long LLVMConstNSWMul(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstNUWMul")
+        @LibrarySymbol(name = "LLVMConstNUWMul")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstNUWMul(long, long);
+        abstract long LLVMConstNUWMul(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstFMul")
+        @LibrarySymbol(name = "LLVMConstFMul")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstFMul(long, long);
+        abstract long LLVMConstFMul(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstUDiv")
+        @LibrarySymbol(name = "LLVMConstUDiv")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstUDiv(long, long);
+        abstract long LLVMConstUDiv(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstSDiv")
+        @LibrarySymbol(name = "LLVMConstSDiv")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstSDiv(long, long);
+        abstract long LLVMConstSDiv(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstExactSDiv")
+        @LibrarySymbol(name = "LLVMConstExactSDiv")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstExactSDiv(long, long);
+        abstract long LLVMConstExactSDiv(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstFDiv")
+        @LibrarySymbol(name = "LLVMConstFDiv")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstFDiv(long, long);
+        abstract long LLVMConstFDiv(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstURem")
+        @LibrarySymbol(name = "LLVMConstURem")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstURem(long, long);
+        abstract long LLVMConstURem(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstSRem")
+        @LibrarySymbol(name = "LLVMConstSRem")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstSRem(long, long);
+        abstract long LLVMConstSRem(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstFRem")
+        @LibrarySymbol(name = "LLVMConstFRem")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstFRem(long, long);
+        abstract long LLVMConstFRem(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstAnd")
+        @LibrarySymbol(name = "LLVMConstAnd")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstAnd(long, long);
+        abstract long LLVMConstAnd(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstOr")
+        @LibrarySymbol(name = "LLVMConstOr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstOr(long, long);
+        abstract long LLVMConstOr(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstXor")
+        @LibrarySymbol(name = "LLVMConstXor")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstXor(long, long);
+        abstract long LLVMConstXor(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstICmp")
+        @LibrarySymbol(name = "LLVMConstICmp")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {INT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstICmp(int, long, long);
+        abstract long LLVMConstICmp(int Predicate, long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstFCmp")
+        @LibrarySymbol(name = "LLVMConstFCmp")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {INT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstFCmp(int, long, long);
+        abstract long LLVMConstFCmp(int Predicate, long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstShl")
+        @LibrarySymbol(name = "LLVMConstShl")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstShl(long, long);
+        abstract long LLVMConstShl(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstLShr")
+        @LibrarySymbol(name = "LLVMConstLShr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstLShr(long, long);
+        abstract long LLVMConstLShr(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstAShr")
+        @LibrarySymbol(name = "LLVMConstAShr")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstAShr(long, long);
+        abstract long LLVMConstAShr(long LHSConstant, long RHSConstant);
 
-        @LibrarySymbol("LLVMConstGEP")
+        @LibrarySymbol(name = "LLVMConstGEP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMConstGEP(long, long, int);
+        abstract long LLVMConstGEP(long ConstantVal, long ConstantIndices, int NumIndices);
 
-        @LibrarySymbol("LLVMConstInBoundsGEP")
+        @LibrarySymbol(name = "LLVMConstInBoundsGEP")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMConstInBoundsGEP(long, long, int);*/
+        abstract long LLVMConstInBoundsGEP(long ConstantVal, long ConstantIndices, int NumIndices);
 
         @LibrarySymbol(name = "LLVMConstTrunc")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
@@ -5068,108 +5068,149 @@ public class Core {
         return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMSizeOf(Ty.value()));
     }
 
-    //LLVMValueRef LLVMConstNeg(LLVMValueRef ConstantVal) {
-    //    return Native.INSTANCE.LLVMConstNeg();
-    //}
-    //LLVMValueRef LLVMConstNSWNeg(LLVMValueRef ConstantVal) {
-    //    return Native.INSTANCE.LLVMConstNSWNeg();
-    //}
-    //LLVMValueRef LLVMConstNUWNeg(LLVMValueRef ConstantVal) {
-    //    return Native.INSTANCE.LLVMConstNUWNeg();
-    //}
-    //LLVMValueRef LLVMConstFNeg(LLVMValueRef ConstantVal) {
-    //    return Native.INSTANCE.LLVMConstFNeg();
-    //}
-    //LLVMValueRef LLVMConstNot(LLVMValueRef ConstantVal) {
-    //    return Native.INSTANCE.LLVMConstNot();
-    //}
-    //LLVMValueRef LLVMConstAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstAdd();
-    //}
-    //LLVMValueRef LLVMConstNSWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstNSWAdd();
-    //}
-    //LLVMValueRef LLVMConstNUWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstNUWAdd();
-    //}
-    //LLVMValueRef LLVMConstFAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstFAdd();
-    //}
-    //LLVMValueRef LLVMConstSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstSub();
-    //}
-    //LLVMValueRef LLVMConstNSWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstNSWSub();
-    //}
-    //LLVMValueRef LLVMConstNUWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstNUWSub();
-    //}
-    //LLVMValueRef LLVMConstFSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstFSub();
-    //}
-    //LLVMValueRef LLVMConstMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstMul();
-    //}
-    //LLVMValueRef LLVMConstNSWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstNSWMul();
-    //}
-    //LLVMValueRef LLVMConstNUWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstNUWMul();
-    //}
-    //LLVMValueRef LLVMConstFMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstFMul();
-    //}
-    //LLVMValueRef LLVMConstUDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstUDiv();
-    //}
-    //LLVMValueRef LLVMConstSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstSDiv();
-    //}
-    //LLVMValueRef LLVMConstExactSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstExactSDiv();
-    //}
-    //LLVMValueRef LLVMConstFDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstFDiv();
-    //}
-    //LLVMValueRef LLVMConstURem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstURem();
-    //}
-    //LLVMValueRef LLVMConstSRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstSRem();
-    //}
-    //LLVMValueRef LLVMConstFRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstFRem();
-    //}
-    //LLVMValueRef LLVMConstAnd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstAnd();
-    //}
-    //LLVMValueRef LLVMConstOr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstOr();
-    //}
-    //LLVMValueRef LLVMConstXor(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstXor();
-    //}
-    //LLVMValueRef LLVMConstICmp(LLVMIntPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstICmp();
-    //}
-    //LLVMValueRef LLVMConstFCmp(LLVMRealPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstFCmp();
-    //}
-    //LLVMValueRef LLVMConstShl(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstShl();
-    //}
-    //LLVMValueRef LLVMConstLShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstLShr();
-    //}
-    //LLVMValueRef LLVMConstAShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-    //    return Native.INSTANCE.LLVMConstAShr();
-    //}
-    //LLVMValueRef LLVMConstGEP(LLVMValueRef ConstantVal, LLVMValueRef *ConstantIndices, int /* unsigned */ NumIndices) {
-    //    return Native.INSTANCE.LLVMConstGEP();
-    //}
-    //LLVMValueRef LLVMConstInBoundsGEP(LLVMValueRef ConstantVal, LLVMValueRef *ConstantIndices, int /* unsigned */ NumIndices) {
-    //    return Native.INSTANCE.LLVMConstInBoundsGEP();
-    //}
+    public static LLVMValueRef LLVMConstNeg(LLVMValueRef ConstantVal) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNeg(ConstantVal.value()));
+    }
+
+    public static LLVMValueRef LLVMConstNSWNeg(LLVMValueRef ConstantVal) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNSWNeg(ConstantVal.value()));
+    }
+
+    public static LLVMValueRef LLVMConstNUWNeg(LLVMValueRef ConstantVal) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNUWNeg(ConstantVal.value()));
+    }
+
+    public static LLVMValueRef LLVMConstFNeg(LLVMValueRef ConstantVal) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFNeg(ConstantVal.value()));
+    }
+
+    public static LLVMValueRef LLVMConstNot(LLVMValueRef ConstantVal) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNot(ConstantVal.value()));
+    }
+
+    public static LLVMValueRef LLVMConstAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstAdd(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstNSWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNSWAdd(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstNUWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNUWAdd(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstFAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFAdd(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSub(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstNSWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNSWSub(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstNUWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNUWSub(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstFSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFSub(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstMul(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstNSWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNSWMul(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstNUWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNUWMul(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstFMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFMul(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstUDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstUDiv(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSDiv(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstExactSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstExactSDiv(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstFDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFDiv(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstURem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstURem(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstSRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSRem(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstFRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFRem(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstAnd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstAnd(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstOr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstOr(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstXor(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstXor(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstICmp(LLVMIntPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstICmp(Predicate.value(), LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstFCmp(LLVMRealPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFCmp(Predicate.value(), LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstShl(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstShl(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstLShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstLShr(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstAShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstAShr(LHSConstant.value(), RHSConstant.value()));
+    }
+
+    public static LLVMValueRef LLVMConstGEP(LLVMValueRef ConstantVal, LLVMValueRef[] ConstantIndices) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ConstantIndices = allocArray(arena, ConstantIndices);
+            int /* unsigned */ NumIndices = arrayLength(ConstantIndices);
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstGEP(ConstantVal.value(), c_ConstantIndices.nativeAddress(), NumIndices));
+        }
+    }
+
+    public static LLVMValueRef LLVMConstInBoundsGEP(LLVMValueRef ConstantVal, LLVMValueRef[] ConstantIndices) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ConstantIndices = allocArray(arena, ConstantIndices);
+            int /* unsigned */ NumIndices = arrayLength(ConstantIndices);
+            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstInBoundsGEP(ConstantVal.value(), c_ConstantIndices.nativeAddress(), NumIndices));
+        }
+    }
 
     public static LLVMValueRef LLVMConstTrunc(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
         return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstTrunc(ConstantVal.value(), ToType.value()));
