@@ -9,14 +9,12 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign._CapturableState.ERRNO;
 import static com.v7878.foreign._Utils.moveArgument;
 import static com.v7878.llvm.Analysis.LLVMVerifyModule;
-import static com.v7878.llvm.Core.LLVMAddAttribute;
+import static com.v7878.llvm.Core.LLVMAddAttributeAtIndex;
+import static com.v7878.llvm.Core.LLVMAddCallSiteAttribute;
 import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAddIncoming;
-import static com.v7878.llvm.Core.LLVMAddInstrAttribute;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMArrayType;
-import static com.v7878.llvm.Core.LLVMAttribute.LLVMByValAttribute;
-import static com.v7878.llvm.Core.LLVMAttribute.LLVMStructRetAttribute;
 import static com.v7878.llvm.Core.LLVMAttributeIndex.LLVMAttributeFirstArgIndex;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildAlloca;
@@ -34,6 +32,7 @@ import static com.v7878.llvm.Core.LLVMBuildStore;
 import static com.v7878.llvm.Core.LLVMBuildUnreachable;
 import static com.v7878.llvm.Core.LLVMConstInt;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
+import static com.v7878.llvm.Core.LLVMCreateEnumAttribute;
 import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMGetParams;
 import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
@@ -94,6 +93,7 @@ import com.v7878.foreign._StorageDescriptor.RawStorage;
 import com.v7878.foreign._StorageDescriptor.WrapperStorage;
 import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.LLVMException;
+import com.v7878.llvm.Types.LLVMAttributeRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
@@ -432,6 +432,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
              var module = LLVMModuleCreateWithNameInContext("generic", context)) {
 
+            var sret_attr = LLVMCreateEnumAttribute(context, "sret", 0);
+            var byval_attr = LLVMCreateEnumAttribute(context, "byval", 0);
+
             LLVMTypeRef stub_type = fdToLLVMType(context, stub_descriptor,
                     options.allowsHeapAccess(), !options.isCritical());
             LLVMValueRef stub = LLVMAddFunction(module, function_name, stub_type);
@@ -469,7 +472,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             int index = 0; // current index in stub_args[]
             LLVMValueRef target = LLVMBuildIntToPtr(builder, stub_args[index++], target_type_ptr, "");
             LLVMValueRef[] target_args = new LLVMValueRef[stub_args.length - index];
-            int[] attrs = new int[target_args.length];
+            LLVMAttributeRef[] attrs = new LLVMAttributeRef[target_args.length];
             int[] aligns = new int[target_args.length];
             boolean retVoid = true;
             LLVMValueRef retStore = null;
@@ -490,7 +493,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     index++;
                 } else if (retStorage instanceof MemoryStorage ms) {
                     // pass as pointer argument with "sret" attribute
-                    attrs[count] = LLVMStructRetAttribute;
+                    attrs[count] = sret_attr;
                     aligns[count] = Math.toIntExact(ms.layout.byteAlignment());
                     target_args[count] = LLVMBuildIntToPtr(builder, stub_args[index],
                             ptr_t(layoutToLLVMType(context, ms.layout)), "");
@@ -515,7 +518,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     count++;
                 } else if (storage instanceof MemoryStorage ms) {
                     // pass as pointer with "byval" attribute
-                    attrs[count] = LLVMByValAttribute;
+                    attrs[count] = byval_attr;
                     aligns[count] = Math.toIntExact(ms.layout.byteAlignment());
                     target_args[count] = LLVMBuildIntToPtr(builder, stub_args[index],
                             ptr_t(layoutToLLVMType(context, ms.layout)), "");
@@ -530,8 +533,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             final int offset = LLVMAttributeFirstArgIndex;
             for (int i = 0; i < count; i++) {
-                if (attrs[i] != 0) {
-                    LLVMAddInstrAttribute(call, i + offset, attrs[i]);
+                if (attrs[i] != null) {
+                    LLVMAddCallSiteAttribute(call, i + offset, attrs[i]);
                 }
                 if (aligns[i] != 0) {
                     LLVMSetInstrParamAlignment(call, i + offset, aligns[i]);
@@ -789,6 +792,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             LLVMValueRef jni_ok = const_int32(context, 0);
             LLVMValueRef jni_version = const_int32(context, /* JNI_VERSION_1_6 */ 0x00010006);
 
+            var sret_attr = LLVMCreateEnumAttribute(context, "sret", 0);
+            var byval_attr = LLVMCreateEnumAttribute(context, "byval", 0);
+
             LLVMTypeRef stub_type = sdToLLVMType(context, stub_descriptor, -1);
             LLVMValueRef stub = LLVMAddFunction(module, function_name, stub_type);
 
@@ -847,7 +853,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 } else if (retStorage instanceof MemoryStorage) {
                     // pass as pointer argument with "sret" attribute
                     var sret = stub_args[index++];
-                    LLVMAddAttribute(sret, LLVMStructRetAttribute);
+                    // Note: attribute index = index of arg + 1
+                    LLVMAddAttributeAtIndex(stub, index, sret_attr);
                     target_args[count++] = LLVMBuildPtrToInt(builder, sret, intptr_t(context), "");
                 } else {
                     throw shouldNotReachHere();
@@ -871,7 +878,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 } else if (storage instanceof MemoryStorage) {
                     // pass as pointer with "byval" attribute
                     var byval = stub_args[index++];
-                    LLVMAddAttribute(byval, LLVMByValAttribute);
+                    // Note: attribute index = index of arg + 1
+                    LLVMAddAttributeAtIndex(stub, index, byval_attr);
                     target_args[count++] = LLVMBuildPtrToInt(builder, byval, intptr_t(context), "");
                 } else {
                     throw shouldNotReachHere();
