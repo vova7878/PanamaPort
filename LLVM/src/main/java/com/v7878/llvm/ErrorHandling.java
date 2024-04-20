@@ -9,6 +9,8 @@ import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
@@ -27,7 +29,10 @@ import java.lang.invoke.MethodHandle;
 |* This file defines the C interface to LLVM's error handling mechanism.      *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
-public class ErrorHandling {
+@SuppressLint("WrongCommentType")
+public final class ErrorHandling {
+    private ErrorHandling() {
+    }
 
     @FunctionalInterface
     public interface LLVMFatalErrorHandler {

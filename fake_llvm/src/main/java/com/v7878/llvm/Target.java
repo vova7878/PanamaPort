@@ -6,7 +6,11 @@ import com.v7878.llvm.Types.LLVMPassManagerRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 
-public class Target {
+public final class Target {
+    private Target() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static final class LLVMTargetDataRef implements AutoCloseable {
         private LLVMTargetDataRef() {
             throw new UnsupportedOperationException("Stub!");
@@ -29,7 +33,7 @@ public class Target {
 
     public enum LLVMByteOrdering {
         LLVMBigEndian,
-        LLVMLittleEndian;
+        LLVMLittleEndian
     }
 
     public static int LLVMABIAlignmentOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {

@@ -5,7 +5,12 @@ import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMPassManagerRef;
 
-public class TargetMachine {
+@SuppressWarnings("RedundantThrows")
+public final class TargetMachine {
+    private TargetMachine() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static final class LLVMTargetRef {
         private LLVMTargetRef() {
             throw new UnsupportedOperationException("Stub!");
@@ -26,14 +31,14 @@ public class TargetMachine {
         LLVMCodeGenLevelNone,
         LLVMCodeGenLevelLess,
         LLVMCodeGenLevelDefault,
-        LLVMCodeGenLevelAggressive;
+        LLVMCodeGenLevelAggressive
     }
 
     public enum LLVMRelocMode {
         LLVMRelocDefault,
         LLVMRelocStatic,
         LLVMRelocPIC,
-        LLVMRelocDynamicNoPic;
+        LLVMRelocDynamicNoPic
     }
 
     public enum LLVMCodeModel {
@@ -42,12 +47,12 @@ public class TargetMachine {
         LLVMCodeModelSmall,
         LLVMCodeModelKernel,
         LLVMCodeModelMedium,
-        LLVMCodeModelLarge;
+        LLVMCodeModelLarge
     }
 
     public enum LLVMCodeGenFileType {
         LLVMAssemblyFile,
-        LLVMObjectFile;
+        LLVMObjectFile
     }
 
     public static void LLVMAddAnalysisPasses(LLVMTargetMachineRef T, LLVMPassManagerRef PM) {

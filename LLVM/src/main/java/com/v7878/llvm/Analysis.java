@@ -35,7 +35,9 @@ import java.util.function.Consumer;
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
 @SuppressLint("WrongCommentType")
-public class Analysis {
+public final class Analysis {
+    private Analysis() {
+    }
 
     /*
      * @defgroup LLVMCAnalysis Analysis

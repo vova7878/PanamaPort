@@ -19,7 +19,12 @@ import com.v7878.llvm.Types.LLVMUseRef;
 
 import java.util.function.Supplier;
 
-public class Core {
+@SuppressWarnings("RedundantThrows")
+public final class Core {
+    private Core() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     @FunctionalInterface
     public interface LLVMDiagnosticHandler {
         void invoke(LLVMDiagnosticInfoRef info);
@@ -30,7 +35,11 @@ public class Core {
         void invoke(LLVMContextRef context);
     }
 
-    public static class LLVMAttributeIndex {
+    public static final class LLVMAttributeIndex {
+        private LLVMAttributeIndex() {
+            throw new UnsupportedOperationException("Stub!");
+        }
+
         public static final int LLVMAttributeFirstArgIndex = ((Supplier<Integer>) () -> {
             throw new UnsupportedOperationException("Stub!");
         }).get();
@@ -106,7 +115,7 @@ public class Core {
         LLVMCatchRet,
         LLVMCatchPad,
         LLVMCleanupPad,
-        LLVMCatchSwitch;
+        LLVMCatchSwitch
     }
 
 
@@ -127,7 +136,7 @@ public class Core {
         LLVMVectorTypeKind,
         LLVMMetadataTypeKind,
         LLVMX86_MMXTypeKind,
-        LLVMTokenTypeKind;
+        LLVMTokenTypeKind
     }
 
 
@@ -148,19 +157,19 @@ public class Core {
         LLVMGhostLinkage,
         LLVMCommonLinkage,
         LLVMLinkerPrivateLinkage,
-        LLVMLinkerPrivateWeakLinkage;
+        LLVMLinkerPrivateWeakLinkage
     }
 
     public enum LLVMVisibility {
         LLVMDefaultVisibility,
         LLVMHiddenVisibility,
-        LLVMProtectedVisibility;
+        LLVMProtectedVisibility
     }
 
     public enum LLVMDLLStorageClass {
         LLVMDefaultStorageClass,
         LLVMDLLImportStorageClass,
-        LLVMDLLExportStorageClass;
+        LLVMDLLExportStorageClass
     }
 
     public enum LLVMCallConv {
@@ -170,7 +179,7 @@ public class Core {
         LLVMWebKitJSCallConv,
         LLVMAnyRegCallConv,
         LLVMX86StdcallCallConv,
-        LLVMX86FastcallCallConv;
+        LLVMX86FastcallCallConv
     }
 
     public enum LLVMValueKind {
@@ -198,7 +207,7 @@ public class Core {
         LLVMConstantTokenNoneValueKind,
         LLVMMetadataAsValueValueKind,
         LLVMInlineAsmValueKind,
-        LLVMInstructionValueKind;
+        LLVMInstructionValueKind
     }
 
     public enum LLVMIntPredicate {
@@ -211,7 +220,7 @@ public class Core {
         LLVMIntSGT,
         LLVMIntSGE,
         LLVMIntSLT,
-        LLVMIntSLE;
+        LLVMIntSLE
     }
 
     public enum LLVMRealPredicate {
@@ -230,12 +239,12 @@ public class Core {
         LLVMRealULT,
         LLVMRealULE,
         LLVMRealUNE,
-        LLVMRealPredicateTrue;
+        LLVMRealPredicateTrue
     }
 
     public enum LLVMLandingPadClauseTy {
         LLVMLandingPadCatch,
-        LLVMLandingPadFilter;
+        LLVMLandingPadFilter
     }
 
     public enum LLVMThreadLocalMode {
@@ -243,7 +252,7 @@ public class Core {
         LLVMGeneralDynamicTLSModel,
         LLVMLocalDynamicTLSModel,
         LLVMInitialExecTLSModel,
-        LLVMLocalExecTLSModel;
+        LLVMLocalExecTLSModel
     }
 
     public enum LLVMAtomicOrdering {
@@ -253,7 +262,7 @@ public class Core {
         LLVMAtomicOrderingAcquire,
         LLVMAtomicOrderingRelease,
         LLVMAtomicOrderingAcquireRelease,
-        LLVMAtomicOrderingSequentiallyConsistent;
+        LLVMAtomicOrderingSequentiallyConsistent
     }
 
     public enum LLVMAtomicRMWBinOp {
@@ -267,14 +276,14 @@ public class Core {
         LLVMAtomicRMWBinOpMax,
         LLVMAtomicRMWBinOpMin,
         LLVMAtomicRMWBinOpUMax,
-        LLVMAtomicRMWBinOpUMin;
+        LLVMAtomicRMWBinOpUMin
     }
 
     public enum LLVMDiagnosticSeverity {
         LLVMDSError,
         LLVMDSWarning,
         LLVMDSRemark,
-        LLVMDSNote;
+        LLVMDSNote
     }
 
     public static LLVMValueRef LLVMAddAlias(LLVMModuleRef M, LLVMTypeRef Ty, LLVMValueRef Aliasee, String Name) {

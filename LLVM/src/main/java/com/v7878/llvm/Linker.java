@@ -5,6 +5,8 @@ import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL_AS_INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
@@ -19,7 +21,10 @@ import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 |* This file defines the C interface to the module/file/archive linker.       *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
-public class Linker {
+@SuppressLint("WrongCommentType")
+public final class Linker {
+    private Linker() {
+    }
 
     @Keep
     private abstract static class Native {

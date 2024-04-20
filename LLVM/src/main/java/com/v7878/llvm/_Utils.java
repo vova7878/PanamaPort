@@ -16,6 +16,8 @@ import java.lang.reflect.Array;
 import java.util.function.LongFunction;
 
 final class _Utils {
+    private _Utils() {
+    }
 
     public static String addressToString(long address) {
         if (address == 0) return null;

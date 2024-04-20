@@ -3,11 +3,16 @@ package com.v7878.llvm;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 
-public class Analysis {
+@SuppressWarnings("RedundantThrows")
+public final class Analysis {
+    private Analysis() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public enum LLVMVerifierFailureAction {
         LLVMAbortProcessAction,
         LLVMPrintMessageAction,
-        LLVMReturnStatusAction;
+        LLVMReturnStatusAction
     }
 
     public static void LLVMVerifyFunction(LLVMValueRef Fn) throws LLVMException {

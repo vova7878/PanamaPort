@@ -60,7 +60,9 @@ import java.util.function.Consumer;
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
 @SuppressLint("WrongCommentType")
-public class Core {
+public final class Core {
+    private Core() {
+    }
 
     public enum LLVMOpcode {
         /* Terminator Instructions */
@@ -795,7 +797,10 @@ public class Core {
      * Attribute index are either LLVMAttributeReturnIndex,
      * LLVMAttributeFunctionIndex or a parameter number from 1 to N.
      */
-    public static class LLVMAttributeIndex {
+    public static final class LLVMAttributeIndex {
+        private LLVMAttributeIndex() {
+        }
+
         public static final int LLVMAttributeReturnIndex = 0;
         // ISO C restricts enumerator values to range of 'int'
         // (4294967295 is too large)

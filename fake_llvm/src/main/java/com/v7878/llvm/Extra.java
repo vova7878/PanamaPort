@@ -1,6 +1,10 @@
 package com.v7878.llvm;
 
-public class Extra {
+public final class Extra {
+    private Extra() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static String LLVMGetHostCPUFeatures() {
         throw new UnsupportedOperationException("Stub!");
     }

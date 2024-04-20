@@ -6,7 +6,9 @@ import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
 
-public class Extra {
+public final class Extra {
+    private Extra() {
+    }
 
     public static String LLVMGetHostTriple() {
         // TODO

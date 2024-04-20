@@ -2,7 +2,11 @@ package com.v7878.llvm;
 
 import com.v7878.llvm.Types.LLVMPassManagerRef;
 
-public class IPO {
+public final class IPO {
+    private IPO() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMAddAlwaysInlinerPass(LLVMPassManagerRef PM) {
         throw new UnsupportedOperationException("Stub!");
     }

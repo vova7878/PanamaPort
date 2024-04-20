@@ -14,6 +14,7 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.os.Build;
 
@@ -45,8 +46,11 @@ import java.util.function.Consumer;
 |* tools written in such languages.                                           *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
+@SuppressLint("WrongCommentType")
 @TargetApi(Build.VERSION_CODES.O_MR1)
-public class ExecutionEngine {
+public final class ExecutionEngine {
+    private ExecutionEngine() {
+    }
 
     /*
      * @defgroup LLVMCExecutionEngine Execution Engine

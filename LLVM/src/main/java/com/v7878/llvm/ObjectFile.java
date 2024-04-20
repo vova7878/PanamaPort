@@ -9,6 +9,8 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
@@ -31,7 +33,10 @@ import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 /* tools written in such languages.                                           */
 /*                                                                            */
 /*===----------------------------------------------------------------------===*/
-public class ObjectFile {
+@SuppressLint("WrongCommentType")
+public final class ObjectFile {
+    private ObjectFile() {
+    }
 
     /*
      * @defgroup LLVMCObject Object file reading and writing

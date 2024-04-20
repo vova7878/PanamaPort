@@ -8,6 +8,8 @@ import static com.v7878.llvm.Core.LLVMDisposeModuleProvider;
 import static com.v7878.llvm.Core.LLVMDisposePassManager;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
+import android.annotation.SuppressLint;
+
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.util.Objects;
@@ -17,6 +19,7 @@ import java.util.Objects;
 |* This file defines types used by the the C interface to LLVM.               *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
+@SuppressLint("WrongCommentType")
 public final class Types {
     private Types() {
     }

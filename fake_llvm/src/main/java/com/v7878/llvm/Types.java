@@ -1,6 +1,10 @@
 package com.v7878.llvm;
 
 public final class Types {
+    private Types() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static final class LLVMDiagnosticInfoRef {
         private LLVMDiagnosticInfoRef() {
             throw new UnsupportedOperationException("Stub!");

@@ -1,6 +1,10 @@
 package com.v7878.llvm;
 
-public class ErrorHandling {
+public final class ErrorHandling {
+    private ErrorHandling() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     @FunctionalInterface
     public interface LLVMFatalErrorHandler {
         void invoke(String reason);

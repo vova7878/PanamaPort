@@ -6,6 +6,8 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
@@ -21,7 +23,10 @@ import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 |* various interprocedural transformations of the LLVM IR.                    *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
-public class IPO {
+@SuppressLint("WrongCommentType")
+public final class IPO {
+    private IPO() {
+    }
 
     /*
      * @defgroup LLVMCTransformsIPO Interprocedural transformations

@@ -2,7 +2,11 @@ package com.v7878.llvm;
 
 import com.v7878.llvm.Types.LLVMPassManagerRef;
 
-public class Vectorize {
+public final class Vectorize {
+    private Vectorize() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMAddBBVectorizePass(LLVMPassManagerRef PM) {
         throw new UnsupportedOperationException("Stub!");
     }

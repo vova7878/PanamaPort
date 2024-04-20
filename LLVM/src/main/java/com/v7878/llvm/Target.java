@@ -18,6 +18,8 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
@@ -40,7 +42,10 @@ import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 /* tools written in such languages.                                           */
 /*                                                                            */
 /*===----------------------------------------------------------------------===*/
-public class Target {
+@SuppressLint("WrongCommentType")
+public final class Target {
+    private Target() {
+    }
 
     /*
      * @defgroup LLVMCTarget Target information

@@ -7,7 +7,12 @@ import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 
-public class ExecutionEngine {
+@SuppressWarnings("RedundantThrows")
+public final class ExecutionEngine {
+    private ExecutionEngine() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static final class LLVMGenericValueRef implements AutoCloseable {
         private LLVMGenericValueRef() {
             throw new UnsupportedOperationException("Stub!");

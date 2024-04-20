@@ -2,7 +2,11 @@ package com.v7878.llvm;
 
 import com.v7878.llvm.Types.LLVMPassManagerRef;
 
-public class Scalar {
+public final class Scalar {
+    private Scalar() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMAddAggressiveDCEPass(LLVMPassManagerRef PM) {
         throw new UnsupportedOperationException("Stub!");
     }

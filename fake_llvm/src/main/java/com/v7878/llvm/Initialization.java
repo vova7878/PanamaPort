@@ -2,7 +2,10 @@ package com.v7878.llvm;
 
 import com.v7878.llvm.Types.LLVMPassRegistryRef;
 
-public class Initialization {
+public final class Initialization {
+    private Initialization() {
+        throw new UnsupportedOperationException("Stub!");
+    }
 
     public static void LLVMInitializeAnalysis(LLVMPassRegistryRef R) {
         throw new UnsupportedOperationException("Stub!");

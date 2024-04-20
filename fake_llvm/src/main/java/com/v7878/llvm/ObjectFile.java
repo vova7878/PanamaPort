@@ -3,7 +3,11 @@ package com.v7878.llvm;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 
-public class ObjectFile {
+public final class ObjectFile {
+    private ObjectFile() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static final class LLVMObjectFileRef implements AutoCloseable {
         private LLVMObjectFileRef() {
             throw new UnsupportedOperationException("Stub!");

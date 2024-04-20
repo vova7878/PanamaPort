@@ -13,6 +13,8 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
@@ -38,7 +40,10 @@ import java.util.function.Consumer;
 |* tools written in such languages.                                           *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
-public class TargetMachine {
+@SuppressLint("WrongCommentType")
+public final class TargetMachine {
+    private TargetMachine() {
+    }
 
     public static final class LLVMTargetMachineRef extends AddressValue implements FineClosable {
 

@@ -8,7 +8,10 @@ import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.LibDLExt;
 
-class _LibLLVM {
+final class _LibLLVM {
+    private _LibLLVM() {
+    }
+
     public static final Arena LLVM_SCOPE = JavaForeignAccess.createImplicitHeapArena(_LibLLVM.class);
     @ApiSensitive
     public static final SymbolLookup LLVM = LibDLExt.systemLibraryLookup(
