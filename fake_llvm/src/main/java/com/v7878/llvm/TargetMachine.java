@@ -5,8 +5,6 @@ import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMPassManagerRef;
 
-import java.util.function.Consumer;
-
 public class TargetMachine {
     public static final class LLVMTargetRef {
         public static LLVMTargetRef of(long value) {
@@ -133,10 +131,6 @@ public class TargetMachine {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static boolean LLVMGetTargetFromTriple(String Triple, Consumer<LLVMTargetRef> T, Consumer<String> ErrorMessage) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public static String LLVMGetTargetMachineCPU(LLVMTargetMachineRef T) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -177,15 +171,7 @@ public class TargetMachine {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static boolean LLVMTargetMachineEmitToFile(LLVMTargetMachineRef T, LLVMModuleRef M, String Filename, LLVMCodeGenFileType codegen, Consumer<String> ErrorMessage) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public static LLVMMemoryBufferRef LLVMTargetMachineEmitToMemoryBuffer(LLVMTargetMachineRef T, LLVMModuleRef M, LLVMCodeGenFileType codegen) throws LLVMException {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public static boolean LLVMTargetMachineEmitToMemoryBuffer(LLVMTargetMachineRef T, LLVMModuleRef M, LLVMCodeGenFileType codegen, Consumer<String> ErrorMessage, Consumer<LLVMMemoryBufferRef> OutMemBuf) {
         throw new UnsupportedOperationException("Stub!");
     }
 }

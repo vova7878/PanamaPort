@@ -324,7 +324,8 @@ public class ExecutionEngine {
 
     /*===-- Operations on execution engines -----------------------------------===*/
 
-    public static boolean LLVMCreateExecutionEngineForModule(Consumer<LLVMExecutionEngineRef> OutEE, LLVMModuleRef M, Consumer<String> OutError) {
+    /* package-private */
+    static boolean nLLVMCreateExecutionEngineForModule(Consumer<LLVMExecutionEngineRef> OutEE, LLVMModuleRef M, Consumer<String> OutError) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutEE = arena.allocate(ADDRESS);
             MemorySegment c_OutError = arena.allocate(ADDRESS);
@@ -342,13 +343,14 @@ public class ExecutionEngine {
     public static LLVMExecutionEngineRef LLVMCreateExecutionEngineForModule(LLVMModuleRef M) throws LLVMException {
         String[] err = new String[1];
         LLVMExecutionEngineRef[] out = new LLVMExecutionEngineRef[1];
-        if (LLVMCreateExecutionEngineForModule(O -> out[0] = O, M, E -> err[0] = E)) {
+        if (nLLVMCreateExecutionEngineForModule(O -> out[0] = O, M, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
         return out[0];
     }
 
-    public static boolean LLVMCreateInterpreterForModule(Consumer<LLVMExecutionEngineRef> OutInterp, LLVMModuleRef M, Consumer<String> OutError) {
+    /* package-private */
+    static boolean nLLVMCreateInterpreterForModule(Consumer<LLVMExecutionEngineRef> OutInterp, LLVMModuleRef M, Consumer<String> OutError) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutInterp = arena.allocate(ADDRESS);
             MemorySegment c_OutError = arena.allocate(ADDRESS);
@@ -366,13 +368,14 @@ public class ExecutionEngine {
     public static LLVMExecutionEngineRef LLVMCreateInterpreterForModule(LLVMModuleRef M) throws LLVMException {
         String[] err = new String[1];
         LLVMExecutionEngineRef[] out = new LLVMExecutionEngineRef[1];
-        if (LLVMCreateInterpreterForModule(O -> out[0] = O, M, E -> err[0] = E)) {
+        if (nLLVMCreateInterpreterForModule(O -> out[0] = O, M, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
         return out[0];
     }
 
-    public static boolean LLVMCreateJITCompilerForModule(Consumer<LLVMExecutionEngineRef> OutJIT, LLVMModuleRef M, int /* unsigned */ OptLevel, Consumer<String> OutError) {
+    /* package-private */
+    static boolean nLLVMCreateJITCompilerForModule(Consumer<LLVMExecutionEngineRef> OutJIT, LLVMModuleRef M, int /* unsigned */ OptLevel, Consumer<String> OutError) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutJIT = arena.allocate(ADDRESS);
             MemorySegment c_OutError = arena.allocate(ADDRESS);
@@ -390,7 +393,7 @@ public class ExecutionEngine {
     public static LLVMExecutionEngineRef LLVMCreateJITCompilerForModule(LLVMModuleRef M, int /* unsigned */ OptLevel) throws LLVMException {
         String[] err = new String[1];
         LLVMExecutionEngineRef[] out = new LLVMExecutionEngineRef[1];
-        if (LLVMCreateJITCompilerForModule(O -> out[0] = O, M, OptLevel, E -> err[0] = E)) {
+        if (nLLVMCreateJITCompilerForModule(O -> out[0] = O, M, OptLevel, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
         return out[0];
@@ -454,7 +457,8 @@ public class ExecutionEngine {
         Native.INSTANCE.LLVMAddModule(EE.value(), M.value());
     }
 
-    public static boolean LLVMRemoveModule(LLVMExecutionEngineRef EE, LLVMModuleRef M, Consumer<LLVMModuleRef> OutMod, Consumer<String> OutError) {
+    /* package-private */
+    static boolean nLLVMRemoveModule(LLVMExecutionEngineRef EE, LLVMModuleRef M, Consumer<LLVMModuleRef> OutMod, Consumer<String> OutError) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutMod = arena.allocate(ADDRESS);
             MemorySegment c_OutError = arena.allocate(ADDRESS);
@@ -473,13 +477,14 @@ public class ExecutionEngine {
     public static LLVMModuleRef LLVMRemoveModule(LLVMExecutionEngineRef EE, LLVMModuleRef M) throws LLVMException {
         String[] err = new String[1];
         LLVMModuleRef[] out = new LLVMModuleRef[1];
-        if (LLVMRemoveModule(EE, M, O -> out[0] = O, E -> err[0] = E)) {
+        if (nLLVMRemoveModule(EE, M, O -> out[0] = O, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
         return out[0];
     }
 
-    public static boolean LLVMFindFunction(LLVMExecutionEngineRef EE, String Name, Consumer<LLVMValueRef> OutFn) {
+    /* package-private */
+    static boolean nLLVMFindFunction(LLVMExecutionEngineRef EE, String Name, Consumer<LLVMValueRef> OutFn) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             MemorySegment c_OutFn = arena.allocate(ADDRESS);
@@ -494,7 +499,7 @@ public class ExecutionEngine {
     // Port-added
     public static LLVMValueRef LLVMFindFunction(LLVMExecutionEngineRef EE, String Name) throws LLVMException {
         LLVMValueRef[] out = new LLVMValueRef[1];
-        if (LLVMFindFunction(EE, Name, O -> out[0] = O)) {
+        if (nLLVMFindFunction(EE, Name, O -> out[0] = O)) {
             throw new LLVMException("Funcfion \"" + Name + "\" not found");
         }
         return out[0];

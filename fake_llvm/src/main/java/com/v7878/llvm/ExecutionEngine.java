@@ -7,8 +7,6 @@ import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 
-import java.util.function.Consumer;
-
 public class ExecutionEngine {
     public static final class LLVMGenericValueRef implements AutoCloseable {
         public static LLVMGenericValueRef of(long value) {
@@ -64,10 +62,6 @@ public class ExecutionEngine {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static boolean LLVMCreateExecutionEngineForModule(Consumer<LLVMExecutionEngineRef> OutEE, LLVMModuleRef M, Consumer<String> OutError) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public static LLVMGenericValueRef LLVMCreateGenericValueOfFloat(LLVMTypeRef Ty, double N) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -84,15 +78,7 @@ public class ExecutionEngine {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static boolean LLVMCreateInterpreterForModule(Consumer<LLVMExecutionEngineRef> OutInterp, LLVMModuleRef M, Consumer<String> OutError) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public static LLVMExecutionEngineRef LLVMCreateJITCompilerForModule(LLVMModuleRef M, int OptLevel) throws LLVMException {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public static boolean LLVMCreateJITCompilerForModule(Consumer<LLVMExecutionEngineRef> OutJIT, LLVMModuleRef M, int OptLevel, Consumer<String> OutError) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -109,10 +95,6 @@ public class ExecutionEngine {
     }
 
     public static LLVMValueRef LLVMFindFunction(LLVMExecutionEngineRef EE, String Name) throws LLVMException {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public static boolean LLVMFindFunction(LLVMExecutionEngineRef EE, String Name, Consumer<LLVMValueRef> OutFn) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -165,10 +147,6 @@ public class ExecutionEngine {
     }
 
     public static LLVMModuleRef LLVMRemoveModule(LLVMExecutionEngineRef EE, LLVMModuleRef M) throws LLVMException {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public static boolean LLVMRemoveModule(LLVMExecutionEngineRef EE, LLVMModuleRef M, Consumer<LLVMModuleRef> OutMod, Consumer<String> OutError) {
         throw new UnsupportedOperationException("Stub!");
     }
 

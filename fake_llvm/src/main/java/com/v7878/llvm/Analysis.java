@@ -3,8 +3,6 @@ package com.v7878.llvm;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 
-import java.util.function.Consumer;
-
 public class Analysis {
     public enum LLVMVerifierFailureAction {
         LLVMAbortProcessAction,
@@ -33,10 +31,6 @@ public class Analysis {
     }
 
     public static void LLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action) throws LLVMException {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public static boolean LLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action, Consumer<String> OutMessage) {
         throw new UnsupportedOperationException("Stub!");
     }
 

@@ -9,6 +9,8 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
@@ -32,6 +34,7 @@ import java.util.function.Consumer;
 |* tools written in such languages.                                           *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
+@SuppressLint("WrongCommentType")
 public class Analysis {
 
     /*
@@ -97,7 +100,8 @@ public class Analysis {
      * Verifies that a module is valid, taking the specified action if not.
      * Optionally returns a human-readable description of any invalid constructs.
      */
-    public static boolean LLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action, Consumer<String> OutMessage) {
+    /* package-private */
+    static boolean nLLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action, Consumer<String> OutMessage) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutMessage = arena.allocate(ADDRESS);
             boolean err = Native.INSTANCE.LLVMVerifyModule(M.value(), Action.value(), c_OutMessage.nativeAddress());
@@ -114,7 +118,7 @@ public class Analysis {
     // Port-added
     public static void LLVMVerifyModule(LLVMModuleRef M, LLVMVerifierFailureAction Action) throws LLVMException {
         String[] err = new String[1];
-        if (LLVMVerifyModule(M, Action, E -> err[0] = E)) {
+        if (nLLVMVerifyModule(M, Action, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
     }

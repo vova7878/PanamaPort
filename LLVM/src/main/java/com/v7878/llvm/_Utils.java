@@ -3,7 +3,7 @@ package com.v7878.llvm;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
-import static com.v7878.llvm.Core.LLVMDisposeMessage;
+import static com.v7878.llvm.Core.nLLVMDisposeMessage;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
@@ -25,7 +25,7 @@ final class _Utils {
     public static String addressToLLVMString(long address) {
         if (address == 0) throw shouldNotReachHere();
         String out = addressToString(address);
-        LLVMDisposeMessage(address);
+        nLLVMDisposeMessage(address);
         return out;
     }
 

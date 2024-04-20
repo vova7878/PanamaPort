@@ -3143,7 +3143,7 @@ public class Core {
 
     /* package-private */
     @SuppressWarnings("unused")
-    static long LLVMCreateMessage(String Message) {
+    static long nLLVMCreateMessage(String Message) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Message = allocString(arena, Message);
             return Native.INSTANCE.LLVMCreateMessage(c_Message.nativeAddress());
@@ -3151,7 +3151,7 @@ public class Core {
     }
 
     /* package-private */
-    static void LLVMDisposeMessage(long Message) {
+    static void nLLVMDisposeMessage(long Message) {
         Native.INSTANCE.LLVMDisposeMessage(Message);
     }
 
@@ -3534,7 +3534,8 @@ public class Core {
      * Print a representation of a module to a file. The ErrorMessage needs to be
      * disposed with LLVMDisposeMessage. Returns 0 on success, 1 otherwise.
      */
-    public static boolean LLVMPrintModuleToFile(LLVMModuleRef M, String Filename, Consumer<String> ErrorMessage) {
+    /* package-private */
+    static boolean nLLVMPrintModuleToFile(LLVMModuleRef M, String Filename, Consumer<String> ErrorMessage) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Filename = allocString(arena, Filename);
             MemorySegment c_ErrorMessage = arena.allocate(ADDRESS);
@@ -3553,7 +3554,7 @@ public class Core {
     // Port-added
     public static void LLVMPrintModuleToFile(LLVMModuleRef M, String Filename) throws LLVMException {
         String[] err = new String[1];
-        if (LLVMPrintModuleToFile(M, Filename, E -> err[0] = E)) {
+        if (nLLVMPrintModuleToFile(M, Filename, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
     }
@@ -3611,7 +3612,7 @@ public class Core {
      * instance corresponds to a llvm::MDNode.
      */
     /* package-private */
-    static void LLVMGetNamedMetadataOperands(LLVMModuleRef M, String Name, long Dest) {
+    static void nLLVMGetNamedMetadataOperands(LLVMModuleRef M, String Name, long Dest) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
             Native.INSTANCE.LLVMGetNamedMetadataOperands(M.value(), c_Name.nativeAddress(), Dest);
@@ -3632,7 +3633,7 @@ public class Core {
         }
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Dest = allocPointerArray(arena, count);
-            LLVMGetNamedMetadataOperands(M, Name, c_Dest.nativeAddress());
+            nLLVMGetNamedMetadataOperands(M, Name, c_Dest.nativeAddress());
             return readPointerArray(c_Dest, LLVMValueRef.class, LLVMValueRef::ofNullable);
         }
     }
@@ -3970,7 +3971,7 @@ public class Core {
      * @param Dest       Memory address of an array to be filled with result.
      */
     /* package-private */
-    static void LLVMGetParamTypes(LLVMTypeRef FunctionTy, long Dest) {
+    static void nLLVMGetParamTypes(LLVMTypeRef FunctionTy, long Dest) {
         Native.INSTANCE.LLVMGetParamTypes(FunctionTy.value(), Dest);
     }
 
@@ -3989,7 +3990,7 @@ public class Core {
         }
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Dest = allocPointerArray(arena, count);
-            LLVMGetParamTypes(FunctionTy, c_Dest.nativeAddress());
+            nLLVMGetParamTypes(FunctionTy, c_Dest.nativeAddress());
             return readPointerArray(c_Dest, LLVMTypeRef.class, LLVMTypeRef::ofNullable);
         }
     }
@@ -4074,7 +4075,7 @@ public class Core {
      * is contained in.
      */
     /* package-private */
-    static void LLVMGetStructElementTypes(LLVMTypeRef StructTy, long Dest) {
+    static void nLLVMGetStructElementTypes(LLVMTypeRef StructTy, long Dest) {
         Native.INSTANCE.LLVMGetStructElementTypes(StructTy.value(), Dest);
     }
 
@@ -4093,7 +4094,7 @@ public class Core {
         }
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Dest = allocPointerArray(arena, count);
-            LLVMGetStructElementTypes(StructTy, c_Dest.nativeAddress());
+            nLLVMGetStructElementTypes(StructTy, c_Dest.nativeAddress());
             return readPointerArray(c_Dest, LLVMTypeRef.class, LLVMTypeRef::ofNullable);
         }
     }
@@ -5581,7 +5582,7 @@ public class Core {
      * instance.
      */
     /* package-private */
-    static void LLVMGetParams(LLVMValueRef Fn, long Params) {
+    static void nLLVMGetParams(LLVMValueRef Fn, long Params) {
         Native.INSTANCE.LLVMGetParams(Fn.value(), Params);
     }
 
@@ -5600,7 +5601,7 @@ public class Core {
         }
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Params = allocPointerArray(arena, count);
-            LLVMGetParams(Fn, c_Params.nativeAddress());
+            nLLVMGetParams(Fn, c_Params.nativeAddress());
             return readPointerArray(c_Params, LLVMValueRef.class, LLVMValueRef::ofNullable);
         }
     }
@@ -5816,7 +5817,7 @@ public class Core {
      * LLVMBasicBlockRef instances.
      */
     /* package-private */
-    static void LLVMGetBasicBlocks(LLVMValueRef Fn, long BasicBlocks) {
+    static void nLLVMGetBasicBlocks(LLVMValueRef Fn, long BasicBlocks) {
         Native.INSTANCE.LLVMGetBasicBlocks(Fn.value(), BasicBlocks);
     }
 
@@ -5833,7 +5834,7 @@ public class Core {
         }
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BasicBlocks = allocPointerArray(arena, count);
-            LLVMGetBasicBlocks(Fn, c_BasicBlocks.nativeAddress());
+            nLLVMGetBasicBlocks(Fn, c_BasicBlocks.nativeAddress());
             return readPointerArray(c_BasicBlocks, LLVMBasicBlockRef.class, LLVMBasicBlockRef::ofNullable);
         }
     }
@@ -7275,7 +7276,8 @@ public class Core {
      * @defgroup LLVMCCoreMemoryBuffers Memory Buffers
      */
 
-    public static boolean LLVMCreateMemoryBufferWithContentsOfFile(String Path, Consumer<LLVMMemoryBufferRef> OutMemBuf, Consumer<String> OutMessage) {
+    /* package-private */
+    static boolean nLLVMCreateMemoryBufferWithContentsOfFile(String Path, Consumer<LLVMMemoryBufferRef> OutMemBuf, Consumer<String> OutMessage) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Path = allocString(arena, Path);
             MemorySegment c_OutMemBuf = arena.allocate(ADDRESS);
@@ -7294,13 +7296,14 @@ public class Core {
     public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithContentsOfFile(String Path) throws LLVMException {
         String[] err = new String[1];
         LLVMMemoryBufferRef[] out = new LLVMMemoryBufferRef[1];
-        if (LLVMCreateMemoryBufferWithContentsOfFile(Path, O -> out[0] = O, E -> err[0] = E)) {
+        if (nLLVMCreateMemoryBufferWithContentsOfFile(Path, O -> out[0] = O, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
         return out[0];
     }
 
-    public static boolean LLVMCreateMemoryBufferWithSTDIN(Consumer<LLVMMemoryBufferRef> OutMemBuf, Consumer<String> OutMessage) {
+    /* package-private */
+    static boolean nLLVMCreateMemoryBufferWithSTDIN(Consumer<LLVMMemoryBufferRef> OutMemBuf, Consumer<String> OutMessage) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_OutMemBuf = arena.allocate(ADDRESS);
             MemorySegment c_OutMessage = arena.allocate(ADDRESS);
@@ -7318,14 +7321,14 @@ public class Core {
     public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSTDIN() throws LLVMException {
         String[] err = new String[1];
         LLVMMemoryBufferRef[] out = new LLVMMemoryBufferRef[1];
-        if (LLVMCreateMemoryBufferWithSTDIN(O -> out[0] = O, E -> err[0] = E)) {
+        if (nLLVMCreateMemoryBufferWithSTDIN(O -> out[0] = O, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
         return out[0];
     }
 
     /* package-private */
-    static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithMemoryRange(
+    static LLVMMemoryBufferRef nLLVMCreateMemoryBufferWithMemoryRange(
             long InputData, long /* size_t */ InputDataLength,
             String BufferName, boolean RequiresNullTerminator) {
         try (Arena arena = Arena.ofConfined()) {
@@ -7338,12 +7341,12 @@ public class Core {
     // Port-added
     public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSegment(
             MemorySegment InputData, String BufferName, boolean RequiresNullTerminator) {
-        return LLVMCreateMemoryBufferWithMemoryRange(InputData.nativeAddress(),
+        return nLLVMCreateMemoryBufferWithMemoryRange(InputData.nativeAddress(),
                 InputData.byteSize(), BufferName, RequiresNullTerminator);
     }
 
     /* package-private */
-    static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithMemoryRangeCopy(
+    static LLVMMemoryBufferRef nLLVMCreateMemoryBufferWithMemoryRangeCopy(
             long InputData, long /* size_t */ InputDataLength, String BufferName) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BufferName = allocString(arena, BufferName);
@@ -7355,12 +7358,12 @@ public class Core {
     // Port-added
     public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSegmentCopy(
             MemorySegment InputData, String BufferName) {
-        return LLVMCreateMemoryBufferWithMemoryRangeCopy(
+        return nLLVMCreateMemoryBufferWithMemoryRangeCopy(
                 InputData.nativeAddress(), InputData.byteSize(), BufferName);
     }
 
     /* package-private */
-    static long LLVMGetBufferStart(LLVMMemoryBufferRef MemBuf) {
+    static long nLLVMGetBufferStart(LLVMMemoryBufferRef MemBuf) {
         return Native.INSTANCE.LLVMGetBufferStart(MemBuf.value());
     }
 
@@ -7370,7 +7373,7 @@ public class Core {
 
     // Port-added
     public static MemorySegment LLVMGetBufferSegment(LLVMMemoryBufferRef MemBuf) {
-        long address = LLVMGetBufferStart(MemBuf);
+        long address = nLLVMGetBufferStart(MemBuf);
         long size = LLVMGetBufferSize(MemBuf);
         return MemorySegment.ofAddress(address).reinterpret(size).asReadOnly();
     }

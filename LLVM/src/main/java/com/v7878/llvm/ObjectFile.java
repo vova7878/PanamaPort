@@ -312,13 +312,13 @@ public class ObjectFile {
     }
 
     /* package-private */
-    static long LLVMGetSectionContents(LLVMSectionIteratorRef SI) {
+    static long nLLVMGetSectionContents(LLVMSectionIteratorRef SI) {
         return Native.INSTANCE.LLVMGetSectionContents(SI.value());
     }
 
     // Port-added
     public static MemorySegment LLVMGetSectionSegment(LLVMSectionIteratorRef SI) {
-        long address = LLVMGetSectionContents(SI);
+        long address = nLLVMGetSectionContents(SI);
         long size = LLVMGetSectionSize(SI);
         return MemorySegment.ofAddress(address).reinterpret(size).asReadOnly();
     }

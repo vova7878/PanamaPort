@@ -289,7 +289,8 @@ public class TargetMachine {
      * Finds the target corresponding to the given triple and stores it in \p T.
      * Returns 0 on success. Optionally returns any error in ErrorMessage.
      */
-    public static boolean LLVMGetTargetFromTriple(String Triple, Consumer<LLVMTargetRef> T, Consumer<String> ErrorMessage) {
+    /* package-private */
+    static boolean nLLVMGetTargetFromTriple(String Triple, Consumer<LLVMTargetRef> T, Consumer<String> ErrorMessage) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Triple = allocString(arena, Triple);
             MemorySegment c_T = arena.allocate(ADDRESS);
@@ -312,7 +313,7 @@ public class TargetMachine {
     public static LLVMTargetRef LLVMGetTargetFromTriple(String Triple) throws LLVMException {
         String[] err = new String[1];
         LLVMTargetRef[] out = new LLVMTargetRef[1];
-        if (LLVMGetTargetFromTriple(Triple, O -> out[0] = O, E -> err[0] = E)) {
+        if (nLLVMGetTargetFromTriple(Triple, O -> out[0] = O, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
         return out[0];
@@ -429,7 +430,8 @@ public class TargetMachine {
      * wraps several c++ only classes (among them a file stream). Returns any
      * error in ErrorMessage.
      */
-    public static boolean LLVMTargetMachineEmitToFile(
+    /* package-private */
+    static boolean nLLVMTargetMachineEmitToFile(
             LLVMTargetMachineRef T, LLVMModuleRef M, String Filename,
             LLVMCodeGenFileType codegen, Consumer<String> ErrorMessage) {
         try (Arena arena = Arena.ofConfined()) {
@@ -453,7 +455,7 @@ public class TargetMachine {
             LLVMTargetMachineRef T, LLVMModuleRef M, String Filename,
             LLVMCodeGenFileType codegen) throws LLVMException {
         String[] err = new String[1];
-        if (LLVMTargetMachineEmitToFile(T, M, Filename, codegen, E -> err[0] = E)) {
+        if (nLLVMTargetMachineEmitToFile(T, M, Filename, codegen, E -> err[0] = E)) {
             throw new LLVMException(err[0]);
         }
     }
@@ -461,7 +463,8 @@ public class TargetMachine {
     /**
      * Compile the LLVM IR stored in \p M and store the result in \p OutMemBuf.
      */
-    public static boolean LLVMTargetMachineEmitToMemoryBuffer(
+    /* package-private */
+    static boolean nLLVMTargetMachineEmitToMemoryBuffer(
             LLVMTargetMachineRef T, LLVMModuleRef M, LLVMCodeGenFileType codegen,
             Consumer<String> ErrorMessage, Consumer<LLVMMemoryBufferRef> OutMemBuf) {
         try (Arena arena = Arena.ofConfined()) {
@@ -486,7 +489,7 @@ public class TargetMachine {
             LLVMTargetMachineRef T, LLVMModuleRef M, LLVMCodeGenFileType codegen) throws LLVMException {
         String[] err = new String[1];
         LLVMMemoryBufferRef[] out = new LLVMMemoryBufferRef[1];
-        if (LLVMTargetMachineEmitToMemoryBuffer(T, M, codegen, E -> err[0] = E, O -> out[0] = O)) {
+        if (nLLVMTargetMachineEmitToMemoryBuffer(T, M, codegen, E -> err[0] = E, O -> out[0] = O)) {
             throw new LLVMException(err[0]);
         }
         return out[0];
