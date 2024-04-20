@@ -15,6 +15,7 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.LLVMDiagnosticInfoRef;
 import com.v7878.llvm.Types.LLVMModuleProviderRef;
 import com.v7878.llvm.Types.LLVMPassManagerRef;
+import com.v7878.llvm.Types.LLVMUseRef;
 
 import java.util.function.Supplier;
 
@@ -37,87 +38,6 @@ public class Core {
             throw new UnsupportedOperationException("Stub!");
         }).get();
         public static final int LLVMAttributeReturnIndex = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-    }
-
-    public static class LLVMAttribute {
-        public static final int LLVMAlignment = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMAlwaysInlineAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMByValAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMInRegAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMInlineHintAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNakedAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNestAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNoAliasAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNoCaptureAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNoImplicitFloatAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNoInlineAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNoRedZoneAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNoReturnAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNoUnwindAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMNonLazyBind = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMOptimizeForSizeAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMReadNoneAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMReadOnlyAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMReturnsTwice = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMSExtAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMStackAlignment = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMStackProtectAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMStackProtectReqAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMStructRetAttribute = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMUWTable = ((Supplier<Integer>) () -> {
-            throw new UnsupportedOperationException("Stub!");
-        }).get();
-        public static final int LLVMZExtAttribute = ((Supplier<Integer>) () -> {
             throw new UnsupportedOperationException("Stub!");
         }).get();
     }
@@ -469,11 +389,15 @@ public class Core {
         }
     }
 
-    public static void LLVMAddAttribute(LLVMValueRef Arg, int PA) {
+    public static LLVMValueRef LLVMAddAlias(LLVMModuleRef M, LLVMTypeRef Ty, LLVMValueRef Aliasee, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
 
     public static void LLVMAddAttributeAtIndex(LLVMValueRef F, int Idx, LLVMAttributeRef A) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddCallSiteAttribute(LLVMValueRef C, int Idx, LLVMAttributeRef A) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -493,7 +417,11 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static void LLVMAddFunctionAttr(LLVMValueRef Fn, int PA) {
+    public static LLVMValueRef LLVMAddGlobal(LLVMModuleRef M, LLVMTypeRef Ty, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMAddGlobalInAddressSpace(LLVMModuleRef M, LLVMTypeRef Ty, String Name, int AddressSpace) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -505,7 +433,11 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static void LLVMAddInstrAttribute(LLVMValueRef Instr, int index, int PA) {
+    public static void LLVMAddNamedMetadataOperand(LLVMModuleRef M, String Name, LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMAddTargetDependentFunctionAttr(LLVMValueRef Fn, String A, String V) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -526,6 +458,10 @@ public class Core {
     }
 
     public static LLVMValueRef LLVMBasicBlockAsValue(LLVMBasicBlockRef BB) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMBlockAddress(LLVMValueRef F, LLVMBasicBlockRef BB) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -901,7 +837,103 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMConstAShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstAddrSpaceCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMConstAllOnes(LLVMTypeRef Ty) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstAnd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstExactSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstExtractElement(LLVMValueRef VectorConstant, LLVMValueRef IndexConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFCmp(LLVMRealPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFNeg(LLVMValueRef ConstantVal) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFPCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFPExt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFPToSI(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFPToUI(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFPTrunc(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstFSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstGEP(LLVMValueRef ConstantVal, LLVMValueRef[] ConstantIndices) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstICmp(LLVMIntPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstInBoundsGEP(LLVMValueRef ConstantVal, LLVMValueRef[] ConstantIndices) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstInlineAsm(LLVMTypeRef Ty, String AsmString, String Constraints, boolean HasSideEffects, boolean IsAlignStack) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstInsertElement(LLVMValueRef VectorConstant, LLVMValueRef ElementValueConstant, LLVMValueRef IndexConstant) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -909,7 +941,63 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMConstIntCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType, boolean isSigned) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMConstIntOfArbitraryPrecision(LLVMTypeRef IntTy, long... Words) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstIntToPtr(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstLShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNSWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNSWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNSWNeg(LLVMValueRef ConstantVal) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNSWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNUWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNUWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNUWNeg(LLVMValueRef ConstantVal) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNUWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNeg(LLVMValueRef ConstantVal) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstNot(LLVMValueRef ConstantVal) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -917,7 +1005,51 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMConstOr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstPointerCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMConstPointerNull(LLVMTypeRef Ty) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstPtrToInt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstSExt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstSExtOrBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstSIToFP(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstSRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstSelect(LLVMValueRef ConstantCondition, LLVMValueRef ConstantIfTrue, LLVMValueRef ConstantIfFalse) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstShl(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstShuffleVector(LLVMValueRef VectorAConstant, LLVMValueRef VectorBConstant, LLVMValueRef MaskConstant) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -926,6 +1058,42 @@ public class Core {
     }
 
     public static LLVMValueRef LLVMConstStringInContext(LLVMContextRef C, String Str, boolean DontNullTerminate) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstTrunc(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstTruncOrBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstUDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstUIToFP(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstURem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstXor(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstZExt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstZExtOrBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -945,11 +1113,23 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static int LLVMCountBasicBlocks(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static int LLVMCountIncoming(LLVMValueRef PhiNode) {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static int LLVMCountParamTypes(LLVMTypeRef FunctionTy) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static int LLVMCountParams(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int LLVMCountStructElementTypes(LLVMTypeRef StructTy) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -965,12 +1145,24 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMAttributeRef LLVMCreateEnumAttribute(LLVMContextRef C, String KindName, long Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     @Deprecated
     public static LLVMPassManagerRef LLVMCreateFunctionPassManager(LLVMModuleProviderRef MP) {
         throw new UnsupportedOperationException("Stub!");
     }
 
     public static LLVMPassManagerRef LLVMCreateFunctionPassManagerForModule(LLVMModuleRef M) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithContentsOfFile(String Path) throws LLVMException {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMMemoryBufferRef LLVMCreateMemoryBufferWithSTDIN() throws LLVMException {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -995,6 +1187,14 @@ public class Core {
     }
 
     public static void LLVMDeleteBasicBlock(LLVMBasicBlockRef BB) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMDeleteFunction(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMDeleteGlobal(LLVMValueRef GlobalVar) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1034,6 +1234,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMDumpValue(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMTypeRef LLVMFP128Type() {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1070,10 +1274,6 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static int LLVMGetAttribute(LLVMValueRef Arg) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public static String LLVMGetBasicBlockName(LLVMBasicBlockRef BB) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1086,11 +1286,27 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMBasicBlockRef[] LLVMGetBasicBlocks(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static MemorySegment LLVMGetBufferSegment(LLVMMemoryBufferRef MemBuf) {
         throw new UnsupportedOperationException("Stub!");
     }
 
     public static long LLVMGetBufferSize(LLVMMemoryBufferRef MemBuf) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMAttributeRef LLVMGetCallSiteEnumAttribute(LLVMValueRef C, int Idx, int KindID) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMAttributeRef LLVMGetCallSiteStringAttribute(LLVMValueRef C, int Idx, String K) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetCalledValue(LLVMValueRef Instr) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1103,6 +1319,10 @@ public class Core {
     }
 
     public static LLVMAtomicOrdering LLVMGetCmpXchgSuccessOrdering(LLVMValueRef CmpXchgInst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetCondition(LLVMValueRef Branch) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1142,6 +1362,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMAttributeRef LLVMGetEnumAttributeAtIndex(LLVMValueRef F, int Idx, int KindID) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static int LLVMGetEnumAttributeKind(LLVMAttributeRef A) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1154,6 +1378,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMRealPredicate LLVMGetFCmpPredicate(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMBasicBlockRef LLVMGetFirstBasicBlock(LLVMValueRef Fn) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1162,11 +1390,19 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMGetFirstGlobal(LLVMModuleRef M) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMGetFirstInstruction(LLVMBasicBlockRef BB) {
         throw new UnsupportedOperationException("Stub!");
     }
 
     public static LLVMValueRef LLVMGetFirstParam(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMUseRef LLVMGetFirstUse(LLVMValueRef Val) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1190,6 +1426,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMIntPredicate LLVMGetICmpPredicate(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMBasicBlockRef LLVMGetIncomingBlock(LLVMValueRef PhiNode, int Index) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1198,11 +1438,35 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static int[] LLVMGetIndices(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetInitializer(LLVMValueRef GlobalVar) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMBasicBlockRef LLVMGetInsertBlock(LLVMBuilderRef Builder) {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMCallConv LLVMGetInstructionCallConv(LLVMValueRef Instr) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMOpcode LLVMGetInstructionOpcode(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMBasicBlockRef LLVMGetInstructionParent(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static int LLVMGetIntTypeWidth(LLVMTypeRef IntegerTy) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int LLVMGetIntrinsicID(LLVMValueRef Fn) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1215,6 +1479,10 @@ public class Core {
     }
 
     public static LLVMValueRef LLVMGetLastFunction(LLVMModuleRef M) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetLastGlobal(LLVMModuleRef M) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1238,6 +1506,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMGetMetadata(LLVMValueRef Val, int KindID) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMContextRef LLVMGetModuleContext(LLVMModuleRef M) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1250,6 +1522,18 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMGetNamedGlobal(LLVMModuleRef M, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int LLVMGetNamedMetadataNumOperands(LLVMModuleRef M, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef[] LLVMGetNamedMetadataOperands(LLVMModuleRef M, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMBasicBlockRef LLVMGetNextBasicBlock(LLVMBasicBlockRef BB) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1258,11 +1542,51 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMGetNextGlobal(LLVMValueRef GlobalVar) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetNextInstruction(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMGetNextParam(LLVMValueRef Arg) {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMUseRef LLVMGetNextUse(LLVMUseRef U) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMBasicBlockRef LLVMGetNormalDest(LLVMValueRef InvokeInst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int LLVMGetNumArgOperands(LLVMValueRef Instr) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static int LLVMGetNumClauses(LLVMValueRef LandingPad) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int LLVMGetNumIndices(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int LLVMGetNumOperands(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int LLVMGetNumSuccessors(LLVMValueRef Term) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetOperand(LLVMValueRef Val, int Index) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMUseRef LLVMGetOperandUse(LLVMValueRef Val, int Index) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1278,7 +1602,15 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMTypeRef[] LLVMGetParamTypes(LLVMTypeRef FunctionTy) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef[] LLVMGetParams(LLVMValueRef Fn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetPersonalityFn(LLVMValueRef Fn) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1294,6 +1626,14 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMGetPreviousGlobal(LLVMValueRef GlobalVar) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetPreviousInstruction(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMGetPreviousParam(LLVMValueRef Arg) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1306,6 +1646,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMAttributeRef LLVMGetStringAttributeAtIndex(LLVMValueRef F, int Idx, String K) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static String LLVMGetStringAttributeKind(LLVMAttributeRef A) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1314,11 +1658,27 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMTypeRef[] LLVMGetStructElementTypes(LLVMTypeRef StructTy) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static String LLVMGetStructName(LLVMTypeRef Ty) {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMBasicBlockRef LLVMGetSuccessor(LLVMValueRef Term, int Idx) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMBasicBlockRef LLVMGetSwitchDefaultDest(LLVMValueRef SwitchInstr) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static String LLVMGetTarget(LLVMModuleRef M) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMThreadLocalMode LLVMGetThreadLocalMode(LLVMValueRef GlobalVar) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1335,6 +1695,26 @@ public class Core {
     }
 
     public static LLVMValueRef LLVMGetUndef(LLVMTypeRef Ty) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMBasicBlockRef LLVMGetUnwindDest(LLVMValueRef InvokeInst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetUsedValue(LLVMUseRef U) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetUser(LLVMUseRef U) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueKind LLVMGetValueKind(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static String LLVMGetValueName(LLVMValueRef Val) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1355,6 +1735,14 @@ public class Core {
     }
 
     public static LLVMTypeRef LLVMHalfTypeInContext(LLVMContextRef C) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMHasMetadata(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMHasPersonalityFn(LLVMValueRef Fn) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1383,6 +1771,18 @@ public class Core {
     }
 
     public static void LLVMInsertIntoBuilderWithName(LLVMBuilderRef Builder, LLVMValueRef Instr, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMInstructionClone(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMInstructionEraseFromParent(LLVMValueRef Inst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMInstructionRemoveFromParent(LLVMValueRef Inst) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1442,11 +1842,339 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMIsAAddrSpaceCastInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAAllocaInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAArgument(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsABasicBlock(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsABinaryOperator(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsABitCastInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsABlockAddress(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsABranchInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsACallInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsACastInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsACatchPadInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsACatchReturnInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsACleanupPadInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsACleanupReturnInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsACmpInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstant(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantAggregateZero(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantArray(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantDataArray(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantDataSequential(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantDataVector(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantExpr(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantFP(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantInt(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantPointerNull(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantStruct(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantTokenNone(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAConstantVector(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsADbgDeclareInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsADbgInfoIntrinsic(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAExtractElementInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAExtractValueInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAFCmpInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAFPExtInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAFPToSIInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAFPToUIInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAFPTruncInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAFuncletPadInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAFunction(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAGetElementPtrInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAGlobalAlias(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAGlobalObject(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAGlobalValue(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAGlobalVariable(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAICmpInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAIndirectBrInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAInlineAsm(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAInsertElementInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAInsertValueInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAInstruction(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAIntToPtrInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAIntrinsicInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAInvokeInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsALandingPadInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsALoadInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAMDNode(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAMDString(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAMemCpyInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAMemIntrinsic(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAMemMoveInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAMemSetInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAPHINode(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAPtrToIntInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAResumeInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAReturnInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsASExtInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsASIToFPInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsASelectInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAShuffleVectorInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAStoreInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsASwitchInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsATerminatorInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsATruncInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAUIToFPInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAUnaryInstruction(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAUndefValue(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAUnreachableInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAUser(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAVAArgInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMIsAZExtInst(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static boolean LLVMIsAtomicSingleThread(LLVMValueRef AtomicInst) {
         throw new UnsupportedOperationException("Stub!");
     }
 
     public static boolean LLVMIsCleanup(LLVMValueRef LandingPad) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsConditional(LLVMValueRef Branch) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsConstant(LLVMValueRef Val) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1458,7 +2186,15 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static boolean LLVMIsExternallyInitialized(LLVMValueRef GlobalVar) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static boolean LLVMIsFunctionVarArg(LLVMTypeRef FunctionTy) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsGlobalConstant(LLVMValueRef GlobalVar) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1484,6 +2220,18 @@ public class Core {
     }
 
     public static boolean LLVMIsStringAttribute(LLVMAttributeRef A) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsTailCall(LLVMValueRef CallInst) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsThreadLocal(LLVMValueRef GlobalVar) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static boolean LLVMIsUndef(LLVMValueRef Val) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1535,6 +2283,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMPrintModuleToFile(LLVMModuleRef M, String Filename) throws LLVMException {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static String LLVMPrintModuleToString(LLVMModuleRef M) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1547,15 +2299,27 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static void LLVMRemoveAttribute(LLVMValueRef Arg, int PA) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public static void LLVMRemoveBasicBlockFromParent(LLVMBasicBlockRef BB) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public static void LLVMRemoveInstrAttribute(LLVMValueRef Instr, int index, int PA) {
+    public static void LLVMRemoveCallSiteEnumAttribute(LLVMValueRef C, int Idx, int KindID) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMRemoveCallSiteStringAttribute(LLVMValueRef C, int Idx, String K) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMRemoveEnumAttributeAtIndex(LLVMValueRef F, int Idx, int KindID) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMRemoveStringAttributeAtIndex(LLVMValueRef F, int Idx, String K) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMReplaceAllUsesWith(LLVMValueRef OldVal, LLVMValueRef NewVal) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1587,6 +2351,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMSetCondition(LLVMValueRef Branch, LLVMValueRef Cond) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMSetCurrentDebugLocation(LLVMBuilderRef Builder, LLVMValueRef L) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1599,11 +2367,23 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMSetExternallyInitialized(LLVMValueRef GlobalVar, boolean IsExtInit) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMSetFunctionCallConv(LLVMValueRef Fn, LLVMCallConv CC) {
         throw new UnsupportedOperationException("Stub!");
     }
 
     public static void LLVMSetGC(LLVMValueRef Fn, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetGlobalConstant(LLVMValueRef GlobalVar, boolean IsConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetInitializer(LLVMValueRef GlobalVar, LLVMValueRef ConstantVal) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1615,11 +2395,19 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMSetInstructionCallConv(LLVMValueRef Instr, LLVMCallConv CC) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMSetIsInBounds(LLVMValueRef GEP, boolean InBounds) {
         throw new UnsupportedOperationException("Stub!");
     }
 
     public static void LLVMSetLinkage(LLVMValueRef Global, LLVMLinkage Linkage) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetMetadata(LLVMValueRef Val, int KindID, LLVMValueRef Node) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1631,6 +2419,14 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMSetNormalDest(LLVMValueRef InvokeInst, LLVMBasicBlockRef B) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetOperand(LLVMValueRef User, int Index, LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMSetOrdering(LLVMValueRef MemoryAccessInst, LLVMAtomicOrdering Ordering) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1639,7 +2435,19 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMSetPersonalityFn(LLVMValueRef Fn, LLVMValueRef PersonalityFn) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMSetSection(LLVMValueRef Global, String Section) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetSuccessor(LLVMValueRef Term, int Idx, LLVMBasicBlockRef Block) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetTailCall(LLVMValueRef CallInst, boolean IsTailCall) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1647,7 +2455,23 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static void LLVMSetThreadLocal(LLVMValueRef GlobalVar, boolean IsThreadLocal) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetThreadLocalMode(LLVMValueRef GlobalVar, LLVMThreadLocalMode Mode) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMSetUnnamedAddr(LLVMValueRef Global, boolean HasUnnamedAddr) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetUnwindDest(LLVMValueRef InvokeInst, LLVMBasicBlockRef B) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static void LLVMSetValueName(LLVMValueRef Val, String Name) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1681,6 +2505,10 @@ public class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMTypeRef LLVMStructGetTypeAtIndex(LLVMTypeRef StructTy, int Idx) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMStructSetBody(LLVMTypeRef StructTy, LLVMTypeRef[] ElementTypes, boolean Packed) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1694,6 +2522,10 @@ public class Core {
     }
 
     public static boolean LLVMTypeIsSized(LLVMTypeRef Ty) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMTypeRef LLVMTypeOf(LLVMValueRef Val) {
         throw new UnsupportedOperationException("Stub!");
     }
 
