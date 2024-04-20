@@ -62,14 +62,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMMemoryBufferRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMMemoryBufferRef of 0");
-            }
-            return new LLVMMemoryBufferRef(value);
-        }
-
-        public static LLVMMemoryBufferRef ofNullable(long value) {
+        static LLVMMemoryBufferRef of(long value) {
             return value == 0 ? null : new LLVMMemoryBufferRef(value);
         }
 
@@ -84,14 +77,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMContextRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMContextRef of 0");
-            }
-            return new LLVMContextRef(value);
-        }
-
-        public static LLVMContextRef ofNullable(long value) {
+        static LLVMContextRef of(long value) {
             return value == 0 ? null : new LLVMContextRef(value);
         }
 
@@ -106,14 +92,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMModuleRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMModuleRef of 0");
-            }
-            return new LLVMModuleRef(value);
-        }
-
-        public static LLVMModuleRef ofNullable(long value) {
+        static LLVMModuleRef of(long value) {
             return value == 0 ? null : new LLVMModuleRef(value);
         }
 
@@ -128,14 +107,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMTypeRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMTypeRef of 0");
-            }
-            return new LLVMTypeRef(value);
-        }
-
-        public static LLVMTypeRef ofNullable(long value) {
+        static LLVMTypeRef of(long value) {
             return value == 0 ? null : new LLVMTypeRef(value);
         }
     }
@@ -145,14 +117,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMValueRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMValueRef of 0");
-            }
-            return new LLVMValueRef(value);
-        }
-
-        public static LLVMValueRef ofNullable(long value) {
+        static LLVMValueRef of(long value) {
             return value == 0 ? null : new LLVMValueRef(value);
         }
     }
@@ -162,14 +127,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMBasicBlockRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMBasicBlockRef of 0");
-            }
-            return new LLVMBasicBlockRef(value);
-        }
-
-        public static LLVMBasicBlockRef ofNullable(long value) {
+        static LLVMBasicBlockRef of(long value) {
             return value == 0 ? null : new LLVMBasicBlockRef(value);
         }
     }
@@ -179,14 +137,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMBuilderRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMBuilderRef of 0");
-            }
-            return new LLVMBuilderRef(value);
-        }
-
-        public static LLVMBuilderRef ofNullable(long value) {
+        static LLVMBuilderRef of(long value) {
             return value == 0 ? null : new LLVMBuilderRef(value);
         }
 
@@ -201,14 +152,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMModuleProviderRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMModuleProviderRef of 0");
-            }
-            return new LLVMModuleProviderRef(value);
-        }
-
-        public static LLVMModuleProviderRef ofNullable(long value) {
+        static LLVMModuleProviderRef of(long value) {
             return value == 0 ? null : new LLVMModuleProviderRef(value);
         }
 
@@ -223,14 +167,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMPassManagerRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMPassManagerRef of 0");
-            }
-            return new LLVMPassManagerRef(value);
-        }
-
-        public static LLVMPassManagerRef ofNullable(long value) {
+        static LLVMPassManagerRef of(long value) {
             return value == 0 ? null : new LLVMPassManagerRef(value);
         }
 
@@ -245,14 +182,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMPassRegistryRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMPassRegistryRef of 0");
-            }
-            return new LLVMPassRegistryRef(value);
-        }
-
-        public static LLVMPassRegistryRef ofNullable(long value) {
+        static LLVMPassRegistryRef of(long value) {
             return value == 0 ? null : new LLVMPassRegistryRef(value);
         }
     }
@@ -262,14 +192,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMUseRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMUseRef of 0");
-            }
-            return new LLVMUseRef(value);
-        }
-
-        public static LLVMUseRef ofNullable(long value) {
+        static LLVMUseRef of(long value) {
             return value == 0 ? null : new LLVMUseRef(value);
         }
     }
@@ -279,14 +202,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMAttributeRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMAttributeRef of 0");
-            }
-            return new LLVMAttributeRef(value);
-        }
-
-        public static LLVMAttributeRef ofNullable(long value) {
+        static LLVMAttributeRef of(long value) {
             return value == 0 ? null : new LLVMAttributeRef(value);
         }
     }
@@ -296,14 +212,7 @@ public final class Types {
             super(value);
         }
 
-        public static LLVMDiagnosticInfoRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMDiagnosticInfoRef of 0");
-            }
-            return new LLVMDiagnosticInfoRef(value);
-        }
-
-        public static LLVMDiagnosticInfoRef ofNullable(long value) {
+        static LLVMDiagnosticInfoRef of(long value) {
             return value == 0 ? null : new LLVMDiagnosticInfoRef(value);
         }
     }

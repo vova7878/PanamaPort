@@ -8,14 +8,6 @@ public class Analysis {
         LLVMAbortProcessAction,
         LLVMPrintMessageAction,
         LLVMReturnStatusAction;
-
-        public static LLVMVerifierFailureAction of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public static void LLVMVerifyFunction(LLVMValueRef Fn) throws LLVMException {

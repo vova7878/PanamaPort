@@ -7,21 +7,13 @@ import com.v7878.llvm.Types.LLVMPassManagerRef;
 
 public class TargetMachine {
     public static final class LLVMTargetRef {
-        public static LLVMTargetRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMTargetRef ofNullable(long value) {
+        private LLVMTargetRef() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
     public static final class LLVMTargetMachineRef implements AutoCloseable {
-        public static LLVMTargetMachineRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMTargetMachineRef ofNullable(long value) {
+        private LLVMTargetMachineRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -35,14 +27,6 @@ public class TargetMachine {
         LLVMCodeGenLevelLess,
         LLVMCodeGenLevelDefault,
         LLVMCodeGenLevelAggressive;
-
-        public static LLVMCodeGenOptLevel of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMRelocMode {
@@ -50,14 +34,6 @@ public class TargetMachine {
         LLVMRelocStatic,
         LLVMRelocPIC,
         LLVMRelocDynamicNoPic;
-
-        public static LLVMRelocMode of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMCodeModel {
@@ -67,27 +43,11 @@ public class TargetMachine {
         LLVMCodeModelKernel,
         LLVMCodeModelMedium,
         LLVMCodeModelLarge;
-
-        public static LLVMCodeModel of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMCodeGenFileType {
         LLVMAssemblyFile,
         LLVMObjectFile;
-
-        public static LLVMCodeGenFileType of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public static void LLVMAddAnalysisPasses(LLVMTargetMachineRef T, LLVMPassManagerRef PM) {

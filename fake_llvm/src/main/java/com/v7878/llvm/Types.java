@@ -2,51 +2,31 @@ package com.v7878.llvm;
 
 public final class Types {
     public static final class LLVMDiagnosticInfoRef {
-        public static LLVMDiagnosticInfoRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMDiagnosticInfoRef ofNullable(long value) {
+        private LLVMDiagnosticInfoRef() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
     public static final class LLVMAttributeRef {
-        public static LLVMAttributeRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMAttributeRef ofNullable(long value) {
+        private LLVMAttributeRef() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
     public static final class LLVMUseRef {
-        public static LLVMUseRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMUseRef ofNullable(long value) {
+        private LLVMUseRef() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
     public static final class LLVMPassRegistryRef {
-        public static LLVMPassRegistryRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMPassRegistryRef ofNullable(long value) {
+        private LLVMPassRegistryRef() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
     public static final class LLVMPassManagerRef implements AutoCloseable {
-        public static LLVMPassManagerRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMPassManagerRef ofNullable(long value) {
+        private LLVMPassManagerRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -56,11 +36,7 @@ public final class Types {
     }
 
     public static final class LLVMModuleProviderRef implements AutoCloseable {
-        public static LLVMModuleProviderRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMModuleProviderRef ofNullable(long value) {
+        private LLVMModuleProviderRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -70,11 +46,7 @@ public final class Types {
     }
 
     public static final class LLVMBuilderRef implements AutoCloseable {
-        public static LLVMBuilderRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMBuilderRef ofNullable(long value) {
+        private LLVMBuilderRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -84,41 +56,25 @@ public final class Types {
     }
 
     public static final class LLVMBasicBlockRef {
-        public static LLVMBasicBlockRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMBasicBlockRef ofNullable(long value) {
+        private LLVMBasicBlockRef() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
     public static final class LLVMValueRef {
-        public static LLVMValueRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMValueRef ofNullable(long value) {
+        private LLVMValueRef() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
     public static final class LLVMTypeRef {
-        public static LLVMTypeRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMTypeRef ofNullable(long value) {
+        private LLVMTypeRef() {
             throw new UnsupportedOperationException("Stub!");
         }
     }
 
     public static final class LLVMModuleRef implements AutoCloseable {
-        public static LLVMModuleRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMModuleRef ofNullable(long value) {
+        private LLVMModuleRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -128,11 +84,7 @@ public final class Types {
     }
 
     public static final class LLVMContextRef implements AutoCloseable {
-        public static LLVMContextRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMContextRef ofNullable(long value) {
+        private LLVMContextRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -142,11 +94,7 @@ public final class Types {
     }
 
     public static final class LLVMMemoryBufferRef implements AutoCloseable {
-        public static LLVMMemoryBufferRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMMemoryBufferRef ofNullable(long value) {
+        private LLVMMemoryBufferRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 

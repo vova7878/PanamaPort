@@ -5,11 +5,7 @@ import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 
 public class ObjectFile {
     public static final class LLVMObjectFileRef implements AutoCloseable {
-        public static LLVMObjectFileRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMObjectFileRef ofNullable(long value) {
+        private LLVMObjectFileRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -19,11 +15,7 @@ public class ObjectFile {
     }
 
     public static final class LLVMSectionIteratorRef implements AutoCloseable {
-        public static LLVMSectionIteratorRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMSectionIteratorRef ofNullable(long value) {
+        private LLVMSectionIteratorRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -33,11 +25,7 @@ public class ObjectFile {
     }
 
     public static final class LLVMSymbolIteratorRef implements AutoCloseable {
-        public static LLVMSymbolIteratorRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMSymbolIteratorRef ofNullable(long value) {
+        private LLVMSymbolIteratorRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -47,11 +35,7 @@ public class ObjectFile {
     }
 
     public static final class LLVMRelocationIteratorRef implements AutoCloseable {
-        public static LLVMRelocationIteratorRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMRelocationIteratorRef ofNullable(long value) {
+        private LLVMRelocationIteratorRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 

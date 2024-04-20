@@ -8,11 +8,7 @@ import com.v7878.llvm.Types.LLVMValueRef;
 
 public class Target {
     public static final class LLVMTargetDataRef implements AutoCloseable {
-        public static LLVMTargetDataRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMTargetDataRef ofNullable(long value) {
+        private LLVMTargetDataRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -22,11 +18,7 @@ public class Target {
     }
 
     public static final class LLVMTargetLibraryInfoRef implements AutoCloseable {
-        public static LLVMTargetLibraryInfoRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMTargetLibraryInfoRef ofNullable(long value) {
+        private LLVMTargetLibraryInfoRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -38,14 +30,6 @@ public class Target {
     public enum LLVMByteOrdering {
         LLVMBigEndian,
         LLVMLittleEndian;
-
-        public static LLVMByteOrdering of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public static int LLVMABIAlignmentOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {

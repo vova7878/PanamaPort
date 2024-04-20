@@ -52,14 +52,7 @@ public class Target {
             super(value);
         }
 
-        public static LLVMTargetDataRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMTargetDataRef of 0");
-            }
-            return new LLVMTargetDataRef(value);
-        }
-
-        public static LLVMTargetDataRef ofNullable(long value) {
+        static LLVMTargetDataRef of(long value) {
             return value == 0 ? null : new LLVMTargetDataRef(value);
         }
 
@@ -75,14 +68,7 @@ public class Target {
             super(value);
         }
 
-        public static LLVMTargetLibraryInfoRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMTargetLibraryInfoRef of 0");
-            }
-            return new LLVMTargetLibraryInfoRef(value);
-        }
-
-        public static LLVMTargetLibraryInfoRef ofNullable(long value) {
+        static LLVMTargetLibraryInfoRef of(long value) {
             return value == 0 ? null : new LLVMTargetLibraryInfoRef(value);
         }
 
@@ -98,11 +84,11 @@ public class Target {
         LLVMBigEndian,
         LLVMLittleEndian;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMByteOrdering of(int value) {
+        static LLVMByteOrdering of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -281,7 +267,7 @@ public class Target {
      * Obtain the data layout for a module.
      */
     public static LLVMTargetDataRef LLVMGetModuleDataLayout(LLVMModuleRef M) {
-        return LLVMTargetDataRef.ofNullable(Native.INSTANCE.LLVMGetModuleDataLayout(M.value()));
+        return LLVMTargetDataRef.of(Native.INSTANCE.LLVMGetModuleDataLayout(M.value()));
     }
 
     /**
@@ -297,7 +283,7 @@ public class Target {
     public static LLVMTargetDataRef LLVMCreateTargetData(String StringRep) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_StringRep = allocString(arena, StringRep);
-            return LLVMTargetDataRef.ofNullable(Native.INSTANCE.LLVMCreateTargetData(c_StringRep.nativeAddress()));
+            return LLVMTargetDataRef.of(Native.INSTANCE.LLVMCreateTargetData(c_StringRep.nativeAddress()));
         }
     }
 
@@ -350,7 +336,7 @@ public class Target {
      * Returns the integer type that is the same size as a pointer on a target.
      */
     public static LLVMTypeRef LLVMIntPtrType(LLVMTargetDataRef TD) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMIntPtrType(TD.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMIntPtrType(TD.value()));
     }
 
     /**
@@ -358,14 +344,14 @@ public class Target {
      * This version allows the address space to be specified.
      */
     public static LLVMTypeRef LLVMIntPtrTypeForAS(LLVMTargetDataRef TD, int /* unsigned */ AS) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMIntPtrTypeForAS(TD.value(), AS));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMIntPtrTypeForAS(TD.value(), AS));
     }
 
     /**
      * Returns the integer type that is the same size as a pointer on a target.
      */
     public static LLVMTypeRef LLVMIntPtrTypeInContext(LLVMContextRef C, LLVMTargetDataRef TD) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMIntPtrTypeInContext(C.value(), TD.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMIntPtrTypeInContext(C.value(), TD.value()));
     }
 
     /**
@@ -373,7 +359,7 @@ public class Target {
      * This version allows the address space to be specified.
      */
     public static LLVMTypeRef LLVMIntPtrTypeForASInContext(LLVMContextRef C, LLVMTargetDataRef TD, int /* unsigned */ AS) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMIntPtrTypeForASInContext(C.value(), TD.value(), AS));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMIntPtrTypeForASInContext(C.value(), TD.value(), AS));
     }
 
     /**

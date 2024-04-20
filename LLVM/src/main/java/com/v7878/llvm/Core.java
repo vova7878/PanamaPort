@@ -143,11 +143,11 @@ public class Core {
             this.value = value;
         }
 
-        public int value() {
+        int value() {
             return value;
         }
 
-        public static LLVMOpcode of(int value) {
+        static LLVMOpcode of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -227,11 +227,11 @@ public class Core {
          */
         LLVMTokenTypeKind;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMTypeKind of(int value) {
+        static LLVMTypeKind of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -311,11 +311,11 @@ public class Core {
          */
         LLVMLinkerPrivateWeakLinkage;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMLinkage of(int value) {
+        static LLVMLinkage of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -339,11 +339,11 @@ public class Core {
          */
         LLVMProtectedVisibility;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMVisibility of(int value) {
+        static LLVMVisibility of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -370,11 +370,11 @@ public class Core {
             this.value = value;
         }
 
-        public int value() {
+        int value() {
             return value;
         }
 
-        public static LLVMDLLStorageClass of(int value) {
+        static LLVMDLLStorageClass of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -399,11 +399,11 @@ public class Core {
             this.value = value;
         }
 
-        public int value() {
+        int value() {
             return value;
         }
 
-        public static LLVMCallConv of(int value) {
+        static LLVMCallConv of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -440,11 +440,11 @@ public class Core {
         LLVMInlineAsmValueKind,
         LLVMInstructionValueKind;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMValueKind of(int value) {
+        static LLVMValueKind of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -497,11 +497,11 @@ public class Core {
          */
         LLVMIntSLE;
 
-        public int value() {
+        int value() {
             return ordinal() + 32;
         }
 
-        public static LLVMIntPredicate of(int value) {
+        static LLVMIntPredicate of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -577,11 +577,11 @@ public class Core {
          */
         LLVMRealPredicateTrue;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMRealPredicate of(int value) {
+        static LLVMRealPredicate of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -601,11 +601,11 @@ public class Core {
          */
         LLVMLandingPadFilter;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMLandingPadClauseTy of(int value) {
+        static LLVMLandingPadClauseTy of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -622,11 +622,11 @@ public class Core {
         LLVMInitialExecTLSModel,
         LLVMLocalExecTLSModel;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMThreadLocalMode of(int value) {
+        static LLVMThreadLocalMode of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -689,11 +689,11 @@ public class Core {
             this.value = value;
         }
 
-        public int value() {
+        int value() {
             return value;
         }
 
-        public static LLVMAtomicOrdering of(int value) {
+        static LLVMAtomicOrdering of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -757,11 +757,11 @@ public class Core {
          */
         LLVMAtomicRMWBinOpUMin;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMAtomicRMWBinOp of(int value) {
+        static LLVMAtomicRMWBinOp of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -777,11 +777,11 @@ public class Core {
         LLVMDSRemark,
         LLVMDSNote;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMDiagnosticSeverity of(int value) {
+        static LLVMDiagnosticSeverity of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -818,7 +818,7 @@ public class Core {
                 void.class, WORD.carrier(), WORD.carrier()), (TransformerI) stack -> {
             var accessor = stack.createAccessor();
             var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
-            handler.invoke(LLVMDiagnosticInfoRef.ofNullable(value));
+            handler.invoke(LLVMDiagnosticInfoRef.of(value));
         });
     }
 
@@ -835,7 +835,7 @@ public class Core {
                 void.class, WORD.carrier(), WORD.carrier()), (TransformerI) stack -> {
             var accessor = stack.createAccessor();
             var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
-            callback.invoke(LLVMContextRef.ofNullable(value));
+            callback.invoke(LLVMContextRef.of(value));
         });
     }
 
@@ -3172,14 +3172,14 @@ public class Core {
      * LLVMContextDispose() or the context will leak memory.
      */
     public static LLVMContextRef LLVMContextCreate() {
-        return LLVMContextRef.ofNullable(Native.INSTANCE.LLVMContextCreate());
+        return LLVMContextRef.of(Native.INSTANCE.LLVMContextCreate());
     }
 
     /**
      * Obtain the global context instance.
      */
     public static LLVMContextRef LLVMGetGlobalContext() {
-        return LLVMContextRef.ofNullable(Native.INSTANCE.LLVMGetGlobalContext());
+        return LLVMContextRef.of(Native.INSTANCE.LLVMGetGlobalContext());
     }
 
     /**
@@ -3315,7 +3315,7 @@ public class Core {
      * Create an enum attribute.
      */
     public static LLVMAttributeRef LLVMCreateEnumAttribute(LLVMContextRef C, int /* unsigned */ KindID, long /* uint64_t */ Val) {
-        return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMCreateEnumAttribute(C.value(), KindID, Val));
+        return LLVMAttributeRef.of(Native.INSTANCE.LLVMCreateEnumAttribute(C.value(), KindID, Val));
     }
 
     /**
@@ -3354,7 +3354,7 @@ public class Core {
             int /* unsigned */ KLength = Math.toIntExact(stringLength(c_K));
             MemorySegment c_V = allocString(arena, V);
             int /* unsigned */ VLength = Math.toIntExact(stringLength(c_V));
-            return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMCreateStringAttribute(
+            return LLVMAttributeRef.of(Native.INSTANCE.LLVMCreateStringAttribute(
                     C.value(), c_K.nativeAddress(), KLength, c_V.nativeAddress(), VLength));
         }
     }
@@ -3414,7 +3414,7 @@ public class Core {
     public static LLVMModuleRef LLVMModuleCreateWithName(String ModuleID) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ModuleID = allocString(arena, ModuleID);
-            return LLVMModuleRef.ofNullable(Native.INSTANCE.LLVMModuleCreateWithName(c_ModuleID.nativeAddress()));
+            return LLVMModuleRef.of(Native.INSTANCE.LLVMModuleCreateWithName(c_ModuleID.nativeAddress()));
         }
     }
 
@@ -3427,7 +3427,7 @@ public class Core {
     public static LLVMModuleRef LLVMModuleCreateWithNameInContext(String ModuleID, LLVMContextRef C) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ModuleID = allocString(arena, ModuleID);
-            return LLVMModuleRef.ofNullable(Native.INSTANCE.LLVMModuleCreateWithNameInContext(c_ModuleID.nativeAddress(), C.value()));
+            return LLVMModuleRef.of(Native.INSTANCE.LLVMModuleCreateWithNameInContext(c_ModuleID.nativeAddress(), C.value()));
         }
     }
 
@@ -3435,7 +3435,7 @@ public class Core {
      * Return an exact copy of the specified module.
      */
     public static LLVMModuleRef LLVMCloneModule(LLVMModuleRef M) {
-        return LLVMModuleRef.ofNullable(Native.INSTANCE.LLVMCloneModule(M.value()));
+        return LLVMModuleRef.of(Native.INSTANCE.LLVMCloneModule(M.value()));
     }
 
     /**
@@ -3580,7 +3580,7 @@ public class Core {
      * Obtain the context to which this module is associated.
      */
     public static LLVMContextRef LLVMGetModuleContext(LLVMModuleRef M) {
-        return LLVMContextRef.ofNullable(Native.INSTANCE.LLVMGetModuleContext(M.value()));
+        return LLVMContextRef.of(Native.INSTANCE.LLVMGetModuleContext(M.value()));
     }
 
     /**
@@ -3589,7 +3589,7 @@ public class Core {
     public static LLVMTypeRef LLVMGetTypeByName(LLVMModuleRef M, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMGetTypeByName(M.value(), c_Name.nativeAddress()));
+            return LLVMTypeRef.of(Native.INSTANCE.LLVMGetTypeByName(M.value(), c_Name.nativeAddress()));
         }
     }
 
@@ -3634,7 +3634,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Dest = allocPointerArray(arena, count);
             nLLVMGetNamedMetadataOperands(M, Name, c_Dest.nativeAddress());
-            return readPointerArray(c_Dest, LLVMValueRef.class, LLVMValueRef::ofNullable);
+            return readPointerArray(c_Dest, LLVMValueRef.class, LLVMValueRef::of);
         }
     }
 
@@ -3654,7 +3654,7 @@ public class Core {
     public static LLVMValueRef LLVMAddFunction(LLVMModuleRef M, String Name, LLVMTypeRef FunctionTy) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMAddFunction(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMAddFunction(
                     M.value(), c_Name.nativeAddress(), FunctionTy.value()));
         }
     }
@@ -3667,7 +3667,7 @@ public class Core {
     public static LLVMValueRef LLVMGetNamedFunction(LLVMModuleRef M, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetNamedFunction(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMGetNamedFunction(
                     M.value(), c_Name.nativeAddress()));
         }
     }
@@ -3676,14 +3676,14 @@ public class Core {
      * Obtain an iterator to the first Function in a Module.
      */
     public static LLVMValueRef LLVMGetFirstFunction(LLVMModuleRef M) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetFirstFunction(M.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetFirstFunction(M.value()));
     }
 
     /**
      * Obtain an iterator to the last Function in a Module.
      */
     public static LLVMValueRef LLVMGetLastFunction(LLVMModuleRef M) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetLastFunction(M.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetLastFunction(M.value()));
     }
 
     /**
@@ -3693,7 +3693,7 @@ public class Core {
      * functions.
      */
     public static LLVMValueRef LLVMGetNextFunction(LLVMValueRef Fn) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetNextFunction(Fn.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetNextFunction(Fn.value()));
     }
 
     /**
@@ -3703,7 +3703,7 @@ public class Core {
      * no previous functions.
      */
     public static LLVMValueRef LLVMGetPreviousFunction(LLVMValueRef Fn) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetPreviousFunction(Fn.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetPreviousFunction(Fn.value()));
     }
 
     /*
@@ -3753,7 +3753,7 @@ public class Core {
      * Obtain the context to which this type instance is associated.
      */
     public static LLVMContextRef LLVMGetTypeContext(LLVMTypeRef Ty) {
-        return LLVMContextRef.ofNullable(Native.INSTANCE.LLVMGetTypeContext(Ty.value()));
+        return LLVMContextRef.of(Native.INSTANCE.LLVMGetTypeContext(Ty.value()));
     }
 
     /**
@@ -3780,31 +3780,31 @@ public class Core {
      * Obtain an integer type from a context with specified bit width.
      */
     public static LLVMTypeRef LLVMInt1TypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt1TypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt1TypeInContext(C.value()));
     }
 
     public static LLVMTypeRef LLVMInt8TypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt8TypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt8TypeInContext(C.value()));
     }
 
     public static LLVMTypeRef LLVMInt16TypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt16TypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt16TypeInContext(C.value()));
     }
 
     public static LLVMTypeRef LLVMInt32TypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt32TypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt32TypeInContext(C.value()));
     }
 
     public static LLVMTypeRef LLVMInt64TypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt64TypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt64TypeInContext(C.value()));
     }
 
     public static LLVMTypeRef LLVMInt128TypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt128TypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt128TypeInContext(C.value()));
     }
 
     public static LLVMTypeRef LLVMIntTypeInContext(LLVMContextRef C, int /* unsigned */ NumBits) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMIntTypeInContext(C.value(), NumBits));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMIntTypeInContext(C.value(), NumBits));
     }
 
     /**
@@ -3812,31 +3812,31 @@ public class Core {
      * width.
      */
     public static LLVMTypeRef LLVMInt1Type() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt1Type());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt1Type());
     }
 
     public static LLVMTypeRef LLVMInt8Type() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt8Type());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt8Type());
     }
 
     public static LLVMTypeRef LLVMInt16Type() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt16Type());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt16Type());
     }
 
     public static LLVMTypeRef LLVMInt32Type() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt32Type());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt32Type());
     }
 
     public static LLVMTypeRef LLVMInt64Type() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt64Type());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt64Type());
     }
 
     public static LLVMTypeRef LLVMInt128Type() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMInt128Type());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMInt128Type());
     }
 
     public static LLVMTypeRef LLVMIntType(int /* unsigned */ NumBits) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMIntType(NumBits));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMIntType(NumBits));
     }
 
     public static int /* unsigned */ LLVMGetIntTypeWidth(LLVMTypeRef IntegerTy) {
@@ -3851,28 +3851,28 @@ public class Core {
      * Obtain a 16-bit floating point type from a context.
      */
     public static LLVMTypeRef LLVMHalfTypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMHalfTypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMHalfTypeInContext(C.value()));
     }
 
     /**
      * Obtain a 32-bit floating point type from a context.
      */
     public static LLVMTypeRef LLVMFloatTypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMFloatTypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMFloatTypeInContext(C.value()));
     }
 
     /**
      * Obtain a 64-bit floating point type from a context.
      */
     public static LLVMTypeRef LLVMDoubleTypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMDoubleTypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMDoubleTypeInContext(C.value()));
     }
 
     /**
      * Obtain a 80-bit floating point type (X87) from a context.
      */
     public static LLVMTypeRef LLVMX86FP80TypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMX86FP80TypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMX86FP80TypeInContext(C.value()));
     }
 
     /**
@@ -3880,14 +3880,14 @@ public class Core {
      * context.
      */
     public static LLVMTypeRef LLVMFP128TypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMFP128TypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMFP128TypeInContext(C.value()));
     }
 
     /**
      * Obtain a 128-bit floating point type (two 64-bits) from a context.
      */
     public static LLVMTypeRef LLVMPPCFP128TypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMPPCFP128TypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMPPCFP128TypeInContext(C.value()));
     }
 
     /**
@@ -3896,27 +3896,27 @@ public class Core {
      * These map to the functions in this group of the same name.
      */
     public static LLVMTypeRef LLVMHalfType() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMHalfType());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMHalfType());
     }
 
     public static LLVMTypeRef LLVMFloatType() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMFloatType());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMFloatType());
     }
 
     public static LLVMTypeRef LLVMDoubleType() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMDoubleType());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMDoubleType());
     }
 
     public static LLVMTypeRef LLVMX86FP80Type() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMX86FP80Type());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMX86FP80Type());
     }
 
     public static LLVMTypeRef LLVMFP128Type() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMFP128Type());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMFP128Type());
     }
 
     public static LLVMTypeRef LLVMPPCFP128Type() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMPPCFP128Type());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMPPCFP128Type());
     }
 
     /*
@@ -3933,7 +3933,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ParamTypes = allocArray(arena, ParamTypes);
             int /* unsigned */ ParamCount = arrayLength(ParamTypes);
-            return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMFunctionType(
+            return LLVMTypeRef.of(Native.INSTANCE.LLVMFunctionType(
                     ReturnType.value(), c_ParamTypes.nativeAddress(), ParamCount, IsVarArg));
         }
     }
@@ -3949,7 +3949,7 @@ public class Core {
      * Obtain the Type this function Type returns.
      */
     public static LLVMTypeRef LLVMGetReturnType(LLVMTypeRef FunctionTy) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMGetReturnType(FunctionTy.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMGetReturnType(FunctionTy.value()));
     }
 
     /**
@@ -3991,7 +3991,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Dest = allocPointerArray(arena, count);
             nLLVMGetParamTypes(FunctionTy, c_Dest.nativeAddress());
-            return readPointerArray(c_Dest, LLVMTypeRef.class, LLVMTypeRef::ofNullable);
+            return readPointerArray(c_Dest, LLVMTypeRef.class, LLVMTypeRef::of);
         }
     }
 
@@ -4011,7 +4011,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
             int /* unsigned */ ElementCount = arrayLength(ElementTypes);
-            return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMStructTypeInContext(
+            return LLVMTypeRef.of(Native.INSTANCE.LLVMStructTypeInContext(
                     C.value(), c_ElementTypes.nativeAddress(), ElementCount, Packed));
         }
     }
@@ -4023,7 +4023,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ElementTypes = allocArray(arena, ElementTypes);
             int /* unsigned */ ElementCount = arrayLength(ElementTypes);
-            return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMStructType(
+            return LLVMTypeRef.of(Native.INSTANCE.LLVMStructType(
                     c_ElementTypes.nativeAddress(), ElementCount, Packed));
         }
     }
@@ -4034,7 +4034,7 @@ public class Core {
     public static LLVMTypeRef LLVMStructCreateNamed(LLVMContextRef C, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMStructCreateNamed
+            return LLVMTypeRef.of(Native.INSTANCE.LLVMStructCreateNamed
                     (C.value(), c_Name.nativeAddress()));
         }
     }
@@ -4095,7 +4095,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Dest = allocPointerArray(arena, count);
             nLLVMGetStructElementTypes(StructTy, c_Dest.nativeAddress());
-            return readPointerArray(c_Dest, LLVMTypeRef.class, LLVMTypeRef::ofNullable);
+            return readPointerArray(c_Dest, LLVMTypeRef.class, LLVMTypeRef::of);
         }
     }
 
@@ -4103,7 +4103,7 @@ public class Core {
      * Get the type of the element at a given index in the structure.
      */
     public static LLVMTypeRef LLVMStructGetTypeAtIndex(LLVMTypeRef StructTy, int /* unsigned */ Idx) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMStructGetTypeAtIndex(StructTy.value(), Idx));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMStructGetTypeAtIndex(StructTy.value(), Idx));
     }
 
     /**
@@ -4133,7 +4133,7 @@ public class Core {
      * This works on array, vector, and pointer types.
      */
     public static LLVMTypeRef LLVMGetElementType(LLVMTypeRef Ty) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMGetElementType(Ty.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMGetElementType(Ty.value()));
     }
 
     /**
@@ -4143,7 +4143,7 @@ public class Core {
      * exists in.
      */
     public static LLVMTypeRef LLVMArrayType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMArrayType(ElementType.value(), ElementCount));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMArrayType(ElementType.value(), ElementCount));
     }
 
     /**
@@ -4162,7 +4162,7 @@ public class Core {
      * exists in.
      */
     public static LLVMTypeRef LLVMPointerType(LLVMTypeRef ElementType, int /* unsigned */ AddressSpace) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMPointerType(ElementType.value(), AddressSpace));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMPointerType(ElementType.value(), AddressSpace));
     }
 
     /**
@@ -4182,7 +4182,7 @@ public class Core {
      * exists in.
      */
     public static LLVMTypeRef LLVMVectorType(LLVMTypeRef ElementType, int /* unsigned */ ElementCount) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMVectorType(ElementType.value(), ElementCount));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMVectorType(ElementType.value(), ElementCount));
     }
 
     /**
@@ -4202,42 +4202,42 @@ public class Core {
      * Create a void type in a context.
      */
     public static LLVMTypeRef LLVMVoidTypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMVoidTypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMVoidTypeInContext(C.value()));
     }
 
     /**
      * Create a label type in a context.
      */
     public static LLVMTypeRef LLVMLabelTypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMLabelTypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMLabelTypeInContext(C.value()));
     }
 
     /**
      * Create a X86 MMX type in a context.
      */
     public static LLVMTypeRef LLVMX86MMXTypeInContext(LLVMContextRef C) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMX86MMXTypeInContext(C.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMX86MMXTypeInContext(C.value()));
     }
 
     /**
      * Create a void type in the global context.
      */
     public static LLVMTypeRef LLVMVoidType() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMVoidType());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMVoidType());
     }
 
     /**
      * Create a label type in the global context.
      */
     public static LLVMTypeRef LLVMLabelType() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMLabelType());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMLabelType());
     }
 
     /**
      * Create a X86 MMX type in the global context.
      */
     public static LLVMTypeRef LLVMX86MMXType() {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMX86MMXType());
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMX86MMXType());
     }
 
     /*
@@ -4252,7 +4252,7 @@ public class Core {
      * Obtain the type of a value.
      */
     public static LLVMTypeRef LLVMTypeOf(LLVMValueRef Val) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMTypeOf(Val.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMTypeOf(Val.value()));
     }
 
     /**
@@ -4325,323 +4325,323 @@ public class Core {
      * If the cast is not valid for the specified type, NULL is returned.
      */
     public static LLVMValueRef LLVMIsAArgument(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAArgument(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAArgument(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsABasicBlock(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABasicBlock(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsABasicBlock(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAInlineAsm(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInlineAsm(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAInlineAsm(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAUser(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUser(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAUser(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstant(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstant(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstant(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsABlockAddress(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABlockAddress(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsABlockAddress(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantAggregateZero(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantAggregateZero(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantAggregateZero(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantArray(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantArray(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantArray(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantDataSequential(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantDataSequential(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantDataSequential(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantDataArray(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantDataArray(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantDataArray(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantDataVector(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantDataVector(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantDataVector(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantExpr(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantExpr(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantExpr(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantFP(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantFP(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantFP(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantInt(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantInt(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantInt(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantPointerNull(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantPointerNull(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantPointerNull(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantStruct(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantStruct(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantStruct(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantTokenNone(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantTokenNone(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantTokenNone(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAConstantVector(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAConstantVector(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAConstantVector(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAGlobalValue(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGlobalValue(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAGlobalValue(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAGlobalAlias(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGlobalAlias(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAGlobalAlias(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAGlobalObject(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGlobalObject(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAGlobalObject(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAFunction(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFunction(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAFunction(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAGlobalVariable(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGlobalVariable(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAGlobalVariable(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAUndefValue(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUndefValue(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAUndefValue(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAInstruction(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInstruction(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAInstruction(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsABinaryOperator(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABinaryOperator(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsABinaryOperator(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsACallInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACallInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsACallInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAIntrinsicInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAIntrinsicInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAIntrinsicInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsADbgInfoIntrinsic(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsADbgInfoIntrinsic(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsADbgInfoIntrinsic(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsADbgDeclareInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsADbgDeclareInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsADbgDeclareInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAMemIntrinsic(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMemIntrinsic(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAMemIntrinsic(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAMemCpyInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMemCpyInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAMemCpyInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAMemMoveInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMemMoveInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAMemMoveInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAMemSetInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMemSetInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAMemSetInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsACmpInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACmpInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsACmpInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAFCmpInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFCmpInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAFCmpInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAICmpInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAICmpInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAICmpInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAExtractElementInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAExtractElementInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAExtractElementInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAGetElementPtrInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAGetElementPtrInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAGetElementPtrInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAInsertElementInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInsertElementInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAInsertElementInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAInsertValueInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInsertValueInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAInsertValueInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsALandingPadInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsALandingPadInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsALandingPadInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAPHINode(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAPHINode(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAPHINode(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsASelectInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsASelectInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsASelectInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAShuffleVectorInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAShuffleVectorInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAShuffleVectorInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAStoreInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAStoreInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAStoreInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsATerminatorInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsATerminatorInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsATerminatorInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsABranchInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABranchInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsABranchInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAIndirectBrInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAIndirectBrInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAIndirectBrInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAInvokeInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAInvokeInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAInvokeInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAReturnInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAReturnInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAReturnInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsASwitchInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsASwitchInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsASwitchInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAUnreachableInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUnreachableInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAUnreachableInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAResumeInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAResumeInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAResumeInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsACleanupReturnInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACleanupReturnInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsACleanupReturnInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsACatchReturnInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACatchReturnInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsACatchReturnInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAFuncletPadInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFuncletPadInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAFuncletPadInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsACatchPadInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACatchPadInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsACatchPadInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsACleanupPadInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACleanupPadInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsACleanupPadInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAUnaryInstruction(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUnaryInstruction(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAUnaryInstruction(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAAllocaInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAAllocaInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAAllocaInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsACastInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsACastInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsACastInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAAddrSpaceCastInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAAddrSpaceCastInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAAddrSpaceCastInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsABitCastInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsABitCastInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsABitCastInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAFPExtInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFPExtInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAFPExtInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAFPToSIInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFPToSIInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAFPToSIInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAFPToUIInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFPToUIInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAFPToUIInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAFPTruncInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAFPTruncInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAFPTruncInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAIntToPtrInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAIntToPtrInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAIntToPtrInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAPtrToIntInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAPtrToIntInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAPtrToIntInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsASExtInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsASExtInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsASExtInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsASIToFPInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsASIToFPInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsASIToFPInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsATruncInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsATruncInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsATruncInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAUIToFPInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAUIToFPInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAUIToFPInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAZExtInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAZExtInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAZExtInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAExtractValueInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAExtractValueInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAExtractValueInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsALoadInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsALoadInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsALoadInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAVAArgInst(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAVAArgInst(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAVAArgInst(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAMDNode(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMDNode(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAMDNode(Val.value()));
     }
 
     public static LLVMValueRef LLVMIsAMDString(LLVMValueRef Val) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMIsAMDString(Val.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMIsAMDString(Val.value()));
     }
 
     /*
@@ -4664,7 +4664,7 @@ public class Core {
      * LLVMGetNextUse() returns NULL.
      */
     public static LLVMUseRef LLVMGetFirstUse(LLVMValueRef Val) {
-        return LLVMUseRef.ofNullable(Native.INSTANCE.LLVMGetFirstUse(Val.value()));
+        return LLVMUseRef.of(Native.INSTANCE.LLVMGetFirstUse(Val.value()));
     }
 
     /**
@@ -4674,7 +4674,7 @@ public class Core {
      * the final use and no more are available.
      */
     public static LLVMUseRef LLVMGetNextUse(LLVMUseRef U) {
-        return LLVMUseRef.ofNullable(Native.INSTANCE.LLVMGetNextUse(U.value()));
+        return LLVMUseRef.of(Native.INSTANCE.LLVMGetNextUse(U.value()));
     }
 
     /**
@@ -4683,14 +4683,14 @@ public class Core {
      * The returned value corresponds to a llvm::User type.
      */
     public static LLVMValueRef LLVMGetUser(LLVMUseRef U) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetUser(U.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetUser(U.value()));
     }
 
     /**
      * Obtain the value this use corresponds to.
      */
     public static LLVMValueRef LLVMGetUsedValue(LLVMUseRef U) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetUsedValue(U.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetUsedValue(U.value()));
     }
 
     /*
@@ -4705,14 +4705,14 @@ public class Core {
      * Obtain an operand at a specific index in a llvm::User value.
      */
     public static LLVMValueRef LLVMGetOperand(LLVMValueRef Val, int /* unsigned */ Index) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetOperand(Val.value(), Index));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetOperand(Val.value(), Index));
     }
 
     /**
      * Obtain the use of an operand at a specific index in a llvm::User value.
      */
     public static LLVMUseRef LLVMGetOperandUse(LLVMValueRef Val, int /* unsigned */ Index) {
-        return LLVMUseRef.ofNullable(Native.INSTANCE.LLVMGetOperandUse(Val.value(), Index));
+        return LLVMUseRef.of(Native.INSTANCE.LLVMGetOperandUse(Val.value(), Index));
     }
 
     /**
@@ -4743,7 +4743,7 @@ public class Core {
      * Obtain a constant value referring to the null instance of a type.
      */
     public static LLVMValueRef LLVMConstNull(LLVMTypeRef Ty) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNull(Ty.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNull(Ty.value()));
     }
 
     /**
@@ -4753,14 +4753,14 @@ public class Core {
      * This is only valid for integer types.
      */
     public static LLVMValueRef LLVMConstAllOnes(LLVMTypeRef Ty) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstAllOnes(Ty.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstAllOnes(Ty.value()));
     }
 
     /**
      * Obtain a constant value referring to an undefined value of a type.
      */
     public static LLVMValueRef LLVMGetUndef(LLVMTypeRef Ty) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetUndef(Ty.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetUndef(Ty.value()));
     }
 
     /**
@@ -4775,7 +4775,7 @@ public class Core {
      * specified type.
      */
     public static LLVMValueRef LLVMConstPointerNull(LLVMTypeRef Ty) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstPointerNull(Ty.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstPointerNull(Ty.value()));
     }
 
     /*
@@ -4802,7 +4802,7 @@ public class Core {
      * @param SignExtend Whether to sign extend the produced value.
      */
     public static LLVMValueRef LLVMConstInt(LLVMTypeRef IntTy, long /* unsigned long long */ N, boolean SignExtend) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstInt(IntTy.value(), N, SignExtend));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstInt(IntTy.value(), N, SignExtend));
     }
 
     /**
@@ -4812,7 +4812,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Words = allocArray(arena, Words);
             int /* unsigned */ NumWords = arrayLength(Words);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstIntOfArbitraryPrecision(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstIntOfArbitraryPrecision(
                     IntTy.value(), NumWords, c_Words.nativeAddress()));
         }
     }
@@ -4898,7 +4898,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             int /* unsigned */ Length = Math.toIntExact(stringLength(c_Str));
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstStringInContext(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstStringInContext(
                     C.value(), c_Str.nativeAddress(), Length, DontNullTerminate));
         }
     }
@@ -4913,7 +4913,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             int /* unsigned */ Length = Math.toIntExact(stringLength(c_Str));
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstString(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstString(
                     c_Str.nativeAddress(), Length, DontNullTerminate));
         }
     }
@@ -4997,146 +4997,146 @@ public class Core {
     }
 
     public static LLVMValueRef LLVMAlignOf(LLVMTypeRef Ty) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMAlignOf(Ty.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMAlignOf(Ty.value()));
     }
 
     public static LLVMValueRef LLVMSizeOf(LLVMTypeRef Ty) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMSizeOf(Ty.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMSizeOf(Ty.value()));
     }
 
     public static LLVMValueRef LLVMConstNeg(LLVMValueRef ConstantVal) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNeg(ConstantVal.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNeg(ConstantVal.value()));
     }
 
     public static LLVMValueRef LLVMConstNSWNeg(LLVMValueRef ConstantVal) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNSWNeg(ConstantVal.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNSWNeg(ConstantVal.value()));
     }
 
     public static LLVMValueRef LLVMConstNUWNeg(LLVMValueRef ConstantVal) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNUWNeg(ConstantVal.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNUWNeg(ConstantVal.value()));
     }
 
     public static LLVMValueRef LLVMConstFNeg(LLVMValueRef ConstantVal) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFNeg(ConstantVal.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFNeg(ConstantVal.value()));
     }
 
     public static LLVMValueRef LLVMConstNot(LLVMValueRef ConstantVal) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNot(ConstantVal.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNot(ConstantVal.value()));
     }
 
     public static LLVMValueRef LLVMConstAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstAdd(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstAdd(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstNSWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNSWAdd(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNSWAdd(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstNUWAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNUWAdd(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNUWAdd(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstFAdd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFAdd(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFAdd(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSub(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstSub(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstNSWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNSWSub(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNSWSub(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstNUWSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNUWSub(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNUWSub(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstFSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFSub(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFSub(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstMul(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstMul(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstNSWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNSWMul(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNSWMul(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstNUWMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstNUWMul(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstNUWMul(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstFMul(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFMul(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFMul(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstUDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstUDiv(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstUDiv(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSDiv(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstSDiv(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstExactSDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstExactSDiv(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstExactSDiv(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstFDiv(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFDiv(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFDiv(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstURem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstURem(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstURem(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstSRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSRem(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstSRem(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstFRem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFRem(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFRem(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstAnd(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstAnd(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstAnd(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstOr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstOr(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstOr(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstXor(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstXor(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstXor(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstICmp(LLVMIntPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstICmp(Predicate.value(), LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstICmp(Predicate.value(), LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstFCmp(LLVMRealPredicate Predicate, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFCmp(Predicate.value(), LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFCmp(Predicate.value(), LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstShl(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstShl(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstShl(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstLShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstLShr(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstLShr(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstAShr(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstAShr(LHSConstant.value(), RHSConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstAShr(LHSConstant.value(), RHSConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstGEP(LLVMValueRef ConstantVal, LLVMValueRef[] ConstantIndices) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ConstantIndices = allocArray(arena, ConstantIndices);
             int /* unsigned */ NumIndices = arrayLength(ConstantIndices);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstGEP(ConstantVal.value(), c_ConstantIndices.nativeAddress(), NumIndices));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstGEP(ConstantVal.value(), c_ConstantIndices.nativeAddress(), NumIndices));
         }
     }
 
@@ -5144,100 +5144,100 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_ConstantIndices = allocArray(arena, ConstantIndices);
             int /* unsigned */ NumIndices = arrayLength(ConstantIndices);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstInBoundsGEP(ConstantVal.value(), c_ConstantIndices.nativeAddress(), NumIndices));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstInBoundsGEP(ConstantVal.value(), c_ConstantIndices.nativeAddress(), NumIndices));
         }
     }
 
     public static LLVMValueRef LLVMConstTrunc(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstTrunc(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstTrunc(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstSExt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSExt(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstSExt(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstZExt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstZExt(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstZExt(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstFPTrunc(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFPTrunc(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFPTrunc(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstFPExt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFPExt(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFPExt(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstUIToFP(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstUIToFP(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstUIToFP(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstSIToFP(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSIToFP(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstSIToFP(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstFPToUI(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFPToUI(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFPToUI(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstFPToSI(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFPToSI(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFPToSI(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstPtrToInt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstPtrToInt(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstPtrToInt(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstIntToPtr(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstIntToPtr(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstIntToPtr(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstBitCast(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstBitCast(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstAddrSpaceCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstAddrSpaceCast(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstAddrSpaceCast(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstZExtOrBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstZExtOrBitCast(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstZExtOrBitCast(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstSExtOrBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSExtOrBitCast(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstSExtOrBitCast(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstTruncOrBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstTruncOrBitCast(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstTruncOrBitCast(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstPointerCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstPointerCast(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstPointerCast(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstIntCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType, boolean isSigned) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstIntCast(ConstantVal.value(), ToType.value(), isSigned));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstIntCast(ConstantVal.value(), ToType.value(), isSigned));
     }
 
     public static LLVMValueRef LLVMConstFPCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstFPCast(ConstantVal.value(), ToType.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstFPCast(ConstantVal.value(), ToType.value()));
     }
 
     public static LLVMValueRef LLVMConstSelect(LLVMValueRef ConstantCondition, LLVMValueRef ConstantIfTrue, LLVMValueRef ConstantIfFalse) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstSelect(ConstantCondition.value(), ConstantIfTrue.value(), ConstantIfFalse.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstSelect(ConstantCondition.value(), ConstantIfTrue.value(), ConstantIfFalse.value()));
     }
 
     public static LLVMValueRef LLVMConstExtractElement(LLVMValueRef VectorConstant, LLVMValueRef IndexConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstExtractElement(VectorConstant.value(), IndexConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstExtractElement(VectorConstant.value(), IndexConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstInsertElement(LLVMValueRef VectorConstant, LLVMValueRef ElementValueConstant, LLVMValueRef IndexConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstInsertElement(VectorConstant.value(), ElementValueConstant.value(), IndexConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstInsertElement(VectorConstant.value(), ElementValueConstant.value(), IndexConstant.value()));
     }
 
     public static LLVMValueRef LLVMConstShuffleVector(LLVMValueRef VectorAConstant, LLVMValueRef VectorBConstant, LLVMValueRef MaskConstant) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstShuffleVector(VectorAConstant.value(), VectorBConstant.value(), MaskConstant.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstShuffleVector(VectorAConstant.value(), VectorBConstant.value(), MaskConstant.value()));
     }
 
     //LLVMValueRef LLVMConstExtractValue(LLVMValueRef AggConstant, int /* unsigned */ *IdxList, int /* unsigned */ NumIdx) {
@@ -5251,12 +5251,12 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_AsmString = allocString(arena, AsmString);
             MemorySegment c_Constraints = allocString(arena, Constraints);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMConstInlineAsm(Ty.value(), c_AsmString.nativeAddress(), c_Constraints.nativeAddress(), HasSideEffects, IsAlignStack));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstInlineAsm(Ty.value(), c_AsmString.nativeAddress(), c_Constraints.nativeAddress(), HasSideEffects, IsAlignStack));
         }
     }
 
     public static LLVMValueRef LLVMBlockAddress(LLVMValueRef F, LLVMBasicBlockRef BB) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBlockAddress(F.value(), BB.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBlockAddress(F.value(), BB.value()));
     }
 
     /*
@@ -5267,7 +5267,7 @@ public class Core {
      */
 
     public static LLVMModuleRef LLVMGetGlobalParent(LLVMValueRef Global) {
-        return LLVMModuleRef.ofNullable(Native.INSTANCE.LLVMGetGlobalParent(Global.value()));
+        return LLVMModuleRef.of(Native.INSTANCE.LLVMGetGlobalParent(Global.value()));
     }
 
     public static boolean LLVMIsDeclaration(LLVMValueRef Global) {
@@ -5347,38 +5347,38 @@ public class Core {
     public static LLVMValueRef LLVMAddGlobal(LLVMModuleRef M, LLVMTypeRef Ty, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMAddGlobal(M.value(), Ty.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMAddGlobal(M.value(), Ty.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMAddGlobalInAddressSpace(LLVMModuleRef M, LLVMTypeRef Ty, String Name, int /* unsigned */ AddressSpace) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMAddGlobalInAddressSpace(M.value(), Ty.value(), c_Name.nativeAddress(), AddressSpace));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMAddGlobalInAddressSpace(M.value(), Ty.value(), c_Name.nativeAddress(), AddressSpace));
         }
     }
 
     public static LLVMValueRef LLVMGetNamedGlobal(LLVMModuleRef M, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetNamedGlobal(M.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMGetNamedGlobal(M.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMGetFirstGlobal(LLVMModuleRef M) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetFirstGlobal(M.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetFirstGlobal(M.value()));
     }
 
     public static LLVMValueRef LLVMGetLastGlobal(LLVMModuleRef M) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetLastGlobal(M.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetLastGlobal(M.value()));
     }
 
     public static LLVMValueRef LLVMGetNextGlobal(LLVMValueRef GlobalVar) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetNextGlobal(GlobalVar.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetNextGlobal(GlobalVar.value()));
     }
 
     public static LLVMValueRef LLVMGetPreviousGlobal(LLVMValueRef GlobalVar) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetPreviousGlobal(GlobalVar.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetPreviousGlobal(GlobalVar.value()));
     }
 
     public static void LLVMDeleteGlobal(LLVMValueRef GlobalVar) {
@@ -5386,7 +5386,7 @@ public class Core {
     }
 
     public static LLVMValueRef LLVMGetInitializer(LLVMValueRef GlobalVar) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetInitializer(GlobalVar.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetInitializer(GlobalVar.value()));
     }
 
     public static void LLVMSetInitializer(LLVMValueRef GlobalVar, LLVMValueRef ConstantVal) {
@@ -5434,7 +5434,7 @@ public class Core {
     public static LLVMValueRef LLVMAddAlias(LLVMModuleRef M, LLVMTypeRef Ty, LLVMValueRef Aliasee, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMAddAlias(M.value(), Ty.value(), Aliasee.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMAddAlias(M.value(), Ty.value(), Aliasee.value(), c_Name.nativeAddress()));
         }
     }
 
@@ -5463,7 +5463,7 @@ public class Core {
      * Obtain the personality function attached to the function.
      */
     public static LLVMValueRef LLVMGetPersonalityFn(LLVMValueRef Fn) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetPersonalityFn(Fn.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetPersonalityFn(Fn.value()));
     }
 
     /**
@@ -5522,14 +5522,14 @@ public class Core {
     }
 
     public static LLVMAttributeRef LLVMGetEnumAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, int /* unsigned */ KindID) {
-        return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMGetEnumAttributeAtIndex(F.value(), Idx, KindID));
+        return LLVMAttributeRef.of(Native.INSTANCE.LLVMGetEnumAttributeAtIndex(F.value(), Idx, KindID));
     }
 
     public static LLVMAttributeRef LLVMGetStringAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, String K) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_K = allocString(arena, K);
             int /* unsigned */ KLen = Math.toIntExact(stringLength(c_K));
-            return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMGetStringAttributeAtIndex(F.value(), Idx, c_K.nativeAddress(), KLen));
+            return LLVMAttributeRef.of(Native.INSTANCE.LLVMGetStringAttributeAtIndex(F.value(), Idx, c_K.nativeAddress(), KLen));
         }
     }
 
@@ -5602,7 +5602,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Params = allocPointerArray(arena, count);
             nLLVMGetParams(Fn, c_Params.nativeAddress());
-            return readPointerArray(c_Params, LLVMValueRef.class, LLVMValueRef::ofNullable);
+            return readPointerArray(c_Params, LLVMValueRef.class, LLVMValueRef::of);
         }
     }
 
@@ -5612,7 +5612,7 @@ public class Core {
      * Parameters are indexed from 0.
      */
     public static LLVMValueRef LLVMGetParam(LLVMValueRef Fn, int /* unsigned */ Index) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetParam(Fn.value(), Index));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetParam(Fn.value(), Index));
     }
 
     /**
@@ -5625,21 +5625,21 @@ public class Core {
      * argument belongs.
      */
     public static LLVMValueRef LLVMGetParamParent(LLVMValueRef Inst) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetParamParent(Inst.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetParamParent(Inst.value()));
     }
 
     /**
      * Obtain the first parameter to a function.
      */
     public static LLVMValueRef LLVMGetFirstParam(LLVMValueRef Fn) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetFirstParam(Fn.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetFirstParam(Fn.value()));
     }
 
     /**
      * Obtain the last parameter to a function.
      */
     public static LLVMValueRef LLVMGetLastParam(LLVMValueRef Fn) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetLastParam(Fn.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetLastParam(Fn.value()));
     }
 
     /**
@@ -5650,7 +5650,7 @@ public class Core {
      * underlying iterator.
      */
     public static LLVMValueRef LLVMGetNextParam(LLVMValueRef Arg) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetNextParam(Arg.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetNextParam(Arg.value()));
     }
 
     /**
@@ -5659,7 +5659,7 @@ public class Core {
      * This is the opposite of LLVMGetNextParam().
      */
     public static LLVMValueRef LLVMGetPreviousParam(LLVMValueRef Arg) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetPreviousParam(Arg.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetPreviousParam(Arg.value()));
     }
 
     /**
@@ -5756,7 +5756,7 @@ public class Core {
      * Convert a basic block instance to a value type.
      */
     public static LLVMValueRef LLVMBasicBlockAsValue(LLVMBasicBlockRef BB) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBasicBlockAsValue(BB.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBasicBlockAsValue(BB.value()));
     }
 
     /**
@@ -5770,7 +5770,7 @@ public class Core {
      * Convert an LLVMValueRef to an LLVMBasicBlockRef instance.
      */
     public static LLVMBasicBlockRef LLVMValueAsBasicBlock(LLVMValueRef Val) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMValueAsBasicBlock(Val.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMValueAsBasicBlock(Val.value()));
     }
 
     /**
@@ -5784,7 +5784,7 @@ public class Core {
      * Obtain the function to which a basic block belongs.
      */
     public static LLVMValueRef LLVMGetBasicBlockParent(LLVMBasicBlockRef BB) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetBasicBlockParent(BB.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetBasicBlockParent(BB.value()));
     }
 
     /**
@@ -5796,7 +5796,7 @@ public class Core {
      * The returned LLVMValueRef corresponds to a llvm::TerminatorInst.
      */
     public static LLVMValueRef LLVMGetBasicBlockTerminator(LLVMBasicBlockRef BB) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetBasicBlockTerminator(BB.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetBasicBlockTerminator(BB.value()));
     }
 
     /**
@@ -5835,7 +5835,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BasicBlocks = allocPointerArray(arena, count);
             nLLVMGetBasicBlocks(Fn, c_BasicBlocks.nativeAddress());
-            return readPointerArray(c_BasicBlocks, LLVMBasicBlockRef.class, LLVMBasicBlockRef::ofNullable);
+            return readPointerArray(c_BasicBlocks, LLVMBasicBlockRef.class, LLVMBasicBlockRef::of);
         }
     }
 
@@ -5846,35 +5846,35 @@ public class Core {
      * eventually call into LLVMGetNextBasicBlock() with it.
      */
     public static LLVMBasicBlockRef LLVMGetFirstBasicBlock(LLVMValueRef Fn) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetFirstBasicBlock(Fn.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetFirstBasicBlock(Fn.value()));
     }
 
     /**
      * Obtain the last basic block in a function.
      */
     public static LLVMBasicBlockRef LLVMGetLastBasicBlock(LLVMValueRef Fn) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetLastBasicBlock(Fn.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetLastBasicBlock(Fn.value()));
     }
 
     /**
      * Advance a basic block iterator.
      */
     public static LLVMBasicBlockRef LLVMGetNextBasicBlock(LLVMBasicBlockRef BB) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetNextBasicBlock(BB.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetNextBasicBlock(BB.value()));
     }
 
     /**
      * Go backwards in a basic block iterator.
      */
     public static LLVMBasicBlockRef LLVMGetPreviousBasicBlock(LLVMBasicBlockRef BB) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetPreviousBasicBlock(BB.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetPreviousBasicBlock(BB.value()));
     }
 
     /**
      * Obtain the basic block that corresponds to the entry point of a function.
      */
     public static LLVMBasicBlockRef LLVMGetEntryBasicBlock(LLVMValueRef Fn) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetEntryBasicBlock(Fn.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetEntryBasicBlock(Fn.value()));
     }
 
     /**
@@ -5883,7 +5883,7 @@ public class Core {
     public static LLVMBasicBlockRef LLVMAppendBasicBlockInContext(LLVMContextRef C, LLVMValueRef Fn, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMAppendBasicBlockInContext(
+            return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMAppendBasicBlockInContext(
                     C.value(), Fn.value(), c_Name.nativeAddress()));
         }
     }
@@ -5894,7 +5894,7 @@ public class Core {
     public static LLVMBasicBlockRef LLVMAppendBasicBlock(LLVMValueRef Fn, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMAppendBasicBlock(
+            return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMAppendBasicBlock(
                     Fn.value(), c_Name.nativeAddress()));
         }
     }
@@ -5908,7 +5908,7 @@ public class Core {
     public static LLVMBasicBlockRef LLVMInsertBasicBlockInContext(LLVMContextRef C, LLVMBasicBlockRef BB, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMInsertBasicBlockInContext(C.value(), BB.value(), c_Name.nativeAddress()));
+            return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMInsertBasicBlockInContext(C.value(), BB.value(), c_Name.nativeAddress()));
         }
     }
 
@@ -5918,7 +5918,7 @@ public class Core {
     public static LLVMBasicBlockRef LLVMInsertBasicBlock(LLVMBasicBlockRef InsertBeforeBB, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMInsertBasicBlock(InsertBeforeBB.value(), c_Name.nativeAddress()));
+            return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMInsertBasicBlock(InsertBeforeBB.value(), c_Name.nativeAddress()));
         }
     }
 
@@ -5963,7 +5963,7 @@ public class Core {
      * instance.
      */
     public static LLVMValueRef LLVMGetFirstInstruction(LLVMBasicBlockRef BB) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetFirstInstruction(BB.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetFirstInstruction(BB.value()));
     }
 
     /**
@@ -5972,7 +5972,7 @@ public class Core {
      * The returned LLVMValueRef corresponds to an LLVM:Instruction.
      */
     public static LLVMValueRef LLVMGetLastInstruction(LLVMBasicBlockRef BB) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetLastInstruction(BB.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetLastInstruction(BB.value()));
     }
 
     /*
@@ -6001,7 +6001,7 @@ public class Core {
      * Return metadata associated with an instruction value.
      */
     public static LLVMValueRef LLVMGetMetadata(LLVMValueRef Val, int /* unsigned */ KindID) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetMetadata(Val.value(), KindID));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetMetadata(Val.value(), KindID));
     }
 
     /**
@@ -6015,7 +6015,7 @@ public class Core {
      * Obtain the basic block to which an instruction belongs.
      */
     public static LLVMBasicBlockRef LLVMGetInstructionParent(LLVMValueRef Inst) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetInstructionParent(Inst.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetInstructionParent(Inst.value()));
     }
 
     /**
@@ -6027,7 +6027,7 @@ public class Core {
      * returned.
      */
     public static LLVMValueRef LLVMGetNextInstruction(LLVMValueRef Inst) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetNextInstruction(Inst.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetNextInstruction(Inst.value()));
     }
 
     /**
@@ -6037,7 +6037,7 @@ public class Core {
      * will be returned.
      */
     public static LLVMValueRef LLVMGetPreviousInstruction(LLVMValueRef Inst) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetPreviousInstruction(Inst.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetPreviousInstruction(Inst.value()));
     }
 
     /**
@@ -6094,7 +6094,7 @@ public class Core {
      * * The instruction has no name
      */
     public static LLVMValueRef LLVMInstructionClone(LLVMValueRef Inst) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMInstructionClone(Inst.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMInstructionClone(Inst.value()));
     }
 
     /*
@@ -6144,14 +6144,14 @@ public class Core {
     }
 
     public static LLVMAttributeRef LLVMGetCallSiteEnumAttribute(LLVMValueRef C, int /* LLVMAttributeIndex */ Idx, int /* unsigned */ KindID) {
-        return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMGetCallSiteEnumAttribute(C.value(), Idx, KindID));
+        return LLVMAttributeRef.of(Native.INSTANCE.LLVMGetCallSiteEnumAttribute(C.value(), Idx, KindID));
     }
 
     public static LLVMAttributeRef LLVMGetCallSiteStringAttribute(LLVMValueRef C, int /* LLVMAttributeIndex */ Idx, String K) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_K = allocString(arena, K);
             int /* unsigned */ KLen = Math.toIntExact(stringLength(c_K));
-            return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMGetCallSiteStringAttribute(C.value(), Idx, c_K.nativeAddress(), KLen));
+            return LLVMAttributeRef.of(Native.INSTANCE.LLVMGetCallSiteStringAttribute(C.value(), Idx, c_K.nativeAddress(), KLen));
         }
     }
 
@@ -6174,7 +6174,7 @@ public class Core {
      * llvm::InvokeInst.
      */
     public static LLVMValueRef LLVMGetCalledValue(LLVMValueRef Instr) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetCalledValue(Instr.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetCalledValue(Instr.value()));
     }
 
     /**
@@ -6201,7 +6201,7 @@ public class Core {
      * This only works on llvm::InvokeInst instructions.
      */
     public static LLVMBasicBlockRef LLVMGetNormalDest(LLVMValueRef InvokeInst) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetNormalDest(InvokeInst.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetNormalDest(InvokeInst.value()));
     }
 
     /**
@@ -6210,7 +6210,7 @@ public class Core {
      * This only works on llvm::InvokeInst instructions.
      */
     public static LLVMBasicBlockRef LLVMGetUnwindDest(LLVMValueRef InvokeInst) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetUnwindDest(InvokeInst.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetUnwindDest(InvokeInst.value()));
     }
 
     /**
@@ -6249,7 +6249,7 @@ public class Core {
      * Return the specified successor.
      */
     public static LLVMBasicBlockRef LLVMGetSuccessor(LLVMValueRef Term, int /* unsigned */ Idx) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetSuccessor(Term.value(), Idx));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetSuccessor(Term.value(), Idx));
     }
 
     /**
@@ -6274,7 +6274,7 @@ public class Core {
      * This only works on llvm::BranchInst instructions.
      */
     public static LLVMValueRef LLVMGetCondition(LLVMValueRef Branch) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetCondition(Branch.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetCondition(Branch.value()));
     }
 
     /**
@@ -6292,7 +6292,7 @@ public class Core {
      * This only works on llvm::SwitchInst instructions.
      */
     public static LLVMBasicBlockRef LLVMGetSwitchDefaultDest(LLVMValueRef SwitchInstr) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetSwitchDefaultDest(SwitchInstr.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetSwitchDefaultDest(SwitchInstr.value()));
     }
 
     /*
@@ -6306,7 +6306,7 @@ public class Core {
      * Obtain the type that is being allocated by the alloca instruction.
      */
     public static LLVMTypeRef LLVMGetAllocatedType(LLVMValueRef Alloca) {
-        return LLVMTypeRef.ofNullable(Native.INSTANCE.LLVMGetAllocatedType(Alloca.value()));
+        return LLVMTypeRef.of(Native.INSTANCE.LLVMGetAllocatedType(Alloca.value()));
     }
 
     /*
@@ -6374,14 +6374,14 @@ public class Core {
      * Obtain an incoming value to a PHI node as an LLVMValueRef.
      */
     public static LLVMValueRef LLVMGetIncomingValue(LLVMValueRef PhiNode, int /* unsigned */ Index) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetIncomingValue(PhiNode.value(), Index));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetIncomingValue(PhiNode.value(), Index));
     }
 
     /**
      * Obtain an incoming value to a PHI node as an LLVMBasicBlockRef.
      */
     public static LLVMBasicBlockRef LLVMGetIncomingBlock(LLVMValueRef PhiNode, int /* unsigned */ Index) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetIncomingBlock(PhiNode.value(), Index));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetIncomingBlock(PhiNode.value(), Index));
     }
 
     /*
@@ -6415,11 +6415,11 @@ public class Core {
      */
 
     public static LLVMBuilderRef LLVMCreateBuilderInContext(LLVMContextRef C) {
-        return LLVMBuilderRef.ofNullable(Native.INSTANCE.LLVMCreateBuilderInContext(C.value()));
+        return LLVMBuilderRef.of(Native.INSTANCE.LLVMCreateBuilderInContext(C.value()));
     }
 
     public static LLVMBuilderRef LLVMCreateBuilder() {
-        return LLVMBuilderRef.ofNullable(Native.INSTANCE.LLVMCreateBuilder());
+        return LLVMBuilderRef.of(Native.INSTANCE.LLVMCreateBuilder());
     }
 
     public static void LLVMPositionBuilder(LLVMBuilderRef Builder, LLVMBasicBlockRef Block, LLVMValueRef Instr) {
@@ -6435,7 +6435,7 @@ public class Core {
     }
 
     public static LLVMBasicBlockRef LLVMGetInsertBlock(LLVMBuilderRef Builder) {
-        return LLVMBasicBlockRef.ofNullable(Native.INSTANCE.LLVMGetInsertBlock(Builder.value()));
+        return LLVMBasicBlockRef.of(Native.INSTANCE.LLVMGetInsertBlock(Builder.value()));
     }
 
     public static void LLVMClearInsertionPosition(LLVMBuilderRef Builder) {
@@ -6464,7 +6464,7 @@ public class Core {
     }
 
     public static LLVMValueRef LLVMGetCurrentDebugLocation(LLVMBuilderRef Builder) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetCurrentDebugLocation(Builder.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetCurrentDebugLocation(Builder.value()));
     }
 
     public static void LLVMSetInstDebugLocation(LLVMBuilderRef Builder, LLVMValueRef Inst) {
@@ -6474,36 +6474,36 @@ public class Core {
     /* Terminators */
 
     public static LLVMValueRef LLVMBuildRetVoid(LLVMBuilderRef Builder) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildRetVoid(Builder.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildRetVoid(Builder.value()));
     }
 
     public static LLVMValueRef LLVMBuildRet(LLVMBuilderRef Builder, LLVMValueRef V) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildRet(Builder.value(), V.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildRet(Builder.value(), V.value()));
     }
 
     public static LLVMValueRef LLVMBuildAggregateRet(LLVMBuilderRef B, LLVMValueRef[] RetVals) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_RetVals = allocArray(arena, RetVals);
             int /* unsigned */ N = arrayLength(RetVals);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAggregateRet(B.value(), c_RetVals.nativeAddress(), N));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildAggregateRet(B.value(), c_RetVals.nativeAddress(), N));
         }
     }
 
     public static LLVMValueRef LLVMBuildBr(LLVMBuilderRef B, LLVMBasicBlockRef Dest) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildBr(B.value(), Dest.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildBr(B.value(), Dest.value()));
     }
 
     public static LLVMValueRef LLVMBuildCondBr(LLVMBuilderRef B, LLVMValueRef If, LLVMBasicBlockRef Then, LLVMBasicBlockRef Else) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildCondBr(
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildCondBr(
                 B.value(), If.value(), Then.value(), Else.value()));
     }
 
     public static LLVMValueRef LLVMBuildSwitch(LLVMBuilderRef B, LLVMValueRef V, LLVMBasicBlockRef Else, int /* unsigned */ NumCases) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildSwitch(B.value(), V.value(), Else.value(), NumCases));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildSwitch(B.value(), V.value(), Else.value(), NumCases));
     }
 
     public static LLVMValueRef LLVMBuildIndirectBr(LLVMBuilderRef B, LLVMValueRef Addr, int /* unsigned */ NumDests) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildIndirectBr(B.value(), Addr.value(), NumDests));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildIndirectBr(B.value(), Addr.value(), NumDests));
     }
 
     public static LLVMValueRef LLVMBuildInvoke(LLVMBuilderRef B, LLVMValueRef Fn, LLVMValueRef[] Args, LLVMBasicBlockRef Then, LLVMBasicBlockRef Catch, String Name) {
@@ -6511,23 +6511,23 @@ public class Core {
             MemorySegment c_Args = allocArray(arena, Args);
             int /* unsigned */ NumArgs = arrayLength(Args);
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildInvoke(B.value(), Fn.value(), c_Args.nativeAddress(), NumArgs, Then.value(), Catch.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildInvoke(B.value(), Fn.value(), c_Args.nativeAddress(), NumArgs, Then.value(), Catch.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildLandingPad(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef PersFn, int /* unsigned */ NumClauses, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildLandingPad(B.value(), Ty.value(), PersFn.value(), NumClauses, c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildLandingPad(B.value(), Ty.value(), PersFn.value(), NumClauses, c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildResume(LLVMBuilderRef B, LLVMValueRef Exn) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildResume(B.value(), Exn.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildResume(B.value(), Exn.value()));
     }
 
     public static LLVMValueRef LLVMBuildUnreachable(LLVMBuilderRef B) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildUnreachable(B.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildUnreachable(B.value()));
     }
 
     /**
@@ -6555,7 +6555,7 @@ public class Core {
      * Get the value of the clause at idnex Idx on the landingpad instruction
      */
     public static LLVMValueRef LLVMGetClause(LLVMValueRef LandingPad, int /* unsigned */ Idx) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetClause(LandingPad.value(), Idx));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetClause(LandingPad.value(), Idx));
     }
 
     /**
@@ -6584,7 +6584,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAdd(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildAdd(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6592,7 +6592,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNSWAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNSWAdd(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNSWAdd(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6600,7 +6600,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNUWAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNUWAdd(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNUWAdd(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6608,7 +6608,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFAdd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFAdd(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFAdd(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6616,7 +6616,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildSub(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildSub(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6624,7 +6624,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNSWSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNSWSub(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNSWSub(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6632,7 +6632,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNUWSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNUWSub(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNUWSub(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6640,7 +6640,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFSub(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFSub(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFSub(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6648,7 +6648,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildMul(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildMul(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6656,7 +6656,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNSWMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNSWMul(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNSWMul(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6664,7 +6664,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNUWMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNUWMul(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNUWMul(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6672,7 +6672,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFMul(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFMul(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFMul(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6680,7 +6680,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildUDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildUDiv(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildUDiv(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6688,7 +6688,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildSDiv(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildSDiv(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6696,7 +6696,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildExactSDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildExactSDiv(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildExactSDiv(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6704,7 +6704,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFDiv(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFDiv(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFDiv(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6712,7 +6712,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildURem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildURem(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildURem(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6720,7 +6720,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSRem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildSRem(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildSRem(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6728,7 +6728,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFRem(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFRem(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFRem(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6736,7 +6736,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildShl(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildShl(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildShl(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6744,7 +6744,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildLShr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildLShr(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildLShr(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6752,7 +6752,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAShr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAShr(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildAShr(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6760,7 +6760,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAnd(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAnd(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildAnd(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6768,7 +6768,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildOr(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildOr(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildOr(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6776,7 +6776,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildXor(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildXor(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildXor(
                     B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6784,7 +6784,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildBinOp(LLVMBuilderRef B, LLVMOpcode Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildBinOp(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildBinOp(
                     B.value(), Op.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -6792,7 +6792,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNeg(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNeg(
                     B.value(), V.value(), c_Name.nativeAddress()));
         }
     }
@@ -6800,7 +6800,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNSWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNSWNeg(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNSWNeg(
                     B.value(), V.value(), c_Name.nativeAddress()));
         }
     }
@@ -6808,7 +6808,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNUWNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNUWNeg(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNUWNeg(
                     B.value(), V.value(), c_Name.nativeAddress()));
         }
     }
@@ -6816,7 +6816,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFNeg(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFNeg(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFNeg(
                     B.value(), V.value(), c_Name.nativeAddress()));
         }
     }
@@ -6824,7 +6824,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildNot(LLVMBuilderRef B, LLVMValueRef V, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildNot(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildNot(
                     B.value(), V.value(), c_Name.nativeAddress()));
         }
     }
@@ -6834,7 +6834,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildMalloc(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildMalloc(
                     B.value(), Ty.value(), c_Name.nativeAddress()));
         }
     }
@@ -6842,7 +6842,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildArrayMalloc(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildArrayMalloc(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildArrayMalloc(
                     B.value(), Ty.value(), Val.value(), c_Name.nativeAddress()));
         }
     }
@@ -6850,7 +6850,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAlloca(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAlloca(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildAlloca(
                     B.value(), Ty.value(), c_Name.nativeAddress()));
         }
     }
@@ -6858,25 +6858,25 @@ public class Core {
     public static LLVMValueRef LLVMBuildArrayAlloca(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Val, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildArrayAlloca(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildArrayAlloca(
                     B.value(), Ty.value(), Val.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildFree(LLVMBuilderRef B, LLVMValueRef Ptr) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFree(B.value(), Ptr.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFree(B.value(), Ptr.value()));
     }
 
     public static LLVMValueRef LLVMBuildLoad(LLVMBuilderRef B, LLVMValueRef Ptr, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildLoad(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildLoad(
                     B.value(), Ptr.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildStore(LLVMBuilderRef B, LLVMValueRef Val, LLVMValueRef Ptr) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildStore(B.value(), Val.value(), Ptr.value()));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildStore(B.value(), Val.value(), Ptr.value()));
     }
 
     public static LLVMValueRef LLVMBuildGEP(LLVMBuilderRef B, LLVMValueRef Pointer, LLVMValueRef[] Indices, String Name) {
@@ -6884,7 +6884,7 @@ public class Core {
             MemorySegment c_Indices = allocArray(arena, Indices);
             int /* unsigned */ NumIndices = arrayLength(Indices);
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildGEP(B.value(),
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildGEP(B.value(),
                     Pointer.value(), c_Indices.nativeAddress(), NumIndices, c_Name.nativeAddress()));
         }
     }
@@ -6894,7 +6894,7 @@ public class Core {
             MemorySegment c_Indices = allocArray(arena, Indices);
             int /* unsigned */ NumIndices = arrayLength(Indices);
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildInBoundsGEP(B.value(),
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildInBoundsGEP(B.value(),
                     Pointer.value(), c_Indices.nativeAddress(), NumIndices, c_Name.nativeAddress()));
         }
     }
@@ -6902,7 +6902,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildStructGEP(LLVMBuilderRef B, LLVMValueRef Pointer, int /* unsigned */ Idx, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildStructGEP(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildStructGEP(
                     B.value(), Pointer.value(), Idx, c_Name.nativeAddress()));
         }
     }
@@ -6911,7 +6911,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildGlobalString(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildGlobalString(
                     B.value(), c_Str.nativeAddress(), c_Name.nativeAddress()));
         }
     }
@@ -6920,7 +6920,7 @@ public class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Str = allocString(arena, Str);
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildGlobalStringPtr(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildGlobalStringPtr(
                     B.value(), c_Str.nativeAddress(), c_Name.nativeAddress()));
         }
     }
@@ -6946,7 +6946,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildTrunc(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildTrunc(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildTrunc(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -6954,7 +6954,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildZExt(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildZExt(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildZExt(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -6962,7 +6962,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSExt(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildSExt(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildSExt(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -6970,7 +6970,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPToUI(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFPToUI(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFPToUI(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -6978,7 +6978,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPToSI(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFPToSI(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFPToSI(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -6986,7 +6986,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildUIToFP(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildUIToFP(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildUIToFP(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -6994,7 +6994,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSIToFP(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildSIToFP(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildSIToFP(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7002,7 +7002,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPTrunc(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFPTrunc(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFPTrunc(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7010,7 +7010,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPExt(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFPExt(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFPExt(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7018,7 +7018,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildPtrToInt(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildPtrToInt(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildPtrToInt(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7026,7 +7026,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildIntToPtr(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildIntToPtr(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildIntToPtr(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7034,7 +7034,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildBitCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildBitCast(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildBitCast(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7042,7 +7042,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildAddrSpaceCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAddrSpaceCast(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildAddrSpaceCast(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7050,7 +7050,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildZExtOrBitCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildZExtOrBitCast(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildZExtOrBitCast(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7058,7 +7058,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSExtOrBitCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildSExtOrBitCast(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildSExtOrBitCast(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7066,7 +7066,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildTruncOrBitCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildTruncOrBitCast(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildTruncOrBitCast(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7074,7 +7074,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildCast(LLVMBuilderRef B, LLVMOpcode Op, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildCast(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildCast(
                     B.value(), Op.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7082,7 +7082,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildPointerCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildPointerCast(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildPointerCast(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7090,7 +7090,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildIntCast(LLVMBuilderRef B, LLVMValueRef Val, /*Signed cast!*/ LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildIntCast(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildIntCast(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7098,7 +7098,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFPCast(LLVMBuilderRef B, LLVMValueRef Val, LLVMTypeRef DestTy, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFPCast(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFPCast(
                     B.value(), Val.value(), DestTy.value(), c_Name.nativeAddress()));
         }
     }
@@ -7108,7 +7108,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildICmp(LLVMBuilderRef B, LLVMIntPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildICmp(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildICmp(
                     B.value(), Op.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -7116,7 +7116,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildFCmp(LLVMBuilderRef B, LLVMRealPredicate Op, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFCmp(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFCmp(
                     B.value(), Op.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
@@ -7126,7 +7126,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildPhi(LLVMBuilderRef B, LLVMTypeRef Ty, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildPhi(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildPhi(
                     B.value(), Ty.value(), c_Name.nativeAddress()));
         }
     }
@@ -7136,7 +7136,7 @@ public class Core {
             MemorySegment c_Args = allocArray(arena, Args);
             int /* unsigned */ NumArgs = arrayLength(Args);
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildCall(B.value(),
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildCall(B.value(),
                     Fn.value(), c_Args.nativeAddress(), NumArgs, c_Name.nativeAddress()));
         }
     }
@@ -7144,7 +7144,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildSelect(LLVMBuilderRef B, LLVMValueRef If, LLVMValueRef Then, LLVMValueRef Else, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildSelect(B.value(),
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildSelect(B.value(),
                     If.value(), Then.value(), Else.value(), c_Name.nativeAddress()));
         }
     }
@@ -7152,35 +7152,35 @@ public class Core {
     public static LLVMValueRef LLVMBuildVAArg(LLVMBuilderRef B, LLVMValueRef List, LLVMTypeRef Ty, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildVAArg(B.value(), List.value(), Ty.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildVAArg(B.value(), List.value(), Ty.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildExtractElement(LLVMBuilderRef B, LLVMValueRef VecVal, LLVMValueRef Index, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildExtractElement(B.value(), VecVal.value(), Index.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildExtractElement(B.value(), VecVal.value(), Index.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildInsertElement(LLVMBuilderRef B, LLVMValueRef VecVal, LLVMValueRef EltVal, LLVMValueRef Index, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildInsertElement(B.value(), VecVal.value(), EltVal.value(), Index.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildInsertElement(B.value(), VecVal.value(), EltVal.value(), Index.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildShuffleVector(LLVMBuilderRef B, LLVMValueRef V1, LLVMValueRef V2, LLVMValueRef Mask, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildShuffleVector(B.value(), V1.value(), V2.value(), Mask.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildShuffleVector(B.value(), V1.value(), V2.value(), Mask.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildExtractValue(LLVMBuilderRef B, LLVMValueRef AggVal, int /* unsigned */ Index, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildExtractValue(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildExtractValue(
                     B.value(), AggVal.value(), Index, c_Name.nativeAddress()));
         }
     }
@@ -7188,7 +7188,7 @@ public class Core {
     public static LLVMValueRef LLVMBuildInsertValue(LLVMBuilderRef B, LLVMValueRef AggVal, LLVMValueRef EltVal, int /* unsigned */ Index, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildInsertValue(
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildInsertValue(
                     B.value(), AggVal.value(), EltVal.value(), Index, c_Name.nativeAddress()));
         }
     }
@@ -7196,37 +7196,37 @@ public class Core {
     public static LLVMValueRef LLVMBuildIsNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildIsNull(B.value(), Val.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildIsNull(B.value(), Val.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildIsNotNull(LLVMBuilderRef B, LLVMValueRef Val, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildIsNotNull(B.value(), Val.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildIsNotNull(B.value(), Val.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildPtrDiff(LLVMBuilderRef B, LLVMValueRef LHS, LLVMValueRef RHS, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildPtrDiff(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildPtrDiff(B.value(), LHS.value(), RHS.value(), c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildFence(LLVMBuilderRef B, LLVMAtomicOrdering Ordering, boolean SingleThread, String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildFence(B.value(), Ordering.value(), SingleThread, c_Name.nativeAddress()));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMBuildFence(B.value(), Ordering.value(), SingleThread, c_Name.nativeAddress()));
         }
     }
 
     public static LLVMValueRef LLVMBuildAtomicRMW(LLVMBuilderRef B, LLVMAtomicRMWBinOp Op, LLVMValueRef Ptr, LLVMValueRef Val, LLVMAtomicOrdering Ordering, boolean SingleThread) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAtomicRMW(B.value(), Op.value(), Ptr.value(), Val.value(), Ordering.value(), SingleThread));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildAtomicRMW(B.value(), Op.value(), Ptr.value(), Val.value(), Ordering.value(), SingleThread));
     }
 
     public static LLVMValueRef LLVMBuildAtomicCmpXchg(LLVMBuilderRef B, LLVMValueRef Ptr, LLVMValueRef Cmp, LLVMValueRef New, LLVMAtomicOrdering SuccessOrdering, LLVMAtomicOrdering FailureOrdering, boolean SingleThread) {
-        return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMBuildAtomicCmpXchg(B.value(), Ptr.value(), Cmp.value(), New.value(), SuccessOrdering.value(), FailureOrdering.value(), SingleThread));
+        return LLVMValueRef.of(Native.INSTANCE.LLVMBuildAtomicCmpXchg(B.value(), Ptr.value(), Cmp.value(), New.value(), SuccessOrdering.value(), FailureOrdering.value(), SingleThread));
     }
 
     public static boolean LLVMIsAtomicSingleThread(LLVMValueRef AtomicInst) {
@@ -7262,7 +7262,7 @@ public class Core {
      * JIT. They take ModuleProviders for historical reasons.
      */
     public static LLVMModuleProviderRef LLVMCreateModuleProviderForExistingModule(LLVMModuleRef M) {
-        return LLVMModuleProviderRef.ofNullable(Native.INSTANCE.LLVMCreateModuleProviderForExistingModule(M.value()));
+        return LLVMModuleProviderRef.of(Native.INSTANCE.LLVMCreateModuleProviderForExistingModule(M.value()));
     }
 
     /**
@@ -7284,7 +7284,7 @@ public class Core {
             MemorySegment c_OutMessage = arena.allocate(ADDRESS);
             boolean err = Native.INSTANCE.LLVMCreateMemoryBufferWithContentsOfFile(c_Path.nativeAddress(), c_OutMemBuf.nativeAddress(), c_OutMessage.nativeAddress());
             if (!err) {
-                OutMemBuf.accept(LLVMMemoryBufferRef.ofNullable(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
+                OutMemBuf.accept(LLVMMemoryBufferRef.of(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
             } else {
                 OutMessage.accept(addressToLLVMString(c_OutMessage.get(ADDRESS, 0).nativeAddress()));
             }
@@ -7309,7 +7309,7 @@ public class Core {
             MemorySegment c_OutMessage = arena.allocate(ADDRESS);
             boolean err = Native.INSTANCE.LLVMCreateMemoryBufferWithSTDIN(c_OutMemBuf.nativeAddress(), c_OutMessage.nativeAddress());
             if (!err) {
-                OutMemBuf.accept(LLVMMemoryBufferRef.ofNullable(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
+                OutMemBuf.accept(LLVMMemoryBufferRef.of(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
             } else {
                 OutMessage.accept(addressToLLVMString(c_OutMessage.get(ADDRESS, 0).nativeAddress()));
             }
@@ -7333,7 +7333,7 @@ public class Core {
             String BufferName, boolean RequiresNullTerminator) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BufferName = allocString(arena, BufferName);
-            return LLVMMemoryBufferRef.ofNullable(Native.INSTANCE.LLVMCreateMemoryBufferWithMemoryRange(
+            return LLVMMemoryBufferRef.of(Native.INSTANCE.LLVMCreateMemoryBufferWithMemoryRange(
                     InputData, InputDataLength, c_BufferName.nativeAddress(), RequiresNullTerminator));
         }
     }
@@ -7350,7 +7350,7 @@ public class Core {
             long InputData, long /* size_t */ InputDataLength, String BufferName) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_BufferName = allocString(arena, BufferName);
-            return LLVMMemoryBufferRef.ofNullable(Native.INSTANCE.LLVMCreateMemoryBufferWithMemoryRangeCopy(
+            return LLVMMemoryBufferRef.of(Native.INSTANCE.LLVMCreateMemoryBufferWithMemoryRangeCopy(
                     InputData, InputDataLength, c_BufferName.nativeAddress()));
         }
     }
@@ -7390,7 +7390,7 @@ public class Core {
      * Return the global pass registry, for use with initialization functions.
      */
     public static LLVMPassRegistryRef LLVMGetGlobalPassRegistry() {
-        return LLVMPassRegistryRef.ofNullable(Native.INSTANCE.LLVMGetGlobalPassRegistry());
+        return LLVMPassRegistryRef.of(Native.INSTANCE.LLVMGetGlobalPassRegistry());
     }
 
     /*
@@ -7402,7 +7402,7 @@ public class Core {
      * suitable for link-time optimization and whole-module transformations.
      */
     public static LLVMPassManagerRef LLVMCreatePassManager() {
-        return LLVMPassManagerRef.ofNullable(Native.INSTANCE.LLVMCreatePassManager());
+        return LLVMPassManagerRef.of(Native.INSTANCE.LLVMCreatePassManager());
     }
 
     /**
@@ -7411,7 +7411,7 @@ public class Core {
      * pipeline is suitable for code generation and JIT compilation tasks.
      */
     public static LLVMPassManagerRef LLVMCreateFunctionPassManagerForModule(LLVMModuleRef M) {
-        return LLVMPassManagerRef.ofNullable(Native.INSTANCE.LLVMCreateFunctionPassManagerForModule(M.value()));
+        return LLVMPassManagerRef.of(Native.INSTANCE.LLVMCreateFunctionPassManagerForModule(M.value()));
     }
 
     /**
@@ -7419,7 +7419,7 @@ public class Core {
      */
     @Deprecated
     public static LLVMPassManagerRef LLVMCreateFunctionPassManager(LLVMModuleProviderRef MP) {
-        return LLVMPassManagerRef.ofNullable(Native.INSTANCE.LLVMCreateFunctionPassManager(MP.value()));
+        return LLVMPassManagerRef.of(Native.INSTANCE.LLVMCreateFunctionPassManager(MP.value()));
     }
 
     /**

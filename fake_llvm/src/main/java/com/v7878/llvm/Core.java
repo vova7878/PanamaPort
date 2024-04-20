@@ -107,14 +107,6 @@ public class Core {
         LLVMCatchPad,
         LLVMCleanupPad,
         LLVMCatchSwitch;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMOpcode of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
 
@@ -136,14 +128,6 @@ public class Core {
         LLVMMetadataTypeKind,
         LLVMX86_MMXTypeKind,
         LLVMTokenTypeKind;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMTypeKind of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
 
@@ -165,42 +149,18 @@ public class Core {
         LLVMCommonLinkage,
         LLVMLinkerPrivateLinkage,
         LLVMLinkerPrivateWeakLinkage;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMLinkage of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMVisibility {
         LLVMDefaultVisibility,
         LLVMHiddenVisibility,
         LLVMProtectedVisibility;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMVisibility of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMDLLStorageClass {
         LLVMDefaultStorageClass,
         LLVMDLLImportStorageClass,
         LLVMDLLExportStorageClass;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMDLLStorageClass of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMCallConv {
@@ -211,14 +171,6 @@ public class Core {
         LLVMAnyRegCallConv,
         LLVMX86StdcallCallConv,
         LLVMX86FastcallCallConv;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMCallConv of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMValueKind {
@@ -247,14 +199,6 @@ public class Core {
         LLVMMetadataAsValueValueKind,
         LLVMInlineAsmValueKind,
         LLVMInstructionValueKind;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMValueKind of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMIntPredicate {
@@ -268,14 +212,6 @@ public class Core {
         LLVMIntSGE,
         LLVMIntSLT,
         LLVMIntSLE;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMIntPredicate of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMRealPredicate {
@@ -295,27 +231,11 @@ public class Core {
         LLVMRealULE,
         LLVMRealUNE,
         LLVMRealPredicateTrue;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMRealPredicate of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMLandingPadClauseTy {
         LLVMLandingPadCatch,
         LLVMLandingPadFilter;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMLandingPadClauseTy of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMThreadLocalMode {
@@ -324,14 +244,6 @@ public class Core {
         LLVMLocalDynamicTLSModel,
         LLVMInitialExecTLSModel,
         LLVMLocalExecTLSModel;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMThreadLocalMode of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMAtomicOrdering {
@@ -342,14 +254,6 @@ public class Core {
         LLVMAtomicOrderingRelease,
         LLVMAtomicOrderingAcquireRelease,
         LLVMAtomicOrderingSequentiallyConsistent;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMAtomicOrdering of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMAtomicRMWBinOp {
@@ -364,14 +268,6 @@ public class Core {
         LLVMAtomicRMWBinOpMin,
         LLVMAtomicRMWBinOpUMax,
         LLVMAtomicRMWBinOpUMin;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMAtomicRMWBinOp of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public enum LLVMDiagnosticSeverity {
@@ -379,14 +275,6 @@ public class Core {
         LLVMDSWarning,
         LLVMDSRemark,
         LLVMDSNote;
-
-        public int value() {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMDiagnosticSeverity of(int value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
     }
 
     public static LLVMValueRef LLVMAddAlias(LLVMModuleRef M, LLVMTypeRef Ty, LLVMValueRef Aliasee, String Name) {

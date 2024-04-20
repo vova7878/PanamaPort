@@ -46,14 +46,7 @@ public class TargetMachine {
             super(value);
         }
 
-        public static LLVMTargetMachineRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMTargetMachineRef of 0");
-            }
-            return new LLVMTargetMachineRef(value);
-        }
-
-        public static LLVMTargetMachineRef ofNullable(long value) {
+        static LLVMTargetMachineRef of(long value) {
             return value == 0 ? null : new LLVMTargetMachineRef(value);
         }
 
@@ -69,14 +62,7 @@ public class TargetMachine {
             super(value);
         }
 
-        public static LLVMTargetRef of(long value) {
-            if (value == 0) {
-                throw new IllegalStateException("LLVMTargetRef of 0");
-            }
-            return new LLVMTargetRef(value);
-        }
-
-        public static LLVMTargetRef ofNullable(long value) {
+        static LLVMTargetRef of(long value) {
             return value == 0 ? null : new LLVMTargetRef(value);
         }
     }
@@ -88,11 +74,11 @@ public class TargetMachine {
         LLVMCodeGenLevelDefault,
         LLVMCodeGenLevelAggressive;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMCodeGenOptLevel of(int value) {
+        static LLVMCodeGenOptLevel of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -109,11 +95,11 @@ public class TargetMachine {
         LLVMRelocPIC,
         LLVMRelocDynamicNoPic;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMRelocMode of(int value) {
+        static LLVMRelocMode of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -132,11 +118,11 @@ public class TargetMachine {
         LLVMCodeModelMedium,
         LLVMCodeModelLarge;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMCodeModel of(int value) {
+        static LLVMCodeModel of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -151,11 +137,11 @@ public class TargetMachine {
         LLVMAssemblyFile,
         LLVMObjectFile;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMCodeGenFileType of(int value) {
+        static LLVMCodeGenFileType of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
@@ -262,14 +248,14 @@ public class TargetMachine {
      * Returns the first llvm::Target in the registered targets list.
      */
     public static LLVMTargetRef LLVMGetFirstTarget() {
-        return LLVMTargetRef.ofNullable(Native.INSTANCE.LLVMGetFirstTarget());
+        return LLVMTargetRef.of(Native.INSTANCE.LLVMGetFirstTarget());
     }
 
     /**
      * Returns the next llvm::Target given a previous one (or null if there's none)
      */
     public static LLVMTargetRef LLVMGetNextTarget(LLVMTargetRef T) {
-        return LLVMTargetRef.ofNullable(Native.INSTANCE.LLVMGetNextTarget(T.value()));
+        return LLVMTargetRef.of(Native.INSTANCE.LLVMGetNextTarget(T.value()));
     }
 
     /*===-- Target ------------------------------------------------------------===*/
@@ -281,7 +267,7 @@ public class TargetMachine {
     public static LLVMTargetRef LLVMGetTargetFromName(String Name) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Name = allocString(arena, Name);
-            return LLVMTargetRef.ofNullable(Native.INSTANCE.LLVMGetTargetFromName(c_Name.nativeAddress()));
+            return LLVMTargetRef.of(Native.INSTANCE.LLVMGetTargetFromName(c_Name.nativeAddress()));
         }
     }
 
@@ -298,7 +284,7 @@ public class TargetMachine {
             boolean err = Native.INSTANCE.LLVMGetTargetFromTriple(
                     c_Triple.nativeAddress(), c_T.nativeAddress(), c_ErrorMessage.nativeAddress());
             if (!err) {
-                T.accept(LLVMTargetRef.ofNullable(c_T.get(ADDRESS, 0).nativeAddress()));
+                T.accept(LLVMTargetRef.of(c_T.get(ADDRESS, 0).nativeAddress()));
             } else {
                 ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
             }
@@ -366,7 +352,7 @@ public class TargetMachine {
             MemorySegment c_Triple = allocString(arena, Triple);
             MemorySegment c_CPU = allocString(arena, CPU);
             MemorySegment c_Features = allocString(arena, Features);
-            return LLVMTargetMachineRef.ofNullable(Native.INSTANCE.LLVMCreateTargetMachine(
+            return LLVMTargetMachineRef.of(Native.INSTANCE.LLVMCreateTargetMachine(
                     T.value(), c_Triple.nativeAddress(), c_CPU.nativeAddress(), c_Features.nativeAddress(),
                     Level.value(), Reloc.value(), CodeModel.value()));
         }
@@ -384,7 +370,7 @@ public class TargetMachine {
      * Returns the Target used in a TargetMachine
      */
     public static LLVMTargetRef LLVMGetTargetMachineTarget(LLVMTargetMachineRef T) {
-        return LLVMTargetRef.ofNullable(Native.INSTANCE.LLVMGetTargetMachineTarget(T.value()));
+        return LLVMTargetRef.of(Native.INSTANCE.LLVMGetTargetMachineTarget(T.value()));
     }
 
     /**
@@ -415,7 +401,7 @@ public class TargetMachine {
      * Create a DataLayout based on the targetMachine.
      */
     public static LLVMTargetDataRef LLVMCreateTargetDataLayout(LLVMTargetMachineRef T) {
-        return LLVMTargetDataRef.ofNullable(Native.INSTANCE.LLVMCreateTargetDataLayout(T.value()));
+        return LLVMTargetDataRef.of(Native.INSTANCE.LLVMCreateTargetDataLayout(T.value()));
     }
 
     /**
@@ -473,7 +459,7 @@ public class TargetMachine {
             boolean err = Native.INSTANCE.LLVMTargetMachineEmitToMemoryBuffer(T.value(), M.value(),
                     codegen.value(), c_ErrorMessage.nativeAddress(), c_OutMemBuf.nativeAddress());
             if (!err) {
-                OutMemBuf.accept(LLVMMemoryBufferRef.ofNullable(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
+                OutMemBuf.accept(LLVMMemoryBufferRef.of(c_OutMemBuf.get(ADDRESS, 0).nativeAddress()));
             } else {
                 ErrorMessage.accept(addressToLLVMString(c_ErrorMessage.get(ADDRESS, 0).nativeAddress()));
             }

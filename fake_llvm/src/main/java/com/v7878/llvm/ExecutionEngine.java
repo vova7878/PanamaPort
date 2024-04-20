@@ -9,11 +9,7 @@ import com.v7878.llvm.Types.LLVMValueRef;
 
 public class ExecutionEngine {
     public static final class LLVMGenericValueRef implements AutoCloseable {
-        public static LLVMGenericValueRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMGenericValueRef ofNullable(long value) {
+        private LLVMGenericValueRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -23,11 +19,7 @@ public class ExecutionEngine {
     }
 
     public static final class LLVMExecutionEngineRef implements AutoCloseable {
-        public static LLVMExecutionEngineRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMExecutionEngineRef ofNullable(long value) {
+        private LLVMExecutionEngineRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 
@@ -37,11 +29,7 @@ public class ExecutionEngine {
     }
 
     public static final class LLVMMCJITMemoryManagerRef implements AutoCloseable {
-        public static LLVMMCJITMemoryManagerRef of(long value) {
-            throw new UnsupportedOperationException("Stub!");
-        }
-
-        public static LLVMMCJITMemoryManagerRef ofNullable(long value) {
+        private LLVMMCJITMemoryManagerRef() {
             throw new UnsupportedOperationException("Stub!");
         }
 

@@ -57,11 +57,11 @@ public class Analysis {
          */
         LLVMReturnStatusAction;
 
-        public int value() {
+        int value() {
             return ordinal();
         }
 
-        public static LLVMVerifierFailureAction of(int value) {
+        static LLVMVerifierFailureAction of(int value) {
             for (var e : values()) {
                 if (e.value() == value) {
                     return e;
