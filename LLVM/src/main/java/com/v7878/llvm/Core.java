@@ -3319,6 +3319,18 @@ public class Core {
     }
 
     /**
+     * Create an enum attribute.
+     */
+    // Port-added
+    public static LLVMAttributeRef LLVMCreateEnumAttribute(LLVMContextRef C, String KindName, long /* uint64_t */ Val) {
+        int kind = LLVMGetEnumAttributeKindForName(KindName);
+        if (kind == 0) {
+            throw new IllegalArgumentException("Can`t find enum attribute with name \"" + KindName + "\"");
+        }
+        return LLVMCreateEnumAttribute(C, kind, Val);
+    }
+
+    /**
      * Get the unique id corresponding to the enum attribute
      * passed as argument.
      */
