@@ -2225,9 +2225,9 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetPersonalityFn(long Fn, long PersonalityFn);
 
-        /*@LibrarySymbol("LLVMGetIntrinsicID")
+        @LibrarySymbol(name = "LLVMGetIntrinsicID")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetIntrinsicID(long);*/
+        abstract int LLVMGetIntrinsicID(long Fn);
 
         @LibrarySymbol(name = "LLVMGetFunctionCallConv")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
@@ -2253,33 +2253,33 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract void LLVMAddAttributeAtIndex(long F, int Idx, long A);
 
-        /*@LibrarySymbol("LLVMGetEnumAttributeAtIndex")
+        @LibrarySymbol(name = "LLVMGetEnumAttributeAtIndex")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, INT})
-        abstract long LLVMGetEnumAttributeAtIndex(long, int, int);
+        abstract long LLVMGetEnumAttributeAtIndex(long F, int Idx, int KindID);
 
-        @LibrarySymbol("LLVMGetStringAttributeAtIndex")
+        @LibrarySymbol(name = "LLVMGetStringAttributeAtIndex")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, INT})
-        abstract long LLVMGetStringAttributeAtIndex(long, int, long, int);
+        abstract long LLVMGetStringAttributeAtIndex(long F, int Idx, long K, int KLen);
 
-        @LibrarySymbol("LLVMRemoveEnumAttributeAtIndex")
+        @LibrarySymbol(name = "LLVMRemoveEnumAttributeAtIndex")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
-        abstract void LLVMRemoveEnumAttributeAtIndex(long, int, int);
+        abstract void LLVMRemoveEnumAttributeAtIndex(long F, int Idx, int KindID);
 
-        @LibrarySymbol("LLVMRemoveStringAttributeAtIndex")
+        @LibrarySymbol(name = "LLVMRemoveStringAttributeAtIndex")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, LONG_AS_WORD, INT})
-        abstract void LLVMRemoveStringAttributeAtIndex(long, int, long, int);
+        abstract void LLVMRemoveStringAttributeAtIndex(long F, int Idx, long K, int KLen);
 
-        @LibrarySymbol("LLVMAddTargetDependentFunctionAttr")
+        @LibrarySymbol(name = "LLVMAddTargetDependentFunctionAttr")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMAddTargetDependentFunctionAttr(long, long, long);
+        abstract void LLVMAddTargetDependentFunctionAttr(long Fn, long A, long V);
 
-        @LibrarySymbol("LLVMGetFunctionAttr")
+        @LibrarySymbol(name = "LLVMGetFunctionAttr")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetFunctionAttr(long);
+        abstract int LLVMGetFunctionAttr(long Fn);
 
-        @LibrarySymbol("LLVMRemoveFunctionAttr")
+        @LibrarySymbol(name = "LLVMRemoveFunctionAttr")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMRemoveFunctionAttr(long, int);*/
+        abstract void LLVMRemoveFunctionAttr(long Fn, int PA);
 
         @LibrarySymbol(name = "LLVMCountParams")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
@@ -2501,13 +2501,13 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetNumArgOperands(long Instr);
 
-        /*@LibrarySymbol("LLVMSetInstructionCallConv")
+        @LibrarySymbol(name = "LLVMSetInstructionCallConv")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMSetInstructionCallConv(long, int);
+        abstract void LLVMSetInstructionCallConv(long Instr, int CC);
 
-        @LibrarySymbol("LLVMGetInstructionCallConv")
+        @LibrarySymbol(name = "LLVMGetInstructionCallConv")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetInstructionCallConv(long);*/
+        abstract int LLVMGetInstructionCallConv(long Instr);
 
         @LibrarySymbol(name = "LLVMAddInstrAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
@@ -2521,25 +2521,25 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
         abstract void LLVMSetInstrParamAlignment(long Instr, int index, int Align);
 
-        /*@LibrarySymbol("LLVMAddCallSiteAttribute")
+        @LibrarySymbol(name = "LLVMAddCallSiteAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract void LLVMAddCallSiteAttribute(long, int, long);
+        abstract void LLVMAddCallSiteAttribute(long C, int Idx, long A);
 
-        @LibrarySymbol("LLVMGetCallSiteEnumAttribute")
+        @LibrarySymbol(name = "LLVMGetCallSiteEnumAttribute")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, INT})
-        abstract long LLVMGetCallSiteEnumAttribute(long, int, int);
+        abstract long LLVMGetCallSiteEnumAttribute(long C, int Idx, int KindID);
 
-        @LibrarySymbol("LLVMGetCallSiteStringAttribute")
+        @LibrarySymbol(name = "LLVMGetCallSiteStringAttribute")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, INT})
-        abstract long LLVMGetCallSiteStringAttribute(long, int, long, int);
+        abstract long LLVMGetCallSiteStringAttribute(long C, int Idx, long K, int KLen);
 
-        @LibrarySymbol("LLVMRemoveCallSiteEnumAttribute")
+        @LibrarySymbol(name = "LLVMRemoveCallSiteEnumAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
-        abstract void LLVMRemoveCallSiteEnumAttribute(long, int, int);
+        abstract void LLVMRemoveCallSiteEnumAttribute(long C, int Idx, int KindID);
 
-        @LibrarySymbol("LLVMRemoveCallSiteStringAttribute")
+        @LibrarySymbol(name = "LLVMRemoveCallSiteStringAttribute")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, LONG_AS_WORD, INT})
-        abstract void LLVMRemoveCallSiteStringAttribute(long, int, long, int);*/
+        abstract void LLVMRemoveCallSiteStringAttribute(long C, int Idx, long K, int KLen);
 
         @LibrarySymbol(name = "LLVMGetCalledValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
@@ -5537,12 +5537,12 @@ public class Core {
         Native.INSTANCE.LLVMSetPersonalityFn(Fn.value(), PersonalityFn.value());
     }
 
-    ///**
-    // * Obtain the ID number from a function instance.
-    // */
-    //int /* unsigned */ LLVMGetIntrinsicID(LLVMValueRef Fn) {
-    //    return Native.INSTANCE.LLVMGetIntrinsicID();
-    //}
+    /**
+     * Obtain the ID number from a function instance.
+     */
+    public static int /* unsigned */ LLVMGetIntrinsicID(LLVMValueRef Fn) {
+        return Native.INSTANCE.LLVMGetIntrinsicID(Fn.value());
+    }
 
     /**
      * Obtain the calling function of a function.
@@ -5592,39 +5592,54 @@ public class Core {
         Native.INSTANCE.LLVMAddAttributeAtIndex(F.value(), Idx, A.value());
     }
 
-    //LLVMAttributeRef LLVMGetEnumAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, int /* unsigned */ KindID) {
-    //    return Native.INSTANCE.LLVMGetEnumAttributeAtIndex();
-    //}
-    //LLVMAttributeRef LLVMGetStringAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, String K, int /* unsigned */ KLen) {
-    //    return Native.INSTANCE.LLVMGetStringAttributeAtIndex();
-    //}
-    //void LLVMRemoveEnumAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, int /* unsigned */ KindID) {
-    //    return Native.INSTANCE.LLVMRemoveEnumAttributeAtIndex();
-    //}
-    //void LLVMRemoveStringAttributeAtIndex(LLVMValueRef F, LLVMAttributeIndex Idx, String K, int /* unsigned */ KLen) {
-    //    return Native.INSTANCE.LLVMRemoveStringAttributeAtIndex();
-    //}
-    ///**
-    // * Add a target-dependent attribute to a function
-    // * @see llvm::AttrBuilder::addAttribute()
-    // */
-    //void LLVMAddTargetDependentFunctionAttr(LLVMValueRef Fn, String A, String V) {
-    //    return Native.INSTANCE.LLVMAddTargetDependentFunctionAttr();
-    //}
-    ///**
-    // * Obtain an attribute from a function.
-    // *
-    // * @see llvm::Function::getAttributes()
-    // */
-    //LLVMAttribute LLVMGetFunctionAttr(LLVMValueRef Fn) {
-    //    return Native.INSTANCE.LLVMGetFunctionAttr();
-    //}
-    ///**
-    // * Remove an attribute from a function.
-    // */
-    //void LLVMRemoveFunctionAttr(LLVMValueRef Fn, LLVMAttribute PA) {
-    //    return Native.INSTANCE.LLVMRemoveFunctionAttr();
-    //}
+    public static LLVMAttributeRef LLVMGetEnumAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, int /* unsigned */ KindID) {
+        return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMGetEnumAttributeAtIndex(F.value(), Idx, KindID));
+    }
+
+    public static LLVMAttributeRef LLVMGetStringAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, String K) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_K = allocString(arena, K);
+            int /* unsigned */ KLen = Math.toIntExact(stringLength(c_K));
+            return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMGetStringAttributeAtIndex(F.value(), Idx, c_K.nativeAddress(), KLen));
+        }
+    }
+
+    public static void LLVMRemoveEnumAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, int /* unsigned */ KindID) {
+        Native.INSTANCE.LLVMRemoveEnumAttributeAtIndex(F.value(), Idx, KindID);
+    }
+
+    public static void LLVMRemoveStringAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, String K) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_K = allocString(arena, K);
+            int /* unsigned */ KLen = Math.toIntExact(stringLength(c_K));
+            Native.INSTANCE.LLVMRemoveStringAttributeAtIndex(F.value(), Idx, c_K.nativeAddress(), KLen);
+        }
+    }
+
+    /**
+     * Add a target-dependent attribute to a function
+     */
+    public static void LLVMAddTargetDependentFunctionAttr(LLVMValueRef Fn, String A, String V) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_A = allocString(arena, A);
+            MemorySegment c_V = allocString(arena, V);
+            Native.INSTANCE.LLVMAddTargetDependentFunctionAttr(Fn.value(), c_A.nativeAddress(), c_V.nativeAddress());
+        }
+    }
+
+    /**
+     * Obtain an attribute from a function.
+     */
+    public static int /* LLVMAttribute */ LLVMGetFunctionAttr(LLVMValueRef Fn) {
+        return Native.INSTANCE.LLVMGetFunctionAttr(Fn.value());
+    }
+
+    /**
+     * Remove an attribute from a function.
+     */
+    public static void LLVMRemoveFunctionAttr(LLVMValueRef Fn, int /* LLVMAttribute */ PA) {
+        Native.INSTANCE.LLVMRemoveFunctionAttr(Fn.value(), PA);
+    }
 
     /*
      * @defgroup LLVMCCoreValueFunctionParameters Function Parameters
@@ -6206,29 +6221,25 @@ public class Core {
         return Native.INSTANCE.LLVMGetNumArgOperands(Instr.value());
     }
 
-    ///**
-    // * Set the calling convention for a call instruction.
-    // *
-    // * This expects an LLVMValueRef that corresponds to a llvm::CallInst or
-    // * llvm::InvokeInst.
-    // *
-    // * @see llvm::CallInst::setCallingConv()
-    // * @see llvm::InvokeInst::setCallingConv()
-    // */
-    //void LLVMSetInstructionCallConv(LLVMValueRef Instr, int /* unsigned */ CC) {
-    //    return Native.INSTANCE.LLVMSetInstructionCallConv();
-    //}
-    ///**
-    // * Obtain the calling convention for a call instruction.
-    // *
-    // * This is the opposite of LLVMSetInstructionCallConv(). Reads its
-    // * usage.
-    // *
-    // * @see LLVMSetInstructionCallConv()
-    // */
-    //int /* unsigned */ LLVMGetInstructionCallConv(LLVMValueRef Instr) {
-    //    return Native.INSTANCE.LLVMGetInstructionCallConv();
-    //}
+    /**
+     * Set the calling convention for a call instruction.
+     * <p>
+     * This expects an LLVMValueRef that corresponds to a llvm::CallInst or
+     * llvm::InvokeInst.
+     */
+    public static void LLVMSetInstructionCallConv(LLVMValueRef Instr, LLVMCallConv CC) {
+        Native.INSTANCE.LLVMSetInstructionCallConv(Instr.value(), CC.value());
+    }
+
+    /**
+     * Obtain the calling convention for a call instruction.
+     * <p>
+     * This is the opposite of LLVMSetInstructionCallConv(). Reads its
+     * usage.
+     */
+    public static LLVMCallConv LLVMGetInstructionCallConv(LLVMValueRef Instr) {
+        return LLVMCallConv.of(Native.INSTANCE.LLVMGetInstructionCallConv(Instr.value()));
+    }
 
     public static void LLVMAddInstrAttribute(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* LLVMAttribute */ PA) {
         Native.INSTANCE.LLVMAddInstrAttribute(Instr.value(), index, PA);
@@ -6242,21 +6253,33 @@ public class Core {
         Native.INSTANCE.LLVMSetInstrParamAlignment(Instr.value(), index, Align);
     }
 
-    //void LLVMAddCallSiteAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, LLVMAttributeRef A) {
-    //    return Native.INSTANCE.LLVMAddCallSiteAttribute();
-    //}
-    //LLVMAttributeRef LLVMGetCallSiteEnumAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, int /* unsigned */ KindID) {
-    //    return Native.INSTANCE.LLVMGetCallSiteEnumAttribute();
-    //}
-    //LLVMAttributeRef LLVMGetCallSiteStringAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, String K, int /* unsigned */ KLen) {
-    //    return Native.INSTANCE.LLVMGetCallSiteStringAttribute();
-    //}
-    //void LLVMRemoveCallSiteEnumAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, int /* unsigned */ KindID) {
-    //    return Native.INSTANCE.LLVMRemoveCallSiteEnumAttribute();
-    //}
-    //void LLVMRemoveCallSiteStringAttribute(LLVMValueRef C, LLVMAttributeIndex Idx, String K, int /* unsigned */ KLen) {
-    //    return Native.INSTANCE.LLVMRemoveCallSiteStringAttribute();
-    //}
+    public static void LLVMAddCallSiteAttribute(LLVMValueRef C, int /* LLVMAttributeIndex */ Idx, LLVMAttributeRef A) {
+        Native.INSTANCE.LLVMAddCallSiteAttribute(C.value(), Idx, A.value());
+    }
+
+    public static LLVMAttributeRef LLVMGetCallSiteEnumAttribute(LLVMValueRef C, int /* LLVMAttributeIndex */ Idx, int /* unsigned */ KindID) {
+        return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMGetCallSiteEnumAttribute(C.value(), Idx, KindID));
+    }
+
+    public static LLVMAttributeRef LLVMGetCallSiteStringAttribute(LLVMValueRef C, int /* LLVMAttributeIndex */ Idx, String K) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_K = allocString(arena, K);
+            int /* unsigned */ KLen = Math.toIntExact(stringLength(c_K));
+            return LLVMAttributeRef.ofNullable(Native.INSTANCE.LLVMGetCallSiteStringAttribute(C.value(), Idx, c_K.nativeAddress(), KLen));
+        }
+    }
+
+    public static void LLVMRemoveCallSiteEnumAttribute(LLVMValueRef C, int /* LLVMAttributeIndex */ Idx, int /* unsigned */ KindID) {
+        Native.INSTANCE.LLVMRemoveCallSiteEnumAttribute(C.value(), Idx, KindID);
+    }
+
+    public static void LLVMRemoveCallSiteStringAttribute(LLVMValueRef C, int /* LLVMAttributeIndex */ Idx, String K) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_K = allocString(arena, K);
+            int /* unsigned */ KLen = Math.toIntExact(stringLength(c_K));
+            Native.INSTANCE.LLVMRemoveCallSiteStringAttribute(C.value(), Idx, c_K.nativeAddress(), KLen);
+        }
+    }
 
     /**
      * Obtain the pointer to the function invoked by this instruction.
