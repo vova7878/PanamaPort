@@ -62,51 +62,6 @@ import java.util.function.Consumer;
 @SuppressLint("WrongCommentType")
 public class Core {
 
-    public static class LLVMAttribute {
-        public static final int LLVMZExtAttribute = 1;
-        public static final int LLVMSExtAttribute = 1 << 1;
-        public static final int LLVMNoReturnAttribute = 1 << 2;
-        public static final int LLVMInRegAttribute = 1 << 3;
-        public static final int LLVMStructRetAttribute = 1 << 4;
-        public static final int LLVMNoUnwindAttribute = 1 << 5;
-        public static final int LLVMNoAliasAttribute = 1 << 6;
-        public static final int LLVMByValAttribute = 1 << 7;
-        public static final int LLVMNestAttribute = 1 << 8;
-        public static final int LLVMReadNoneAttribute = 1 << 9;
-        public static final int LLVMReadOnlyAttribute = 1 << 10;
-        public static final int LLVMNoInlineAttribute = 1 << 11;
-        public static final int LLVMAlwaysInlineAttribute = 1 << 12;
-        public static final int LLVMOptimizeForSizeAttribute = 1 << 13;
-        public static final int LLVMStackProtectAttribute = 1 << 14;
-        public static final int LLVMStackProtectReqAttribute = 1 << 15;
-        public static final int LLVMAlignment = 31 << 16;
-        public static final int LLVMNoCaptureAttribute = 1 << 21;
-        public static final int LLVMNoRedZoneAttribute = 1 << 22;
-        public static final int LLVMNoImplicitFloatAttribute = 1 << 23;
-        public static final int LLVMNakedAttribute = 1 << 24;
-        public static final int LLVMInlineHintAttribute = 1 << 25;
-        public static final int LLVMStackAlignment = 7 << 26;
-        public static final int LLVMReturnsTwice = 1 << 29;
-        public static final int LLVMUWTable = 1 << 30;
-        public static final int LLVMNonLazyBind = 1 << 31;
-
-        // FIXME: These attributes are currently not included in the C API as
-        // a temporary measure until the API/ABI impact to the C API is understood
-        // and the path forward agreed upon.
-
-        // LLVMSanitizeAddressAttribute = 1ULL << 32,
-        // LLVMStackProtectStrongAttribute = 1ULL<<35,
-        // LLVMColdAttribute = 1ULL << 40,
-        // LLVMOptimizeNoneAttribute = 1ULL << 42,
-        // LLVMInAllocaAttribute = 1ULL << 43,
-        // LLVMNonNullAttribute = 1ULL << 44,
-        // LLVMJumpTableAttribute = 1ULL << 45,
-        // LLVMConvergentAttribute = 1ULL << 46,
-        // LLVMSafeStackAttribute = 1ULL << 47,
-        // LLVMSwiftSelfAttribute = 1ULL << 48,
-        // LLVMSwiftErrorAttribute = 1ULL << 49,
-    }
-
     public enum LLVMOpcode {
         /* Terminator Instructions */
         LLVMRet(1),
@@ -2245,10 +2200,6 @@ public class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMSetGC(long Fn, long Name);
 
-        @LibrarySymbol(name = "LLVMAddFunctionAttr")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMAddFunctionAttr(long Fn, int PA);
-
         @LibrarySymbol(name = "LLVMAddAttributeAtIndex")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract void LLVMAddAttributeAtIndex(long F, int Idx, long A);
@@ -2272,14 +2223,6 @@ public class Core {
         @LibrarySymbol(name = "LLVMAddTargetDependentFunctionAttr")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract void LLVMAddTargetDependentFunctionAttr(long Fn, long A, long V);
-
-        @LibrarySymbol(name = "LLVMGetFunctionAttr")
-        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetFunctionAttr(long Fn);
-
-        @LibrarySymbol(name = "LLVMRemoveFunctionAttr")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMRemoveFunctionAttr(long Fn, int PA);
 
         @LibrarySymbol(name = "LLVMCountParams")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
@@ -2312,18 +2255,6 @@ public class Core {
         @LibrarySymbol(name = "LLVMGetPreviousParam")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetPreviousParam(long Arg);
-
-        @LibrarySymbol(name = "LLVMAddAttribute")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMAddAttribute(long Arg, int PA);
-
-        @LibrarySymbol(name = "LLVMRemoveAttribute")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void LLVMRemoveAttribute(long Arg, int PA);
-
-        @LibrarySymbol(name = "LLVMGetAttribute")
-        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetAttribute(long Arg);
 
         @LibrarySymbol(name = "LLVMSetParamAlignment")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
@@ -2508,14 +2439,6 @@ public class Core {
         @LibrarySymbol(name = "LLVMGetInstructionCallConv")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int LLVMGetInstructionCallConv(long Instr);
-
-        @LibrarySymbol(name = "LLVMAddInstrAttribute")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
-        abstract void LLVMAddInstrAttribute(long Instr, int index, int PA);
-
-        @LibrarySymbol(name = "LLVMRemoveInstrAttribute")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
-        abstract void LLVMRemoveInstrAttribute(long Instr, int index, int PA);
 
         @LibrarySymbol(name = "LLVMSetInstrParamAlignment")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT, INT})
@@ -5581,13 +5504,6 @@ public class Core {
         }
     }
 
-    /**
-     * Add an attribute to a function.
-     */
-    public static void LLVMAddFunctionAttr(LLVMValueRef Fn, int /* LLVMAttribute */ PA) {
-        Native.INSTANCE.LLVMAddFunctionAttr(Fn.value(), PA);
-    }
-
     public static void LLVMAddAttributeAtIndex(LLVMValueRef F, int /* LLVMAttributeIndex */ Idx, LLVMAttributeRef A) {
         Native.INSTANCE.LLVMAddAttributeAtIndex(F.value(), Idx, A.value());
     }
@@ -5625,20 +5541,6 @@ public class Core {
             MemorySegment c_V = allocString(arena, V);
             Native.INSTANCE.LLVMAddTargetDependentFunctionAttr(Fn.value(), c_A.nativeAddress(), c_V.nativeAddress());
         }
-    }
-
-    /**
-     * Obtain an attribute from a function.
-     */
-    public static int /* LLVMAttribute */ LLVMGetFunctionAttr(LLVMValueRef Fn) {
-        return Native.INSTANCE.LLVMGetFunctionAttr(Fn.value());
-    }
-
-    /**
-     * Remove an attribute from a function.
-     */
-    public static void LLVMRemoveFunctionAttr(LLVMValueRef Fn, int /* LLVMAttribute */ PA) {
-        Native.INSTANCE.LLVMRemoveFunctionAttr(Fn.value(), PA);
     }
 
     /*
@@ -5745,27 +5647,6 @@ public class Core {
      */
     public static LLVMValueRef LLVMGetPreviousParam(LLVMValueRef Arg) {
         return LLVMValueRef.ofNullable(Native.INSTANCE.LLVMGetPreviousParam(Arg.value()));
-    }
-
-    /**
-     * Add an attribute to a function argument.
-     */
-    public static void LLVMAddAttribute(LLVMValueRef Arg, int /* LLVMAttribute */ PA) {
-        Native.INSTANCE.LLVMAddAttribute(Arg.value(), PA);
-    }
-
-    /**
-     * Remove an attribute from a function argument.
-     */
-    public static void LLVMRemoveAttribute(LLVMValueRef Arg, int /* LLVMAttribute */ PA) {
-        Native.INSTANCE.LLVMRemoveAttribute(Arg.value(), PA);
-    }
-
-    /**
-     * Get an attribute from a function argument.
-     */
-    public static int /* LLVMAttribute */ LLVMGetAttribute(LLVMValueRef Arg) {
-        return Native.INSTANCE.LLVMGetAttribute(Arg.value());
     }
 
     /**
@@ -6239,14 +6120,6 @@ public class Core {
      */
     public static LLVMCallConv LLVMGetInstructionCallConv(LLVMValueRef Instr) {
         return LLVMCallConv.of(Native.INSTANCE.LLVMGetInstructionCallConv(Instr.value()));
-    }
-
-    public static void LLVMAddInstrAttribute(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* LLVMAttribute */ PA) {
-        Native.INSTANCE.LLVMAddInstrAttribute(Instr.value(), index, PA);
-    }
-
-    public static void LLVMRemoveInstrAttribute(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* LLVMAttribute */ PA) {
-        Native.INSTANCE.LLVMRemoveInstrAttribute(Instr.value(), index, PA);
     }
 
     public static void LLVMSetInstrParamAlignment(LLVMValueRef Instr, int /* LLVMAttributeIndex */ index, int /* unsigned */ Align) {
