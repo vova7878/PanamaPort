@@ -2,7 +2,6 @@ package com.v7878.llvm;
 
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
-import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.llvm.Types.LLVMAttributeRef;
 import static com.v7878.llvm.Types.LLVMBasicBlockRef;
 import static com.v7878.llvm.Types.LLVMBuilderRef;
@@ -18,11 +17,14 @@ import static com.v7878.llvm._Utils.allocArray;
 import static com.v7878.llvm._Utils.allocPointerArray;
 import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.llvm._Utils.arrayLength;
+import static com.v7878.llvm._Utils.getWord;
 import static com.v7878.llvm._Utils.readPointerArray;
 import static com.v7878.llvm._Utils.stringLength;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL_AS_INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.BYTE;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.DOUBLE;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -1709,37 +1711,37 @@ public final class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMConstIntOfArbitraryPrecision(long IntTy, int NumWords, long Words);
 
-        /*@LibrarySymbol("LLVMConstIntOfString")
+        @LibrarySymbol(name = "LLVMConstIntOfString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, BYTE})
-        abstract long LLVMConstIntOfString(long, long, byte);
+        abstract long LLVMConstIntOfString(long IntTy, long Text, byte Radix);
 
-        @LibrarySymbol("LLVMConstIntOfStringAndSize")
+        @LibrarySymbol(name = "LLVMConstIntOfStringAndSize")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BYTE})
-        abstract long LLVMConstIntOfStringAndSize(long, long, int, byte);
+        abstract long LLVMConstIntOfStringAndSize(long IntTy, long Text, int SLen, byte Radix);
 
-        @LibrarySymbol("LLVMConstReal")
+        @LibrarySymbol(name = "LLVMConstReal")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, DOUBLE})
-        abstract long LLVMConstReal(long, double);
+        abstract long LLVMConstReal(long RealTy, double N);
 
-        @LibrarySymbol("LLVMConstRealOfString")
+        @LibrarySymbol(name = "LLVMConstRealOfString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMConstRealOfString(long, long);
+        abstract long LLVMConstRealOfString(long RealTy, long Text);
 
-        @LibrarySymbol("LLVMConstRealOfStringAndSize")
+        @LibrarySymbol(name = "LLVMConstRealOfStringAndSize")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMConstRealOfStringAndSize(long, long, int);
+        abstract long LLVMConstRealOfStringAndSize(long RealTy, long Text, int SLen);
 
-        @LibrarySymbol("LLVMConstIntGetZExtValue")
+        @LibrarySymbol(name = "LLVMConstIntGetZExtValue")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
-        abstract long LLVMConstIntGetZExtValue(long);
+        abstract long LLVMConstIntGetZExtValue(long ConstantVal);
 
-        @LibrarySymbol("LLVMConstIntGetSExtValue")
+        @LibrarySymbol(name = "LLVMConstIntGetSExtValue")
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD})
-        abstract long LLVMConstIntGetSExtValue(long);
+        abstract long LLVMConstIntGetSExtValue(long ConstantVal);
 
-        @LibrarySymbol("LLVMConstRealGetDouble")
+        @LibrarySymbol(name = "LLVMConstRealGetDouble")
         @CallSignature(type = CRITICAL, ret = DOUBLE, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract double LLVMConstRealGetDouble(long, long);*/
+        abstract double LLVMConstRealGetDouble(long ConstantVal, long LosesInfo);
 
         @LibrarySymbol(name = "LLVMConstStringInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
@@ -1749,37 +1751,37 @@ public final class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, BOOL_AS_INT})
         abstract long LLVMConstString(long Str, int Length, boolean DontNullTerminate);
 
-        /*@LibrarySymbol("LLVMIsConstantString")
+        @LibrarySymbol(name = "LLVMIsConstantString")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD})
-        abstract boolean LLVMIsConstantString(long);
+        abstract boolean LLVMIsConstantString(long Val);
 
-        @LibrarySymbol("LLVMGetAsString")
+        @LibrarySymbol(name = "LLVMGetAsString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMGetAsString(long, long);
+        abstract long LLVMGetAsString(long Val, long Length);
 
-        @LibrarySymbol("LLVMConstStructInContext")
+        @LibrarySymbol(name = "LLVMConstStructInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, BOOL_AS_INT})
-        abstract long LLVMConstStructInContext(long, long, int, boolean);
+        abstract long LLVMConstStructInContext(long C, long ConstantVals, int Count, boolean Packed);
 
-        @LibrarySymbol("LLVMConstStruct")
+        @LibrarySymbol(name = "LLVMConstStruct")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, BOOL_AS_INT})
-        abstract long LLVMConstStruct(long, int, boolean);
+        abstract long LLVMConstStruct(long ConstantVals, int Count, boolean Packed);
 
-        @LibrarySymbol("LLVMConstArray")
+        @LibrarySymbol(name = "LLVMConstArray")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMConstArray(long, long, int);
+        abstract long LLVMConstArray(long ElementTy, long ConstantVals, int Length);
 
-        @LibrarySymbol("LLVMConstNamedStruct")
+        @LibrarySymbol(name = "LLVMConstNamedStruct")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMConstNamedStruct(long, long, int);
+        abstract long LLVMConstNamedStruct(long StructTy, long ConstantVals, int Count);
 
-        @LibrarySymbol("LLVMGetElementAsConstant")
+        @LibrarySymbol(name = "LLVMGetElementAsConstant")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMGetElementAsConstant(long, int);
+        abstract long LLVMGetElementAsConstant(long C, int Idx);
 
-        @LibrarySymbol("LLVMConstVector")
+        @LibrarySymbol(name = "LLVMConstVector")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMConstVector(long, int);*/
+        abstract long LLVMConstVector(long ScalarConstantVals, int Size);
 
         @LibrarySymbol(name = "LLVMGetConstOpcode")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
@@ -2021,13 +2023,13 @@ public final class Core {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long LLVMConstShuffleVector(long VectorAConstant, long VectorBConstant, long MaskConstant);
 
-        /*@LibrarySymbol(name = "LLVMConstExtractValue")
+        @LibrarySymbol(name = "LLVMConstExtractValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMConstExtractValue(long, long, int);
+        abstract long LLVMConstExtractValue(long AggConstant, long IdxList, int NumIdx);
 
         @LibrarySymbol(name = "LLVMConstInsertValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMConstInsertValue(long, long, long, int);*/
+        abstract long LLVMConstInsertValue(long AggConstant, long ElementValueConstant, long IdxList, int NumIdx);
 
         @LibrarySymbol(name = "LLVMConstInlineAsm")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, BOOL_AS_INT, BOOL_AS_INT})
@@ -2265,33 +2267,33 @@ public final class Core {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
         abstract void LLVMSetParamAlignment(long Arg, int Align);
 
-        /*@LibrarySymbol("LLVMMDStringInContext")
+        @LibrarySymbol(name = "LLVMMDStringInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMMDStringInContext(long, long, int);
+        abstract long LLVMMDStringInContext(long C, long Str, int SLen);
 
-        @LibrarySymbol("LLVMMDString")
+        @LibrarySymbol(name = "LLVMMDString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMMDString(long, int);
+        abstract long LLVMMDString(long Str, int SLen);
 
-        @LibrarySymbol("LLVMMDNodeInContext")
+        @LibrarySymbol(name = "LLVMMDNodeInContext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract long LLVMMDNodeInContext(long, long, int);
+        abstract long LLVMMDNodeInContext(long C, long Vals, int Count);
 
-        @LibrarySymbol("LLVMMDNode")
+        @LibrarySymbol(name = "LLVMMDNode")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long LLVMMDNode(long, int);
+        abstract long LLVMMDNode(long Vals, int Count);
 
-        @LibrarySymbol("LLVMGetMDString")
+        @LibrarySymbol(name = "LLVMGetMDString")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMGetMDString(long, long);
+        abstract long LLVMGetMDString(long V, long Length);
 
-        @LibrarySymbol("LLVMGetMDNodeNumOperands")
+        @LibrarySymbol(name = "LLVMGetMDNodeNumOperands")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
-        abstract int LLVMGetMDNodeNumOperands(long);
+        abstract int LLVMGetMDNodeNumOperands(long V);
 
-        @LibrarySymbol("LLVMGetMDNodeOperands")
+        @LibrarySymbol(name = "LLVMGetMDNodeOperands")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMGetMDNodeOperands(long, long);*/
+        abstract void LLVMGetMDNodeOperands(long V, long Dest);
 
         @LibrarySymbol(name = "LLVMBasicBlockAsValue")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
@@ -3463,8 +3465,7 @@ public final class Core {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Len = arena.allocate(WORD);
             long ptr = Native.INSTANCE.LLVMGetModuleIdentifier(M.value(), c_Len.nativeAddress());
-            long /* size_t */ Len = IS64BIT ? c_Len.get(JAVA_LONG, 0) :
-                    c_Len.get(JAVA_INT, 0) & 0xffffffffL;
+            long /* size_t */ Len = getWord(c_Len, 0);
             return addressToString(ptr, Len);
         }
     }
@@ -4822,73 +4823,120 @@ public final class Core {
         }
     }
 
-    ///**
-    // * Obtain a constant value for an integer parsed from a string.
-    // *
-    // * A similar API, LLVMConstIntOfStringAndSize is also available. If the
-    // * string's length is available, it is preferred to call that function
-    // * instead.
-    // *
-    // * @see llvm::ConstantInt::get()
-    // */
-    //LLVMValueRef LLVMConstIntOfString(LLVMTypeRef IntTy, String Text, byte /* uint8_t */ Radix) {
-    //    return Native.INSTANCE.LLVMConstIntOfString();
-    //}
-    ///**
-    // * Obtain a constant value for an integer parsed from a string with
-    // * specified length.
-    // *
-    // * @see llvm::ConstantInt::get()
-    // */
-    //LLVMValueRef LLVMConstIntOfStringAndSize(LLVMTypeRef IntTy, String Text, int /* unsigned */ SLen, byte /* uint8_t */ Radix) {
-    //    return Native.INSTANCE.LLVMConstIntOfStringAndSize();
-    //}
-    ///**
-    // * Obtain a constant value referring to a double floating point value.
-    // */
-    //LLVMValueRef LLVMConstReal(LLVMTypeRef RealTy, double N) {
-    //    return Native.INSTANCE.LLVMConstReal();
-    //}
-    ///**
-    // * Obtain a constant for a floating point value parsed from a string.
-    // *
-    // * A similar API, LLVMConstRealOfStringAndSize is also available. It
-    // * should be used if the input string's length is known.
-    // */
-    //LLVMValueRef LLVMConstRealOfString(LLVMTypeRef RealTy, String Text) {
-    //    return Native.INSTANCE.LLVMConstRealOfString();
-    //}
-    ///**
-    // * Obtain a constant for a floating point value parsed from a string.
-    // */
-    //LLVMValueRef LLVMConstRealOfStringAndSize(LLVMTypeRef RealTy, String Text, int /* unsigned */ SLen) {
-    //    return Native.INSTANCE.LLVMConstRealOfStringAndSize();
-    //}
-    ///**
-    // * Obtain the zero extended value for an integer constant value.
-    // *
-    // * @see llvm::ConstantInt::getZExtValue()
-    // */
-    //long /* unsigned long long */ LLVMConstIntGetZExtValue(LLVMValueRef ConstantVal) {
-    //    return Native.INSTANCE.LLVMConstIntGetZExtValue();
-    //}
-    ///**
-    // * Obtain the sign extended value for an integer constant value.
-    // *
-    // * @see llvm::ConstantInt::getSExtValue()
-    // */
-    //long /* long long */ LLVMConstIntGetSExtValue(LLVMValueRef ConstantVal) {
-    //    return Native.INSTANCE.LLVMConstIntGetSExtValue();
-    //}
-    ///**
-    // * Obtain the double value for an floating point constant value.
-    // * losesInfo indicates if some precision was lost in the conversion.
-    // *
-    // * @see llvm::ConstantFP::getDoubleValue
-    // */
-    //double LLVMConstRealGetDouble(LLVMValueRef ConstantVal, boolean *losesInfo) {
-    //    return Native.INSTANCE.LLVMConstRealGetDouble();
-    //}
+    /**
+     * Obtain a constant value for an integer parsed from a string.
+     * <p>
+     * A similar API, LLVMConstIntOfStringAndSize is also available. If the
+     * string's length is available, it is preferred to call that function
+     * instead.
+     */
+    /* package-private */
+    @SuppressWarnings("unused")
+    static LLVMValueRef nLLVMConstIntOfString(LLVMTypeRef IntTy, String Text, byte /* uint8_t */ Radix) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Text = allocString(arena, Text);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstIntOfString(IntTy.value(), c_Text.nativeAddress(), Radix));
+        }
+    }
+
+    /**
+     * Obtain a constant value for an integer parsed from a string with
+     * specified length.
+     */
+    /* package-private */
+    static LLVMValueRef nLLVMConstIntOfStringAndSize(LLVMTypeRef IntTy, String Text, byte /* uint8_t */ Radix) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Text = allocString(arena, Text);
+            int /* unsigned */ SLen = Math.toIntExact(stringLength(c_Text));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstIntOfStringAndSize(IntTy.value(), c_Text.nativeAddress(), SLen, Radix));
+        }
+    }
+
+    /**
+     * Obtain a constant value for an integer parsed from a string.
+     */
+    // Port-added
+    public static LLVMValueRef LLVMConstIntOfString(LLVMTypeRef IntTy, String Text, byte /* uint8_t */ Radix) {
+        return nLLVMConstIntOfStringAndSize(IntTy, Text, Radix);
+    }
+
+    /**
+     * Obtain a constant value referring to a double floating point value.
+     */
+    public static LLVMValueRef LLVMConstReal(LLVMTypeRef RealTy, double N) {
+        return LLVMValueRef.of(Native.INSTANCE.LLVMConstReal(RealTy.value(), N));
+    }
+
+    /**
+     * Obtain a constant for a floating point value parsed from a string.
+     * <p>
+     * A similar API, LLVMConstRealOfStringAndSize is also available. It
+     * should be used if the input string's length is known.
+     */
+    /* package-private */
+    @SuppressWarnings("unused")
+    static LLVMValueRef nLLVMConstRealOfString(LLVMTypeRef RealTy, String Text) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Text = allocString(arena, Text);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstRealOfString(RealTy.value(), c_Text.nativeAddress()));
+        }
+    }
+
+    /**
+     * Obtain a constant for a floating point value parsed from a string.
+     */
+    /* package-private */
+    static LLVMValueRef nLLVMConstRealOfStringAndSize(LLVMTypeRef RealTy, String Text) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Text = allocString(arena, Text);
+            int /* unsigned */ SLen = Math.toIntExact(stringLength(c_Text));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstRealOfStringAndSize(RealTy.value(), c_Text.nativeAddress(), SLen));
+        }
+    }
+
+    /**
+     * Obtain a constant for a floating point value parsed from a string.
+     */
+    // Port-added
+    public static LLVMValueRef LLVMConstRealOfString(LLVMTypeRef RealTy, String Text) {
+        return nLLVMConstRealOfStringAndSize(RealTy, Text);
+    }
+
+    /**
+     * Obtain the zero extended value for an integer constant value.
+     */
+    public static long /* unsigned long long */ LLVMConstIntGetZExtValue(LLVMValueRef ConstantVal) {
+        return Native.INSTANCE.LLVMConstIntGetZExtValue(ConstantVal.value());
+    }
+
+    /**
+     * Obtain the sign extended value for an integer constant value.
+     */
+    public static long /* long long */ LLVMConstIntGetSExtValue(LLVMValueRef ConstantVal) {
+        return Native.INSTANCE.LLVMConstIntGetSExtValue(ConstantVal.value());
+    }
+
+    /**
+     * Obtain the double value for an floating point constant value.
+     * LosesInfo indicates if some precision was lost in the conversion.
+     */
+    public static double nLLVMConstRealGetDouble(LLVMValueRef ConstantVal, Consumer<Boolean> LosesInfo) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_LosesInfo = arena.allocate(JAVA_INT);
+            double out = Native.INSTANCE.LLVMConstRealGetDouble(ConstantVal.value(), c_LosesInfo.nativeAddress());
+            LosesInfo.accept(c_LosesInfo.get(JAVA_INT, 0) != 0);
+            return out;
+        }
+    }
+
+    /**
+     * Obtain the double value for an floating point constant value.
+     */
+    // Port-added
+    public double LLVMConstRealGetDouble(LLVMValueRef ConstantVal) {
+        return nLLVMConstRealGetDouble(ConstantVal, unused -> {
+        });
+    }
 
     /*
      * @defgroup LLVMCCoreValueConstantComposite Composite Constants
@@ -4923,73 +4971,89 @@ public final class Core {
         }
     }
 
-    ///**
-    // * Returns true if the specified constant is an array of i8.
-    // *
-    // * @see ConstantDataSequential::getAsString()
-    // */
-    //boolean LLVMIsConstantString(LLVMValueRef c) {
-    //    return Native.INSTANCE.LLVMIsConstantString();
-    //}
-    ///**
-    // * Get the given constant data sequential as a string.
-    // *
-    // * @see ConstantDataSequential::getAsString()
-    // */
-    //String LLVMGetAsString(LLVMValueRef c, long /* size_t */ *Length) {
-    //    return Native.INSTANCE.LLVMGetAsString();
-    //}
-    ///**
-    // * Create an anonymous ConstantStruct with the specified values.
-    // *
-    // * @see llvm::ConstantStruct::getAnon()
-    // */
-    //LLVMValueRef LLVMConstStructInContext(LLVMContextRef C, LLVMValueRef *ConstantVals, int /* unsigned */ Count, boolean Packed) {
-    //    return Native.INSTANCE.LLVMConstStructInContext();
-    //}
-    ///**
-    // * Create a ConstantStruct in the global Context.
-    // *
-    // * This is the same as LLVMConstStructInContext except it operates on the
-    // * global Context.
-    // *
-    // * @see LLVMConstStructInContext()
-    // */
-    //LLVMValueRef LLVMConstStruct(LLVMValueRef *ConstantVals, int /* unsigned */ Count, boolean Packed) {
-    //    return Native.INSTANCE.LLVMConstStruct();
-    //}
-    ///**
-    // * Create a ConstantArray from values.
-    // *
-    // * @see llvm::ConstantArray::get()
-    // */
-    //LLVMValueRef LLVMConstArray(LLVMTypeRef ElementTy, LLVMValueRef *ConstantVals, int /* unsigned */ Length) {
-    //    return Native.INSTANCE.LLVMConstArray();
-    //}
-    ///**
-    // * Create a non-anonymous ConstantStruct from values.
-    // *
-    // * @see llvm::ConstantStruct::get()
-    // */
-    //LLVMValueRef LLVMConstNamedStruct(LLVMTypeRef StructTy, LLVMValueRef *ConstantVals, int /* unsigned */ Count) {
-    //    return Native.INSTANCE.LLVMConstNamedStruct();
-    //}
-    ///**
-    // * Get an element at specified index as a constant.
-    // *
-    // * @see ConstantDataSequential::getElementAsConstant()
-    // */
-    //LLVMValueRef LLVMGetElementAsConstant(LLVMValueRef C, int /* unsigned */ idx) {
-    //    return Native.INSTANCE.LLVMGetElementAsConstant();
-    //}
-    ///**
-    // * Create a ConstantVector from values.
-    // *
-    // * @see llvm::ConstantVector::get()
-    // */
-    //LLVMValueRef LLVMConstVector(LLVMValueRef *ScalarConstantVals, int /* unsigned */ Size) {
-    //    return Native.INSTANCE.LLVMConstVector();
-    //}
+    /**
+     * Returns true if the specified constant is an array of i8.
+     */
+    public static boolean LLVMIsConstantString(LLVMValueRef Val) {
+        return Native.INSTANCE.LLVMIsConstantString(Val.value());
+    }
+
+    /**
+     * Get the given constant data sequential as a string.
+     */
+    public static String LLVMGetAsString(LLVMValueRef Val) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Length = arena.allocate(WORD);
+            long ptr = Native.INSTANCE.LLVMGetAsString(Val.value(), c_Length.nativeAddress());
+            long /* size_t */ Length = getWord(c_Length, 0);
+            return addressToString(ptr, Length);
+        }
+    }
+
+    /**
+     * Create an anonymous ConstantStruct with the specified values.
+     */
+    public static LLVMValueRef LLVMConstStructInContext(LLVMContextRef C, LLVMValueRef[] ConstantVals, boolean Packed) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ConstantVals = allocArray(arena, ConstantVals);
+            int /* unsigned */ Count = arrayLength(ConstantVals);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstStructInContext(C.value(), c_ConstantVals.nativeAddress(), Count, Packed));
+        }
+    }
+
+    /**
+     * Create a ConstantStruct in the global Context.
+     * <p>
+     * This is the same as LLVMConstStructInContext except it operates on the
+     * global Context.
+     */
+    public static LLVMValueRef LLVMConstStruct(LLVMValueRef[] ConstantVals, boolean Packed) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ConstantVals = allocArray(arena, ConstantVals);
+            int /* unsigned */ Count = arrayLength(ConstantVals);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstStruct(c_ConstantVals.nativeAddress(), Count, Packed));
+        }
+    }
+
+    /**
+     * Create a ConstantArray from values.
+     */
+    public static LLVMValueRef LLVMConstArray(LLVMTypeRef ElementTy, LLVMValueRef[] ConstantVals) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ConstantVals = allocArray(arena, ConstantVals);
+            int /* unsigned */ Length = arrayLength(ConstantVals);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstArray(ElementTy.value(), c_ConstantVals.nativeAddress(), Length));
+        }
+    }
+
+    /**
+     * Create a non-anonymous ConstantStruct from values.
+     */
+    public static LLVMValueRef LLVMConstNamedStruct(LLVMTypeRef StructTy, LLVMValueRef[] ConstantVals) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ConstantVals = allocArray(arena, ConstantVals);
+            int /* unsigned */ Count = arrayLength(ConstantVals);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstNamedStruct(StructTy.value(), c_ConstantVals.nativeAddress(), Count));
+        }
+    }
+
+    /**
+     * Get an element at specified index as a constant.
+     */
+    public static LLVMValueRef LLVMGetElementAsConstant(LLVMValueRef C, int /* unsigned */ Idx) {
+        return LLVMValueRef.of(Native.INSTANCE.LLVMGetElementAsConstant(C.value(), Idx));
+    }
+
+    /**
+     * Create a ConstantVector from values.
+     */
+    public static LLVMValueRef LLVMConstVector(LLVMValueRef[] ScalarConstantVals) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ScalarConstantVals = allocArray(arena, ScalarConstantVals);
+            int /* unsigned */ Size = arrayLength(ScalarConstantVals);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstVector(c_ScalarConstantVals.nativeAddress(), Size));
+        }
+    }
 
     /*
      * @defgroup LLVMCCoreValueConstantExpressions Constant Expressions
@@ -5245,12 +5309,21 @@ public final class Core {
         return LLVMValueRef.of(Native.INSTANCE.LLVMConstShuffleVector(VectorAConstant.value(), VectorBConstant.value(), MaskConstant.value()));
     }
 
-    //LLVMValueRef LLVMConstExtractValue(LLVMValueRef AggConstant, int /* unsigned */ *IdxList, int /* unsigned */ NumIdx) {
-    //    return Native.INSTANCE.LLVMConstExtractValue();
-    //}
-    //LLVMValueRef LLVMConstInsertValue(LLVMValueRef AggConstant, LLVMValueRef ElementValueConstant, int /* unsigned */ *IdxList, int /* unsigned */ NumIdx) {
-    //    return Native.INSTANCE.LLVMConstInsertValue();
-    //}
+    public static LLVMValueRef LLVMConstExtractValue(LLVMValueRef AggConstant, int[] /* unsigned* */ IdxList) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_IdxList = allocArray(arena, IdxList);
+            int /* unsigned */ NumIdx = arrayLength(IdxList);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstExtractValue(AggConstant.value(), c_IdxList.nativeAddress(), NumIdx));
+        }
+    }
+
+    public static LLVMValueRef LLVMConstInsertValue(LLVMValueRef AggConstant, LLVMValueRef ElementValueConstant, int[] /* unsigned* */ IdxList) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_IdxList = allocArray(arena, IdxList);
+            int /* unsigned */ NumIdx = arrayLength(IdxList);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMConstInsertValue(AggConstant.value(), ElementValueConstant.value(), c_IdxList.nativeAddress(), NumIdx));
+        }
+    }
 
     public static LLVMValueRef LLVMConstInlineAsm(LLVMTypeRef Ty, String AsmString, String Constraints, boolean HasSideEffects, boolean IsAlignStack) {
         try (Arena arena = Arena.ofConfined()) {
@@ -5678,71 +5751,119 @@ public final class Core {
      * @defgroup LLVMCCoreValueMetadata Metadata
      */
 
-    ///**
-    // * Obtain a MDString value from a context.
-    // *
-    // * The returned instance corresponds to the llvm::MDString class.
-    // *
-    // * The instance is specified by string data of a specified length. The
-    // * string content is copied, so the backing memory can be freed after
-    // * this function returns.
-    // */
-    //LLVMValueRef LLVMMDStringInContext(LLVMContextRef C, String Str, int /* unsigned */ SLen) {
-    //    return Native.INSTANCE.LLVMMDStringInContext();
-    //}
-    ///**
-    // * Obtain a MDString value from the global context.
-    // */
-    //LLVMValueRef LLVMMDString(String Str, int /* unsigned */ SLen) {
-    //    return Native.INSTANCE.LLVMMDString();
-    //}
-    ///**
-    // * Obtain a MDNode value from a context.
-    // *
-    // * The returned value corresponds to the llvm::MDNode class.
-    // */
-    //LLVMValueRef LLVMMDNodeInContext(LLVMContextRef C, LLVMValueRef *Vals, int /* unsigned */ Count) {
-    //    return Native.INSTANCE.LLVMMDNodeInContext();
-    //}
-    ///**
-    // * Obtain a MDNode value from the global context.
-    // */
-    //LLVMValueRef LLVMMDNode(LLVMValueRef *Vals, int /* unsigned */ Count) {
-    //    return Native.INSTANCE.LLVMMDNode();
-    //}
-    ///**
-    // * Obtain the underlying string from a MDString value.
-    // *
-    // * @param V Instance to obtain string from.
-    // * @param Length Memory address which will hold length of returned string.
-    // * @return String data in MDString.
-    // */
-    //String LLVMGetMDString(LLVMValueRef V, int /* unsigned */ *Length) {
-    //    return Native.INSTANCE.LLVMGetMDString();
-    //}
-    ///**
-    // * Obtain the number of operands from an MDNode value.
-    // *
-    // * @param V MDNode to get number of operands from.
-    // * @return Number of operands of the MDNode.
-    // */
-    //int /* unsigned */ LLVMGetMDNodeNumOperands(LLVMValueRef V) {
-    //    return Native.INSTANCE.LLVMGetMDNodeNumOperands();
-    //}
-    ///**
-    // * Obtain the given MDNode's operands.
-    // *
-    // * The passed LLVMValueRef pointer should point to enough memory to hold all of
-    // * the operands of the given MDNode (see LLVMGetMDNodeNumOperands) as
-    // * LLVMValueRefs. This memory will be populated with the LLVMValueRefs of the
-    // * MDNode's operands.
-    // *
-    // * @param V MDNode to get the operands from.
-    // * @param Dest Destination array for operands.
-    // */
-    //void LLVMGetMDNodeOperands(LLVMValueRef V, LLVMValueRef *Dest) {
-    //    return Native.INSTANCE.LLVMGetMDNodeOperands();
-    //}
+    /**
+     * Obtain a MDString value from a context.
+     * <p>
+     * The returned instance corresponds to the llvm::MDString class.
+     * <p>
+     * The instance is specified by string data of a specified length. The
+     * string content is copied, so the backing memory can be freed after
+     * this function returns.
+     */
+    public static LLVMValueRef LLVMMDStringInContext(LLVMContextRef C, String Str) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Str = allocString(arena, Str);
+            int /* unsigned */ SLen = Math.toIntExact(stringLength(c_Str));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMMDStringInContext(C.value(), c_Str.nativeAddress(), SLen));
+        }
+    }
+
+    /**
+     * Obtain a MDString value from the global context.
+     */
+    public static LLVMValueRef LLVMMDString(String Str) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Str = allocString(arena, Str);
+            int /* unsigned */ SLen = Math.toIntExact(stringLength(c_Str));
+            return LLVMValueRef.of(Native.INSTANCE.LLVMMDString(c_Str.nativeAddress(), SLen));
+        }
+    }
+
+    /**
+     * Obtain a MDNode value from a context.
+     * <p>
+     * The returned value corresponds to the llvm::MDNode class.
+     */
+    public static LLVMValueRef LLVMMDNodeInContext(LLVMContextRef C, LLVMValueRef[] Vals) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Vals = allocArray(arena, Vals);
+            int /* unsigned */ Count = arrayLength(Vals);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMMDNodeInContext(C.value(), c_Vals.nativeAddress(), Count));
+        }
+    }
+
+    /**
+     * Obtain a MDNode value from the global context.
+     */
+    public static LLVMValueRef LLVMMDNode(LLVMValueRef[] Vals) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Vals = allocArray(arena, Vals);
+            int /* unsigned */ Count = arrayLength(Vals);
+            return LLVMValueRef.of(Native.INSTANCE.LLVMMDNode(c_Vals.nativeAddress(), Count));
+        }
+    }
+
+    /**
+     * Obtain the underlying string from a MDString value.
+     *
+     * @param V Instance to obtain string from.
+     * @return String data in MDString.
+     */
+    public static String LLVMGetMDString(LLVMValueRef V) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Length = arena.allocate(JAVA_INT);
+            long ptr = Native.INSTANCE.LLVMGetMDString(V.value(), c_Length.nativeAddress());
+            int /* unsigned */ Length = c_Length.get(JAVA_INT, 0);
+            return addressToString(ptr, Length);
+        }
+    }
+
+    /**
+     * Obtain the number of operands from an MDNode value.
+     *
+     * @param V MDNode to get number of operands from.
+     * @return Number of operands of the MDNode.
+     */
+    public static int /* unsigned */ LLVMGetMDNodeNumOperands(LLVMValueRef V) {
+        return Native.INSTANCE.LLVMGetMDNodeNumOperands(V.value());
+    }
+
+    /**
+     * Obtain the given MDNode's operands.
+     * <p>
+     * The passed LLVMValueRef pointer should point to enough memory to hold all of
+     * the operands of the given MDNode (see LLVMGetMDNodeNumOperands) as
+     * LLVMValueRefs. This memory will be populated with the LLVMValueRefs of the
+     * MDNode's operands.
+     *
+     * @param V    MDNode to get the operands from.
+     * @param Dest Destination array for operands.
+     */
+    /* package-private */
+    static void nLLVMGetMDNodeOperands(LLVMValueRef V, long Dest) {
+        Native.INSTANCE.LLVMGetMDNodeOperands(V.value(), Dest);
+    }
+
+    /**
+     * Obtain the given MDNode's operands.
+     * <p>
+     * Retaurn array will be populated with the LLVMValueRefs of the
+     * MDNode's operands.
+     *
+     * @param V MDNode to get the operands from.
+     */
+    // Port-added
+    public static LLVMValueRef[] LLVMGetMDNodeOperands(LLVMValueRef V) {
+        int /* unsigned */ count = LLVMGetMDNodeNumOperands(V);
+        if (count == 0) {
+            return new LLVMValueRef[0];
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_Dest = allocPointerArray(arena, count);
+            nLLVMGetMDNodeOperands(V, c_Dest.nativeAddress());
+            return readPointerArray(c_Dest, LLVMValueRef.class, LLVMValueRef::of);
+        }
+    }
 
     /*
      * @defgroup LLVMCCoreValueBasicBlock Basic Block

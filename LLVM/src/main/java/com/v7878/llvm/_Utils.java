@@ -1,6 +1,7 @@
 package com.v7878.llvm;
 
 import static com.v7878.foreign.ValueLayout.ADDRESS;
+import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.llvm.Core.nLLVMDisposeMessage;
@@ -9,7 +10,6 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.foreign.ValueLayout;
 import com.v7878.llvm.Types.AddressValue;
 
 import java.lang.reflect.Array;
@@ -39,7 +39,7 @@ final class _Utils {
             return null;
         }
         MemorySegment tmp = MemorySegment.ofAddress(address).reinterpret(length);
-        return new String(tmp.toArray(ValueLayout.JAVA_BYTE));
+        return new String(tmp.toArray(JAVA_BYTE));
     }
 
     public static MemorySegment allocString(Arena scope, String value) {
@@ -47,7 +47,7 @@ final class _Utils {
     }
 
     public static long stringLength(MemorySegment string) {
-        return string.byteSize() - 1;
+        return MemorySegment.NULL.equals(string) ? 0 : string.byteSize() - 1;
     }
 
     public static MemorySegment allocArray(Arena scope, AddressValue... values) {
@@ -59,13 +59,13 @@ final class _Utils {
             for (int i = 0; i < values.length; i++) {
                 tmp[i] = values[i].value();
             }
-            return scope.allocateFrom(ValueLayout.JAVA_LONG, tmp);
+            return scope.allocateFrom(JAVA_LONG, tmp);
         } else {
             int[] tmp = new int[values.length];
             for (int i = 0; i < values.length; i++) {
                 tmp[i] = (int) values[i].value();
             }
-            return scope.allocateFrom(ValueLayout.JAVA_INT, tmp);
+            return scope.allocateFrom(JAVA_INT, tmp);
         }
     }
 
@@ -109,10 +109,25 @@ final class _Utils {
         if (values == null || values.length == 0) {
             return MemorySegment.NULL;
         }
-        return scope.allocateFrom(ValueLayout.JAVA_LONG, values);
+        return scope.allocateFrom(JAVA_LONG, values);
     }
 
     public static int arrayLength(long... values) {
         return values == null ? 0 : values.length;
+    }
+
+    public static MemorySegment allocArray(Arena scope, int... values) {
+        if (values == null || values.length == 0) {
+            return MemorySegment.NULL;
+        }
+        return scope.allocateFrom(JAVA_INT, values);
+    }
+
+    public static int arrayLength(int... values) {
+        return values == null ? 0 : values.length;
+    }
+
+    public static long getWord(MemorySegment ms, long offset) {
+        return IS64BIT ? ms.get(JAVA_LONG, offset) : ms.get(JAVA_INT, offset) & 0xffffffffL;
     }
 }
