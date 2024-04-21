@@ -17,6 +17,7 @@ import com.v7878.llvm.Types.LLVMModuleProviderRef;
 import com.v7878.llvm.Types.LLVMPassManagerRef;
 import com.v7878.llvm.Types.LLVMUseRef;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @SuppressWarnings("RedundantThrows")
@@ -754,6 +755,10 @@ public final class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMConstArray(LLVMTypeRef ElementTy, LLVMValueRef[] ConstantVals) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMConstBitCast(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -763,6 +768,10 @@ public final class Core {
     }
 
     public static LLVMValueRef LLVMConstExtractElement(LLVMValueRef VectorConstant, LLVMValueRef IndexConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstExtractValue(LLVMValueRef AggConstant, int[] IdxList) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -834,6 +843,10 @@ public final class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMConstInsertValue(LLVMValueRef AggConstant, LLVMValueRef ElementValueConstant, int[] IdxList) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMConstInt(LLVMTypeRef IntTy, long N, boolean SignExtend) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -842,7 +855,19 @@ public final class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static long LLVMConstIntGetSExtValue(LLVMValueRef ConstantVal) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static long LLVMConstIntGetZExtValue(LLVMValueRef ConstantVal) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMConstIntOfArbitraryPrecision(LLVMTypeRef IntTy, long... Words) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstIntOfString(LLVMTypeRef IntTy, String Text, byte Radix) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -890,6 +915,10 @@ public final class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMConstNamedStruct(LLVMTypeRef StructTy, LLVMValueRef[] ConstantVals) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMConstNeg(LLVMValueRef ConstantVal) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -915,6 +944,14 @@ public final class Core {
     }
 
     public static LLVMValueRef LLVMConstPtrToInt(LLVMValueRef ConstantVal, LLVMTypeRef ToType) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstReal(LLVMTypeRef RealTy, double N) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstRealOfString(LLVMTypeRef RealTy, String Text) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -958,6 +995,14 @@ public final class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static LLVMValueRef LLVMConstStruct(LLVMValueRef[] ConstantVals, boolean Packed) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstStructInContext(LLVMContextRef C, LLVMValueRef[] ConstantVals, boolean Packed) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static LLVMValueRef LLVMConstSub(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -979,6 +1024,10 @@ public final class Core {
     }
 
     public static LLVMValueRef LLVMConstURem(LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMConstVector(LLVMValueRef[] ScalarConstantVals) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1171,6 +1220,10 @@ public final class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static String LLVMGetAsString(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static String LLVMGetBasicBlockName(LLVMBasicBlockRef BB) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -1248,6 +1301,10 @@ public final class Core {
     }
 
     public static LLVMDiagnosticSeverity LLVMGetDiagInfoSeverity(LLVMDiagnosticInfoRef DI) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMGetElementAsConstant(LLVMValueRef C, int Idx) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -1400,6 +1457,18 @@ public final class Core {
     }
 
     public static int LLVMGetMDKindIDInContext(LLVMContextRef C, String Name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static int LLVMGetMDNodeNumOperands(LLVMValueRef V) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef[] LLVMGetMDNodeOperands(LLVMValueRef V) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static String LLVMGetMDString(LLVMValueRef V) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -2075,6 +2144,10 @@ public final class Core {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static boolean LLVMIsConstantString(LLVMValueRef Val) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static boolean LLVMIsDeclaration(LLVMValueRef Global) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -2137,6 +2210,22 @@ public final class Core {
     }
 
     public static LLVMTypeRef LLVMLabelTypeInContext(LLVMContextRef C) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMMDNode(LLVMValueRef[] Vals) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMMDNodeInContext(LLVMContextRef C, LLVMValueRef[] Vals) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMMDString(String Str) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static LLVMValueRef LLVMMDStringInContext(LLVMContextRef C, String Str) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -2459,6 +2548,14 @@ public final class Core {
     }
 
     public static LLVMTypeRef LLVMX86MMXTypeInContext(LLVMContextRef C) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public static double nLLVMConstRealGetDouble(LLVMValueRef ConstantVal, Consumer<Boolean> LosesInfo) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public double LLVMConstRealGetDouble(LLVMValueRef ConstantVal) {
         throw new UnsupportedOperationException("Stub!");
     }
 }
