@@ -149,6 +149,7 @@ final class _LLVMCallingConvention {
                 }
                 throw shouldNotReachHere();
             }).orElse(new NoStorage(null));
+            //TODO: this operation is ordered?
             LLVMStorage[] argStorages = descriptor.argumentLayouts().stream().map(layout -> {
                 if (layout instanceof ValueLayout vl) {
                     int type = isFP(vl) ? 1 : 0;
