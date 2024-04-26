@@ -16,7 +16,6 @@ import static com.v7878.llvm.Core.LLVMAddIncoming;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMArrayType;
 import static com.v7878.llvm.Core.LLVMAttributeIndex.LLVMAttributeFirstArgIndex;
-import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildAlloca;
 import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildCondBr;
@@ -30,8 +29,10 @@ import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMBuildStore;
 import static com.v7878.llvm.Core.LLVMBuildUnreachable;
+import static com.v7878.llvm.Core.LLVMConstAdd;
 import static com.v7878.llvm.Core.LLVMConstAllOnes;
 import static com.v7878.llvm.Core.LLVMConstInt;
+import static com.v7878.llvm.Core.LLVMConstIntToPtr;
 import static com.v7878.llvm.Core.LLVMConstNull;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMCreateEnumAttribute;
@@ -684,106 +685,91 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             long arranger_id, long class_id, long function_id) {
         class Holder {
             private static final Arena SCOPE = Arena.ofAuto();
+            private static int f_ptrs_count = 0;
 
             private enum Symbols {
-                JVM(JNIUtils.getJavaVMPtr()),
-                LOG_ASSERT(ART.find("__android_log_assert").orElseThrow(Utils::shouldNotReachHere)),
-                LOG_TAG(SCOPE.allocateFrom("PANAMA")),
-                LOG_GET_ENV_MSG(SCOPE.allocateFrom("Could not get JNIEnv for upcall. JNI error code: %d")),
-                LOG_ATTACH_MSG(SCOPE.allocateFrom("Could not attach thread for upcall. JNI error code: %d")),
-                LOG_DETACH_MSG(SCOPE.allocateFrom("Could not detach current thread. JNI error code: %d")),
-                GET_ENV(JNIUtils.getJNIInvokeInterfaceFunction("GetEnv")),
-                ATTACH(JNIUtils.getJNIInvokeInterfaceFunction("AttachCurrentThreadAsDaemon")),
-                DETACH(JNIUtils.getJNIInvokeInterfaceFunction("DetachCurrentThread")),
-                CALL(JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod")),
-                EXCEPTION_CHECK(JNIUtils.getJNINativeInterfaceFunction("ExceptionCheck")),
-                FATAL_ERROR(JNIUtils.getJNINativeInterfaceFunction("FatalError")),
-                UNCAUGHT_EXCEPTION_MESSAGE(SCOPE.allocateFrom("Uncaught exception in upcall:"));
+                LOG_ASSERT(true, ART.find("__android_log_assert").orElseThrow(Utils::shouldNotReachHere)),
+                GET_ENV(true, JNIUtils.getJNIInvokeInterfaceFunction("GetEnv")),
+                ATTACH(true, JNIUtils.getJNIInvokeInterfaceFunction("AttachCurrentThreadAsDaemon")),
+                DETACH(true, JNIUtils.getJNIInvokeInterfaceFunction("DetachCurrentThread")),
+                CALL(true, JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod")),
+                EXCEPTION_CHECK(true, JNIUtils.getJNINativeInterfaceFunction("ExceptionCheck")),
+                FATAL_ERROR(true, JNIUtils.getJNINativeInterfaceFunction("FatalError")),
+                JVM(false, JNIUtils.getJavaVMPtr()),
+                LOG_TAG(false, SCOPE.allocateFrom("PANAMA")),
+                LOG_GET_ENV_MSG(false, SCOPE.allocateFrom("Could not get JNIEnv for upcall. JNI error code: %d")),
+                LOG_ATTACH_MSG(false, SCOPE.allocateFrom("Could not attach thread for upcall. JNI error code: %d")),
+                LOG_DETACH_MSG(false, SCOPE.allocateFrom("Could not detach current thread. JNI error code: %d")),
+                UNCAUGHT_EXCEPTION_MSG(false, SCOPE.allocateFrom("Uncaught exception in upcall:"));
 
                 private static final MemorySegment pointers;
 
                 static {
-                    var symbols = values();
-                    pointers = SCOPE.allocate(ADDRESS, symbols.length);
-                    for (int i = 0; i < symbols.length; i++) {
-                        pointers.setAtIndex(ADDRESS, i, symbols[i].value);
+                    pointers = SCOPE.allocate(ADDRESS, f_ptrs_count);
+                    for (var symbol : values()) {
+                        if (symbol.is_function) {
+                            pointers.setAtIndex(ADDRESS, symbol.index, symbol.value);
+                        }
                     }
                 }
 
                 private final MemorySegment value;
+                private final boolean is_function;
+                private final int index;
 
-                Symbols(MemorySegment value) {
+                Symbols(boolean is_function, MemorySegment value) {
                     this.value = value;
+                    this.is_function = is_function;
+                    this.index = is_function ? f_ptrs_count++ : -1;
                 }
 
-                private static LLVMValueRef const_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value, long offset) {
-                    var context = getBuilderContext(builder);
-                    type = ptr_t(type);
-                    var ptr = LLVMBuildAdd(builder, const_intptr(context, value), const_intptr(context, offset), "");
-                    return LLVMBuildIntToPtr(builder, ptr, type, "");
+                private static LLVMValueRef const_ptr(LLVMContextRef context, LLVMTypeRef type, long value, long offset) {
+                    var ptr = LLVMConstAdd(const_intptr(context, value), const_intptr(context, offset));
+                    return LLVMConstIntToPtr(ptr, ptr_t(type));
                 }
 
                 private static LLVMValueRef const_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value, long offset) {
-                    var ptr = const_ptr(builder, ptr_t(type), value, offset);
+                    var context = getBuilderContext(builder);
+                    var ptr = const_ptr(context, ptr_t(type), value, offset);
                     return LLVMBuildLoad(builder, ptr, "");
                 }
 
-                public LLVMValueRef getValue(LLVMBuilderRef builder, LLVMTypeRef type) {
-                    //TODO: const_load only for function ptrs
-                    return const_load_ptr(builder, type, pointers.nativeAddress(), (long) ADDRESS_SIZE * ordinal());
+                public LLVMValueRef getFPtr(LLVMBuilderRef builder, LLVMTypeRef type) {
+                    assert is_function;
+                    return const_load_ptr(builder, type, pointers.nativeAddress(), (long) ADDRESS_SIZE * index);
                 }
-            }
 
-            static LLVMValueRef jvm(LLVMBuilderRef builder) {
-                var context = getBuilderContext(builder);
-                return Symbols.JVM.getValue(builder, void_t(context));
+                public LLVMValueRef getValue(LLVMContextRef context, LLVMTypeRef type) {
+                    assert !is_function;
+                    return const_ptr(context, type, value.nativeAddress(), 0);
+                }
             }
 
             static LLVMValueRef log_assert(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{intptr_t(context),
                         ptr_t(int8_t(context)), ptr_t(int8_t(context))}, true);
-                return Symbols.LOG_ASSERT.getValue(builder, type);
-            }
-
-            static LLVMValueRef log_tag(LLVMBuilderRef builder) {
-                var context = getBuilderContext(builder);
-                return Symbols.LOG_TAG.getValue(builder, int8_t(context));
-            }
-
-            static LLVMValueRef log_get_env_msg(LLVMBuilderRef builder) {
-                var context = getBuilderContext(builder);
-                return Symbols.LOG_GET_ENV_MSG.getValue(builder, int8_t(context));
-            }
-
-            static LLVMValueRef log_attach_msg(LLVMBuilderRef builder) {
-                var context = getBuilderContext(builder);
-                return Symbols.LOG_ATTACH_MSG.getValue(builder, int8_t(context));
-            }
-
-            static LLVMValueRef log_detach_msg(LLVMBuilderRef builder) {
-                var context = getBuilderContext(builder);
-                return Symbols.LOG_DETACH_MSG.getValue(builder, int8_t(context));
+                return Symbols.LOG_ASSERT.getFPtr(builder, type);
             }
 
             static LLVMValueRef get_env(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var type = LLVMFunctionType(int32_t(context), new LLVMTypeRef[]{void_ptr_t(context),
                         ptr_t(void_ptr_t(context)), int32_t(context)}, false);
-                return Symbols.GET_ENV.getValue(builder, type);
+                return Symbols.GET_ENV.getFPtr(builder, type);
             }
 
             static LLVMValueRef attach(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var type = LLVMFunctionType(int32_t(context), new LLVMTypeRef[]{void_ptr_t(context),
                         ptr_t(void_ptr_t(context)), intptr_t(context)}, false);
-                return Symbols.ATTACH.getValue(builder, type);
+                return Symbols.ATTACH.getFPtr(builder, type);
             }
 
             static LLVMValueRef detach(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var type = LLVMFunctionType(int32_t(context), new LLVMTypeRef[]{void_ptr_t(context)}, false);
-                return Symbols.DETACH.getValue(builder, type);
+                return Symbols.DETACH.getFPtr(builder, type);
             }
 
             static LLVMValueRef call(LLVMBuilderRef builder) {
@@ -791,26 +777,45 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 var intptr = intptr_t(context);
                 var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{
                         void_ptr_t(context), intptr, intptr}, true);
-                return Symbols.CALL.getValue(builder, type);
+                return Symbols.CALL.getFPtr(builder, type);
             }
 
             static LLVMValueRef exceptionCheck(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var type = LLVMFunctionType(int1_t(context),
                         new LLVMTypeRef[]{void_ptr_t(context)}, false);
-                return Symbols.EXCEPTION_CHECK.getValue(builder, type);
+                return Symbols.EXCEPTION_CHECK.getFPtr(builder, type);
             }
 
             static LLVMValueRef fatalError(LLVMBuilderRef builder) {
                 var context = getBuilderContext(builder);
                 var type = LLVMFunctionType(void_t(context), new LLVMTypeRef[]{void_ptr_t(context),
                         ptr_t(int8_t(context))}, false);
-                return Symbols.FATAL_ERROR.getValue(builder, type);
+                return Symbols.FATAL_ERROR.getFPtr(builder, type);
             }
 
-            static LLVMValueRef uncaughtExceptionMessage(LLVMBuilderRef builder) {
-                var context = getBuilderContext(builder);
-                return Symbols.UNCAUGHT_EXCEPTION_MESSAGE.getValue(builder, int8_t(context));
+            static LLVMValueRef jvm(LLVMContextRef context) {
+                return Symbols.JVM.getValue(context, void_t(context));
+            }
+
+            static LLVMValueRef log_tag(LLVMContextRef context) {
+                return Symbols.LOG_TAG.getValue(context, int8_t(context));
+            }
+
+            static LLVMValueRef log_get_env_msg(LLVMContextRef context) {
+                return Symbols.LOG_GET_ENV_MSG.getValue(context, int8_t(context));
+            }
+
+            static LLVMValueRef log_attach_msg(LLVMContextRef context) {
+                return Symbols.LOG_ATTACH_MSG.getValue(context, int8_t(context));
+            }
+
+            static LLVMValueRef log_detach_msg(LLVMContextRef context) {
+                return Symbols.LOG_DETACH_MSG.getValue(context, int8_t(context));
+            }
+
+            static LLVMValueRef uncaught_exception_msg(LLVMContextRef context) {
+                return Symbols.UNCAUGHT_EXCEPTION_MSG.getValue(context, int8_t(context));
             }
         }
 
@@ -818,15 +823,17 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
              var module = LLVMModuleCreateWithNameInContext("generic", context)) {
 
-            LLVMValueRef jni_ok = const_int32(context, 0);
-            LLVMValueRef jni_edetached = const_int32(context, -2);
-            LLVMValueRef jni_version = const_int32(context, /* JNI_VERSION_1_6 */ 0x00010006);
+            var jni_ok = const_int32(context, 0);
+            var jni_edetached = const_int32(context, -2);
+            var jni_version = const_int32(context, /* JNI_VERSION_1_6 */ 0x00010006);
+
+            var jvm = Holder.jvm(context);
 
             var sret_attr = LLVMCreateEnumAttribute(context, "sret", 0);
             var byval_attr = LLVMCreateEnumAttribute(context, "byval", 0);
 
-            LLVMTypeRef stub_type = sdToLLVMType(context, stub_descriptor, -1);
-            LLVMValueRef stub = LLVMAddFunction(module, function_name, stub_type);
+            var stub_type = sdToLLVMType(context, stub_descriptor, -1);
+            var stub = LLVMAddFunction(module, function_name, stub_type);
 
             var get_env = LLVMAppendBasicBlock(stub, "");
             var check_detached = LLVMAppendBasicBlock(stub, "");
@@ -842,11 +849,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             var abort_msg = LLVMBuildPhi(builder, ptr_t(int8_t(context)), "");
             var status = LLVMBuildPhi(builder, int32_t(context), "");
             LLVMBuildCall(builder, Holder.log_assert(builder), new LLVMValueRef[]{
-                    const_intptr(context, 0), Holder.log_tag(builder), abort_msg, status}, "");
+                    const_intptr(context, 0), Holder.log_tag(context), abort_msg, status}, "");
             LLVMBuildUnreachable(builder);
 
             LLVMPositionBuilderAtEnd(builder, get_env);
-            var jvm = Holder.jvm(builder);
             var env_ptr = LLVMBuildAlloca(builder, void_ptr_t(context), "");
             var jni_status = LLVMBuildCall(builder, Holder.get_env(builder), new LLVMValueRef[]{
                     jvm, env_ptr, jni_version}, "");
@@ -855,7 +861,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             LLVMPositionBuilderAtEnd(builder, check_detached);
             test = LLVMBuildICmp(builder, LLVMIntEQ, jni_status, jni_edetached, "");
-            LLVMAddIncoming(abort_msg, Holder.log_get_env_msg(builder), check_detached);
+            LLVMAddIncoming(abort_msg, Holder.log_get_env_msg(context), check_detached);
             LLVMAddIncoming(status, jni_status, check_detached);
             LLVMBuildCondBr(builder, test, attach, abort);
 
@@ -863,7 +869,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             jni_status = LLVMBuildCall(builder, Holder.attach(builder), new LLVMValueRef[]{
                     jvm, env_ptr, const_intptr(context, 0)}, "");
             test = LLVMBuildICmp(builder, LLVMIntEQ, jni_status, jni_ok, "");
-            LLVMAddIncoming(abort_msg, Holder.log_attach_msg(builder), attach);
+            LLVMAddIncoming(abort_msg, Holder.log_attach_msg(context), attach);
             LLVMAddIncoming(status, jni_status, attach);
             LLVMBuildCondBr(builder, test, body, abort);
 
@@ -874,9 +880,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             var env = LLVMBuildLoad(builder, env_ptr, "");
             int count = 0; // current index in target_args[] and their count
             int index = 0; // current index in stub_args[]
-            LLVMValueRef[] stub_args = LLVMGetParams(stub);
-            LLVMValueRef target = Holder.call(builder);
-            LLVMValueRef[] target_args = new LLVMValueRef[stub_args.length + 5];
+            var stub_args = LLVMGetParams(stub);
+            var target = Holder.call(builder);
+            var target_args = new LLVMValueRef[stub_args.length + 5];
             target_args[count++] = env;
             target_args[count++] = const_intptr(context, class_id);
             target_args[count++] = const_intptr(context, function_id);
@@ -942,7 +948,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             LLVMPositionBuilderAtEnd(builder, uncaught_exception);
             LLVMBuildCall(builder, Holder.fatalError(builder), new LLVMValueRef[]{env,
-                    Holder.uncaughtExceptionMessage(builder)}, "");
+                    Holder.uncaught_exception_msg(context)}, "");
             LLVMBuildUnreachable(builder);
 
             LLVMPositionBuilderAtEnd(builder, check_attached);
@@ -951,7 +957,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             LLVMPositionBuilderAtEnd(builder, detach);
             jni_status = LLVMBuildCall(builder, Holder.detach(builder), new LLVMValueRef[]{jvm}, "");
             test = LLVMBuildICmp(builder, LLVMIntEQ, jni_status, jni_ok, "");
-            LLVMAddIncoming(abort_msg, Holder.log_detach_msg(builder), detach);
+            LLVMAddIncoming(abort_msg, Holder.log_detach_msg(context), detach);
             LLVMAddIncoming(status, jni_status, detach);
             LLVMBuildCondBr(builder, test, exit, abort);
 
