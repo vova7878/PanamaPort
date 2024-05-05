@@ -877,6 +877,18 @@ public class AndroidUnsafe {
         return v;
     }
 
+    public static boolean compareAndSwapIntO(Object obj, long offset, int expectedValue, int value) {
+        return SunUnsafe.compareAndSwapInt(obj, offset, expectedValue, value);
+    }
+
+    public static boolean compareAndSwapLongO(Object obj, long offset, long expectedValue, long value) {
+        return SunUnsafe.compareAndSwapLong(obj, offset, expectedValue, value);
+    }
+
+    public static boolean compareAndSwapObject(Object obj, long offset, Object expectedValue, Object value) {
+        return SunUnsafe.compareAndSwapObject(obj, offset, expectedValue, value);
+    }
+
     public static int getAndSetIntO(Object obj, long offset, int newValue) {
         return SunUnsafe.getAndSetInt(obj, offset, newValue);
     }
@@ -887,5 +899,21 @@ public class AndroidUnsafe {
 
     public static Object getAndSetObject(Object obj, long offset, Object newValue) {
         return SunUnsafe.getAndSetObject(obj, offset, newValue);
+    }
+
+    public static int getAndAddIntO(Object o, long offset, int delta) {
+        int v;
+        do {
+            v = getIntVolatileO(o, offset);
+        } while (!compareAndSwapIntO(o, offset, v, v + delta));
+        return v;
+    }
+
+    public static long getAndAddLongO(Object o, long offset, long delta) {
+        long v;
+        do {
+            v = getLongVolatileO(o, offset);
+        } while (!compareAndSwapLongO(o, offset, v, v + delta));
+        return v;
     }
 }
