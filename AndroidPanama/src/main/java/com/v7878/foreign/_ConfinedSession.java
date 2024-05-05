@@ -27,7 +27,11 @@
 
 package com.v7878.foreign;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import static com.v7878.unsafe.Reflection.getDeclaredField;
+
+import androidx.annotation.Keep;
+
+import com.v7878.unsafe.AndroidUnsafe;
 
 /**
  * A confined session, which features an owner thread. The liveness check features an additional
@@ -37,8 +41,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class _ConfinedSession extends _MemorySessionImpl {
 
-    //TODO: int field + unsafe operations
-    private final AtomicInteger ASYNC_RELEASE_COUNT = new AtomicInteger(0);
+    static final long ASYNC_RELEASE_COUNT_OFFSET = AndroidUnsafe.objectFieldOffset(
+            getDeclaredField(_ConfinedSession.class, "asyncReleaseCount"));
+
+    @Keep
+    @SuppressWarnings({"unused", "FieldMayBeFinal"})
+    private int asyncReleaseCount = 0;
 
     public _ConfinedSession(Thread owner) {
         super(owner, new ConfinedResourceList());
@@ -62,13 +70,13 @@ final class _ConfinedSession extends _MemorySessionImpl {
             // which is implicitly released (in which case the release call comes from the cleaner thread). Or,
             // this session might be kept alive by a shared session, which means the release call can come from any
             // thread.
-            ASYNC_RELEASE_COUNT.getAndAdd(1);
+            AndroidUnsafe.getAndAddIntO(this, ASYNC_RELEASE_COUNT_OFFSET, 1);
         }
     }
 
     void justClose() {
         checkValidState();
-        int asyncCount = ASYNC_RELEASE_COUNT.get();
+        int asyncCount = AndroidUnsafe.getIntVolatileO(this, ASYNC_RELEASE_COUNT_OFFSET);
         if ((state == 0 && asyncCount == 0)
                 || ((state - asyncCount) == 0)) {
             state = CLOSED;
