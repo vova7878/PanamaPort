@@ -6,7 +6,6 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
@@ -29,6 +28,7 @@ import com.v7878.foreign.SymbolLookup;
 import com.v7878.invoke.VarHandle;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
+import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
@@ -391,24 +391,21 @@ public class LibDLExt {
         }
     }
 
-    //TODO
-    /*public static Namespace defaultNamespace() {
+    public static Namespace systemNamespace() {
         class Holder {
-            static final Namespace g_default_namespace;
+            static final Namespace default_namespace;
 
             static {
-                MMapEntry linker = MMap.findFirstByPath("/\\S+/linker" + (IS64BIT ? "64" : ""));
-                SymTab symbols = ELF.readSymTab(linker.path, false);
-                MemorySegment tmp = symbols.findObject("__dl_g_default_namespace", linker.start);
-                g_default_namespace = new Namespace(tmp.nativeAddress());
+                String path = System.getProperty("java.library.path");
+                assert path != null;
+                default_namespace = create_namespace("panama_default", path, "",
+                        NamespaceType.SHARED, "", Namespace.NULL);
             }
         }
-        return Holder.g_default_namespace;
-    }*/
+        return Holder.default_namespace;
+    }
 
-    //TODO: open with system namespace via dlopen_ext
     public static SymbolLookup systemLibraryLookup(String name, Arena arena) {
-        return SymbolLookup.libraryLookup("/system/lib" + (IS64BIT ? "64" : "") + "/" + name, arena);
-        //return JavaForeignAccess.libraryLookup(RawNativeLibraries.load(name, defaultNamespace()), arena);
+        return JavaForeignAccess.libraryLookup(RawNativeLibraries.load(name, systemNamespace()), arena);
     }
 }
