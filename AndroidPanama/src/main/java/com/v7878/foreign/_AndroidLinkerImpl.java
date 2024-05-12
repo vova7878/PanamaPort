@@ -56,7 +56,6 @@ import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
@@ -104,11 +103,11 @@ import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.NativeCodeBlob;
-import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
+import com.v7878.unsafe.invoke.MethodHandlesFixes;
 import com.v7878.unsafe.invoke.Transformers;
 import com.v7878.unsafe.invoke.Transformers.TransformerI;
 
@@ -315,9 +314,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         Method function = getDeclaredMethod(stub_class, method_name, gType.parameterArray());
         registerNativeMethod(function, nativeStub.nativeAddress());
 
-        MethodHandle stub = unreflect(function);
-        Reflection.setMethodType(stub, stubType);
-        return stub;
+        return MethodHandlesFixes.unreflectWithTransform(function, stubType);
     }
 
     // Note: all layouts already has natural alignment
