@@ -123,5 +123,14 @@ public class RawNativeLibraries {
                 closed = true;
             }
         }
+
+        @Override
+        public String toString() {
+            return "RawNativeLibraryImpl{" +
+                    "name='" + name + '\'' +
+                    ", handle=" + handle +
+                    ", closed=" + closed +
+                    '}';
+        }
     }
 }
