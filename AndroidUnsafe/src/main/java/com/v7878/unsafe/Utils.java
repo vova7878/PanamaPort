@@ -16,9 +16,13 @@ import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -114,6 +118,21 @@ public class Utils {
     public static <T> Constructor<T> searchConstructor(
             Constructor<T>[] constructors, Class<?>... parameterTypes) {
         return searchConstructor(constructors, true, parameterTypes);
+    }
+
+    public static MethodType methodTypeOf(Executable target) {
+        List<Class<?>> args = new ArrayList<>(List.of(target.getParameterTypes()));
+        Class<?> ret;
+        if (target instanceof Method method) {
+            if (!Modifier.isStatic(method.getModifiers())) {
+                args.add(0, method.getDeclaringClass());
+            }
+            ret = method.getReturnType();
+        } else {
+            // constructor
+            ret = target.getDeclaringClass();
+        }
+        return MethodType.methodType(ret, args);
     }
 
     public static <T extends Throwable> void assert_(boolean value, Supplier<T> th) {
