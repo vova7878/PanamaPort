@@ -5,7 +5,6 @@ import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Stack.getStackClass1;
 import static com.v7878.unsafe.Utils.badCast;
 import static com.v7878.unsafe.Utils.boxedTypeAsPrimitiveChar;
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
@@ -18,7 +17,7 @@ import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrame;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 
-import android.util.ArrayMap;
+import android.util.ArraySet;
 
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
@@ -34,8 +33,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import dalvik.system.DexFile;
 
@@ -118,45 +117,14 @@ public class MethodHandlesFixes {
                         stack.createAccessor().moveToReturn(), type));
     }
 
-    private static void addClass(Map<String, Class<?>> map, Class<?> clazz) {
-        Class<?> component = clazz.getComponentType();
-        while (component != null) {
-            clazz = component;
-            component = clazz.getComponentType();
-        }
-
-        if (clazz.getClassLoader() != null && clazz.getClassLoader() != Object.class.getClassLoader()) {
-            map.put(clazz.getName(), clazz);
-        }
-    }
-
     private static ClassLoader getInvokerClassLoader(MethodType type) {
-        ArrayMap<String, Class<?>> map = new ArrayMap<>(type.parameterCount() + 1);
+        Set<Class<?>> set = new ArraySet<>(type.parameterCount() + 1);
         for (int i = 0; i < type.parameterCount(); i++) {
-            addClass(map, type.parameterType(i));
+            set.add(type.parameterType(i));
         }
-        addClass(map, Transformers.rtype(type));
+        set.add(Transformers.rtype(type));
 
-        if (map.isEmpty()) {
-            return Utils.newEmptyClassLoader();
-        }
-
-        // new every time, needed for GC
-        return new ClassLoader(getStackClass1().getClassLoader()) {
-            @Override
-            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                Class<?> out = map.get(name);
-                if (out != null) {
-                    return out;
-                }
-                return super.loadClass(name, resolve);
-            }
-
-            @Override
-            public Class<?> loadClass(String name) throws ClassNotFoundException {
-                return loadClass(name, false);
-            }
-        };
+        return Utils.getClassLoaderWithClasses(MethodHandlesFixes.class.getClassLoader(), set);
     }
 
     private static String getInvokerName(ProtoId proto) {
