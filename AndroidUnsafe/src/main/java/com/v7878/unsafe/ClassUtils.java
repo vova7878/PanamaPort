@@ -137,8 +137,18 @@ public class ClassUtils {
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void makeClassPublic(Class<?> clazz) {
+        changeClassFlags(clazz, 0, Modifier.PUBLIC);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void makeClassNonFinal(Class<?> clazz) {
+        changeClassFlags(clazz, Modifier.FINAL, 0);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void makeClassPublicNonFinal(Class<?> clazz) {
-        changeClassFlags(clazz, Modifier.FINAL | Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE, Modifier.PUBLIC);
+        changeClassFlags(clazz, Modifier.FINAL, Modifier.PUBLIC);
     }
 
     public static void ensureClassInitialized(Class<?> clazz) {
@@ -151,4 +161,13 @@ public class ClassUtils {
     public static boolean isClassInitialized(Class<?> clazz) {
         return getRawClassStatus(clazz) >= ClassStatus.Initialized.rawValue();
     }
+
+    @ApiSensitive
+    public static final int kAccSkipHiddenApiChecks = switch (CORRECT_SDK_INT) {
+        case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/,
+                32 /*android 12L*/, 31 /*android 12*/, 30 /*android 11*/,
+                29 /*android 10*/, 28 /*android 9*/ -> 0x00100000;
+        case 27 /*android 8.1*/, 26 /*android 8*/ -> 0;
+        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+    };
 }

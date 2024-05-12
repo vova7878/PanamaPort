@@ -153,8 +153,48 @@ public class ArtMethodUtils {
         fullFence();
     }
 
+    private static void checkTypeChange(Executable ex) {
+        int mods = ex.getModifiers();
+        if (ex instanceof Method && !Modifier.isStatic(mods) && Modifier.isPrivate(mods)) {
+            throw new IllegalArgumentException("Can't make direct private method virtual: " + ex);
+        }
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void makeExecutablePublic(Executable ex) {
+        checkTypeChange(ex);
+        changeExecutableFlags(ex, Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE, Modifier.PUBLIC);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void makeExecutableNonFinal(Executable ex) {
+        changeExecutableFlags(ex, Modifier.FINAL, 0);
+    }
+
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void makeExecutablePublicNonFinal(Executable ex) {
+        checkTypeChange(ex);
         changeExecutableFlags(ex, Modifier.FINAL | Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE, Modifier.PUBLIC);
     }
+
+    @ApiSensitive
+    public static final int kAccSkipAccessChecks = 0x00080000;
+
+    @ApiSensitive
+    public static final int kAccCompileDontBother = switch (CORRECT_SDK_INT) {
+        case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/, 32 /*android 12L*/,
+                31 /*android 12*/, 30 /*android 11*/, 29 /*android 10*/,
+                28 /*android 9*/, 27 /*android 8.1*/ -> 0x02000000;
+        case 26 /*android 8*/ -> 0x01000000;
+        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+    };
+
+    @ApiSensitive
+    public static final int kAccPreCompiled = switch (CORRECT_SDK_INT) {
+        case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/,
+                32 /*android 12L*/, 31 /*android 12*/ -> 0x00800000;
+        case 30 /*android 11*/ -> 0x00200000;
+        case 29 /*android 10*/, 28 /*android 9*/, 27 /*android 8.1*/, 26 /*android 8*/ -> 0;
+        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+    };
 }
