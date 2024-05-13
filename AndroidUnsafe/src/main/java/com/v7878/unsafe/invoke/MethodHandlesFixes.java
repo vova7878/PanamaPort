@@ -1,7 +1,6 @@
 package com.v7878.unsafe.invoke;
 
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.DexConstants.ACC_STATIC;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.INTERFACE;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
@@ -12,8 +11,6 @@ import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.badCast;
 import static com.v7878.unsafe.Utils.boxedTypeAsPrimitiveChar;
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
@@ -133,72 +130,52 @@ public class MethodHandlesFixes {
                         stack.createAccessor().moveToReturn(), type));
     }
 
-    private static ClassLoader getInvokerClassLoader(MethodType type) {
-        Set<Class<?>> set = new ArraySet<>(type.parameterCount() + 1);
-        set.addAll(type.parameterList());
-        set.add(Transformers.rtype(type));
+    static class Invoker implements TransformerI {
+        private final MethodType targetType;
+        private final boolean isExactInvoker;
+        private final int args_count;
 
-        return Utils.getClassLoaderWithClasses(MethodHandlesFixes.class.getClassLoader(), set);
+        Invoker(MethodType targetType, boolean isExactInvoker) {
+            this.targetType = targetType;
+            this.isExactInvoker = isExactInvoker;
+            this.args_count = targetType.parameterCount();
+        }
+
+        @Override
+        public void transform(EmulatedStackFrame stackFrame) throws Throwable {
+            // The first argument to the stack frame is the handle that needs to be invoked.
+            StackFrameAccessor thisAccessor = stackFrame.createAccessor();
+            MethodHandle target = thisAccessor.nextReference(MethodHandle.class);
+
+            // All other arguments must be copied to the target frame.
+            EmulatedStackFrame targetFrame = EmulatedStackFrame.create(targetType);
+            StackFrameAccessor targetAccessor = targetFrame.createAccessor();
+            EmulatedStackFrame.copyArguments(thisAccessor, 1, targetAccessor, 0, args_count);
+
+            // Finally, invoke the handle and copy the return value.
+            if (isExactInvoker) {
+                Transformers.invokeExactWithFrame(target, targetFrame);
+            } else {
+                Transformers.invokeWithFrame(target, targetFrame);
+            }
+            targetFrame.copyReturnValueTo(stackFrame);
+        }
+    }
+
+    public static MethodHandle invoker(MethodType type) {
+        Objects.requireNonNull(type);
+        MethodType transformer_type = type.insertParameterTypes(0, MethodHandle.class);
+        return Transformers.makeTransformer(transformer_type, new Invoker(type, false));
+    }
+
+    public static MethodHandle exactInvoker(MethodType type) {
+        Objects.requireNonNull(type);
+        MethodType transformer_type = type.insertParameterTypes(0, MethodHandle.class);
+        return Transformers.makeTransformer(transformer_type, new Invoker(type, true));
     }
 
     private static String getInvokerName(ProtoId proto) {
         return MethodHandlesFixes.class.getName() + "$$$Invoker_" + proto.getShorty();
-    }
-
-    private static MethodHandle newInvoker(MethodType type, boolean exact) {
-        ProtoId proto = ProtoId.of(type);
-        MethodType itype = type.insertParameterTypes(0, MethodHandle.class);
-
-        String invoker_name = getInvokerName(proto);
-        TypeId invoker_id = TypeId.of(invoker_name);
-        ClassDef invoker_def = new ClassDef(invoker_id);
-        invoker_def.setSuperClass(TypeId.of(Object.class));
-
-        MethodId invoke = new MethodId(TypeId.of(MethodHandle.class),
-                new ProtoId(TypeId.of(Object.class), TypeId.of(Object[].class)),
-                exact ? "invokeExact" : "invoke");
-
-        MethodId iid = new MethodId(invoker_id, ProtoId.of(itype), "invoke");
-        invoker_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                iid, ACC_STATIC).withCode(2 /* locals for wide result */, b -> {
-                    b.invoke_polymorphic_range(invoke, proto,
-                            proto.getInputRegistersCount() + 1, b.p(0));
-                    switch (proto.getReturnType().getShorty()) {
-                        case 'V' -> b.return_void();
-                        case 'L' -> b.move_result_object(b.l(0))
-                                .return_object(b.l(0));
-                        case 'J', 'D' -> b.move_result_wide(b.l(0))
-                                .return_wide(b.l(0));
-                        default -> b.move_result(b.l(0))
-                                .return_(b.l(0));
-                    }
-                }
-        ));
-
-        DexFile dex = openDexFile(new Dex(invoker_def).compile());
-        Class<?> invoker = loadClass(dex, invoker_name, getInvokerClassLoader(type));
-
-        return unreflect(getDeclaredMethod(invoker, "invoke", itype.parameterArray()));
-    }
-
-    private static final Utils.SoftReferenceCache<MethodType, MethodHandle>
-            invokers_cache = new Utils.SoftReferenceCache<>();
-
-    public static MethodHandle invoker(MethodType type) {
-        Objects.requireNonNull(type);
-        return invokers_cache.get(type, t -> newInvoker(t, false));
-    }
-
-    private static final Utils.SoftReferenceCache<MethodType, MethodHandle>
-            exact_invokers_cache = new Utils.SoftReferenceCache<>();
-
-    public static MethodHandle exactInvoker(MethodType type) {
-        Objects.requireNonNull(type);
-        return exact_invokers_cache.get(type, t -> newInvoker(t, true));
-    }
-
-    public static abstract class EmulatedInvoker {
-        public abstract void invoke(StackFrameAccessor accessor) throws Throwable;
     }
 
     private static ClassLoader getInvokerClassLoader(Method target) {
@@ -206,8 +183,11 @@ public class MethodHandlesFixes {
         set.addAll(List.of(target.getParameterTypes()));
         set.add(target.getReturnType());
         set.add(target.getDeclaringClass());
+        return Utils.newClassLoaderWithClasses(MethodHandlesFixes.class.getClassLoader(), set);
+    }
 
-        return Utils.getClassLoaderWithClasses(MethodHandlesFixes.class.getClassLoader(), set);
+    public static abstract class EmulatedInvoker {
+        public abstract void invoke(StackFrameAccessor accessor) throws Throwable;
     }
 
     private static EmulatedInvoker emulatedInvoker(Method target, InvokeKind kind, MethodType type) {

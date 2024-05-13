@@ -5,7 +5,6 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import com.v7878.invoke.VarHandle;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Objects;
@@ -321,8 +320,7 @@ public abstract class AbstractVarHandle extends VarHandle {
 
     private MethodHandle getInvokerHandleUncached(AccessType accessType) {
         MethodType type = accessModeType(accessType);
-        //FIXME: SIGSEGV on api levels [26, 28] if used MethodHandlesFixes
-        MethodHandle invoker = MethodHandles.exactInvoker(type);
+        MethodHandle invoker = MethodHandlesFixes.exactInvoker(type);
         invoker = MethodHandlesFixes.asTypeAdapter(invoker,
                 type.generic().insertParameterTypes(0, MethodHandle.class));
         return invoker.asSpreader(Object[].class, type.parameterCount());

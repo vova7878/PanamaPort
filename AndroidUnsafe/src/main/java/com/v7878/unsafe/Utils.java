@@ -391,7 +391,7 @@ public class Utils {
         map.put(name, clazz);
     }
 
-    public static ClassLoader getClassLoaderWithClasses(ClassLoader base, Set<Class<?>> classes) {
+    public static ClassLoader newClassLoaderWithClasses(ClassLoader base, Set<Class<?>> classes) {
         ArrayMap<String, Class<?>> map = new ArrayMap<>(classes.size());
         for (Class<?> clazz : classes) {
             addClass(map, clazz, base);
@@ -404,6 +404,7 @@ public class Utils {
         return new ClassLoader(base) {
             @Override
             protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                //TODO: what if name of array?
                 Class<?> out = map.get(name);
                 if (out != null) {
                     return out;
