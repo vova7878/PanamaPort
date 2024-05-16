@@ -22,6 +22,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 
+//TODO: improve perfomance
 public class EmulatedStackFrame {
     public static final int RETURN_VALUE_IDX = -2;
 
@@ -182,6 +183,7 @@ public class EmulatedStackFrame {
         protected int referencesOffset;
         protected int argumentIdx;
 
+        //TODO: cache offsets in MethodTypeForm? (with some hacks)
         int[] frameOffsets;
         int[] referencesOffsets;
 
