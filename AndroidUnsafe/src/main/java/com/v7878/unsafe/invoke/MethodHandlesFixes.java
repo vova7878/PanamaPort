@@ -93,7 +93,7 @@ public class MethodHandlesFixes {
             // Finish constructing the target frame.
             int this_pos = pos + collector_count;
             EmulatedStackFrame.copyArguments(this_accessor, this_pos,
-                    target_accessor, target_accessor.argumentIdx,
+                    target_accessor, target_accessor.currentArgument(),
                     stack.type().parameterCount() - this_pos);
 
             // Invoke the target.

@@ -6,6 +6,7 @@ import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
+import static com.v7878.unsafe.Utils.assertEq;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
@@ -117,10 +118,8 @@ public class EmulatedStackFrame {
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void copyArguments(StackFrameAccessor reader, int reader_start_idx,
                                      StackFrameAccessor writer, int writer_start_idx, int count) {
-        Checks.checkFromIndexSize(reader_start_idx, count,
-                reader.frame().type().parameterCount());
-        Checks.checkFromIndexSize(writer_start_idx, count,
-                writer.frame().type().parameterCount());
+        Checks.checkFromIndexSize(reader_start_idx, count, reader.type().parameterCount());
+        Checks.checkFromIndexSize(writer_start_idx, count, writer.type().parameterCount());
 
         if (count == 0) return;
 
@@ -130,15 +129,10 @@ public class EmulatedStackFrame {
         int writer_frame_start = writer.frameOffsets[writer_start_idx];
         int writer_ref_start = writer.referencesOffsets[writer_start_idx];
 
-        int frame_count = reader.frameOffsets[reader_start_idx + count] - reader_frame_start;
-        int ref_count = reader.referencesOffsets[reader_start_idx + count] - reader_ref_start;
-
-        if (frame_count != (writer.frameOffsets[writer_start_idx + count] - writer_frame_start)) {
-            throw new IllegalArgumentException("reader and writer have different stack frame range size");
-        }
-        if (ref_count != (writer.referencesOffsets[writer_start_idx + count] - writer_ref_start)) {
-            throw new IllegalArgumentException("reader and writer have different stack ref range size");
-        }
+        int frame_count = assertEq(reader.frameOffsets[reader_start_idx + count] - reader_frame_start,
+                writer.frameOffsets[writer_start_idx + count] - writer_frame_start);
+        int ref_count = assertEq(reader.referencesOffsets[reader_start_idx + count] - reader_ref_start,
+                writer.referencesOffsets[writer_start_idx + count] - writer_ref_start);
 
         System.arraycopy(reader.frame.stackFrame(), reader_frame_start,
                 writer.frame.stackFrame(), writer_frame_start, frame_count);
@@ -181,34 +175,34 @@ public class EmulatedStackFrame {
 
     public static class StackFrameAccessor {
 
-        protected int referencesOffset;
-        protected int argumentIdx;
+        private int argumentIdx;
 
-        int[] frameOffsets;
-        int[] referencesOffsets;
+        private int[] frameOffsets;
+        private int[] referencesOffsets;
 
-        protected ByteBuffer frameBuf;
-        protected Object[] references;
+        private ByteBuffer frameBuf;
+        private int currentReference;
+        private Object[] references;
 
-        protected EmulatedStackFrame frame;
+        private EmulatedStackFrame frame;
+        private MethodType type;
 
         public StackFrameAccessor() {
-            referencesOffset = 0;
-            argumentIdx = 0;
-            frameBuf = null;
         }
 
         public void attach(EmulatedStackFrame stackFrame) {
             if (frame != stackFrame) {
                 // Re-initialize storage if not re-attaching to the same stackFrame.
                 frame = stackFrame;
-                frameBuf = ByteBuffer.wrap(frame.stackFrame()).order(ByteOrder.nativeOrder());
+                MethodType tmp_type = stackFrame.type();
+                type = tmp_type;
+                frameBuf = ByteBuffer.wrap(stackFrame.stackFrame()).order(ByteOrder.nativeOrder());
                 references = frame.references();
-                MethodTypeForm form = MethodTypeHacks.getForm(stackFrame.type());
+                MethodTypeForm form = MethodTypeHacks.getForm(tmp_type);
                 frameOffsets = form.frameOffsets();
                 referencesOffsets = form.referencesOffsets();
             }
-            referencesOffset = 0;
+            currentReference = 0;
             argumentIdx = 0;
         }
 
@@ -216,14 +210,27 @@ public class EmulatedStackFrame {
             return frame;
         }
 
+        // hack for ReturnWrapper
+        public void updateType() {
+            type = frame.type();
+        }
+
+        public MethodType type() {
+            return type;
+        }
+
+        public int currentArgument() {
+            return argumentIdx;
+        }
+
         private void checkIndex(int index) {
-            if ((index < 0 || index >= frame.type().parameterCount()) && (index != RETURN_VALUE_IDX)) {
+            if ((index < 0 || index >= type.parameterCount()) && (index != RETURN_VALUE_IDX)) {
                 throw new IllegalArgumentException("Invalid argument index: " + index);
             }
         }
 
         private int toArrayIndex(int index) {
-            return index == RETURN_VALUE_IDX ? frame.type().parameterCount() : index;
+            return index == RETURN_VALUE_IDX ? type.parameterCount() : index;
         }
 
         private int toFrameOffset(int index) {
@@ -236,8 +243,8 @@ public class EmulatedStackFrame {
 
         public Class<?> getArgumentType(int index) {
             checkIndex(index);
-            MethodType type = frame.type();
-            return (index == RETURN_VALUE_IDX) ? type.returnType() : type.parameterType(index);
+            MethodType tmp_type = type;
+            return (index == RETURN_VALUE_IDX) ? tmp_type.returnType() : tmp_type.parameterType(index);
         }
 
         public void checkWriteType(int index, Class<?> expectedType) {
@@ -259,7 +266,7 @@ public class EmulatedStackFrame {
         public StackFrameAccessor moveTo(int index) {
             checkIndex(index);
             int array_index = toArrayIndex(index);
-            referencesOffset = referencesOffsets[array_index];
+            currentReference = referencesOffsets[array_index];
             frameBuf.position(frameOffsets[array_index]);
             argumentIdx = index;
             return this;
@@ -320,7 +327,7 @@ public class EmulatedStackFrame {
         public void putNextReference(Object value, Class<?> expectedType) {
             checkWriteType(expectedType);
             argumentIdx++;
-            references[referencesOffset++] = value;
+            references[currentReference++] = value;
         }
 
         public void putNextValue(Object value) {
@@ -329,7 +336,7 @@ public class EmulatedStackFrame {
             switch (shorty) {
                 case 'V' -> {
                 }
-                case 'L' -> references[referencesOffset++] = value;
+                case 'L' -> references[currentReference++] = value;
                 case 'Z' -> frameBuf.putInt((boolean) value ? 1 : 0);
                 case 'B' -> frameBuf.putInt((byte) value);
                 case 'C' -> frameBuf.putInt((char) value);
@@ -457,14 +464,14 @@ public class EmulatedStackFrame {
             checkReadType(expectedType);
             argumentIdx++;
             //noinspection unchecked
-            return (T) references[referencesOffset++];
+            return (T) references[currentReference++];
         }
 
         public Object nextValue() {
             char shorty = TypeId.of(getArgumentType(argumentIdx)).getShorty();
             argumentIdx++;
             return switch (shorty) {
-                case 'L' -> references[referencesOffset++];
+                case 'L' -> references[currentReference++];
                 case 'Z' -> (frameBuf.getInt() != 0);
                 case 'B' -> (byte) frameBuf.getInt();
                 case 'C' -> (char) frameBuf.getInt();
