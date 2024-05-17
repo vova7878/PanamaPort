@@ -135,6 +135,20 @@ public class Utils {
         return MethodType.methodType(ret, args);
     }
 
+    public static int assertEq(int a, int b) {
+        if (a == b) {
+            return a;
+        }
+        throw new IllegalArgumentException("a(" + a + ") != b(" + b + ")");
+    }
+
+    public static long assertEq(long a, long b) {
+        if (a == b) {
+            return a;
+        }
+        throw new IllegalArgumentException("a(" + a + ") != b(" + b + ")");
+    }
+
     public static <T extends Throwable> void assert_(boolean value, Supplier<T> th) {
         if (!value) {
             AndroidUnsafe.throwException(th.get());
