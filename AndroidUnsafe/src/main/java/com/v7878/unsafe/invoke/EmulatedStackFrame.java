@@ -30,10 +30,11 @@ public class EmulatedStackFrame {
         return type == double.class || type == long.class;
     }
 
-    public static int getSize(Class<?> type) {
+    static int getSize(Class<?> type) {
         if (!type.isPrimitive()) {
             throw new IllegalArgumentException("type.isPrimitive() == false: " + type);
         }
+        // NOTE: size of void is 4
         return is64BitPrimitive(type) ? 8 : 4;
     }
 
@@ -183,7 +184,6 @@ public class EmulatedStackFrame {
         protected int referencesOffset;
         protected int argumentIdx;
 
-        //TODO: cache offsets in MethodTypeForm? (with some hacks)
         int[] frameOffsets;
         int[] referencesOffsets;
 
@@ -202,10 +202,11 @@ public class EmulatedStackFrame {
             if (frame != stackFrame) {
                 // Re-initialize storage if not re-attaching to the same stackFrame.
                 frame = stackFrame;
-                frameBuf = ByteBuffer.wrap(frame.stackFrame())
-                        .order(ByteOrder.nativeOrder());
+                frameBuf = ByteBuffer.wrap(frame.stackFrame()).order(ByteOrder.nativeOrder());
                 references = frame.references();
-                buildTables(stackFrame.type());
+                MethodTypeForm form = MethodTypeHacks.getForm(stackFrame.type());
+                frameOffsets = form.frameOffsets();
+                referencesOffsets = form.referencesOffsets();
             }
             referencesOffset = 0;
             argumentIdx = 0;
@@ -213,24 +214,6 @@ public class EmulatedStackFrame {
 
         public EmulatedStackFrame frame() {
             return frame;
-        }
-
-        private void buildTables(MethodType methodType) {
-            Class<?>[] ptypes = Transformers.ptypes(methodType);
-            frameOffsets = new int[ptypes.length + 1];
-            referencesOffsets = new int[ptypes.length + 1];
-            int frameOffset = 0;
-            int referenceOffset = 0;
-            for (int i = 0; i < ptypes.length; i++) {
-                Class<?> ptype = ptypes[i];
-                if (ptype.isPrimitive()) {
-                    frameOffset += getSize(ptype);
-                } else {
-                    referenceOffset++;
-                }
-                frameOffsets[i + 1] = frameOffset;
-                referencesOffsets[i + 1] = referenceOffset;
-            }
         }
 
         private void checkIndex(int index) {
