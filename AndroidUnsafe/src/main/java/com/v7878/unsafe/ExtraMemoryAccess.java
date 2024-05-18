@@ -45,6 +45,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
+import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
@@ -55,6 +56,7 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT_AS_RAW_INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.SHORT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
+import static com.v7878.unsafe.foreign.BulkLinker.Tristate.FALSE;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int16_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int1_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
@@ -78,8 +80,10 @@ import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.unsafe.foreign.BulkLinker;
+import com.v7878.unsafe.foreign.BulkLinker.ASM;
 import com.v7878.unsafe.foreign.BulkLinker.ASMGenerator;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.Conditions;
 import com.v7878.unsafe.llvm.LLVMGlobals;
 import com.v7878.unsafe.llvm.LLVMUtils;
 import com.v7878.unsafe.llvm.LLVMUtils.Generator;
@@ -104,6 +108,8 @@ public class ExtraMemoryAccess {
             }
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -8, 72, -123, -46, 116, 19, 72, 1, -16, 102, 15, 31, 68, 0, 0, -120, 8, 72, -1, -64, 72, -1, -54, 117, -10, -61})
         @ASMGenerator(method = "gen_memset")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD, BYTE})
         abstract void memset(Object base, long offset, long bytes, byte value);
@@ -214,6 +220,10 @@ public class ExtraMemoryAccess {
             LLVMBuildRetVoid(builder);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                77, -123, -64, 116, 75, -119, -8, 72, 1, -16, -119, -46, 72, 1, -54, 72, 57, -48, 115, 44, 102, 102, 102, 46, 15, 31, -124,
+                0, 0, 0, 0, 0, 15, -74, 10, -120, 8, 72, -1, -64, 72, -1, -62, 73, -1, -56, 117, -16, -21, 30, 102, 102, 102, 102, 102, 46,
+                15, 31, -124, 0, 0, 0, 0, 0, 66, 15, -74, 76, 2, -1, 66, -120, 76, 0, -1, 73, -1, -56, 117, -16, -61})
         @ASMGenerator(method = "gen_memmove")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
@@ -224,6 +234,10 @@ public class ExtraMemoryAccess {
             return gen((context, module, builder) -> gen_memmove_modify(context, module, builder, name, int8_t(context), 1, value -> value), name);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                77, -123, -64, 116, 80, -119, -8, 72, 1, -16, -119, -46, 72, 1, -54, 72, 57, -48, 115, 44, 102, 102, 102, 46, 15, 31, -124,
+                0, 0, 0, 0, 0, 15, -73, 10, 102, -63, -63, 8, 102, -119, 8, 72, -125, -64, 2, 72, -125, -62, 2, 73, -1, -56, 117, -23, -21,
+                28, 15, 31, -128, 0, 0, 0, 0, 66, 15, -73, 76, 66, -2, 102, -63, -63, 8, 102, 66, -119, 76, 64, -2, 73, -1, -56, 117, -21, -61})
         @ASMGenerator(method = "gen_memmove_swap_shorts")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_shorts(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
@@ -241,6 +255,10 @@ public class ExtraMemoryAccess {
             }, name);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                77, -123, -64, 116, 76, -119, -8, 72, 1, -16, -119, -46, 72, 1, -54, 72, 57, -48, 115, 44, 102, 102, 102, 46, 15, 31, -124,
+                0, 0, 0, 0, 0, -117, 10, 15, -55, -119, 8, 72, -125, -64, 4, 72, -125, -62, 4, 73, -1, -56, 117, -19, -21, 28, 102, 102, 46,
+                15, 31, -124, 0, 0, 0, 0, 0, 66, -117, 76, -126, -4, 15, -55, 66, -119, 76, -128, -4, 73, -1, -56, 117, -17, -61})
         @ASMGenerator(method = "gen_memmove_swap_ints")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_ints(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
@@ -258,6 +276,10 @@ public class ExtraMemoryAccess {
             }, name);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                77, -123, -64, 116, 77, -119, -8, 72, 1, -16, -119, -46, 72, 1, -54, 72, 57, -48, 115, 44, 102, 102, 102, 46, 15, 31, -124,
+                0, 0, 0, 0, 0, 72, -117, 10, 72, 15, -55, 72, -119, 8, 72, -125, -64, 8, 72, -125, -62, 8, 73, -1, -56, 117, -22, -21, 26,
+                15, 31, -124, 0, 0, 0, 0, 0, 74, -117, 76, -62, -8, 72, 15, -55, 74, -119, 76, -64, -8, 73, -1, -56, 117, -18, -61})
         @ASMGenerator(method = "gen_memmove_swap_longs")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_longs(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
@@ -294,6 +316,7 @@ public class ExtraMemoryAccess {
             }, name);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -118, 4, 48, -61})
         @ASMGenerator(method = "gen_load_byte_atomic")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract byte load_byte_atomic(Object base, long offset);
@@ -303,6 +326,7 @@ public class ExtraMemoryAccess {
             return gen_load_atomic("load_byte_atomic", LLVMGlobals::int8_t, 1);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 102, -117, 4, 48, -61})
         @ASMGenerator(method = "gen_load_short_atomic")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract short load_short_atomic(Object base, long offset);
@@ -312,6 +336,7 @@ public class ExtraMemoryAccess {
             return gen_load_atomic("load_short_atomic", LLVMGlobals::int16_t, 2);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -117, 4, 48, -61})
         @ASMGenerator(method = "gen_load_int_atomic")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract int load_int_atomic(Object base, long offset);
@@ -321,6 +346,7 @@ public class ExtraMemoryAccess {
             return gen_load_atomic("load_int_atomic", LLVMGlobals::int32_t, 4);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 72, -117, 4, 48, -61})
         @ASMGenerator(method = "gen_load_long_atomic")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract long load_long_atomic(Object base, long offset);
@@ -349,6 +375,7 @@ public class ExtraMemoryAccess {
             }, name);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -122, 20, 48, -61})
         @ASMGenerator(method = "gen_store_byte_atomic")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract void store_byte_atomic(Object base, long offset, byte value);
@@ -358,6 +385,7 @@ public class ExtraMemoryAccess {
             return gen_store_atomic("store_byte_atomic", LLVMGlobals::int8_t, 1);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 102, -121, 20, 48, -61})
         @ASMGenerator(method = "gen_store_short_atomic")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract void store_short_atomic(Object base, long offset, short value);
@@ -367,6 +395,7 @@ public class ExtraMemoryAccess {
             return gen_store_atomic("store_short_atomic", LLVMGlobals::int16_t, 2);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -121, 20, 48, -61})
         @ASMGenerator(method = "gen_store_int_atomic")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract void store_int_atomic(Object base, long offset, int value);
@@ -376,6 +405,7 @@ public class ExtraMemoryAccess {
             return gen_store_atomic("store_int_atomic", LLVMGlobals::int32_t, 4);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 72, -121, 20, 48, -61})
         @ASMGenerator(method = "gen_store_long_atomic")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract void store_long_atomic(Object base, long offset, long value);
@@ -403,6 +433,7 @@ public class ExtraMemoryAccess {
             }, name);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -122, 20, 48, -119, -48, -61})
         @ASMGenerator(method = "gen_atomic_exchange_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_exchange_byte(Object base, long offset, byte value);
@@ -412,6 +443,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_exchange_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpXchg);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 102, -121, 20, 48, -119, -48, -61})
         @ASMGenerator(method = "gen_atomic_exchange_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_exchange_short(Object base, long offset, short value);
@@ -421,6 +453,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_exchange_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpXchg);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -121, 20, 48, -119, -48, -61})
         @ASMGenerator(method = "gen_atomic_exchange_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_exchange_int(Object base, long offset, int value);
@@ -430,6 +463,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_exchange_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpXchg);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 72, -121, 20, 48, 72, -119, -48, -61})
         @ASMGenerator(method = "gen_atomic_exchange_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_exchange_long(Object base, long offset, long value);
@@ -439,6 +473,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_exchange_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpXchg);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, -118, 4, 49, 72, -115, 52, 49, 15, 31, -128, 0, 0, 0, 0, -119, -63, 32, -47, -16, 15, -80, 14, 117, -10, -61})
         @ASMGenerator(method = "gen_atomic_fetch_and_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_and_byte(Object base, long offset, byte value);
@@ -448,6 +484,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_and_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpAnd);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, 102, -117, 4, 49, 72, -115, 12, 49, 102, 15, 31, 68, 0, 0, -119, -58, 33, -42, 102, -16, 15, -79, 49, 117, -11, -61})
         @ASMGenerator(method = "gen_atomic_fetch_and_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_and_short(Object base, long offset, short value);
@@ -457,6 +495,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_and_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpAnd);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, -117, 4, 49, 72, -115, 12, 49, 15, 31, -128, 0, 0, 0, 0, -119, -58, 33, -42, -16, 15, -79, 49, 117, -10, -61})
         @ASMGenerator(method = "gen_atomic_fetch_and_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_and_int(Object base, long offset, int value);
@@ -466,6 +506,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_and_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpAnd);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, 72, -117, 4, 49, 72, -115, 12, 49, 102, 15, 31, 68, 0, 0, 72, -119, -58, 72, 33, -42, -16, 72, 15, -79, 49, 117, -13, -61})
         @ASMGenerator(method = "gen_atomic_fetch_add_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_and_long(Object base, long offset, long value);
@@ -475,6 +517,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_and_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpAnd);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, -118, 4, 49, 72, -115, 52, 49, 15, 31, -128, 0, 0, 0, 0, -119, -63, 8, -47, -16, 15, -80, 14, 117, -10, -61})
         @ASMGenerator(method = "gen_atomic_fetch_or_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_or_byte(Object base, long offset, byte value);
@@ -484,6 +528,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_or_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpOr);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, 102, -117, 4, 49, 72, -115, 12, 49, 102, 15, 31, 68, 0, 0, -119, -58, 9, -42, 102, -16, 15, -79, 49, 117, -11, -61})
         @ASMGenerator(method = "gen_atomic_fetch_or_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_or_short(Object base, long offset, short value);
@@ -493,6 +539,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_or_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpOr);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, -117, 4, 49, 72, -115, 12, 49, 15, 31, -128, 0, 0, 0, 0, -119, -58, 9, -42, -16, 15, -79, 49, 117, -10, -61})
         @ASMGenerator(method = "gen_atomic_fetch_or_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_or_int(Object base, long offset, int value);
@@ -502,6 +550,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_or_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpOr);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, 72, -117, 4, 49, 72, -115, 12, 49, 102, 15, 31, 68, 0, 0, 72, -119, -58, 72, 9, -42, -16, 72, 15, -79, 49, 117, -13, -61})
         @ASMGenerator(method = "gen_atomic_fetch_or_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_or_long(Object base, long offset, long value);
@@ -511,6 +561,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_or_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpOr);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, -118, 4, 49, 72, -115, 52, 49, 15, 31, -128, 0, 0, 0, 0, -119, -63, 48, -47, -16, 15, -80, 14, 117, -10, -61})
         @ASMGenerator(method = "gen_atomic_fetch_xor_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_xor_byte(Object base, long offset, byte value);
@@ -520,6 +572,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_xor_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpXor);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, 102, -117, 4, 49, 72, -115, 12, 49, 102, 15, 31, 68, 0, 0, -119, -58, 49, -42, 102, -16, 15, -79, 49, 117, -11, -61})
         @ASMGenerator(method = "gen_atomic_fetch_xor_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_xor_short(Object base, long offset, short value);
@@ -529,6 +583,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_xor_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpXor);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, -117, 4, 49, 72, -115, 12, 49, 15, 31, -128, 0, 0, 0, 0, -119, -58, 49, -42, -16, 15, -79, 49, 117, -10, -61})
         @ASMGenerator(method = "gen_atomic_fetch_xor_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_xor_int(Object base, long offset, int value);
@@ -538,6 +594,8 @@ public class ExtraMemoryAccess {
             return gen_atomic_rmw("atomic_fetch_xor_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpXor);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                -119, -7, 72, -117, 4, 49, 72, -115, 12, 49, 102, 15, 31, 68, 0, 0, 72, -119, -58, 72, 49, -42, -16, 72, 15, -79, 49, 117, -13, -61})
         @ASMGenerator(method = "gen_atomic_fetch_xor_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_xor_long(Object base, long offset, long value);
@@ -569,6 +627,7 @@ public class ExtraMemoryAccess {
             }, name);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, -16, 15, -80, 12, 55, -61})
         @ASMGenerator(method = "gen_atomic_compare_and_exchange_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE, BYTE})
         abstract byte atomic_compare_and_exchange_byte(Object base, long offset, byte expected, byte desired);
@@ -578,6 +637,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_byte", LLVMGlobals::int8_t, true);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, 102, -16, 15, -79, 12, 55, -61})
         @ASMGenerator(method = "gen_atomic_compare_and_exchange_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT, SHORT})
         abstract short atomic_compare_and_exchange_short(Object base, long offset, short expected, short desired);
@@ -587,6 +647,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_short", LLVMGlobals::int16_t, true);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, -16, 15, -79, 12, 55, -61})
         @ASMGenerator(method = "gen_atomic_compare_and_exchange_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT, INT})
         abstract int atomic_compare_and_exchange_int(Object base, long offset, int expected, int desired);
@@ -596,6 +657,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_int", LLVMGlobals::int32_t, true);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, 72, -119, -48, -16, 72, 15, -79, 12, 55, -61})
         @ASMGenerator(method = "gen_atomic_compare_and_exchange_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG, LONG})
         abstract long atomic_compare_and_exchange_long(Object base, long offset, long expected, long desired);
@@ -605,6 +667,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_long", LLVMGlobals::int64_t, true);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, -16, 15, -80, 12, 55, 15, -108, -64, -61})
         @ASMGenerator(method = "gen_atomic_compare_and_set_byte")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE, BYTE})
         abstract boolean atomic_compare_and_set_byte(Object base, long offset, byte expected, byte desired);
@@ -614,6 +677,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_compare_and_exchange("atomic_compare_and_set_byte", LLVMGlobals::int8_t, false);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, 102, -16, 15, -79, 12, 55, 15, -108, -64, -61})
         @ASMGenerator(method = "gen_atomic_compare_and_set_short")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT, SHORT})
         abstract boolean atomic_compare_and_set_short(Object base, long offset, short expected, short desired);
@@ -623,6 +687,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_compare_and_exchange("atomic_compare_and_set_short", LLVMGlobals::int16_t, false);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, -16, 15, -79, 12, 55, 15, -108, -64, -61})
         @ASMGenerator(method = "gen_atomic_compare_and_set_int")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT, INT})
         abstract boolean atomic_compare_and_set_int(Object base, long offset, int expected, int desired);
@@ -632,6 +697,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_compare_and_exchange("atomic_compare_and_set_int", LLVMGlobals::int32_t, false);
         }
 
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, 72, -119, -48, -16, 72, 15, -79, 12, 55, 15, -108, -64, -61})
         @ASMGenerator(method = "gen_atomic_compare_and_set_long")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG, LONG})
         abstract boolean atomic_compare_and_set_long(Object base, long offset, long expected, long desired);
