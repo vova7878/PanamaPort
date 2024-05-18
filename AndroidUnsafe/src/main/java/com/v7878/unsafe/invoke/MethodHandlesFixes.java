@@ -669,7 +669,7 @@ public class MethodHandlesFixes {
 
         private static void explicitCast(StackFrameAccessor reader, Class<?> from,
                                          StackFrameAccessor writer, Class<?> to) {
-            if (from.equals(to)) {
+            if (from == to) {
                 EmulatedStackFrame.copyNext(reader, writer, from);
                 return;
             }
