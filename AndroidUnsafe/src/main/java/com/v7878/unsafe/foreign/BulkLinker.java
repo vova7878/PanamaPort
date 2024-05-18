@@ -527,7 +527,7 @@ public class BulkLinker {
                     }
                 }
             }
-            if (generator != null) {
+            if (code == null && generator != null) {
                 code = getCode(generator, clazz, cached_methods);
             }
             if (code == null) {
@@ -570,7 +570,7 @@ public class BulkLinker {
                     }
                 }
             }
-            if (generator != null) {
+            if (symbol == null && generator != null) {
                 symbol = getSymbol(generator, clazz, cached_methods);
             }
             if (symbol == null) {
