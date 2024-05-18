@@ -204,7 +204,6 @@ public class BulkLinker {
 
     private static final String prefix = "raw_";
 
-    //TODO: use optimally sized move instructions
     private static byte[] generateStub(Class<?> parent, SymbolInfo[] infos) {
         if (parent == null) {
             parent = Object.class;
@@ -234,46 +233,46 @@ public class BulkLinker {
             int[] regs = {/* call args */ reserved, /* stub args */ 0};
             EncodedMethod em = new EncodedMethod(method_id, ACC_PUBLIC).withCode(locals, b -> {
                 if (!info.call_type.isStatic && !info.call_type.replaceThis) {
-                    b.move_object_16(b.l(regs[0]++), b.this_());
+                    b.move_object_auto(b.l(regs[0]++), b.this_());
                 }
                 for (MapType type : info.args) {
                     switch (type) {
                         case BYTE, BOOL, SHORT, CHAR, INT, FLOAT, BOOL_AS_INT ->
-                                b.move_16(b.l(regs[0]++), b.p(regs[1]++));
+                                b.move_auto(b.l(regs[0]++), b.p(regs[1]++));
                         case LONG, DOUBLE -> {
-                            b.move_wide_16(b.l(regs[0]), b.p(regs[1]));
+                            b.move_wide_auto(b.l(regs[0]), b.p(regs[1]));
                             regs[0] += 2;
                             regs[1] += 2;
                         }
                         case LONG_AS_WORD -> {
                             if (IS64BIT) {
-                                b.move_wide_16(b.l(regs[0]), b.p(regs[1]));
+                                b.move_wide_auto(b.l(regs[0]), b.p(regs[1]));
                                 regs[0] += 2;
                             } else {
-                                b.move_wide_16(b.l(0), b.p(regs[1]));
+                                b.move_wide_auto(b.l(0), b.p(regs[1]));
                                 b.unop(LONG_TO_INT, b.l(0), b.l(0));
-                                b.move_16(b.l(regs[0]), b.l(0));
+                                b.move_auto(b.l(regs[0]), b.l(0));
                                 regs[0] += 1;
                             }
                             regs[1] += 2;
                         }
                         case OBJECT, OBJECT_AS_RAW_INT ->
-                                b.move_object_16(b.l(regs[0]++), b.p(regs[1]++));
+                                b.move_object_auto(b.l(regs[0]++), b.p(regs[1]++));
                         case OBJECT_AS_ADDRESS -> {
                             // note: it's broken - object is cast to pointer
                             // TODO: check how will GC react to this?
-                            b.move_object_16(b.l(0), b.p(regs[1]));
+                            b.move_object_auto(b.l(0), b.p(regs[1]));
                             if (VM.isPoisonReferences()) {
                                 b.unop(NEG_INT, b.l(0), b.l(0));
                             }
                             if (IS64BIT) {
                                 b.unop(INT_TO_LONG, b.l(0), b.l(0));
-                                b.const_wide(b.l(2), 0xffffffffL);
+                                b.const_wide_auto(b.l(2), 0xffffffffL);
                                 b.binop_2addr(AND_LONG, b.l(0), b.l(2));
-                                b.move_wide_16(b.l(regs[0]), b.l(0));
+                                b.move_wide_auto(b.l(regs[0]), b.l(0));
                                 regs[0] += 2;
                             } else {
-                                b.move_16(b.l(regs[0]), b.l(0));
+                                b.move_auto(b.l(regs[0]), b.l(0));
                                 regs[0] += 1;
                             }
                             regs[1] += 1;
@@ -307,7 +306,7 @@ public class BulkLinker {
                         } else {
                             b.move_result(b.l(0));
                             b.unop(INT_TO_LONG, b.l(0), b.l(0));
-                            b.const_wide(b.l(2), 0xffffffffL);
+                            b.const_wide_auto(b.l(2), 0xffffffffL);
                             b.binop_2addr(AND_LONG, b.l(0), b.l(2));
                             b.return_wide(b.l(0));
                         }

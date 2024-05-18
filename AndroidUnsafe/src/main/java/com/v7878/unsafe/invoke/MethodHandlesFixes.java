@@ -237,7 +237,7 @@ public class MethodHandlesFixes {
         MethodId iid = new MethodId(invoker_id, new ProtoId(TypeId.V, sfa_id), "invoke");
         invoker_def.getClassData().getVirtualMethods().add(new EncodedMethod(
                 iid, ACC_PUBLIC).withCode(reserved_regs + proto_regs, b -> {
-                    b.move_object_16(b.l(2), b.p(0));
+                    b.move_object_auto(b.l(2), b.p(0));
                     int reg = reserved_regs;
                     for (var arg_id : proto.getParameters()) {
                         char shorty = arg_id.getShorty();
@@ -245,13 +245,13 @@ public class MethodHandlesFixes {
                             case 'Z', 'B', 'C', 'S', 'I', 'F' -> {
                                 b.invoke(VIRTUAL, next_ids.get(shorty), b.l(2));
                                 b.move_result(b.l(0));
-                                b.move_16(b.l(reg), b.l(0));
+                                b.move_auto(b.l(reg), b.l(0));
                                 reg++;
                             }
                             case 'J', 'D' -> {
                                 b.invoke(VIRTUAL, next_ids.get(shorty), b.l(2));
                                 b.move_result_wide(b.l(0));
-                                b.move_wide_16(b.l(reg), b.l(0));
+                                b.move_wide_auto(b.l(reg), b.l(0));
                                 reg += 2;
                             }
                             case 'L' -> {
@@ -259,7 +259,7 @@ public class MethodHandlesFixes {
                                 b.invoke(VIRTUAL, next_ids.get(shorty), b.l(2), b.l(0));
                                 b.move_result_object(b.l(0));
                                 b.check_cast(b.l(0), arg_id);
-                                b.move_object_16(b.l(reg), b.l(0));
+                                b.move_object_auto(b.l(reg), b.l(0));
                                 reg++;
                             }
                             default -> throw shouldNotReachHere();
