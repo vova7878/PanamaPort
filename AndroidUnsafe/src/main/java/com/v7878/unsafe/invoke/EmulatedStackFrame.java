@@ -12,7 +12,6 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import androidx.annotation.Keep;
 
-import com.v7878.dex.TypeId;
 import com.v7878.misc.Checks;
 import com.v7878.unsafe.DangerLevel;
 
@@ -159,7 +158,7 @@ public class EmulatedStackFrame {
 
     public static void copyNext(StackFrameAccessor reader,
                                 StackFrameAccessor writer, Class<?> type) {
-        switch (TypeId.of(type).getShorty()) {
+        switch (Wrapper.basicTypeChar(type)) {
             case 'L' -> writer.putNextReference(reader.nextReference(type), type);
             case 'Z' -> writer.putNextBoolean(reader.nextBoolean());
             case 'B' -> writer.putNextByte(reader.nextByte());
@@ -331,7 +330,7 @@ public class EmulatedStackFrame {
         }
 
         public void putNextValue(Object value) {
-            char shorty = TypeId.of(getArgumentType(argumentIdx)).getShorty();
+            char shorty = Wrapper.basicTypeChar(getArgumentType(argumentIdx));
             argumentIdx++;
             switch (shorty) {
                 case 'V' -> {
@@ -395,7 +394,7 @@ public class EmulatedStackFrame {
         }
 
         public void setValue(int index, Object value) {
-            char shorty = TypeId.of(getArgumentType(index)).getShorty();
+            char shorty = Wrapper.basicTypeChar(getArgumentType(index));
             switch (shorty) {
                 case 'V' -> {
                 }
@@ -468,7 +467,7 @@ public class EmulatedStackFrame {
         }
 
         public Object nextValue() {
-            char shorty = TypeId.of(getArgumentType(argumentIdx)).getShorty();
+            char shorty = Wrapper.basicTypeChar(getArgumentType(argumentIdx));
             argumentIdx++;
             return switch (shorty) {
                 case 'L' -> references[currentReference++];
@@ -532,7 +531,7 @@ public class EmulatedStackFrame {
         }
 
         public Object getValue(int index) {
-            char shorty = TypeId.of(getArgumentType(index)).getShorty();
+            char shorty = Wrapper.basicTypeChar(getArgumentType(index));
             return switch (shorty) {
                 case 'L' -> references[toReferencesOffset(index)];
                 case 'Z' -> (frameBuf.getInt(toFrameOffset(index)) != 0);

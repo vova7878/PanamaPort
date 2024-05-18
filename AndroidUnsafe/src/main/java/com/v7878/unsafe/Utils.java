@@ -466,29 +466,6 @@ public class Utils {
         throw new ClassCastException("Cannot cast from " + from + " to " + to);
     }
 
-    public static Class<?> boxedTypeAsPrimitiveType(Class<?> boxed) {
-        if (boxed == Boolean.class) {
-            return boolean.class;
-        } else if (boxed == Byte.class) {
-            return byte.class;
-        } else if (boxed == Short.class) {
-            return short.class;
-        } else if (boxed == Character.class) {
-            return char.class;
-        } else if (boxed == Integer.class) {
-            return int.class;
-        } else if (boxed == Float.class) {
-            return float.class;
-        } else if (boxed == Long.class) {
-            return long.class;
-        } else if (boxed == Double.class) {
-            return double.class;
-        } else if (boxed == Void.class) {
-            return void.class;
-        }
-        throw unexpectedType(boxed);
-    }
-
     public static char boxedTypeAsPrimitiveChar(Class<?> boxed) {
         if (boxed == Boolean.class) {
             return 'Z';
@@ -510,29 +487,6 @@ public class Utils {
             return 'V';
         }
         throw unexpectedType(boxed);
-    }
-
-    public static Class<?> primitiveTypeAsBoxedType(Class<?> prim) {
-        if (prim == boolean.class) {
-            return Boolean.class;
-        } else if (prim == byte.class) {
-            return Byte.class;
-        } else if (prim == short.class) {
-            return Short.class;
-        } else if (prim == char.class) {
-            return Character.class;
-        } else if (prim == int.class) {
-            return Integer.class;
-        } else if (prim == float.class) {
-            return Float.class;
-        } else if (prim == long.class) {
-            return Long.class;
-        } else if (prim == double.class) {
-            return Double.class;
-        } else if (prim == void.class) {
-            return Void.class;
-        }
-        throw unexpectedType(prim);
     }
 
     public static Class<?> primitiveCharAsBoxedType(char prim) {

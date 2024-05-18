@@ -30,8 +30,8 @@ package com.v7878.foreign;
 
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 
-import com.v7878.dex.TypeId;
 import com.v7878.invoke.VarHandle;
+import com.v7878.unsafe.invoke.Wrapper;
 
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -91,7 +91,7 @@ final class _ValueLayouts {
         // Port-changed
         @Override
         public String toString() {
-            char descriptor = TypeId.of(carrier).getShorty();
+            char descriptor = Wrapper.basicTypeChar(carrier);
             if (order == ByteOrder.LITTLE_ENDIAN) {
                 descriptor = Character.toLowerCase(descriptor);
             }

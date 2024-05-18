@@ -396,7 +396,7 @@ public class MethodHandlesFixes {
         }
 
         private static byte readPrimitiveAsByte(StackFrameAccessor reader, final Class<?> from) {
-            return switch (TypeId.of(from).getShorty()) {
+            return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> reader.nextByte();
                 case 'C' -> (byte) reader.nextChar();
                 case 'S' -> (byte) reader.nextShort();
@@ -410,7 +410,7 @@ public class MethodHandlesFixes {
         }
 
         private static char readPrimitiveAsChar(StackFrameAccessor reader, Class<?> from) {
-            return switch (TypeId.of(from).getShorty()) {
+            return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (char) reader.nextByte();
                 case 'C' -> reader.nextChar();
                 case 'S' -> (char) reader.nextShort();
@@ -424,7 +424,7 @@ public class MethodHandlesFixes {
         }
 
         private static short readPrimitiveAsShort(StackFrameAccessor reader, final Class<?> from) {
-            return switch (TypeId.of(from).getShorty()) {
+            return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (short) reader.nextByte();
                 case 'C' -> (short) reader.nextChar();
                 case 'S' -> reader.nextShort();
@@ -438,7 +438,7 @@ public class MethodHandlesFixes {
         }
 
         private static int readPrimitiveAsInt(StackFrameAccessor reader, final Class<?> from) {
-            return switch (TypeId.of(from).getShorty()) {
+            return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (int) reader.nextByte();
                 case 'C' -> (int) reader.nextChar();
                 case 'S' -> (int) reader.nextShort();
@@ -452,7 +452,7 @@ public class MethodHandlesFixes {
         }
 
         private static long readPrimitiveAsLong(StackFrameAccessor reader, final Class<?> from) {
-            return switch (TypeId.of(from).getShorty()) {
+            return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (long) reader.nextByte();
                 case 'C' -> (long) reader.nextChar();
                 case 'S' -> (long) reader.nextShort();
@@ -466,7 +466,7 @@ public class MethodHandlesFixes {
         }
 
         private static float readPrimitiveAsFloat(StackFrameAccessor reader, final Class<?> from) {
-            return switch (TypeId.of(from).getShorty()) {
+            return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (float) reader.nextByte();
                 case 'C' -> (float) reader.nextChar();
                 case 'S' -> (float) reader.nextShort();
@@ -480,7 +480,7 @@ public class MethodHandlesFixes {
         }
 
         private static double readPrimitiveAsDouble(StackFrameAccessor reader, final Class<?> from) {
-            return switch (TypeId.of(from).getShorty()) {
+            return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (double) reader.nextByte();
                 case 'C' -> (double) reader.nextChar();
                 case 'S' -> (double) reader.nextShort();
@@ -495,7 +495,7 @@ public class MethodHandlesFixes {
 
         private static void explicitCastPrimitives(StackFrameAccessor reader, Class<?> from,
                                                    StackFrameAccessor writer, Class<?> to) {
-            switch (TypeId.of(to).getShorty()) {
+            switch (Wrapper.basicTypeChar(to)) {
                 case 'B' -> writer.putNextByte(readPrimitiveAsByte(reader, from));
                 case 'C' -> writer.putNextChar(readPrimitiveAsChar(reader, from));
                 case 'S' -> writer.putNextShort(readPrimitiveAsShort(reader, from));
@@ -509,7 +509,7 @@ public class MethodHandlesFixes {
         }
 
         private static void unboxNull(StackFrameAccessor writer, final Class<?> to) {
-            switch (TypeId.of(to).getShorty()) {
+            switch (Wrapper.basicTypeChar(to)) {
                 case 'Z' -> writer.putNextBoolean(false);
                 case 'B' -> writer.putNextByte((byte) 0);
                 case 'C' -> writer.putNextChar((char) 0);
@@ -524,9 +524,9 @@ public class MethodHandlesFixes {
 
         private static void unboxNonNull(Object ref, StackFrameAccessor writer, Class<?> to) {
             Class<?> from = ref.getClass();
-            char unboxed_char = boxedTypeAsPrimitiveChar(from);
-            char to_char = TypeId.of(to).getShorty();
-            switch (unboxed_char) {
+            char from_char = boxedTypeAsPrimitiveChar(from);
+            char to_char = Wrapper.basicTypeChar(to);
+            switch (from_char) {
                 case 'Z' -> {
                     boolean z = (boolean) ref;
                     switch (to_char) {
@@ -653,7 +653,7 @@ public class MethodHandlesFixes {
 
         private static void box(StackFrameAccessor reader, Class<?> from,
                                 StackFrameAccessor writer, Class<?> to) {
-            Object boxed = switch (TypeId.of(from).getShorty()) {
+            Object boxed = switch (Wrapper.basicTypeChar(from)) {
                 case 'Z' -> reader.nextBoolean();
                 case 'B' -> reader.nextByte();
                 case 'C' -> reader.nextChar();
@@ -931,9 +931,9 @@ public class MethodHandlesFixes {
                 return;
             }
             if (to.isPrimitive()) {
-                char toBaseType = TypeId.of(to).getShorty();
+                char toBaseType = Wrapper.basicTypeChar(to);
                 if (from.isPrimitive()) {
-                    char fromBaseType = TypeId.of(from).getShorty();
+                    char fromBaseType = Wrapper.basicTypeChar(from);
                     switch (fromBaseType) {
                         case 'B' -> writePrimitiveByteAs(writer, toBaseType, reader.nextByte());
                         case 'S' -> writePrimitiveShortAs(writer, toBaseType, reader.nextShort());
@@ -978,7 +978,7 @@ public class MethodHandlesFixes {
             } else {
                 if (from.isPrimitive()) {
                     // Boxing conversion
-                    char fromBaseType = TypeId.of(from).getShorty();
+                    char fromBaseType = Wrapper.basicTypeChar(from);
                     Class<?> fromBoxed = primitiveCharAsBoxedType(fromBaseType);
                     // 'to' maybe a super class of the boxed `from` type, e.g. Number.
                     if (!to.isAssignableFrom(fromBoxed)) {
