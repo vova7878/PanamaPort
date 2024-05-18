@@ -615,12 +615,12 @@ public class BulkLinker {
                 if (signature == null) {
                     continue; // skip, this method does not require processing
                 } else {
-                    throw new IllegalStateException("Signature is present, but ASM or Symbol sources aren`t for method" + method);
+                    throw new IllegalStateException("Signature is present, but ASM or Symbol sources aren`t for method " + method);
                 }
             } else if (asm_source != null && sym_source != null) {
                 throw new IllegalStateException("Both ASM and Symbol sources are present for method " + method);
             } else if (signature == null) {
-                throw new IllegalStateException("ASM or Symbol sources are present, but signeture isn`t for method" + method);
+                throw new IllegalStateException("ASM or Symbol sources are present, but signeture isn`t for method " + method);
             }
 
             SymbolSource source = asm_source == null ? sym_source : asm_source;
