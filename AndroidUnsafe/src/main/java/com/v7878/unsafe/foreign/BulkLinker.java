@@ -24,6 +24,7 @@ import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
+import static com.v7878.unsafe.Utils.DEBUG_BUILD;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
@@ -509,7 +510,6 @@ public class BulkLinker {
                 checkPoisoning(cond.poisoning());
     }
 
-    //TODO: check if DEBUG_BUILD
     private static ASMSource getASMSource(
             ASM[] asms, ASMGenerator generator, Class<?> clazz,
             Map<Class<?>, Method[]> cached_methods, Method method) {
@@ -527,8 +527,18 @@ public class BulkLinker {
                     }
                 }
             }
-            if (code == null && generator != null) {
-                code = getCode(generator, clazz, cached_methods);
+            if (DEBUG_BUILD) {
+                if (generator != null) {
+                    byte[] tmp_code = getCode(generator, clazz, cached_methods);
+                    if (code != null && !Arrays.equals(code, tmp_code)) {
+                        throw new IllegalStateException("code from ASM != code from generator for method " + method);
+                    }
+                    code = tmp_code;
+                }
+            } else {
+                if (code == null && generator != null) {
+                    code = getCode(generator, clazz, cached_methods);
+                }
             }
             if (code == null) {
                 throw new IllegalStateException("could not find code for method " + method);
@@ -552,7 +562,6 @@ public class BulkLinker {
         return nothrows_run(() -> (MemorySegment) unreflect(method).invokeExact());
     }
 
-    //TODO: check if DEBUG_BUILD
     private static SegmentSource getSegmentSource(
             LibrarySymbol[] syms, SymbolGenerator generator, SymbolLookup lookup,
             Class<?> clazz, Map<Class<?>, Method[]> cached_methods, Method method) {
@@ -570,8 +579,18 @@ public class BulkLinker {
                     }
                 }
             }
-            if (symbol == null && generator != null) {
-                symbol = getSymbol(generator, clazz, cached_methods);
+            if (DEBUG_BUILD) {
+                if (generator != null) {
+                    MemorySegment tmp_symbol = getSymbol(generator, clazz, cached_methods);
+                    if (symbol != null && !symbol.equals(tmp_symbol)) {
+                        throw new IllegalStateException("symbol from library != symbol from generator for method " + method);
+                    }
+                    symbol = tmp_symbol;
+                }
+            } else {
+                if (symbol == null && generator != null) {
+                    symbol = getSymbol(generator, clazz, cached_methods);
+                }
             }
             if (symbol == null) {
                 throw new IllegalStateException("could not find symbol for method " + method);
