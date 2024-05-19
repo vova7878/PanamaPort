@@ -13,6 +13,7 @@ import static com.v7878.llvm.Core.LLVMGetInsertBlock;
 import static com.v7878.llvm.Core.LLVMGetModuleContext;
 import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
 import static com.v7878.llvm.Core.LLVMRunPassManager;
+import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
 import static com.v7878.llvm.ObjectFile.LLVMGetSectionSegment;
 import static com.v7878.llvm.ObjectFile.LLVMGetSections;
 import static com.v7878.llvm.ObjectFile.LLVMGetSymbolAddress;
@@ -26,12 +27,14 @@ import static com.v7878.llvm.PassManagerBuilder.LLVMPassManagerBuilderCreate;
 import static com.v7878.llvm.PassManagerBuilder.LLVMPassManagerBuilderPopulateModulePassManager;
 import static com.v7878.llvm.TargetMachine.LLVMCodeGenFileType.LLVMObjectFile;
 import static com.v7878.llvm.TargetMachine.LLVMTargetMachineEmitToMemoryBuffer;
+import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.newContext;
 import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
 import static com.v7878.unsafe.llvm.LLVMGlobals.ptr_t;
 
 import com.v7878.foreign.MemorySegment;
+import com.v7878.foreign.ValueLayout;
 import com.v7878.llvm.LLVMException;
 import com.v7878.llvm.ObjectFile.LLVMObjectFileRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
@@ -133,6 +136,17 @@ public class LLVMUtils {
             try (var machine = newDefaultMachine()) {
                 return LLVMTargetMachineEmitToMemoryBuffer(machine, module, LLVMObjectFile);
             }
+        }
+    }
+
+    public static byte[] generateFunctionCode(Generator generator, String name) {
+        try {
+            var buf = generateModuleToBuffer(generator);
+            try (var of = LLVMCreateObjectFile(buf)) {
+                return getFunctionCode(of, name).toArray(ValueLayout.JAVA_BYTE);
+            }
+        } catch (LLVMException e) {
+            throw shouldNotHappen(e);
         }
     }
 }

@@ -31,7 +31,6 @@ import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntULT;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Core.LLVMSetAlignment;
 import static com.v7878.llvm.Core.LLVMSetOrdering;
-import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
 import static com.v7878.misc.Math.convEndian;
 import static com.v7878.misc.Math.d2l;
 import static com.v7878.misc.Math.f2i;
@@ -49,7 +48,6 @@ import static com.v7878.unsafe.InstructionSet.ARM;
 import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
-import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BYTE;
@@ -68,14 +66,12 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.int8_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.buildToJvmPointer;
-import static com.v7878.unsafe.llvm.LLVMUtils.getFunctionCode;
+import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCode;
 
 import androidx.annotation.Keep;
 
 import com.v7878.foreign.Arena;
-import com.v7878.foreign.ValueLayout;
 import com.v7878.llvm.Core.LLVMAtomicRMWBinOp;
-import com.v7878.llvm.LLVMException;
 import com.v7878.llvm.Types.LLVMBasicBlockRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
@@ -88,8 +84,6 @@ import com.v7878.unsafe.foreign.BulkLinker.ASMGenerator;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.Conditions;
 import com.v7878.unsafe.llvm.LLVMGlobals;
-import com.v7878.unsafe.llvm.LLVMUtils;
-import com.v7878.unsafe.llvm.LLVMUtils.Generator;
 
 import java.util.function.Function;
 
@@ -99,17 +93,6 @@ public class ExtraMemoryAccess {
     private abstract static class Native {
 
         private static final Arena SCOPE = Arena.ofAuto();
-
-        private static byte[] gen(Generator generator, String name) {
-            try {
-                var buf = LLVMUtils.generateModuleToBuffer(generator);
-                try (var of = LLVMCreateObjectFile(buf)) {
-                    return getFunctionCode(of, name).toArray(ValueLayout.JAVA_BYTE);
-                }
-            } catch (LLVMException e) {
-                throw shouldNotHappen(e);
-            }
-        }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
                 -119, -8, 72, -123, -46, 116, 19, 72, 1, -16, 102, 15, 31, 68, 0, 0, -120, 8, 72, -1, -64, 72, -1, -54, 117, -10, -61})
@@ -128,7 +111,7 @@ public class ExtraMemoryAccess {
         @SuppressWarnings("unused")
         private static byte[] gen_memset() {
             final String name = "memset";
-            return gen((context, module, builder) -> {
+            return generateFunctionCode((context, module, builder) -> {
                 LLVMValueRef one = LLVMConstInt(intptr_t(context), 1, false);
                 LLVMValueRef zero = LLVMConstNull(intptr_t(context));
 
@@ -255,7 +238,7 @@ public class ExtraMemoryAccess {
         @SuppressWarnings("unused")
         private static byte[] gen_memmove() {
             final String name = "memmove";
-            return gen((context, module, builder) -> gen_memmove_modify(context, module, builder, name, int8_t(context), 1, value -> value), name);
+            return generateFunctionCode((context, module, builder) -> gen_memmove_modify(context, module, builder, name, int8_t(context), 1, value -> value), name);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -284,7 +267,7 @@ public class ExtraMemoryAccess {
         @SuppressWarnings("unused")
         private static byte[] gen_memmove_swap_shorts() {
             final String name = "memmove_swap_shorts";
-            return gen((context, module, builder) -> {
+            return generateFunctionCode((context, module, builder) -> {
                 LLVMTypeRef[] bswap16_args = {int16_t(context)};
                 LLVMTypeRef bswap16_type = LLVMFunctionType(int16_t(context), bswap16_args, false);
                 LLVMValueRef bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
@@ -318,7 +301,7 @@ public class ExtraMemoryAccess {
         @SuppressWarnings("unused")
         private static byte[] gen_memmove_swap_ints() {
             final String name = "memmove_swap_ints";
-            return gen((context, module, builder) -> {
+            return generateFunctionCode((context, module, builder) -> {
                 LLVMTypeRef[] bswap32_args = {int32_t(context)};
                 LLVMTypeRef bswap32_type = LLVMFunctionType(int32_t(context), bswap32_args, false);
                 LLVMValueRef bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
@@ -356,7 +339,7 @@ public class ExtraMemoryAccess {
         @SuppressWarnings("unused")
         private static byte[] gen_memmove_swap_longs() {
             final String name = "memmove_swap_longs";
-            return gen((context, module, builder) -> {
+            return generateFunctionCode((context, module, builder) -> {
                 LLVMTypeRef[] bswap64_args = {int64_t(context)};
                 LLVMTypeRef bswap64_type = LLVMFunctionType(int64_t(context), bswap64_args, false);
                 LLVMValueRef bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
@@ -368,7 +351,7 @@ public class ExtraMemoryAccess {
 
         private static byte[] gen_load_atomic(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
-            return gen((context, module, builder) -> {
+            return generateFunctionCode((context, module, builder) -> {
                 LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context)};
                 LLVMTypeRef var_type = type.apply(context);
                 LLVMTypeRef f_type = LLVMFunctionType(var_type, arg_types, false);
@@ -441,7 +424,7 @@ public class ExtraMemoryAccess {
 
         private static byte[] gen_store_atomic(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
-            return gen((context, module, builder) -> {
+            return generateFunctionCode((context, module, builder) -> {
                 LLVMTypeRef var_type = type.apply(context);
                 LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), var_type};
                 LLVMTypeRef f_type = LLVMFunctionType(void_t(context), arg_types, false);
@@ -522,7 +505,7 @@ public class ExtraMemoryAccess {
 
         private static byte[] gen_atomic_rmw(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, LLVMAtomicRMWBinOp op) {
-            return gen((context, module, builder) -> {
+            return generateFunctionCode((context, module, builder) -> {
                 LLVMTypeRef var_type = type.apply(context);
                 LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), var_type};
                 LLVMTypeRef f_type = LLVMFunctionType(var_type, arg_types, false);
@@ -838,7 +821,7 @@ public class ExtraMemoryAccess {
         //TODO: weak version?
         private static byte[] gen_atomic_compare_and_exchange(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, boolean ret_value) {
-            return gen((context, module, builder) -> {
+            return generateFunctionCode((context, module, builder) -> {
                 LLVMTypeRef var_type = type.apply(context);
                 LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), var_type, var_type};
                 LLVMTypeRef r_type = ret_value ? var_type : int1_t(context);
