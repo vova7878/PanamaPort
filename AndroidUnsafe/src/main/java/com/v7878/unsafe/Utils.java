@@ -46,6 +46,8 @@ public class Utils {
 
     public static final boolean DEBUG_BUILD = DEBUG;
 
+    public static final String LOG_TAG = "PANAMA";
+
     public interface FineClosable extends AutoCloseable {
         void close();
     }

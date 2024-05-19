@@ -56,6 +56,8 @@ import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Utils.handleUncaughtException;
+import static com.v7878.unsafe.Utils.newEmptyClassLoader;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
@@ -306,7 +308,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         ));
 
         DexFile dex = openDexFile(new Dex(stub_def).compile());
-        Class<?> stub_class = loadClass(dex, stub_name, Utils.newEmptyClassLoader());
+        Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
 
         Field field = getDeclaredField(stub_class, field_name);
         putObject(stub_class, fieldOffset(field), scope);
@@ -665,7 +667,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         ));
 
         DexFile dex = openDexFile(new Dex(stub_def).compile());
-        Class<?> stub_class = loadClass(dex, stub_name, Utils.newEmptyClassLoader());
+        Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
 
         return getDeclaredMethod(stub_class, method_name, stub_type.parameterArray());
     }
@@ -694,7 +696,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 EXCEPTION_CHECK(true, JNIUtils.getJNINativeInterfaceFunction("ExceptionCheck")),
                 FATAL_ERROR(true, JNIUtils.getJNINativeInterfaceFunction("FatalError")),
                 JVM(false, JNIUtils.getJavaVMPtr()),
-                LOG_TAG(false, SCOPE.allocateFrom("PANAMA")),
+                LOG_TAG(false, SCOPE.allocateFrom(Utils.LOG_TAG)),
                 LOG_GET_ENV_MSG(false, SCOPE.allocateFrom("Could not get JNIEnv for upcall. JNI error code: %d")),
                 LOG_ATTACH_MSG(false, SCOPE.allocateFrom("Could not attach thread for upcall. JNI error code: %d")),
                 LOG_DETACH_MSG(false, SCOPE.allocateFrom("Could not detach current thread. JNI error code: %d")),
@@ -1046,7 +1048,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             try {
                 invokeExactWithFrameNoChecks(stub, stub_frame);
             } catch (Throwable th) {
-                Utils.handleUncaughtException(th);
+                handleUncaughtException(th);
             }
             if (ret != null) {
                 stub_acc.moveToReturn();
