@@ -6,11 +6,13 @@ import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
 import static com.v7878.llvm.Core.LLVMBuildNeg;
 import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
+import static com.v7878.llvm.Core.LLVMCreatePassManager;
 import static com.v7878.llvm.Core.LLVMGetBasicBlockParent;
 import static com.v7878.llvm.Core.LLVMGetGlobalParent;
 import static com.v7878.llvm.Core.LLVMGetInsertBlock;
 import static com.v7878.llvm.Core.LLVMGetModuleContext;
 import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
+import static com.v7878.llvm.Core.LLVMRunPassManager;
 import static com.v7878.llvm.ObjectFile.LLVMGetSectionSegment;
 import static com.v7878.llvm.ObjectFile.LLVMGetSections;
 import static com.v7878.llvm.ObjectFile.LLVMGetSymbolAddress;
@@ -20,6 +22,8 @@ import static com.v7878.llvm.ObjectFile.LLVMGetSymbols;
 import static com.v7878.llvm.ObjectFile.LLVMIsSymbolIteratorAtEnd;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToContainingSection;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToNextSymbol;
+import static com.v7878.llvm.PassManagerBuilder.LLVMPassManagerBuilderCreate;
+import static com.v7878.llvm.PassManagerBuilder.LLVMPassManagerBuilderPopulateModulePassManager;
 import static com.v7878.llvm.TargetMachine.LLVMCodeGenFileType.LLVMObjectFile;
 import static com.v7878.llvm.TargetMachine.LLVMTargetMachineEmitToMemoryBuffer;
 import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
@@ -118,6 +122,13 @@ public class LLVMUtils {
             generator.generate(context, module, builder);
 
             LLVMVerifyModule(module);
+
+            try (var pass_manager = LLVMCreatePassManager()) {
+                try (var pmb = LLVMPassManagerBuilderCreate()) {
+                    LLVMPassManagerBuilderPopulateModulePassManager(pmb, pass_manager);
+                }
+                LLVMRunPassManager(pass_manager, module);
+            }
 
             try (var machine = newDefaultMachine()) {
                 return LLVMTargetMachineEmitToMemoryBuffer(machine, module, LLVMObjectFile);
