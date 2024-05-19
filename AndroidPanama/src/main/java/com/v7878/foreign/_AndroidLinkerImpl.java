@@ -8,7 +8,6 @@ import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign._CapturableState.ERRNO;
 import static com.v7878.foreign._Utils.moveArgument;
-import static com.v7878.llvm.Analysis.LLVMVerifyModule;
 import static com.v7878.llvm.Core.LLVMAddAttributeAtIndex;
 import static com.v7878.llvm.Core.LLVMAddCallSiteAttribute;
 import static com.v7878.llvm.Core.LLVMAddFunction;
@@ -34,19 +33,14 @@ import static com.v7878.llvm.Core.LLVMConstAllOnes;
 import static com.v7878.llvm.Core.LLVMConstInt;
 import static com.v7878.llvm.Core.LLVMConstIntToPtr;
 import static com.v7878.llvm.Core.LLVMConstNull;
-import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMCreateEnumAttribute;
 import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMGetParams;
 import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
-import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Core.LLVMSetAlignment;
 import static com.v7878.llvm.Core.LLVMSetInstrParamAlignment;
 import static com.v7878.llvm.Core.LLVMStructTypeInContext;
-import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
-import static com.v7878.llvm.TargetMachine.LLVMCodeGenFileType.LLVMObjectFile;
-import static com.v7878.llvm.TargetMachine.LLVMTargetMachineEmitToMemoryBuffer;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.putObject;
@@ -58,7 +52,6 @@ import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.handleUncaughtException;
 import static com.v7878.unsafe.Utils.newEmptyClassLoader;
-import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 import static com.v7878.unsafe.foreign.LibArt.ART;
@@ -71,14 +64,12 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int64_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int8_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
-import static com.v7878.unsafe.llvm.LLVMGlobals.newContext;
-import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
 import static com.v7878.unsafe.llvm.LLVMGlobals.ptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_ptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.buildToJvmAddress;
+import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeSegment;
 import static com.v7878.unsafe.llvm.LLVMUtils.getBuilderContext;
-import static com.v7878.unsafe.llvm.LLVMUtils.getFunctionCode;
 
 import com.v7878.dex.AnnotationItem;
 import com.v7878.dex.AnnotationSet;
@@ -96,15 +87,12 @@ import com.v7878.foreign._StorageDescriptor.NoStorage;
 import com.v7878.foreign._StorageDescriptor.RawStorage;
 import com.v7878.foreign._StorageDescriptor.WrapperStorage;
 import com.v7878.invoke.VarHandle;
-import com.v7878.llvm.LLVMException;
 import com.v7878.llvm.Types.LLVMAttributeRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
-import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.unsafe.JNIUtils;
-import com.v7878.unsafe.NativeCodeBlob;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
@@ -431,9 +419,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             Arena scope, _StorageDescriptor target_descriptor,
             _FunctionDescriptorImpl stub_descriptor, _LinkerOptions options) {
         final String function_name = "stub";
-        try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
-             var module = LLVMModuleCreateWithNameInContext("generic", context)) {
-
+        return generateFunctionCodeSegment((context, module, builder) -> {
             var sret_attr = LLVMCreateEnumAttribute(context, "sret", 0);
             var byval_attr = LLVMCreateEnumAttribute(context, "byval", 0);
 
@@ -552,20 +538,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             } else {
                 LLVMBuildRet(builder, call);
             }
-
-            LLVMVerifyModule(module);
-
-            try (var machine = newDefaultMachine()) {
-                LLVMMemoryBufferRef buf = LLVMTargetMachineEmitToMemoryBuffer(
-                        machine, module, LLVMObjectFile);
-                try (var of = LLVMCreateObjectFile(buf)) {
-                    MemorySegment code = getFunctionCode(of, function_name);
-                    return NativeCodeBlob.makeCodeBlob(scope, code)[0];
-                }
-            }
-        } catch (LLVMException e) {
-            throw shouldNotHappen(e);
-        }
+        }, function_name, scope);
     }
 
     @SuppressWarnings("ClassCanBeRecord")
@@ -820,8 +793,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
 
         final String function_name = "stub";
-        try (var context = newContext(); var builder = LLVMCreateBuilderInContext(context);
-             var module = LLVMModuleCreateWithNameInContext("generic", context)) {
+        return generateFunctionCodeSegment((context, module, builder) -> {
 
             var jni_ok = const_int32(context, 0);
             var jni_edetached = const_int32(context, -2);
@@ -969,20 +941,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 LLVMSetAlignment(load, Math.toIntExact(retLoad.byteAlignment()));
                 LLVMBuildRet(builder, load);
             }
-
-            LLVMVerifyModule(module);
-
-            try (var machine = newDefaultMachine()) {
-                LLVMMemoryBufferRef buf = LLVMTargetMachineEmitToMemoryBuffer(
-                        machine, module, LLVMObjectFile);
-                try (var of = LLVMCreateObjectFile(buf)) {
-                    MemorySegment code = getFunctionCode(of, function_name);
-                    return NativeCodeBlob.makeCodeBlob(scope, code)[0];
-                }
-            }
-        } catch (LLVMException e) {
-            throw shouldNotHappen(e);
-        }
+        }, function_name, scope);
     }
 
     private static class UpcallArranger implements TransformerI {

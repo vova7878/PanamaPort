@@ -33,6 +33,7 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.newContext;
 import static com.v7878.unsafe.llvm.LLVMGlobals.newDefaultMachine;
 import static com.v7878.unsafe.llvm.LLVMGlobals.ptr_t;
 
+import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.ValueLayout;
 import com.v7878.llvm.LLVMException;
@@ -43,6 +44,7 @@ import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.unsafe.NativeCodeBlob;
 import com.v7878.unsafe.VM;
 
 import java.util.List;
@@ -139,11 +141,23 @@ public class LLVMUtils {
         }
     }
 
-    public static byte[] generateFunctionCode(Generator generator, String name) {
+    public static byte[] generateFunctionCodeArray(Generator generator, String name) {
         try {
             var buf = generateModuleToBuffer(generator);
             try (var of = LLVMCreateObjectFile(buf)) {
                 return getFunctionCode(of, name).toArray(ValueLayout.JAVA_BYTE);
+            }
+        } catch (LLVMException e) {
+            throw shouldNotHappen(e);
+        }
+    }
+
+    public static MemorySegment generateFunctionCodeSegment(Generator generator, String name, Arena scope) {
+        try {
+            var buf = generateModuleToBuffer(generator);
+            try (var of = LLVMCreateObjectFile(buf)) {
+                MemorySegment code = getFunctionCode(of, name);
+                return NativeCodeBlob.makeCodeBlob(scope, code)[0];
             }
         } catch (LLVMException e) {
             throw shouldNotHappen(e);
