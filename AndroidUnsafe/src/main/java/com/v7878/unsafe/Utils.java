@@ -532,10 +532,9 @@ public class Utils {
 
     @SuppressWarnings("finally")
     public static void handleUncaughtException(Throwable th) {
-        String tag = "PANAMA";
         if (th != null) {
             try {
-                Log.wtf(tag, "Unrecoverable uncaught exception encountered. The VM will now exit", th);
+                Log.wtf(LOG_TAG, "Unrecoverable uncaught exception encountered. The VM will now exit", th);
             } finally {
                 System.exit(1);
             }

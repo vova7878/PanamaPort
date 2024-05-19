@@ -25,10 +25,13 @@ import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.DEBUG_BUILD;
+import static com.v7878.unsafe.Utils.LOG_TAG;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static java.lang.annotation.ElementType.METHOD;
+
+import android.util.Log;
 
 import androidx.annotation.Keep;
 
@@ -531,7 +534,8 @@ public class BulkLinker {
                 if (generator != null) {
                     byte[] tmp_code = getCode(generator, clazz, cached_methods);
                     if (code != null && !Arrays.equals(code, tmp_code)) {
-                        throw new IllegalStateException("code from ASM != code from generator for method " + method);
+                        Log.w(LOG_TAG, String.format("code from ASM(%s) != code from generator(%s) for method %s",
+                                Arrays.toString(code), Arrays.toString(tmp_code), method));
                     }
                     code = tmp_code;
                 }
@@ -583,7 +587,8 @@ public class BulkLinker {
                 if (generator != null) {
                     MemorySegment tmp_symbol = getSymbol(generator, clazz, cached_methods);
                     if (symbol != null && !symbol.equals(tmp_symbol)) {
-                        throw new IllegalStateException("symbol from library != symbol from generator for method " + method);
+                        Log.w(LOG_TAG, String.format("symbol from library(%s) != symbol from generator(%s) for method %s",
+                                symbol, tmp_symbol, method));
                     }
                     symbol = tmp_symbol;
                 }
