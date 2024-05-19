@@ -45,6 +45,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
+import static com.v7878.unsafe.InstructionSet.ARM;
 import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
@@ -117,6 +118,8 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -112, -112, -120, 10, 66, 72, 117, -6, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 -94, 0, 0, -76, 40, 64, 32, -117, 3, 21, 0, 56, 66, 4, 0, -47, -62, -1, -1, -75, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                0, 0, 82, -29, 30, -1, 47, 1, 1, 0, -128, -32, 1, 48, -64, -28, 1, 32, 82, -30, -4, -1, -1, 26, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_memset")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD, BYTE})
         abstract void memset(Object base, long offset, long bytes, byte value);
@@ -239,6 +242,10 @@ public class ExtraMemoryAccess {
                 4, 2, 0, -76, 40, 64, 32, -117, 105, 64, 34, -117, 31, 1, 9, -21, -62, 0, 0, 84, 42, 21, 64,
                 56, 10, 21, 0, 56, -124, 4, 0, -47, -92, -1, -1, -75, 7, 0, 0, 20, 42, 1, 4, -117, 74, -15,
                 95, 56, 11, 1, 4, -117, 106, -15, 31, 56, -124, 4, 0, -47, 100, -1, -1, -75, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                0, -64, -99, -27, 0, 0, 92, -29, 30, -1, 47, 1, 3, 32, -126, -32, 1, 0, -128, -32, 2, 0, 80, -31, 4, 0,
+                0, 42, 1, 16, -46, -28, 1, -64, 92, -30, 1, 16, -64, -28, -5, -1, -1, 26, 5, 0, 0, -22, 1, 16, 66, -30,
+                1, 0, 64, -30, 12, 32, -47, -25, 12, 32, -64, -25, 1, -64, 92, -30, -5, -1, -1, 26, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_memmove")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
@@ -262,6 +269,11 @@ public class ExtraMemoryAccess {
                 120, 74, 9, -64, 90, 74, 125, 16, 83, 10, 37, 0, 120, -124, 4, 0, -47, 100, -1, -1, -75, 10,
                 0, 0, 20, -118, 4, 0, -47, 75, -7, 127, -45, 44, 105, 107, 120, 74, 5, 0, -47, -116, 9, -64,
                 90, -116, 125, 16, 83, 12, 105, 43, 120, 95, 5, 0, -79, 33, -1, -1, 84, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                0, -64, -99, -27, 0, 0, 92, -29, 30, -1, 47, 1, 3, 32, -126, -32, 1, 0, -128, -32, 2, 0, 80, -31, 6, 0,
+                0, 42, -78, 16, -46, -32, 1, -64, 92, -30, 49, 31, -65, -26, 33, 24, -96, -31, -78, 16, -64, -32, -7, -1,
+                -1, 26, 8, 0, 0, -22, 1, 48, 76, -30, -125, 16, -126, -32, -125, 0, -128, -32, -78, 32, 81, -32, 1, -64,
+                92, -30, 50, 47, -65, -26, 34, 40, -96, -31, -78, 32, 64, -32, -7, -1, -1, 26, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_memmove_swap_shorts")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_shorts(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
@@ -291,6 +303,10 @@ public class ExtraMemoryAccess {
                 100, 2, 0, -76, 40, 64, 32, -117, 105, 64, 34, -117, 31, 1, 9, -21, -30, 0, 0, 84, 42, 69, 64, -72, 74, 9, -64, 90, 10, 69,
                 0, -72, -124, 4, 0, -47, -124, -1, -1, -75, 9, 0, 0, 20, -118, 4, 0, -47, 75, -11, 126, -45, 44, 105, 107, -72, 74, 5, 0,
                 -47, -116, 9, -64, 90, 12, 105, 43, -72, 95, 5, 0, -79, 65, -1, -1, 84, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                0, -64, -99, -27, 0, 0, 92, -29, 30, -1, 47, 1, 3, 32, -126, -32, 1, 0, -128, -32, 2, 0, 80, -31, 5, 0, 0, 42, 4, 16,
+                -110, -28, 1, -64, 92, -30, 49, 31, -65, -26, 4, 16, -128, -28, -6, -1, -1, 26, 6, 0, 0, -22, 4, 16, 66, -30, 4, 0,
+                64, -30, 12, 33, -111, -25, 50, 47, -65, -26, 12, 33, -128, -25, 1, -64, 92, -30, -6, -1, -1, 26, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_memmove_swap_ints")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_ints(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
@@ -321,6 +337,12 @@ public class ExtraMemoryAccess {
                 100, 2, 0, -76, 40, 64, 32, -117, 105, 64, 34, -117, 31, 1, 9, -21, -30, 0, 0, 84, 42, -123, 64, -8, 74, 13, -64,
                 -38, 10, -123, 0, -8, -124, 4, 0, -47, -124, -1, -1, -75, 9, 0, 0, 20, -118, 4, 0, -47, 75, -15, 125, -45, 44, 105,
                 107, -8, 74, 5, 0, -47, -116, 13, -64, -38, 12, 105, 43, -8, 95, 5, 0, -79, 65, -1, -1, 84, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                0, -64, -99, -27, 0, 0, 92, -29, 30, -1, 47, 1, 3, 32, -126, -32, 1, 0, -128, -32, 2, 0, 80, -31, 10, 0, 0, 42,
+                0, 16, -110, -27, 4, 48, -110, -27, 8, 32, -126, -30, 1, -64, 92, -30, 49, 31, -65, -26, 4, 16, -128, -27, 51,
+                31, -65, -26, 0, 16, -128, -27, 8, 0, -128, -30, -11, -1, -1, 26, 12, 0, 0, -22, 1, 48, 76, -30, -125, 17, -126,
+                -32, -125, 1, -128, -32, 0, 32, -111, -27, 4, 48, -111, -27, 8, 16, 65, -30, 1, -64, 92, -30, 50, 47, -65, -26,
+                4, 32, -128, -27, 51, 47, -65, -26, 0, 32, -128, -27, 8, 0, 64, -30, -11, -1, -1, 26, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_memmove_swap_longs")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_longs(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
@@ -360,6 +382,7 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -118, 4, 48, -61})
         @ASM(conditions = @Conditions(arch = X86, poisoning = FALSE), code = {-117, 68, 36, 8, -117, 76, 36, 4, -118, 4, 1, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {40, 64, 32, -117, 0, -3, -33, 8, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {1, 0, -48, -25, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_load_byte_atomic")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract byte load_byte_atomic(Object base, long offset);
@@ -372,6 +395,7 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 102, -117, 4, 48, -61})
         @ASM(conditions = @Conditions(arch = X86, poisoning = FALSE), code = {-117, 68, 36, 8, -117, 76, 36, 4, 102, -117, 4, 1, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {40, 64, 32, -117, 0, -3, -33, 72, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {1, 0, -128, -32, -80, 0, -48, -31, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_load_short_atomic")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract short load_short_atomic(Object base, long offset);
@@ -384,6 +408,7 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -117, 4, 48, -61})
         @ASM(conditions = @Conditions(arch = X86, poisoning = FALSE), code = {-117, 68, 36, 8, -117, 76, 36, 4, -117, 4, 1, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {40, 64, 32, -117, 0, -3, -33, -120, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {1, 0, -112, -25, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_load_int_atomic")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract int load_int_atomic(Object base, long offset);
@@ -397,6 +422,8 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = X86, poisoning = FALSE), code = {
                 83, 87, 86, -117, 116, 36, 20, -117, 124, 36, 16, 49, -64, 49, -46, 49, -55, 49, -37, -16, 15, -57, 12, 55, 94, 95, 91, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {40, 64, 32, -117, 0, -3, -33, -56, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                1, 0, -128, -32, -97, 15, -80, -31, 31, -16, 127, -11, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_load_long_atomic")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract long load_long_atomic(Object base, long offset);
@@ -429,6 +456,8 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = X86, poisoning = FALSE), code = {
                 -117, 68, 36, 8, -117, 76, 36, 4, -118, 84, 36, 12, -122, 20, 1, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {40, 64, 32, -117, 2, -3, -97, 8, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, 32, -64, -25, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_store_byte_atomic")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract void store_byte_atomic(Object base, long offset, byte value);
@@ -442,6 +471,8 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = X86, poisoning = FALSE), code = {
                 -117, 68, 36, 8, -117, 76, 36, 4, 15, -73, 84, 36, 12, 102, -121, 20, 1, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {40, 64, 32, -117, 2, -3, -97, 72, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                1, 0, -128, -32, 91, -16, 127, -11, -80, 32, -64, -31, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_store_short_atomic")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract void store_short_atomic(Object base, long offset, short value);
@@ -455,6 +486,8 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = X86, poisoning = FALSE), code = {
                 -117, 68, 36, 8, -117, 76, 36, 4, -117, 84, 36, 12, -121, 20, 1, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {40, 64, 32, -117, 2, -3, -97, -120, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, 32, -128, -25, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_store_int_atomic")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract void store_int_atomic(Object base, long offset, int value);
@@ -469,6 +502,9 @@ public class ExtraMemoryAccess {
                 83, 87, 86, -117, 76, 36, 28, -117, 92, 36, 24, -117, 84, 36, 20, -117, 124, 36, 16, -115, 52, 23,
                 -117, 4, 23, -117, 84, 23, 4, -112, -112, -112, -16, 15, -57, 14, 117, -6, 94, 95, 91, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {40, 64, 32, -117, 2, -3, -97, -56, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                48, 72, 45, -23, 91, -16, 127, -11, 1, 0, -128, -32, -97, 79, -80, -31, -110, 31,
+                -96, -31, 0, 0, 81, -29, -5, -1, -1, 26, 91, -16, 127, -11, 48, -120, -67, -24})
         @ASMGenerator(method = "gen_store_long_atomic")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract void store_long_atomic(Object base, long offset, long value);
@@ -501,6 +537,9 @@ public class ExtraMemoryAccess {
                 -117, 76, 36, 8, -117, 84, 36, 4, -118, 68, 36, 12, -122, 4, 10, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 8, 2, -3, 9, 8, -55, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, 16, -128, -32, -97, 15, -47, -31, -110, 63, -63,
+                -31, 0, 0, 83, -29, -5, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_exchange_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_exchange_byte(Object base, long offset, byte value);
@@ -515,6 +554,9 @@ public class ExtraMemoryAccess {
                 -117, 76, 36, 8, -117, 84, 36, 4, 15, -73, 68, 36, 12, 102, -121, 4, 10, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 72, 2, -3, 9, 72, -55, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, 16, -128, -32, -97, 15, -15, -31, -110, 63, -31,
+                -31, 0, 0, 83, -29, -5, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_exchange_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_exchange_short(Object base, long offset, short value);
@@ -529,6 +571,9 @@ public class ExtraMemoryAccess {
                 -117, 76, 36, 8, -117, 84, 36, 4, -117, 68, 36, 12, -121, 4, 10, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -120, 2, -3, 9, -120, -55, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, 16, -128, -32, -97, 15, -111, -31, -110, 63, -127,
+                -31, 0, 0, 83, -29, -5, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_exchange_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_exchange_int(Object base, long offset, int value);
@@ -544,6 +589,9 @@ public class ExtraMemoryAccess {
                 23, -117, 4, 23, -117, 84, 23, 4, -112, -112, -112, -16, 15, -57, 14, 117, -6, 94, 95, 91, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -56, 2, -3, 9, -56, -55, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                0, 72, 45, -23, 91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -68, -31, -110, -17,
+                -84, -31, 0, 0, 94, -29, -5, -1, -1, 26, 91, -16, 127, -11, 0, -120, -67, -24})
         @ASMGenerator(method = "gen_atomic_exchange_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_exchange_long(Object base, long offset, long value);
@@ -560,6 +608,9 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -120, -60, 32, -52, -16, 15, -80, 34, 117, -10, 94, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 8, 9, 0, 2, 10, 9, -3, 10, 8, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -36, -31, 2, 48, 0, -32, -109, 31,
+                -52, -31, 0, 0, 81, -29, -6, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_fetch_and_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_and_byte(Object base, long offset, byte value);
@@ -576,6 +627,9 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -119, -58, 33, -50, 102, -16, 15, -79, 50, 117, -11, 94, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 72, 9, 0, 2, 10, 9, -3, 10, 72, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -4, -31, 2, 48, 0, -32, -109, 31,
+                -20, -31, 0, 0, 81, -29, -6, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_fetch_and_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_and_short(Object base, long offset, short value);
@@ -592,6 +646,9 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -119, -58, 33, -50, -16, 15, -79, 50, 117, -10, 94, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -120, 9, 0, 2, 10, 9, -3, 10, -120, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -100, -31, 2, 48, 0, -32, -109, 31,
+                -116, -31, 0, 0, 81, -29, -6, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_fetch_and_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_and_int(Object base, long offset, int value);
@@ -608,6 +665,9 @@ public class ExtraMemoryAccess {
                 -117, 84, 10, 4, -112, -112, -119, -61, 33, -5, -119, -47, 33, -15, -16, 15, -57, 77, 0, 117, -15, 94, 95, 91, 93, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -56, 9, 0, 2, -118, 9, -3, 10, -56, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                48, 72, 45, -23, 91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -68, -31, 3, 80, 1, -32, 2, 64,
+                0, -32, -108, -17, -84, -31, 0, 0, 94, -29, -7, -1, -1, 26, 91, -16, 127, -11, 48, -120, -67, -24})
         @ASMGenerator(method = "gen_atomic_fetch_add_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_and_long(Object base, long offset, long value);
@@ -624,6 +684,9 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -120, -60, 8, -52, -16, 15, -80, 34, 117, -10, 94, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 8, 9, 0, 2, 42, 9, -3, 10, 8, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -36, -31, 2, 48, -128, -31, -109, 31,
+                -52, -31, 0, 0, 81, -29, -6, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_fetch_or_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_or_byte(Object base, long offset, byte value);
@@ -640,6 +703,9 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -119, -58, 9, -50, 102, -16, 15, -79, 50, 117, -11, 94, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 72, 9, 0, 2, 42, 9, -3, 10, 72, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -4, -31, 2, 48, -128, -31, -109, 31,
+                -20, -31, 0, 0, 81, -29, -6, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_fetch_or_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_or_short(Object base, long offset, short value);
@@ -656,6 +722,9 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -112, -119, -58, 9, -50, -16, 15, -79, 50, 117, -10, 94, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -120, 9, 0, 2, 42, 9, -3, 10, -120, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -100, -31, 2, 48, -128, -31, -109,
+                31, -116, -31, 0, 0, 81, -29, -6, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_fetch_or_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_or_int(Object base, long offset, int value);
@@ -672,6 +741,9 @@ public class ExtraMemoryAccess {
                 -117, 84, 10, 4, -112, -112, -119, -61, 9, -5, -119, -47, 9, -15, -16, 15, -57, 77, 0, 117, -15, 94, 95, 91, 93, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -56, 9, 0, 2, -86, 9, -3, 10, -56, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                48, 72, 45, -23, 91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -68, -31, 3, 80, -127, -31, 2, 64,
+                -128, -31, -108, -17, -84, -31, 0, 0, 94, -29, -7, -1, -1, 26, 91, -16, 127, -11, 48, -120, -67, -24})
         @ASMGenerator(method = "gen_atomic_fetch_or_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_or_long(Object base, long offset, long value);
@@ -688,6 +760,9 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -120, -60, 48, -52, -16, 15, -80, 34, 117, -10, 94, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 8, 9, 0, 2, 74, 9, -3, 10, 8, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -36, -31, 2, 48, 32, -32, -109, 31,
+                -52, -31, 0, 0, 81, -29, -6, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_fetch_xor_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_xor_byte(Object base, long offset, byte value);
@@ -704,6 +779,9 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -119, -58, 49, -50, 102, -16, 15, -79, 50, 117, -11, 94, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 72, 9, 0, 2, 74, 9, -3, 10, 72, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -4, -31, 2, 48, 32, -32, -109, 31,
+                -20, -31, 0, 0, 81, -29, -6, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_fetch_xor_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_xor_short(Object base, long offset, short value);
@@ -720,6 +798,9 @@ public class ExtraMemoryAccess {
                 -112, -112, -112, -112, -112, -112, -112, -112, -119, -58, 49, -50, -16, 15, -79, 50, 117, -10, 94, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -120, 9, 0, 2, 74, 9, -3, 10, -120, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -100, -31, 2, 48, 32, -32, -109,
+                31, -116, -31, 0, 0, 81, -29, -6, -1, -1, 26, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_fetch_xor_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_xor_int(Object base, long offset, int value);
@@ -736,6 +817,9 @@ public class ExtraMemoryAccess {
                 -117, 84, 10, 4, -112, -112, -119, -61, 49, -5, -119, -47, 49, -15, -16, 15, -57, 77, 0, 117, -15, 94, 95, 91, 93, -61})
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -56, 9, 0, 2, -54, 9, -3, 10, -56, -86, -1, -1, 53, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                48, 72, 45, -23, 91, -16, 127, -11, 1, -64, -128, -32, -97, 15, -68, -31, 3, 80, 33, -32, 2, 64,
+                32, -32, -108, -17, -84, -31, 0, 0, 94, -29, -7, -1, -1, 26, 91, -16, 127, -11, 48, -120, -67, -24})
         @ASMGenerator(method = "gen_atomic_fetch_xor_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_xor_long(Object base, long offset, long value);
@@ -773,6 +857,10 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 8, 31, 0, 34, 107, -127, 0, 0, 84, 3, -3,
                 9, 8, -119, -1, -1, 53, 2, 0, 0, 20, 95, 63, 3, -43, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                1, 16, -128, -32, 114, -64, -17, -26, -97, 15, -47, -31, 12, 0, 80, -31, 6, 0, 0, 26,
+                91, -16, 127, -11, -109, 47, -63, -31, 0, 0, 82, -29, 3, 0, 0, 10, -97, 15, -47, -31,
+                12, 0, 80, -31, -7, -1, -1, 10, 31, -16, 127, -11, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_compare_and_exchange_byte")
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE, BYTE})
         abstract byte atomic_compare_and_exchange_byte(Object base, long offset, byte expected, byte desired);
@@ -788,6 +876,10 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, 72, 31, 32, 34, 107, -127, 0, 0, 84, 3, -3,
                 9, 72, -119, -1, -1, 53, 2, 0, 0, 20, 95, 63, 3, -43, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                1, 16, -128, -32, 114, -64, -1, -26, -97, 15, -15, -31, 12, 0, 80, -31, 6, 0, 0, 26,
+                91, -16, 127, -11, -109, 47, -31, -31, 0, 0, 82, -29, 3, 0, 0, 10, -97, 15, -15, -31,
+                12, 0, 80, -31, -7, -1, -1, 10, 31, -16, 127, -11, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_compare_and_exchange_short")
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT, SHORT})
         abstract short atomic_compare_and_exchange_short(Object base, long offset, short expected, short desired);
@@ -803,6 +895,10 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -120, 31, 0, 2, 107, -127, 0, 0, 84, 3, -3,
                 9, -120, -119, -1, -1, 53, 2, 0, 0, 20, 95, 63, 3, -43, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                1, -64, -128, -32, -97, 15, -100, -31, 2, 0, 80, -31, 6, 0, 0, 26, 91, -16, 127,
+                -11, -109, 31, -116, -31, 0, 0, 81, -29, 3, 0, 0, 10, -97, 15, -100, -31, 2, 0,
+                80, -31, -7, -1, -1, 10, 31, -16, 127, -11, 91, -16, 127, -11, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_compare_and_exchange_int")
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT, INT})
         abstract int atomic_compare_and_exchange_int(Object base, long offset, int expected, int desired);
@@ -819,6 +915,11 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 0, -3, 95, -56, 31, 0, 2, -21, -127, 0, 0, 84, 3, -3,
                 9, -56, -119, -1, -1, 53, 2, 0, 0, 20, 95, 63, 3, -43, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                -16, 72, 45, -23, 1, -64, -128, -32, -97, 15, -68, -31, 3, 80, 33, -32, 2, 64, 32, -32, 5,
+                80, -108, -31, 10, 0, 0, 26, 28, 112, -99, -27, 91, -16, 127, -11, 24, 96, -99, -27, -106,
+                79, -84, -31, 0, 0, 84, -29, 5, 0, 0, 10, -97, 15, -68, -31, 3, 80, 33, -32, 2, 64, 32, -32,
+                5, 80, -108, -31, -9, -1, -1, 10, 31, -16, 127, -11, 91, -16, 127, -11, -16, -120, -67, -24})
         @ASMGenerator(method = "gen_atomic_compare_and_exchange_long")
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG, LONG})
         abstract long atomic_compare_and_exchange_long(Object base, long offset, long expected, long desired);
@@ -834,6 +935,10 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 9, -3, 95, 8, 63, 1, 34, 107, -95, 0, 0, 84, 3, -3, 9, 8, -119, -1, -1,
                 53, -32, 3, 0, 50, -64, 3, 95, -42, 95, 63, 3, -43, -32, 3, 31, 42, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                1, 0, -128, -32, 114, 16, -17, -26, -97, -49, -48, -31, 1, 0, 92, -31, 6, 0, 0, 26, 91, -16, 127, -11, -109,
+                47, -64, -31, 0, 0, 82, -29, 6, 0, 0, 10, -97, 47, -48, -31, 1, 0, 82, -31, -7, -1, -1, 10, 31, -16, 127, -11,
+                0, 0, -96, -29, 91, -16, 127, -11, 30, -1, 47, -31, 91, -16, 127, -11, 1, 0, -96, -29, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_compare_and_set_byte")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE, BYTE})
         abstract boolean atomic_compare_and_set_byte(Object base, long offset, byte expected, byte desired);
@@ -849,6 +954,10 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 9, -3, 95, 72, 63, 33, 34, 107, -95, 0, 0, 84, 3, -3, 9, 72, -119, -1, -1,
                 53, -32, 3, 0, 50, -64, 3, 95, -42, 95, 63, 3, -43, -32, 3, 31, 42, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                1, 0, -128, -32, 114, 16, -1, -26, -97, -49, -16, -31, 1, 0, 92, -31, 6, 0, 0, 26, 91, -16, 127, -11, -109,
+                47, -32, -31, 0, 0, 82, -29, 6, 0, 0, 10, -97, 47, -16, -31, 1, 0, 82, -31, -7, -1, -1, 10, 31, -16, 127,
+                -11, 0, 0, -96, -29, 91, -16, 127, -11, 30, -1, 47, -31, 91, -16, 127, -11, 1, 0, -96, -29, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_compare_and_set_short")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT, SHORT})
         abstract boolean atomic_compare_and_set_short(Object base, long offset, short expected, short desired);
@@ -864,6 +973,10 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 9, -3, 95, -120, 63, 1, 2, 107, -95, 0, 0, 84, 3, -3, 9, -120, -119, -1, -1,
                 53, -32, 3, 0, 50, -64, 3, 95, -42, 95, 63, 3, -43, -32, 3, 31, 42, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                1, 0, -128, -32, -97, 31, -112, -31, 2, 0, 81, -31, 6, 0, 0, 26, 91, -16, 127, -11, -109, 31, -128, -31,
+                0, 0, 81, -29, 6, 0, 0, 10, -97, 31, -112, -31, 2, 0, 81, -31, -7, -1, -1, 10, 31, -16, 127, -11, 0, 0,
+                -96, -29, 91, -16, 127, -11, 30, -1, 47, -31, 91, -16, 127, -11, 1, 0, -96, -29, 30, -1, 47, -31})
         @ASMGenerator(method = "gen_atomic_compare_and_set_int")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT, INT})
         abstract boolean atomic_compare_and_set_int(Object base, long offset, int expected, int desired);
@@ -880,6 +993,11 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
                 40, 64, 32, -117, 9, -3, 95, -56, 63, 1, 2, -21, -95, 0, 0, 84, 3, -3, 9, -56, -119, -1, -1,
                 53, -32, 3, 0, 50, -64, 3, 95, -42, 95, 63, 3, -43, -32, 3, 31, 42, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                -16, 72, 45, -23, 1, 0, -128, -32, -97, 79, -80, -31, 3, 16, 37, -32, 2, 80, 36, -32, 1, 16, -107, -31, 10, 0,
+                0, 26, 28, 80, -99, -27, 91, -16, 127, -11, 24, 64, -99, -27, -108, 31, -96, -31, 0, 0, 81, -29, 8, 0, 0, 10,
+                -97, 111, -80, -31, 3, 16, 39, -32, 2, 112, 38, -32, 1, 16, -105, -31, -9, -1, -1, 10, 31, -16, 127, -11, 0, 0,
+                -96, -29, 91, -16, 127, -11, -16, -120, -67, -24, 91, -16, 127, -11, 1, 0, -96, -29, -16, -120, -67, -24})
         @ASMGenerator(method = "gen_atomic_compare_and_set_long")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG, LONG})
         abstract boolean atomic_compare_and_set_long(Object base, long offset, long expected, long desired);
