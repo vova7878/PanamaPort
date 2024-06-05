@@ -193,6 +193,10 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
         if (this instanceof ValueLayout vl && elements.length == 0) {
             return vl.varHandle(); // fast path
         }
+        return varHandleInternal(elements);
+    }
+
+    public VarHandle varHandleInternal(PathElement... elements) {
         return computePathOp(_LayoutPath.rootPath((MemoryLayout) this), _LayoutPath::dereferenceHandle,
                 Set.of(), elements);
     }

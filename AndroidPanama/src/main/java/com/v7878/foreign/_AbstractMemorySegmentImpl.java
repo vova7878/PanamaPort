@@ -354,10 +354,14 @@ abstract sealed class _AbstractMemorySegmentImpl
         return arr;
     }
 
-    public void checkAccess(long offset, long length, boolean readOnly) {
+    public void checkReadOnly(boolean readOnly) {
         if (!readOnly && this.readOnly) {
             throw new IllegalArgumentException("Attempt to write a read-only segment");
         }
+    }
+
+    public void checkAccess(long offset, long length, boolean readOnly) {
+        checkReadOnly(readOnly);
         checkBounds(offset, length);
     }
 
@@ -811,6 +815,7 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     @Override
     public void set(AddressLayout layout, long offset, MemorySegment value) {
+        Objects.requireNonNull(value);
         layout.varHandle().set(this, offset, value);
     }
 
@@ -918,6 +923,7 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     @Override
     public void setAtIndex(AddressLayout layout, long index, MemorySegment value) {
+        Objects.requireNonNull(value);
         _Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.varHandle().set(this, index * layout.byteSize(), value);
     }

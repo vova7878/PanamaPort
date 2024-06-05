@@ -64,7 +64,7 @@ class _LayoutPath {
     private static final MethodHandle MH_ADD_SCALED_OFFSET;
     private static final MethodHandle MH_SLICE;
     private static final MethodHandle MH_SLICE_LAYOUT;
-    private static final MethodHandle MH_CHECK_ALIGN;
+    private static final MethodHandle MH_CHECK_ENCL_LAYOUT;
     private static final MethodHandle MH_SEGMENT_RESIZE;
     private static final MethodHandle MH_ADD;
 
@@ -77,7 +77,7 @@ class _LayoutPath {
                     MethodType.methodType(MemorySegment.class, long.class, long.class));
             MH_SLICE_LAYOUT = lookup.findVirtual(MemorySegment.class, "asSlice",
                     MethodType.methodType(MemorySegment.class, long.class, MemoryLayout.class));
-            MH_CHECK_ALIGN = lookup.findStatic(_LayoutPath.class, "checkAlign",
+            MH_CHECK_ENCL_LAYOUT = lookup.findStatic(_LayoutPath.class, "checkEnclosingLayout",
                     MethodType.methodType(void.class, MemorySegment.class, long.class, MemoryLayout.class));
             MH_SEGMENT_RESIZE = lookup.findStatic(_LayoutPath.class, "resizeSegment",
                     MethodType.methodType(MemorySegment.class, MemorySegment.class, MemoryLayout.class));
@@ -205,19 +205,16 @@ class _LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        // If we have an enclosing layout, drop the alignment check for the accessed element,
-        // we check the root layout instead
-        ValueLayout accessedLayout = enclosing != null ? valueLayout.withByteAlignment(1) : valueLayout;
-        VarHandle handle = accessedLayout.varHandle();
+        VarHandle handle = _Utils.makeRawSegmentViewVarHandle(valueLayout);
         handle = VarHandles.collectCoordinates(handle, 1, offsetHandle());
 
         // we only have to check the alignment of the root layout for the first dereference we do,
         // as each dereference checks the alignment of the target address when constructing its segment
         // (see _Utils::longToAddress)
-        if (derefAdapters.length == 0 && enclosing != null) {
+        if (derefAdapters.length == 0) {
             // insert align check for the root layout on the initial MS + offset
             List<Class<?>> coordinateTypes = handle.coordinateTypes();
-            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
+            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ENCL_LAYOUT, 2, rootLayout());
             handle = VarHandles.collectCoordinates(handle, 0, alignCheck);
             int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, coordinateTypes.size())).toArray();
             handle = VarHandles.permuteCoordinates(handle, coordinateTypes, reorder);
@@ -277,7 +274,7 @@ class _LayoutPath {
         if (enclosing != null) {
             // insert align check for the root layout on the initial MS + offset
             MethodType oldType = sliceHandle.type();
-            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
+            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ENCL_LAYOUT, 2, rootLayout());
             sliceHandle = MethodHandlesFixes.collectArguments(sliceHandle, 0, alignCheck); // (MS, long, MS, long) -> MS
             int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, oldType.parameterCount())).toArray();
             sliceHandle = MethodHandlesFixes.permuteArguments(sliceHandle, oldType, reorder); // (MS, long, ...) -> MS
@@ -287,11 +284,12 @@ class _LayoutPath {
     }
 
     @Keep
-    private static void checkAlign(MemorySegment segment, long offset, MemoryLayout constraint) {
-        if (!((_AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, constraint)) {
+    private static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
+        ((_AbstractMemorySegmentImpl) segment).checkAccess(offset, enclosing.byteSize(), true);
+        if (!((_AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, enclosing)) {
             throw new IllegalArgumentException(String.format(
                     "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
-                    , offset, constraint.byteAlignment(), constraint, segment));
+                    , offset, enclosing.byteAlignment(), enclosing, segment));
         }
     }
 
