@@ -157,7 +157,6 @@ public interface SymbolLookup {
      * @return a zero-length memory segment whose address indicates the address of the symbol
      * @throws NoSuchElementException if no symbol address can be found for the given name
      * @see #find(String)
-     * @since 23
      */
     default MemorySegment findOrThrow(String name) {
         Objects.requireNonNull(name);
