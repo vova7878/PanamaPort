@@ -10,41 +10,54 @@ import static com.v7878.unsafe.invoke.VarHandleImpl.isReadOnly;
 
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandle.AccessMode;
-import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.VarHandleImpl;
 import com.v7878.unsafe.invoke.VarHandleImpl.VarHandleTransformer;
+import com.v7878.unsafe.invoke.Wrapper;
 
 import java.util.Objects;
 
 abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer {
 
-    public static VarHandle makeRawSegmentViewVarHandle(Class<?> carrier, long alignmentMask, boolean swap) {
+    /**
+     * Creates a memory segment view var handle.
+     * <p>
+     * The resulting var handle will take a memory segment as first argument (the segment to be dereferenced),
+     * and a {@code long} as second argument (the offset into the segment).
+     * <p>
+     * Note: the returned var handle does not perform any size or alignment check. It is up to clients
+     * to adapt the returned var handle and insert the appropriate checks.
+     *
+     * @param carrier       the Java carrier type.
+     * @param alignmentMask alignment requirement to be checked upon access. In bytes. Expressed as a mask.
+     * @return the created VarHandle.
+     */
+    public static VarHandle rawMemorySegmentViewHandle(Class<?> carrier, long alignmentMask, boolean swap) {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
 
         _VarHandleSegmentViewBase transformer;
         if (carrier == byte.class) {
-            transformer = new VarHandleSegmentAsBytes(swap, alignmentMask);
+            transformer = new VarHandleSegmentAsBytes(swap);
         } else if (carrier == short.class) {
-            transformer = new VarHandleSegmentAsShorts(swap, alignmentMask);
+            transformer = new VarHandleSegmentAsShorts(swap);
         } else if (carrier == char.class) {
-            transformer = new VarHandleSegmentAsChars(swap, alignmentMask);
+            transformer = new VarHandleSegmentAsChars(swap);
         } else if (carrier == int.class) {
-            transformer = new VarHandleSegmentAsInts(swap, alignmentMask);
+            transformer = new VarHandleSegmentAsInts(swap);
         } else if (carrier == float.class) {
-            transformer = new VarHandleSegmentAsFloats(swap, alignmentMask);
+            transformer = new VarHandleSegmentAsFloats(swap);
         } else if (carrier == long.class) {
-            transformer = new VarHandleSegmentAsLongs(swap, alignmentMask);
+            transformer = new VarHandleSegmentAsLongs(swap);
         } else if (carrier == double.class) {
-            transformer = new VarHandleSegmentAsDoubles(swap, alignmentMask);
+            transformer = new VarHandleSegmentAsDoubles(swap);
         } else {
             throw shouldNotReachHere();
         }
 
-        long min_align_mask = transformer.length - 1;
+        long min_align_mask = Wrapper.forPrimitiveType(carrier).byteWidth() - 1;
         boolean allowAtomicAccess = (alignmentMask & min_align_mask) == min_align_mask;
         int modesMask = VarHandleImpl.accessModesBitMask(carrier, allowAtomicAccess);
         return VarHandleImpl.newVarHandle(modesMask, transformer,
@@ -56,44 +69,23 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
      **/
     final boolean swap;
 
-    /**
-     * access size (in bytes, computed from var handle carrier type)
-     **/
-    final long length;
-
-    /**
-     * alignment constraint (in bytes, expressed as a bit mask)
-     **/
-    final long alignmentMask;
-
-    _VarHandleSegmentViewBase(boolean swap, long length, long alignmentMask) {
+    _VarHandleSegmentViewBase(boolean swap) {
         this.swap = swap;
-        this.length = length;
-        this.alignmentMask = alignmentMask;
     }
 
-    static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
-        return new IllegalArgumentException("Misaligned access at address: " + Utils.toHexString(address));
-    }
-
-    void checkAddress(_AbstractMemorySegmentImpl ms, long offset, boolean ro) {
-        Objects.requireNonNull(ms).checkAccess(offset, length, ro);
+    void checkAddress(_AbstractMemorySegmentImpl ms, boolean ro) {
+        Objects.requireNonNull(ms).checkReadOnly(ro);
     }
 
     long getOffset(_AbstractMemorySegmentImpl bb, long offset) {
         long base = bb.unsafeGetOffset();
-        long address = base + offset;
-        long maxAlignMask = bb.maxAlignMask();
-        if (((address | maxAlignMask) & alignmentMask) != 0) {
-            throw newIllegalArgumentExceptionForMisalignedAccess(address);
-        }
-        return address;
+        return base + offset;
     }
 
     private static final class VarHandleSegmentAsBytes extends _VarHandleSegmentViewBase {
 
-        VarHandleSegmentAsBytes(boolean swap, long alignmentMask) {
-            super(swap, 1, alignmentMask);
+        VarHandleSegmentAsBytes(boolean swap) {
+            super(swap);
         }
 
         @Override
@@ -102,7 +94,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
             long offset = accessor.nextLong();
-            checkAddress(ms, offset, isReadOnly(mode));
+            checkAddress(ms, isReadOnly(mode));
             offset = getOffset(ms, offset);
             Object base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
@@ -157,8 +149,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
 
     private static final class VarHandleSegmentAsShorts extends _VarHandleSegmentViewBase {
 
-        VarHandleSegmentAsShorts(boolean swap, long alignmentMask) {
-            super(swap, 2, alignmentMask);
+        VarHandleSegmentAsShorts(boolean swap) {
+            super(swap);
         }
 
         @Override
@@ -167,7 +159,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
             long offset = accessor.nextLong();
-            checkAddress(ms, offset, isReadOnly(mode));
+            checkAddress(ms, isReadOnly(mode));
             offset = getOffset(ms, offset);
             Object base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
@@ -223,8 +215,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
 
     private static final class VarHandleSegmentAsChars extends _VarHandleSegmentViewBase {
 
-        VarHandleSegmentAsChars(boolean swap, long alignmentMask) {
-            super(swap, 2, alignmentMask);
+        VarHandleSegmentAsChars(boolean swap) {
+            super(swap);
         }
 
         @Override
@@ -233,7 +225,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
             long offset = accessor.nextLong();
-            checkAddress(ms, offset, isReadOnly(mode));
+            checkAddress(ms, isReadOnly(mode));
             offset = getOffset(ms, offset);
             Object base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
@@ -291,8 +283,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
 
     private static final class VarHandleSegmentAsInts extends _VarHandleSegmentViewBase {
 
-        VarHandleSegmentAsInts(boolean swap, long alignmentMask) {
-            super(swap, 4, alignmentMask);
+        VarHandleSegmentAsInts(boolean swap) {
+            super(swap);
         }
 
         @Override
@@ -301,7 +293,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
             long offset = accessor.nextLong();
-            checkAddress(ms, offset, isReadOnly(mode));
+            checkAddress(ms, isReadOnly(mode));
             offset = getOffset(ms, offset);
             Object base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
@@ -357,8 +349,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
 
     private static final class VarHandleSegmentAsFloats extends _VarHandleSegmentViewBase {
 
-        VarHandleSegmentAsFloats(boolean swap, long alignmentMask) {
-            super(swap, 4, alignmentMask);
+        VarHandleSegmentAsFloats(boolean swap) {
+            super(swap);
         }
 
         @Override
@@ -367,7 +359,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
             long offset = accessor.nextLong();
-            checkAddress(ms, offset, isReadOnly(mode));
+            checkAddress(ms, isReadOnly(mode));
             offset = getOffset(ms, offset);
             Object base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
@@ -408,8 +400,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
 
     private static final class VarHandleSegmentAsLongs extends _VarHandleSegmentViewBase {
 
-        VarHandleSegmentAsLongs(boolean swap, long alignmentMask) {
-            super(swap, 8, alignmentMask);
+        VarHandleSegmentAsLongs(boolean swap) {
+            super(swap);
         }
 
         @Override
@@ -418,7 +410,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
             long offset = accessor.nextLong();
-            checkAddress(ms, offset, isReadOnly(mode));
+            checkAddress(ms, isReadOnly(mode));
             offset = getOffset(ms, offset);
             Object base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
@@ -474,8 +466,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
 
     private static final class VarHandleSegmentAsDoubles extends _VarHandleSegmentViewBase {
 
-        VarHandleSegmentAsDoubles(boolean swap, long alignmentMask) {
-            super(swap, 8, alignmentMask);
+        VarHandleSegmentAsDoubles(boolean swap) {
+            super(swap);
         }
 
         @Override
@@ -484,7 +476,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
             long offset = accessor.nextLong();
-            checkAddress(ms, offset, isReadOnly(mode));
+            checkAddress(ms, isReadOnly(mode));
             offset = getOffset(ms, offset);
             Object base = ms.unsafeGetBase();
             var session = ms.sessionImpl();

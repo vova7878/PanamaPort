@@ -113,12 +113,11 @@ final class _Utils {
     }
 
     // Port-added: specific implementation
-    private static VarHandle makeRawSegmentViewVarHandle2(
+    private static VarHandle rawMemorySegmentViewHandle(
             Class<?> carrier, long alignmentMask, ByteOrder order) {
-        return _VarHandleSegmentViewBase.makeRawSegmentViewVarHandle(carrier,
+        return _VarHandleSegmentViewBase.rawMemorySegmentViewHandle(carrier,
                 alignmentMask, !ByteOrder.nativeOrder().equals(order));
     }
-
 
     /**
      * This method returns a <em>raw var handle</em>, that is, a var handle that does not perform any size
@@ -137,8 +136,8 @@ final class _Utils {
         final class VarHandleCache {
             private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
         }
-        return VarHandleCache.HANDLE_MAP
-                .computeIfAbsent(layout.withoutName(), _Utils::makeRawSegmentViewVarHandleInternal);
+        return VarHandleCache.HANDLE_MAP.computeIfAbsent(
+                layout.withoutName(), _Utils::makeRawSegmentViewVarHandleInternal);
     }
 
     private static VarHandle makeRawSegmentViewVarHandleInternal(ValueLayout layout) {
@@ -150,7 +149,7 @@ final class _Utils {
             baseCarrier = byte.class;
         }
 
-        VarHandle handle = makeRawSegmentViewVarHandle2(baseCarrier,
+        VarHandle handle = rawMemorySegmentViewHandle(baseCarrier,
                 layout.byteAlignment() - 1, layout.order());
 
         if (layout.carrier() == boolean.class) {
