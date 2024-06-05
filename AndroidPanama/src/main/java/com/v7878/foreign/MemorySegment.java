@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,11 @@ import java.util.stream.Stream;
  * <li>The address of a native segment (including mapped segments) denotes the physical
  * address of the region of memory which backs the segment.</li>
  * </ul>
+ * <p>
+ * Every memory segment has a {@linkplain #maxByteAlignment() maximum byte alignment},
+ * expressed as a {@code long} value. The maximum alignment is always a power of two,
+ * derived from the segment address, and the segment type, as explained in more detail
+ * <a href="#segment-alignment">below</a>.
  * <p>
  * Every memory segment has a {@linkplain #byteSize() size}. The size of a heap segment
  * is derived from the Java array from which it is obtained. This size is predictable
@@ -412,6 +417,14 @@ import java.util.stream.Stream;
  * MemorySegment byteSegment = MemorySegment.ofArray(new byte[10]);
  * byteSegment.get(ValueLayout.JAVA_INT_UNALIGNED, 0); // ok: ValueLayout.JAVA_INT_UNALIGNED.byteAlignment() == ValueLayout.JAVA_BYTE.byteAlignment()
  *}
+ * <p>
+ * Clients can use the {@linkplain MemorySegment#maxByteAlignment()} method to check if
+ * a memory segment supports the alignment constraint of a memory layout, as follows:
+ * {@snippet lang = java:
+ * MemoryLayout layout = ...
+ * MemorySegment segment = ...
+ * boolean isAligned = segment.maxByteAlignment() >= layout.byteAlignment();
+ *}
  *
  * <h2 id="wrapping-addresses">Zero-length memory segments</h2>
  * <p>
@@ -615,6 +628,26 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      * {@return the size (in bytes) of this memory segment}
      */
     long byteSize();
+
+    /**
+     * {@return the <a href="#segment-alignment">maximum byte alignment</a>
+     * associated with this memory segment}
+     * <p>
+     * The returned alignment is always a power of two and is derived from
+     * the segment {@linkplain #address() address()} and, if it is a heap segment,
+     * the type of the {@linkplain #heapBase() backing heap storage}.
+     * <p>
+     * This method can be used to ensure that a segment is sufficiently aligned
+     * with a layout:
+     * {@snippet lang = java:
+     * MemoryLayout layout = ...
+     * MemorySegment segment = ...
+     * if (segment.maxByteAlignment() < layout.byteAlignment()) {
+     *     // Take action (e.g. throw an Exception)
+     * }
+     *}
+     */
+    long maxByteAlignment();
 
     /**
      * Returns a slice of this memory segment, at the given offset. The returned
@@ -1438,6 +1471,9 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
     /**
      * A zero-length native segment modelling the {@code NULL} address. Equivalent to
      * {@code MemorySegment.ofAddress(0L)}.
+     * <p>
+     * The {@linkplain MemorySegment#maxByteAlignment() maximum byte alignment} for
+     * the {@code NULL} segment is of 2<sup>62</sup>.
      */
     MemorySegment NULL = MemorySegment.ofAddress(0L);
 
@@ -2587,7 +2623,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *     <li>Segments obtained from the {@linkplain Arena#global() global arena};</li>
      *     <li>Segments obtained from a raw address, using the
      *         {@link MemorySegment#ofAddress(long)} factory; and</li>
-     *     <li><a href="#wrapping-addresses">Zero-length memory segments.</a></li>
+     *     <li>{@link MemorySegment##wrapping-addresses Zero-length memory segments}.</li>
      * </ul>
      * <p>
      * Conversely, a bounded lifetime is modeled with a segment scope that can be
