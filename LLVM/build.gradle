@@ -32,7 +32,6 @@ dependencies {
 
     implementation project(':AndroidUnsafe')
 
-    implementation 'com.github.vova7878:DexFile:v0.0.6'
     implementation 'com.github.vova7878:AndroidMisc:v0.0.3'
 }
 
