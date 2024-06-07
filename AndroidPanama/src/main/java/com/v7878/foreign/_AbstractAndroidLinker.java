@@ -12,10 +12,12 @@ import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.ExtraLayouts;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
+import com.v7878.unsafe.invoke.Transformers;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +68,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
         checkLayouts(function);
-        //TODO? SharedUtils.checkExceptions(target);
+        checkExceptions(target);
         function = stripNames(function, true);
         _LinkerOptions optionSet = _LinkerOptions.forUpcall(function, options);
 
@@ -101,6 +103,13 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                     throw new IllegalArgumentException("Invalid variadic argument layout: " + variadicLayout);
                 }
             }
+        }
+    }
+
+    private static void checkExceptions(MethodHandle target) {
+        Class<?>[] exceptions = Transformers.exceptionTypes(target);
+        if (exceptions != null && exceptions.length != 0) {
+            throw new IllegalArgumentException("Target handle may throw exceptions: " + Arrays.toString(exceptions));
         }
     }
 
