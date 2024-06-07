@@ -556,8 +556,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         @Override
         public void transform(EmulatedStackFrame stack) throws Throwable {
             StackFrameAccessor thiz_acc = stack.createAccessor();
-            Arena arena = thiz_acc.getReference(ret_index, Arena.class);
-            MemorySegment ret = arena.allocate(ret_layout);
+            SegmentAllocator allocator = thiz_acc.getReference(ret_index, SegmentAllocator.class);
+            MemorySegment ret = allocator.allocate(ret_layout);
             MethodType cached_type = stack.type();
             stack.setType(handle.type());
             thiz_acc.updateType();
@@ -602,7 +602,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         MethodHandle handle = Transformers.makeTransformer(handleType, arranger);
         if (options.isReturnInMemory()) {
             int ret_index = options.hasCapturedCallState() ? 2 : 1;
-            MethodType type = handleType.changeParameterType(ret_index, Arena.class);
+            MethodType type = handleType.changeParameterType(ret_index, SegmentAllocator.class);
             ReturnWrapper wrapper = new ReturnWrapper(handle, ret, ret_index);
             handle = Transformers.makeTransformer(type, wrapper);
         }
