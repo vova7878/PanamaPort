@@ -6,6 +6,11 @@ import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
+import static com.v7878.foreign.ValueLayout.OfChar;
+import static com.v7878.foreign.ValueLayout.OfDouble;
+import static com.v7878.foreign.ValueLayout.OfFloat;
+import static com.v7878.foreign.ValueLayout.OfInt;
+import static com.v7878.foreign.ValueLayout.OfLong;
 import static com.v7878.foreign._CapturableState.ERRNO;
 import static com.v7878.foreign._Utils.moveArgument;
 import static com.v7878.llvm.Core.LLVMAddAttributeAtIndex;
@@ -18,6 +23,7 @@ import static com.v7878.llvm.Core.LLVMAttributeIndex.LLVMAttributeFirstArgIndex;
 import static com.v7878.llvm.Core.LLVMBuildAlloca;
 import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildCondBr;
+import static com.v7878.llvm.Core.LLVMBuildFPCast;
 import static com.v7878.llvm.Core.LLVMBuildICmp;
 import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
@@ -26,8 +32,10 @@ import static com.v7878.llvm.Core.LLVMBuildPointerCast;
 import static com.v7878.llvm.Core.LLVMBuildPtrToInt;
 import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
+import static com.v7878.llvm.Core.LLVMBuildSExt;
 import static com.v7878.llvm.Core.LLVMBuildStore;
 import static com.v7878.llvm.Core.LLVMBuildUnreachable;
+import static com.v7878.llvm.Core.LLVMBuildZExt;
 import static com.v7878.llvm.Core.LLVMConstAdd;
 import static com.v7878.llvm.Core.LLVMConstAllOnes;
 import static com.v7878.llvm.Core.LLVMConstInt;
@@ -81,6 +89,9 @@ import com.v7878.dex.FieldId;
 import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
+import com.v7878.foreign.ValueLayout.OfBoolean;
+import com.v7878.foreign.ValueLayout.OfByte;
+import com.v7878.foreign.ValueLayout.OfShort;
 import com.v7878.foreign._StorageDescriptor.LLVMStorage;
 import com.v7878.foreign._StorageDescriptor.MemoryStorage;
 import com.v7878.foreign._StorageDescriptor.NoStorage;
@@ -322,19 +333,19 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     // Note: all layouts already has natural alignment
     private static LLVMTypeRef layoutToLLVMType(LLVMContextRef context, MemoryLayout layout) {
         Objects.requireNonNull(layout);
-        if (layout instanceof ValueLayout.OfByte) {
+        if (layout instanceof OfByte) {
             return int8_t(context);
-        } else if (layout instanceof ValueLayout.OfBoolean) {
+        } else if (layout instanceof OfBoolean) {
             return int1_t(context);
-        } else if (layout instanceof ValueLayout.OfShort || layout instanceof ValueLayout.OfChar) {
+        } else if (layout instanceof OfShort || layout instanceof OfChar) {
             return int16_t(context);
-        } else if (layout instanceof ValueLayout.OfInt) {
+        } else if (layout instanceof OfInt) {
             return int32_t(context);
-        } else if (layout instanceof ValueLayout.OfFloat) {
+        } else if (layout instanceof OfFloat) {
             return float_t(context);
-        } else if (layout instanceof ValueLayout.OfLong) {
+        } else if (layout instanceof OfLong) {
             return int64_t(context);
-        } else if (layout instanceof ValueLayout.OfDouble) {
+        } else if (layout instanceof OfDouble) {
             return double_t(context);
         } else if (layout instanceof AddressLayout) {
             return intptr_t(context);
@@ -904,8 +915,17 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     assert ns.layout != null;
                     var type = layoutToLLVMType(context, ns.layout);
                     target_args[count++] = LLVMBuildAlloca(builder, type, "");
-                } else if (storage instanceof RawStorage) {
-                    target_args[count++] = stub_args[index++];
+                } else if (storage instanceof RawStorage rs) {
+                    var arg = stub_args[index++];
+                    // varargs rules
+                    if (rs.layout instanceof OfByte || rs.layout instanceof OfShort) {
+                        arg = LLVMBuildSExt(builder, arg, int32_t(context), "");
+                    } else if (rs.layout instanceof OfBoolean || rs.layout instanceof OfChar) {
+                        arg = LLVMBuildZExt(builder, arg, int32_t(context), "");
+                    } else if (rs.layout instanceof OfFloat) {
+                        arg = LLVMBuildFPCast(builder, arg, double_t(context), "");
+                    }
+                    target_args[count++] = arg;
                 } else if (storage instanceof WrapperStorage ws) {
                     var ltype = layoutToLLVMType(context, ws.layout);
                     var wtype = layoutToLLVMType(context, ws.wrapper);
@@ -981,21 +1001,21 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
 
         private static void copyRet(StackFrameAccessor reader, MemorySegment ret, MemoryLayout layout) {
-            if (layout instanceof ValueLayout.OfByte bl) {
+            if (layout instanceof OfByte bl) {
                 ret.set(bl, 0, reader.nextByte());
-            } else if (layout instanceof ValueLayout.OfBoolean bl) {
+            } else if (layout instanceof OfBoolean bl) {
                 ret.set(bl, 0, reader.nextBoolean());
-            } else if (layout instanceof ValueLayout.OfShort sl) {
+            } else if (layout instanceof OfShort sl) {
                 ret.set(sl, 0, reader.nextShort());
-            } else if (layout instanceof ValueLayout.OfChar cl) {
+            } else if (layout instanceof OfChar cl) {
                 ret.set(cl, 0, reader.nextChar());
-            } else if (layout instanceof ValueLayout.OfInt il) {
+            } else if (layout instanceof OfInt il) {
                 ret.set(il, 0, reader.nextInt());
-            } else if (layout instanceof ValueLayout.OfFloat fl) {
+            } else if (layout instanceof OfFloat fl) {
                 ret.set(fl, 0, reader.nextFloat());
-            } else if (layout instanceof ValueLayout.OfLong ll) {
+            } else if (layout instanceof OfLong ll) {
                 ret.set(ll, 0, reader.nextLong());
-            } else if (layout instanceof ValueLayout.OfDouble dl) {
+            } else if (layout instanceof OfDouble dl) {
                 ret.set(dl, 0, reader.nextDouble());
             } else if (layout instanceof AddressLayout al) {
                 ret.set(al, 0, reader.nextReference(MemorySegment.class));
