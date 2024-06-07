@@ -45,9 +45,11 @@ import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -59,11 +61,6 @@ public class Transformers {
 
     public static final Class<?> INVOKE_TRANSFORMER = nothrows_run(
             () -> Class.forName("java.lang.invoke.Transformers$Transformer"));
-
-    private static final MethodHandle isConvertibleTo = nothrows_run(() -> unreflect(
-            getDeclaredMethod(MethodType.class, "isConvertibleTo", MethodType.class)));
-    private static final MethodHandle explicitCastEquivalentToAsType = nothrows_run(() -> unreflect(
-            getDeclaredMethod(MethodType.class, "explicitCastEquivalentToAsType", MethodType.class)));
 
     private static final MethodHandle directAsVarargsCollector = nothrows_run(() -> unreflectDirect(
             getDeclaredMethod(MethodHandle.class, "asVarargsCollector", Class.class)));
@@ -550,11 +547,62 @@ public class Transformers {
     }
 
     public static boolean isConvertibleTo(MethodType from, MethodType to) {
-        return nothrows_run(() -> (boolean) isConvertibleTo.invokeExact(from, to));
+        class Holder {
+            static final MethodHandle isConvertibleTo = nothrows_run(() -> unreflect(
+                    getDeclaredMethod(MethodType.class, "isConvertibleTo", MethodType.class)));
+        }
+        return nothrows_run(() -> (boolean) Holder.isConvertibleTo.invokeExact(from, to));
     }
 
     public static boolean explicitCastEquivalentToAsType(MethodType from, MethodType to) {
-        return nothrows_run(() -> (boolean) explicitCastEquivalentToAsType.invokeExact(from, to));
+        class Holder {
+            static final MethodHandle explicitCastEquivalentToAsType = nothrows_run(() -> unreflect(
+                    getDeclaredMethod(MethodType.class, "explicitCastEquivalentToAsType", MethodType.class)));
+        }
+        return nothrows_run(() -> (boolean) Holder.explicitCastEquivalentToAsType.invokeExact(from, to));
+    }
+
+    public static MethodHandle getMethodHandleImpl(MethodHandle target) {
+        class Holder {
+            static final MethodHandle getMethodHandleImpl = nothrows_run(() -> unreflect(
+                    getDeclaredMethod(MethodHandles.class, "getMethodHandleImpl", MethodHandle.class)));
+        }
+        return nothrows_run(() -> (MethodHandle) Holder.getMethodHandleImpl.invokeExact(target));
+    }
+
+    public static Member getMemberInternal(MethodHandle target) {
+        class Holder {
+            static final Class<?> mhi = nothrows_run(() ->
+                    Class.forName("java.lang.invoke.MethodHandleImpl"));
+            static final MethodHandle getMemberInternal = nothrows_run(() ->
+                    unreflect(getDeclaredMethod(mhi, "getMemberInternal")));
+        }
+        return nothrows_run(() -> (Member) Holder.getMemberInternal.invoke(target));
+    }
+
+    public static Member getMemberOrNull(MethodHandle target) {
+        MethodHandle impl;
+        try {
+            impl = getMethodHandleImpl(target);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+        return getMemberInternal(impl);
+    }
+
+    public static Class<?>[] exceptionTypes(MethodHandle handle) {
+        Member member = getMemberOrNull(handle);
+        if (member instanceof Method method) {
+            return method.getExceptionTypes();
+        }
+        if (member instanceof Constructor<?> constructor) {
+            return constructor.getExceptionTypes();
+        }
+        if (member instanceof Field) {
+            return new Class[0];
+        }
+        // unknown
+        return null;
     }
 
     private static final long RTYPE_OFFSET = fieldOffset(
