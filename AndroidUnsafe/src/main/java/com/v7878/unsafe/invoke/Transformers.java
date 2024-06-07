@@ -567,7 +567,7 @@ public class Transformers {
             static final MethodHandle getMethodHandleImpl = nothrows_run(() -> unreflect(
                     getDeclaredMethod(MethodHandles.class, "getMethodHandleImpl", MethodHandle.class)));
         }
-        return nothrows_run(() -> (MethodHandle) Holder.getMethodHandleImpl.invokeExact(target));
+        return nothrows_run(() -> (MethodHandle) Holder.getMethodHandleImpl.invoke(target));
     }
 
     public static Member getMemberInternal(MethodHandle target) {
