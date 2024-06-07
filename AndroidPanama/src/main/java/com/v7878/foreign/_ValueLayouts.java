@@ -165,7 +165,13 @@ final class _ValueLayouts {
         }
     }
 
-    public static final class OfBooleanImpl extends AbstractValueLayout<OfBooleanImpl> implements ValueLayout.OfBoolean {
+    abstract static sealed class JavaValueLayout<V extends JavaValueLayout<V> & ValueLayout> extends AbstractValueLayout<V> {
+        JavaValueLayout(Class<?> carrier, ByteOrder order, long byteSize, long byteAlignment, String name) {
+            super(carrier, order, byteSize, byteAlignment, name);
+        }
+    }
+
+    public static final class OfBooleanImpl extends JavaValueLayout<OfBooleanImpl> implements ValueLayout.OfBoolean {
 
         private OfBooleanImpl(ByteOrder order, long byteAlignment, String name) {
             super(boolean.class, order, Byte.BYTES, byteAlignment, name);
@@ -181,7 +187,7 @@ final class _ValueLayouts {
         }
     }
 
-    public static final class OfByteImpl extends AbstractValueLayout<OfByteImpl> implements ValueLayout.OfByte {
+    public static final class OfByteImpl extends JavaValueLayout<OfByteImpl> implements ValueLayout.OfByte {
 
         private OfByteImpl(ByteOrder order, long byteAlignment, String name) {
             super(byte.class, order, Byte.BYTES, byteAlignment, name);
@@ -197,7 +203,7 @@ final class _ValueLayouts {
         }
     }
 
-    public static final class OfCharImpl extends AbstractValueLayout<OfCharImpl> implements ValueLayout.OfChar {
+    public static final class OfCharImpl extends JavaValueLayout<OfCharImpl> implements ValueLayout.OfChar {
 
         private OfCharImpl(ByteOrder order, long byteAlignment, String name) {
             super(char.class, order, Character.BYTES, byteAlignment, name);
@@ -213,7 +219,7 @@ final class _ValueLayouts {
         }
     }
 
-    public static final class OfShortImpl extends AbstractValueLayout<OfShortImpl> implements ValueLayout.OfShort {
+    public static final class OfShortImpl extends JavaValueLayout<OfShortImpl> implements ValueLayout.OfShort {
 
         private OfShortImpl(ByteOrder order, long byteAlignment, String name) {
             super(short.class, order, Short.BYTES, byteAlignment, name);
@@ -229,7 +235,7 @@ final class _ValueLayouts {
         }
     }
 
-    public static final class OfIntImpl extends AbstractValueLayout<OfIntImpl> implements ValueLayout.OfInt {
+    public static final class OfIntImpl extends JavaValueLayout<OfIntImpl> implements ValueLayout.OfInt {
 
         private OfIntImpl(ByteOrder order, long byteAlignment, String name) {
             super(int.class, order, Integer.BYTES, byteAlignment, name);
@@ -245,7 +251,7 @@ final class _ValueLayouts {
         }
     }
 
-    public static final class OfFloatImpl extends AbstractValueLayout<OfFloatImpl> implements ValueLayout.OfFloat {
+    public static final class OfFloatImpl extends JavaValueLayout<OfFloatImpl> implements ValueLayout.OfFloat {
 
         private OfFloatImpl(ByteOrder order, long byteAlignment, String name) {
             super(float.class, order, Float.BYTES, byteAlignment, name);
@@ -261,7 +267,7 @@ final class _ValueLayouts {
         }
     }
 
-    public static final class OfLongImpl extends AbstractValueLayout<OfLongImpl> implements ValueLayout.OfLong {
+    public static final class OfLongImpl extends JavaValueLayout<OfLongImpl> implements ValueLayout.OfLong {
 
         private OfLongImpl(ByteOrder order, long byteAlignment, String name) {
             super(long.class, order, Long.BYTES, byteAlignment, name);
@@ -277,7 +283,7 @@ final class _ValueLayouts {
         }
     }
 
-    public static final class OfDoubleImpl extends AbstractValueLayout<OfDoubleImpl> implements ValueLayout.OfDouble {
+    public static final class OfDoubleImpl extends JavaValueLayout<OfDoubleImpl> implements ValueLayout.OfDouble {
 
         private OfDoubleImpl(ByteOrder order, long byteAlignment, String name) {
             super(double.class, order, Double.BYTES, byteAlignment, name);

@@ -86,6 +86,7 @@ import com.v7878.foreign._StorageDescriptor.MemoryStorage;
 import com.v7878.foreign._StorageDescriptor.NoStorage;
 import com.v7878.foreign._StorageDescriptor.RawStorage;
 import com.v7878.foreign._StorageDescriptor.WrapperStorage;
+import com.v7878.foreign._ValueLayouts.JavaValueLayout;
 import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.Types.LLVMAttributeRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
@@ -124,49 +125,60 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     private static class DowncallArranger implements TransformerI {
+
         private final MethodHandle stub;
-        private final Class<?>[] args;
+        private final MemoryLayout[] args;
         private final ValueLayout ret;
         private final boolean allowsHeapAccess;
         private final int capturedStateMask;
         private final int segment_params_count;
 
-        public DowncallArranger(MethodHandle stub, Class<?>[] args, ValueLayout ret,
+        public DowncallArranger(MethodHandle stub, List<MemoryLayout> argsList, ValueLayout ret,
                                 boolean allowsHeapAccess, int capturedStateMask) {
             this.stub = stub;
-            this.args = args;
+            this.args = argsList.toArray(new MemoryLayout[0]);
             this.ret = ret;
             this.allowsHeapAccess = allowsHeapAccess;
             this.capturedStateMask = capturedStateMask;
-            this.segment_params_count = Arrays.stream(args)
-                    .mapToInt(t -> t == MemorySegment.class ? 1 : 0)
+            this.segment_params_count = argsList.stream()
+                    .mapToInt(t -> t instanceof AddressLayout ? 1 : 0)
                     .reduce(Integer::sum).orElse(0)
                     + (capturedStateMask < 0 ? 1 : 0);
         }
 
         private void copyArg(StackFrameAccessor reader, StackFrameAccessor writer,
-                             Class<?> type, List<_MemorySessionImpl> acquiredSessions) {
-            if (type == MemorySegment.class) {
-                _AbstractMemorySegmentImpl segment = (_AbstractMemorySegmentImpl)
-                        reader.nextReference(MemorySegment.class);
-                segment.scope.acquire0();
-                acquiredSessions.add(segment.scope);
-                long value;
-                if (allowsHeapAccess) {
-                    Object base = segment.unsafeGetBase();
-                    writer.putNextReference(base, Object.class);
-                    value = segment.unsafeGetOffset();
-                } else {
-                    value = _Utils.unboxSegment(segment);
-                }
-                if (IS64BIT) {
-                    writer.putNextLong(value);
-                } else {
-                    writer.putNextInt((int) value);
-                }
+                             MemoryLayout layout, Arena arena,
+                             List<_MemorySessionImpl> acquiredSessions) {
+            if (layout instanceof JavaValueLayout<?> valueLayout) {
+                Class<?> carrier = valueLayout.carrier();
+                EmulatedStackFrame.copyNext(reader, writer, carrier);
                 return;
             }
-            EmulatedStackFrame.copyNext(reader, writer, type);
+            _AbstractMemorySegmentImpl segment = (_AbstractMemorySegmentImpl)
+                    reader.nextReference(MemorySegment.class);
+            if (layout instanceof AddressLayout) {
+                segment.scope.acquire0();
+                acquiredSessions.add(segment.scope);
+            } else {
+                // TODO: improve performance
+                MemorySegment tmp = arena.allocate(layout);
+                // by-value struct
+                MemorySegment.copy(segment, 0, tmp, 0, layout.byteSize());
+                segment = (_AbstractMemorySegmentImpl) tmp;
+            }
+            long value;
+            if (allowsHeapAccess) {
+                Object base = segment.unsafeGetBase();
+                writer.putNextReference(base, Object.class);
+                value = segment.unsafeGetOffset();
+            } else {
+                value = _Utils.unboxSegment(segment);
+            }
+            if (IS64BIT) {
+                writer.putNextLong(value);
+            } else {
+                writer.putNextInt((int) value);
+            }
         }
 
         private void copyRet(StackFrameAccessor reader, StackFrameAccessor writer,
@@ -187,7 +199,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             StackFrameAccessor stub_acc = stub_frame.createAccessor();
 
             List<_MemorySessionImpl> acquiredSessions = new ArrayList<>(segment_params_count);
-            try {
+            try (Arena arena = Arena.ofConfined()) {
                 _AbstractMemorySegmentImpl capturedState = null;
                 if (capturedStateMask < 0) {
                     capturedState = (_AbstractMemorySegmentImpl) thiz_acc.nextReference(MemorySegment.class);
@@ -195,8 +207,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     acquiredSessions.add(capturedState.scope);
                 }
 
-                for (Class<?> arg : args) {
-                    copyArg(thiz_acc, stub_acc, arg, acquiredSessions);
+                for (MemoryLayout arg : args) {
+                    copyArg(thiz_acc, stub_acc, arg, arena, acquiredSessions);
                 }
 
                 invokeExactWithFrameNoChecks(stub, stub_frame);
@@ -581,7 +593,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
         // leading function pointer
         stub_descriptor = stub_descriptor.insertArgumentLayouts(0, ADDRESS);
-        MethodType handleType = fdToHandleMethodType(stub_descriptor);
         MethodType stubType = fdToRawMethodType(stub_descriptor, options.allowsHeapAccess());
         Arena scope = Arena.ofAuto();
         MemorySegment nativeStub = generateNativeDowncallStub(scope, target_descriptor, stub_descriptor, options);
@@ -590,9 +601,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 .mapToInt(_CapturableState::mask)
                 .reduce(0, (a, b) -> a | b);
         capturedStateMask |= options.hasCapturedCallState() ? 1 << 31 : 0;
-        var arranger = new DowncallArranger(stub, handleType.parameterArray(),
+        var arranger = new DowncallArranger(stub, stub_descriptor.argumentLayouts(),
                 (ValueLayout) stub_descriptor.returnLayoutPlain(),
                 options.allowsHeapAccess(), capturedStateMask);
+        MethodType handleType = fdToHandleMethodType(stub_descriptor);
         if (options.hasCapturedCallState()) {
             handleType = handleType.insertParameterTypes(0, MemorySegment.class);
         }
