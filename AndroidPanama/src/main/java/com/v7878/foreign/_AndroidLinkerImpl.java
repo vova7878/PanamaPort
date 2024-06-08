@@ -504,7 +504,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     index++;
                 } else if (retStorage instanceof MemoryStorage ms) {
                     // pass as pointer argument with "sret" attribute
-                    attrs[count] = sret_attr;
+                    attrs[count] = ms.add_flag ? sret_attr : null;
                     aligns[count] = Math.toIntExact(ms.layout.byteAlignment());
                     target_args[count] = LLVMBuildIntToPtr(builder, stub_args[index],
                             ptr_t(layoutToLLVMType(context, ms.layout)), "");
@@ -529,7 +529,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     count++;
                 } else if (storage instanceof MemoryStorage ms) {
                     // pass as pointer with "byval" attribute
-                    attrs[count] = byval_attr;
+                    attrs[count] = ms.add_flag ? byval_attr : null;
                     aligns[count] = Math.toIntExact(ms.layout.byteAlignment());
                     target_args[count] = LLVMBuildIntToPtr(builder, stub_args[index],
                             ptr_t(layoutToLLVMType(context, ms.layout)), "");
@@ -900,11 +900,13 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     var wtype = layoutToLLVMType(context, ws.wrapper);
                     target_args[count++] = ret = LLVMBuildAlloca(builder, ltype, "");
                     ret = LLVMBuildPointerCast(builder, ret, ptr_t(wtype), "");
-                } else if (retStorage instanceof MemoryStorage) {
+                } else if (retStorage instanceof MemoryStorage ms) {
                     // pass as pointer argument with "sret" attribute
                     var sret = stub_args[index++];
-                    // Note: attribute index = index of arg + 1
-                    LLVMAddAttributeAtIndex(stub, index, sret_attr);
+                    // Note: attribute index = index of arg + 1 or 0 for return
+                    if (ms.add_flag) {
+                        LLVMAddAttributeAtIndex(stub, index, sret_attr);
+                    }
                     target_args[count++] = LLVMBuildPtrToInt(builder, sret, intptr_t(context), "");
                 } else {
                     throw shouldNotReachHere();
@@ -934,11 +936,13 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     var store = LLVMBuildStore(builder, stub_args[index++], arg);
                     // Note: alignment from layout, not wrapper
                     LLVMSetAlignment(store, Math.toIntExact(ws.layout.byteAlignment()));
-                } else if (storage instanceof MemoryStorage) {
+                } else if (storage instanceof MemoryStorage ms) {
                     // pass as pointer with "byval" attribute
                     var byval = stub_args[index++];
                     // Note: attribute index = index of arg + 1
-                    LLVMAddAttributeAtIndex(stub, index, byval_attr);
+                    if (ms.add_flag) {
+                        LLVMAddAttributeAtIndex(stub, index, byval_attr);
+                    }
                     target_args[count++] = LLVMBuildPtrToInt(builder, byval, intptr_t(context), "");
                 } else {
                     throw shouldNotReachHere();

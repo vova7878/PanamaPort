@@ -28,9 +28,12 @@ final class _StorageDescriptor {
 
     // struct with 'byval' or 'sret' flags
     public static final class MemoryStorage extends LLVMStorage {
-        MemoryStorage(MemoryLayout layout) {
+        public final boolean add_flag;
+
+        MemoryStorage(MemoryLayout layout, boolean add_flag) {
             super(Objects.requireNonNull(layout));
             assert layout instanceof GroupLayout;
+            this.add_flag = add_flag;
         }
     }
 
