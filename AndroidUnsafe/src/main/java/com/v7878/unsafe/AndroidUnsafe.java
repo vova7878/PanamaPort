@@ -1,67 +1,16 @@
 package com.v7878.unsafe;
 
-import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.misc.Math.convEndian;
 import static com.v7878.misc.Math.toUnsignedInt;
 import static com.v7878.misc.Math.toUnsignedLong;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
-import androidx.annotation.Keep;
-
-import com.v7878.dex.ClassDef;
-import com.v7878.dex.Dex;
-import com.v7878.dex.EncodedMethod;
-import com.v7878.dex.MethodId;
-import com.v7878.dex.ProtoId;
-import com.v7878.dex.TypeId;
-
 import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
 
-import dalvik.system.InMemoryDexClassLoader;
-
 public class AndroidUnsafe {
-
-    //TODO: generate with jasmin gradle plugin?
-    public static abstract class Thrower {
-        public static final Thrower INSTANCE;
-
-        static {
-            String impl_name = Thrower.class.getName() + "$Impl";
-            TypeId impl_id = TypeId.of(impl_name);
-            ClassDef clazz = new ClassDef(impl_id);
-            clazz.setSuperClass(TypeId.of(Thrower.class));
-
-            //public Object throwException(Throwable th) {
-            //    throw th;
-            //}
-            clazz.getClassData().getVirtualMethods().add(new EncodedMethod(
-                    new MethodId(impl_id, new ProtoId(TypeId.of(Object.class),
-                            TypeId.of(Throwable.class)), "throwException"),
-                    ACC_PUBLIC).withCode(0, b -> b
-                    .throw_(b.p(0))
-            ));
-
-            InMemoryDexClassLoader cl = new InMemoryDexClassLoader(
-                    ByteBuffer.wrap(new Dex(clazz).compile()), Thrower.class.getClassLoader());
-
-            Class<Thrower> impl;
-            try {
-                //noinspection unchecked
-                impl = (Class<Thrower>) cl.loadClass(impl_name);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-
-            INSTANCE = allocateInstance(impl);
-        }
-
-        @Keep
-        public abstract <T> T throwException(Throwable th);
-    }
 
     public static final int ADDRESS_SIZE = SunUnsafe.addressSize();
     public static final int PAGE_SIZE = SunUnsafe.pageSize();
@@ -110,8 +59,13 @@ public class AndroidUnsafe {
         return IS_BIG_ENDIAN;
     }
 
+    private static <E extends Throwable, T> T throwException0(Throwable th) throws E {
+        //noinspection unchecked
+        throw (E) th;
+    }
+
     public static <T> T throwException(Throwable th) {
-        return Thrower.INSTANCE.throwException(th);
+        return throwException0(th);
     }
 
     public static void park(boolean absolute, long time) {
