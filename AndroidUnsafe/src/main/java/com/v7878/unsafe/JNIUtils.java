@@ -482,7 +482,7 @@ public class JNIUtils {
             static final MemorySegment ptr;
 
             static {
-                ptr = ART.find("_ZN3art7Runtime9instance_E").orElseThrow(Utils::shouldNotReachHere)
+                ptr = ART.findOrThrow("_ZN3art7Runtime9instance_E")
                         .reinterpret(ADDRESS_SIZE).get(ADDRESS, 0);
             }
         }

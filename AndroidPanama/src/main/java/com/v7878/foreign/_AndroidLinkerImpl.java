@@ -684,7 +684,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             private static int f_ptrs_count = 0;
 
             private enum Symbols {
-                LOG_ASSERT(true, ART.find("__android_log_assert").orElseThrow(Utils::shouldNotReachHere)),
+                LOG_ASSERT(true, ART.findOrThrow("__android_log_assert")),
                 GET_ENV(true, JNIUtils.getJNIInvokeInterfaceFunction("GetEnv")),
                 ATTACH(true, JNIUtils.getJNIInvokeInterfaceFunction("AttachCurrentThreadAsDaemon")),
                 DETACH(true, JNIUtils.getJNIInvokeInterfaceFunction("DetachCurrentThread")),

@@ -34,6 +34,10 @@ public interface SymbolLookup {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    default MemorySegment findOrThrow(String name) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     static SymbolLookup loaderLookup() {
         throw new UnsupportedOperationException("Stub!");
     }
