@@ -12,10 +12,9 @@ import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructor;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Reflection.unreflectDirect;
+import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.runOnce;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
 import com.v7878.foreign.GroupLayout;
@@ -26,10 +25,7 @@ import com.v7878.unsafe.foreign.ExtraLayouts.std;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
 
@@ -281,22 +277,28 @@ public class DexFileUtils {
         throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
     }
 
-    //TODO: use defineClassNative(String name, ClassLoader loader, Object cookie, DexFile dexFile)
-    private static final Supplier<MethodHandle> loadClassBinaryName = runOnce(
-            () -> unreflectDirect(getDeclaredMethod(DexFile.class, "loadClassBinaryName",
-                    String.class, ClassLoader.class, List.class)));
-
     public static Class<?> loadClass(DexFile dex, String name, ClassLoader loader) {
-        List<Throwable> suppressed = new ArrayList<>();
-        Class<?> out = (Class<?>) nothrows_run(() -> loadClassBinaryName.get()
-                .invoke(dex, name.replace('.', '/'), loader, suppressed));
-        if (!suppressed.isEmpty()) {
-            RuntimeException err = new RuntimeException();
-            for (Throwable tmp : suppressed) {
-                err.addSuppressed(tmp);
-            }
-            throw err;
+        class Holder {
+            static final MethodHandle defineClassNative = unreflect(
+                    getDeclaredMethod(DexFile.class, "defineClassNative",
+                            String.class, ClassLoader.class, Object.class, DexFile.class));
         }
-        return out;
+        //noinspection RedundantCast
+        return nothrows_run(() -> (Class<?>) Holder.defineClassNative.invokeExact(
+                name.replace('.', '/'), loader, (Object) getCookie(dex), dex));
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static String[] getClassNameList(Object cookie) {
+        class Holder {
+            static final MethodHandle getClassNameList = unreflect(
+                    getDeclaredMethod(DexFile.class, "getClassNameList", Object.class));
+        }
+        return nothrows_run(() -> (String[]) Holder.getClassNameList.invokeExact(cookie));
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static String[] getClassNameList(long dexfile) {
+        return getClassNameList(new long[]{0, dexfile});
     }
 }
