@@ -582,8 +582,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             SegmentAllocator allocator = thiz_acc.getReference(ret_index, SegmentAllocator.class);
             MemorySegment ret = allocator.allocate(ret_layout);
             MethodType cached_type = stack.type();
-            stack.setType(handle.type());
-            thiz_acc.updateType();
+            thiz_acc.setType(handle.type());
             thiz_acc.setReference(ret_index, ret, MemorySegment.class);
             invokeExactWithFrameNoChecks(handle, stack);
             stack.setType(cached_type);

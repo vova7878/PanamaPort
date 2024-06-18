@@ -103,6 +103,7 @@ public class EmulatedStackFrame {
         return (MethodType) getObject(esf, type_offset);
     }
 
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
     public void setType(MethodType type) {
         Objects.requireNonNull(type);
         putObject(esf, type_offset, type);
@@ -209,9 +210,10 @@ public class EmulatedStackFrame {
             return frame;
         }
 
-        // hack for ReturnWrapper
-        public void updateType() {
-            type = frame.type();
+        @DangerLevel(DangerLevel.VERY_CAREFUL)
+        public void setType(MethodType type) {
+            frame.setType(type);
+            this.type = type;
         }
 
         public MethodType type() {
