@@ -18,6 +18,7 @@ public class ExtraLayouts {
             CURRENT_INSTRUCTION_SET.alignofLongLong());
     public static final ValueLayout C_DOUBLE = JAVA_DOUBLE.withByteAlignment(
             CURRENT_INSTRUCTION_SET.alignofDouble());
+    public static final ValueLayout C_WCHAR_T = JAVA_INT;
 
     public static final ValueLayout WORD = IS64BIT ? C_LONG_LONG : JAVA_INT;
     public static final MemoryLayout JAVA_OBJECT = structLayout(JAVA_INT);

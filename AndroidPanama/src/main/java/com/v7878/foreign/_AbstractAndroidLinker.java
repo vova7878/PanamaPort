@@ -296,7 +296,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                         Map.entry("double", ExtraLayouts.C_DOUBLE),
                         Map.entry("void*", ADDRESS),
                         Map.entry("size_t", ExtraLayouts.WORD),
-                        //TODO?: Map.entry("wchar_t", ???),
+                        Map.entry("wchar_t", ExtraLayouts.C_WCHAR_T),
 
                         // unspecified size-dependent layouts
                         Map.entry("int8_t", JAVA_BYTE),
