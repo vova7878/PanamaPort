@@ -6,5 +6,6 @@ import com.v7878.unsafe.access.JavaForeignAccess;
 
 public class LibArt {
     public static final Arena ART_SCOPE = JavaForeignAccess.createImplicitHeapArena(LibArt.class);
+    //TODO: what if used libartd.so?
     public static final SymbolLookup ART = LibDLExt.systemLibraryLookup("libart.so", ART_SCOPE);
 }
