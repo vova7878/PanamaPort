@@ -178,11 +178,14 @@ public class MethodHandlesFixes {
         return MethodHandlesFixes.class.getName() + "$$$Invoker_" + proto.getShorty();
     }
 
-    private static ClassLoader getInvokerClassLoader(Method target) {
-        Set<Class<?>> set = new ArraySet<>(target.getParameterCount() + 2);
+    private static ClassLoader getInvokerClassLoader(Method target, MethodType type) {
+        Set<Class<?>> set = new ArraySet<>(
+                target.getParameterCount() + type.parameterCount() + 3);
         set.addAll(List.of(target.getParameterTypes()));
         set.add(target.getReturnType());
         set.add(target.getDeclaringClass());
+        set.addAll(List.of(type.parameterArray()));
+        set.add(type.returnType());
         return Utils.newClassLoaderWithClasses(MethodHandlesFixes.class.getClassLoader(), set);
     }
 
@@ -295,7 +298,7 @@ public class MethodHandlesFixes {
         DexFile dex = openDexFile(new Dex(invoker_def).compile());
         setTrusted(dex);
 
-        Class<?> invoker = loadClass(dex, invoker_name, getInvokerClassLoader(target));
+        Class<?> invoker = loadClass(dex, invoker_name, getInvokerClassLoader(target, type));
         setClassStatus(invoker, ClassStatus.Verified);
 
         return (EmulatedInvoker) AndroidUnsafe.allocateInstance(invoker);
