@@ -20,7 +20,9 @@ import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.unsafe.Reflection.ClassMirror;
-import com.v7878.unsafe.foreign.ExtraLayouts.std;
+import com.v7878.unsafe.cpp_std.shared_ptr;
+import com.v7878.unsafe.cpp_std.string;
+import com.v7878.unsafe.cpp_std.unique_ptr;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
@@ -40,7 +42,7 @@ public class DexFileUtils {
             ADDRESS.withName("begin_"),
             WORD.withName("size_"),
             array_ref_layout.withName("data_"),
-            std.string.withName("location_"),
+            string.LAYOUT.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
             ADDRESS.withName("header_"),
             ADDRESS.withName("string_ids_"),
@@ -55,7 +57,7 @@ public class DexFileUtils {
             WORD.withName("num_call_site_ids_"),
             ADDRESS.withName("hiddenapi_class_data_"),
             ADDRESS.withName("oat_dex_file_"),
-            std.shared_ptr.withName("container_"),
+            shared_ptr.LAYOUT.withName("container_"),
             JAVA_BOOLEAN.withName("is_compact_dex_"),
             JAVA_BYTE.withName("hiddenapi_domain_")
     );
@@ -65,7 +67,7 @@ public class DexFileUtils {
             WORD.withName("size_"),
             ADDRESS.withName("data_begin_"),
             WORD.withName("data_size_"),
-            std.string.withName("location_"),
+            string.LAYOUT.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
             ADDRESS.withName("header_"),
             ADDRESS.withName("string_ids_"),
@@ -80,7 +82,7 @@ public class DexFileUtils {
             WORD.withName("num_call_site_ids_"),
             ADDRESS.withName("hiddenapi_class_data_"),
             ADDRESS.withName("oat_dex_file_"),
-            std.unique_ptr.withName("container_"),
+            unique_ptr.LAYOUT.withName("container_"),
             JAVA_BOOLEAN.withName("is_compact_dex_"),
             JAVA_BYTE.withName("hiddenapi_domain_")
     );
@@ -90,7 +92,7 @@ public class DexFileUtils {
             WORD.withName("size_"),
             ADDRESS.withName("data_begin_"),
             WORD.withName("data_size_"),
-            std.string.withName("location_"),
+            string.LAYOUT.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
             ADDRESS.withName("header_"),
             ADDRESS.withName("string_ids_"),
@@ -105,7 +107,7 @@ public class DexFileUtils {
             WORD.withName("num_call_site_ids_"),
             ADDRESS.withName("hiddenapi_class_data_"),
             ADDRESS.withName("oat_dex_file_"),
-            std.unique_ptr.withName("container_"),
+            unique_ptr.LAYOUT.withName("container_"),
             JAVA_BOOLEAN.withName("is_compact_dex_"),
             JAVA_INT.withName("hiddenapi_domain_")
     );
@@ -115,7 +117,7 @@ public class DexFileUtils {
             WORD.withName("size_"),
             ADDRESS.withName("data_begin_"),
             WORD.withName("data_size_"),
-            std.string.withName("location_"),
+            string.LAYOUT.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
             ADDRESS.withName("header_"),
             ADDRESS.withName("string_ids_"),
@@ -129,7 +131,7 @@ public class DexFileUtils {
             ADDRESS.withName("call_site_ids_"),
             WORD.withName("num_call_site_ids_"),
             ADDRESS.withName("oat_dex_file_"),
-            std.unique_ptr.withName("container_"),
+            unique_ptr.LAYOUT.withName("container_"),
             JAVA_BOOLEAN.withName("is_compact_dex_"),
             JAVA_BOOLEAN.withName("is_platform_dex_")
     );
@@ -137,9 +139,9 @@ public class DexFileUtils {
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
             WORD.withName("size_"),
-            std.string.withName("location_"),
+            string.LAYOUT.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
-            std.unique_ptr.withName("mem_map_"),
+            unique_ptr.LAYOUT.withName("mem_map_"),
             ADDRESS.withName("header_"),
             ADDRESS.withName("string_ids_"),
             ADDRESS.withName("type_ids_"),

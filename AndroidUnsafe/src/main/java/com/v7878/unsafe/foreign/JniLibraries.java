@@ -27,6 +27,7 @@ import com.v7878.misc.Math;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
+import com.v7878.unsafe.cpp_std.string;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
@@ -36,7 +37,7 @@ import java.util.function.Function;
 public class JniLibraries {
 
     public static final GroupLayout SHARED_LIBRARY = paddedStructLayout(
-            ExtraLayouts.std.string.withName("path_"),
+            string.LAYOUT.withName("path_"),
             ADDRESS.withName("handle_"),
             JAVA_BOOLEAN.withName("needs_native_bridge_"),
             JNI_OBJECT.withName("class_loader_"),
