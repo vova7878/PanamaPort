@@ -21,7 +21,7 @@ public final class string {
 
     public static final MemoryLayout LAYOUT = structLayout(sequenceLayout(3, ADDRESS));
 
-    private static MemorySegment make_str(MemorySegment str) {
+    private static MemorySegment to_str(MemorySegment str) {
         return str.asSlice(0, LAYOUT);
     }
 
@@ -34,7 +34,7 @@ public final class string {
     }
 
     public static boolean is_short(MemorySegment str) {
-        return is_short0(make_str(str));
+        return is_short0(to_str(str));
     }
 
     private static MemorySegment data0(MemorySegment str) {
@@ -42,7 +42,7 @@ public final class string {
     }
 
     public static MemorySegment data(MemorySegment str) {
-        return data0(make_str(str)).reinterpret(length0(str));
+        return data0(to_str(str)).reinterpret(length0(str));
     }
 
     private static long capacity0(MemorySegment str) {
@@ -50,7 +50,7 @@ public final class string {
     }
 
     public static long capacity(MemorySegment str) {
-        return capacity0(make_str(str));
+        return capacity0(to_str(str));
     }
 
     private static long length0(MemorySegment str) {
@@ -58,7 +58,7 @@ public final class string {
     }
 
     public static long length(MemorySegment str) {
-        return length0(make_str(str));
+        return length0(to_str(str));
     }
 
     private static void destruct0(MemorySegment str) {
@@ -68,7 +68,7 @@ public final class string {
     }
 
     public static void destruct(MemorySegment str) {
-        destruct0(make_str(str));
+        destruct0(to_str(str));
     }
 
     private static void assign0(MemorySegment str, MemorySegment data) {
@@ -87,6 +87,6 @@ public final class string {
     }
 
     public static void assign(MemorySegment str, MemorySegment data) {
-        assign0(make_str(str), Objects.requireNonNull(data));
+        assign0(to_str(str), Objects.requireNonNull(data));
     }
 }
