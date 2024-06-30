@@ -11,6 +11,7 @@ import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.instanceFieldOffset;
+import static com.v7878.unsafe.cpp_std.basic_string_template.string;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
@@ -27,7 +28,6 @@ import com.v7878.misc.Math;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
-import com.v7878.unsafe.cpp_std.string;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
