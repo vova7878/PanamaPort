@@ -2,12 +2,10 @@ package com.v7878.unsafe.foreign;
 
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
-import static com.v7878.foreign.MemoryLayout.paddingLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BOOLEAN;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.instanceFieldOffset;
@@ -28,7 +26,6 @@ import com.v7878.misc.Math;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
-import com.v7878.unsafe.cpp_std.basic_string;
 import com.v7878.unsafe.cpp_std.map;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
@@ -45,49 +42,9 @@ public class JniLibraries {
             JNI_OBJECT.withName("class_loader_"),
             ADDRESS.withName("class_loader_allocator_")
     );
+    private static final AddressLayout SHARED_LIBRARY_PTR = ADDRESS.withTargetLayout(SHARED_LIBRARY);
 
-    private static final map LBS = new map(string.LAYOUT, SHARED_LIBRARY);
-
-    private static MemorySegment unbound(MemorySegment ptr) {
-        return ptr.reinterpret(Long.MAX_VALUE);
-    }
-
-    private static MemorySegment begin(MemorySegment map) {
-        return unbound(map).get(ADDRESS, 0);
-    }
-
-    private static MemorySegment end(MemorySegment map) {
-        return unbound(map).asSlice(ADDRESS_SIZE, 0);
-    }
-
-    private static MemorySegment getValue(MemorySegment iterator) {
-        return unbound(iterator).get(ADDRESS, IS64BIT ? 0x38 : 0x1c);
-    }
-
-    private static final AddressLayout PTR =
-            ADDRESS.withTargetLayout(paddingLayout(Long.MAX_VALUE));
-
-    private static MemorySegment next(MemorySegment iterator) {
-        MemorySegment tmp1 = unbound(iterator);
-        MemorySegment tmp2 = tmp1.get(PTR, ADDRESS_SIZE);
-        MemorySegment tmp3;
-
-        if (tmp2.equals(MemorySegment.NULL)) {
-            while (true) {
-                tmp3 = tmp1.get(PTR, ADDRESS_SIZE * 2L);
-                if (tmp3.get(ADDRESS, 0).equals(tmp1)) {
-                    break;
-                }
-                tmp1 = tmp3;
-            }
-        } else {
-            do {
-                tmp3 = tmp2;
-                tmp2 = tmp2.get(PTR, 0);
-            } while (!tmp2.equals(MemorySegment.NULL));
-        }
-        return tmp3.reinterpret(0);
-    }
+    private static final map LIBS_MAP = new map(string.LAYOUT, ADDRESS);
 
     @ApiSensitive
     private static final long libraries_offset;
@@ -159,7 +116,8 @@ public class JniLibraries {
             static final MemorySegment libraries;
 
             static {
-                libraries = unbound(JNIUtils.getJavaVMPtr()).get(ADDRESS, libraries_offset);
+                libraries = JNIUtils.getJavaVMPtr().reinterpret(Long.MAX_VALUE)
+                        .get(ADDRESS, libraries_offset).reinterpret(LIBS_MAP.LAYOUT.byteSize());
             }
         }
         return Holder.libraries;
@@ -203,10 +161,11 @@ public class JniLibraries {
         long self = JNIUtils.getRawNativePeer(Thread.currentThread());
         MutexLock(LIBRARIES_LOCK, self);
         try {
-            MemorySegment end = end(libs);
+            var map = LIBS_MAP.new impl(libs);
+            var end = map.end();
 
-            for (var iter = begin(libs); !end.equals(iter); iter = next(iter)) {
-                if (consumer.apply(getValue(iter))) {
+            for (var iter = map.begin(); !iter.equals(end); iter = iter.next()) {
+                if (consumer.apply(iter.second().get(SHARED_LIBRARY_PTR, 0))) {
                     break;
                 }
             }
