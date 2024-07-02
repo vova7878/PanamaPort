@@ -31,9 +31,10 @@ public final class basic_string {
         this.LONG_LAYOUT = structLayout(sequenceLayout(3, ADDRESS));
         long min_cap = (LONG_LAYOUT.byteSize() - 1) / ELEMENT.byteSize();
         min_cap = min_cap < 2 ? 2 : min_cap;
-        this.SHORT_LAYOUT = structLayout(JAVA_BYTE,
-                sequenceLayout(ELEMENT.byteSize() - 1, JAVA_BYTE),
-                sequenceLayout(min_cap, ELEMENT));
+        long padding = ELEMENT.byteSize() - 1;
+        this.SHORT_LAYOUT = padding == 0 ? structLayout(JAVA_BYTE,
+                sequenceLayout(min_cap, ELEMENT)) : structLayout(JAVA_BYTE,
+                sequenceLayout(padding, JAVA_BYTE), sequenceLayout(min_cap, ELEMENT));
         this.LAYOUT = unionLayout(LONG_LAYOUT, SHORT_LAYOUT);
         this.min_capacity = min_cap;
     }
