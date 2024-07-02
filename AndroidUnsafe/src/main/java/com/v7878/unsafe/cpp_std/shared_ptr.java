@@ -7,7 +7,7 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import com.v7878.foreign.MemoryLayout;
 
 //TODO: access methods
-public class shared_ptr {
+public final class shared_ptr {
     private shared_ptr() {
     }
 

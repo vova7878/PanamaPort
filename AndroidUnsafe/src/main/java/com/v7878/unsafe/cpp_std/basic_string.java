@@ -16,8 +16,8 @@ import com.v7878.unsafe.AndroidUnsafe;
 
 import java.util.Objects;
 
-public final class basic_string_template {
-    public static final basic_string_template string = new basic_string_template(JAVA_BYTE);
+public final class basic_string {
+    public static final basic_string string = new basic_string(JAVA_BYTE);
 
     public final MemoryLayout ELEMENT;
     public final MemoryLayout LONG_LAYOUT;
@@ -26,7 +26,7 @@ public final class basic_string_template {
 
     private final long min_capacity;
 
-    private basic_string_template(MemoryLayout element) {
+    public basic_string(MemoryLayout element) {
         this.ELEMENT = Objects.requireNonNull(element);
         this.LONG_LAYOUT = structLayout(sequenceLayout(3, ADDRESS));
         long min_cap = (LONG_LAYOUT.byteSize() - 1) / ELEMENT.byteSize();

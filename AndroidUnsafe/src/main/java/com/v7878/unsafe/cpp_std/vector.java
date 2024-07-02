@@ -10,12 +10,12 @@ import com.v7878.unsafe.AndroidUnsafe;
 
 import java.util.Objects;
 
-public class vector_template {
+public final class vector {
 
     public final MemoryLayout ELEMENT;
     public final MemoryLayout LAYOUT;
 
-    private vector_template(MemoryLayout element) {
+    public vector(MemoryLayout element) {
         this.ELEMENT = Objects.requireNonNull(element);
         this.LAYOUT = structLayout(sequenceLayout(3, ADDRESS));
     }

@@ -15,7 +15,7 @@ import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.cpp_std.basic_string_template.string;
+import static com.v7878.unsafe.cpp_std.basic_string.string;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
 import com.v7878.foreign.GroupLayout;
