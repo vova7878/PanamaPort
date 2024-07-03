@@ -1,11 +1,11 @@
 package com.v7878.unsafe;
 
 public enum InstructionSet {
-    ARM(8, 8),
-    ARM64(16, 8),
-    X86(16, 4),
-    X86_64(16, 8),
-    RISCV64(16, 8);
+    ARM(8, 8, 8),
+    ARM64(16, 8, 16),
+    X86(16, 4, 8),
+    X86_64(16, 8, 16),
+    RISCV64(16, 8, 16);
 
     public static final InstructionSet CURRENT_INSTRUCTION_SET;
 
@@ -24,11 +24,13 @@ public enum InstructionSet {
     private final int code_alignment;
     private final int alignof_long_long;
     private final int alignof_double;
+    private final int stdcpp_default_new_alignment;
 
-    InstructionSet(int code_alignment, int alignof_ll_and_d) {
+    InstructionSet(int code_alignment, int alignof_ll_and_d, int stdcpp_default_new_alignment) {
         this.code_alignment = code_alignment;
         this.alignof_long_long = alignof_ll_and_d;
         this.alignof_double = alignof_ll_and_d;
+        this.stdcpp_default_new_alignment = stdcpp_default_new_alignment;
     }
 
     public int codeAlignment() {
@@ -41,5 +43,9 @@ public enum InstructionSet {
 
     public int alignofDouble() {
         return alignof_double;
+    }
+
+    public int stdcppDefaultNewAlignment() {
+        return stdcpp_default_new_alignment;
     }
 }

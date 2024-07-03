@@ -27,6 +27,8 @@
 
 package com.v7878.foreign;
 
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
+
 import com.v7878.foreign._HeapMemorySegmentImpl.OfByte;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfChar;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfDouble;
@@ -40,6 +42,7 @@ import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
+import com.v7878.unsafe.cpp_std.MemoryOperators;
 
 import java.util.Objects;
 
@@ -147,39 +150,63 @@ class _SegmentFactories {
     }
 
     public static MemorySegment allocateSegment(long byteSize, long byteAlignment,
-                                                _MemorySessionImpl sessionImpl) {
+                                                _MemorySessionImpl sessionImpl, boolean use_new) {
         ensureInitialized();
         sessionImpl.checkValidState();
         //TODO
         //if (VM.isDirectMemoryPageAligned()) {
         //    byteAlignment = Math.max(byteAlignment, AndroidUnsafe.pageSize());
         //}
-        long alignedSize = Math.max(1L, byteAlignment > MAX_MALLOC_ALIGN ?
-                byteSize + (byteAlignment - 1) : byteSize);
-
-        long buf = allocateMemoryWrapper(alignedSize);
-        long alignedBuf = _Utils.alignUp(buf, byteAlignment);
-        _AbstractMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
-                buf, alignedSize, false, sessionImpl);
-        sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
-            @Override
-            public void cleanup() {
-                AndroidUnsafe.freeMemory(buf);
+        if (use_new) {
+            long buf = allocateMemoryWrapperOperatorNew(byteSize, byteAlignment);
+            if (!_Utils.isAligned(buf, byteAlignment)) {
+                throw shouldNotReachHere();
             }
-        });
-        if (alignedSize != byteSize) {
-            long delta = alignedBuf - buf;
-            segment = segment.asSlice(delta, byteSize);
+            _AbstractMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
+                    buf, byteSize, false, sessionImpl);
+            sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
+                @Override
+                public void cleanup() {
+                    MemoryOperators.delete(buf, byteAlignment);
+                }
+            });
+            return segment;
+        } else {
+            long alignedSize = Math.max(1L, byteAlignment > MAX_MALLOC_ALIGN ?
+                    byteSize + (byteAlignment - 1) : byteSize);
+
+            long buf = allocateMemoryWrapperMalloc(alignedSize);
+            long alignedBuf = _Utils.alignUp(buf, byteAlignment);
+            _AbstractMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
+                    buf, alignedSize, false, sessionImpl);
+            sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
+                @Override
+                public void cleanup() {
+                    AndroidUnsafe.freeMemory(buf);
+                }
+            });
+            if (alignedSize != byteSize) {
+                long delta = alignedBuf - buf;
+                segment = segment.asSlice(delta, byteSize);
+            }
+            return segment;
         }
-        return segment;
     }
 
-    private static long allocateMemoryWrapper(long size) {
+    private static long allocateMemoryWrapperMalloc(long size) {
         try {
             return AndroidUnsafe.allocateMemory(size);
         } catch (IllegalArgumentException ex) {
             throw new OutOfMemoryError();
         }
+    }
+
+    private static long allocateMemoryWrapperOperatorNew(long size, long alignment) {
+        long out = MemoryOperators.new_(size, alignment);
+        if (out == 0) {
+            throw new OutOfMemoryError();
+        }
+        return out;
     }
 
     public static MemorySegment mapSegment(UnmapperProxy unmapper, long size,

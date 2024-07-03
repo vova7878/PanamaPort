@@ -2725,9 +2725,10 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
 
             @Override
             protected MemorySegment _allocateSegment(
-                    long byteSize, long byteAlignment, Arena scope) {
+                    long byteSize, long byteAlignment, Arena scope,
+                    boolean use_operator_new_instead_of_malloc) {
                 return _SegmentFactories.allocateSegment(byteSize, byteAlignment,
-                        _MemorySessionImpl.toMemorySession(scope));
+                        _MemorySessionImpl.toMemorySession(scope), use_operator_new_instead_of_malloc);
             }
 
             @Override
