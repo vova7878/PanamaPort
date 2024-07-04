@@ -191,7 +191,6 @@ public class JniLibraries {
 
         long allocator = getLongO(loader, ALLOCATOR_OFFSET);
         forEachLibraries(library -> {
-            library = library.reinterpret(SHARED_LIBRARY.byteSize());
             if (!library.get(JAVA_BOOLEAN, NNB_OFFSET) &&
                     library.get(ADDRESS, CLA_OFFSET).nativeAddress() == allocator) {
                 return consumer.apply(library.get(ADDRESS, HANDLE_OFFSET));

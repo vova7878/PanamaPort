@@ -227,10 +227,6 @@ public class LibDLExt {
             return LibDL.s_android_dlopen_ext;
         }
 
-        @LibrarySymbol(name = "android_get_LD_LIBRARY_PATH")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void get_LD_LIBRARY_PATH(long buffer, long buffer_size);
-
         @LibrarySymbol(name = "android_update_LD_LIBRARY_PATH")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void update_LD_LIBRARY_PATH(long ld_library_path);
@@ -259,8 +255,6 @@ public class LibDLExt {
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class, DLEXT));
     }
-
-    // TODO: void get_LD_LIBRARY_PATH(char* buffer, size_t buffer_size)
 
     public static void update_LD_LIBRARY_PATH(String ld_library_path) {
         Objects.requireNonNull(ld_library_path);
