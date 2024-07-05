@@ -49,7 +49,7 @@ Important differences:
 - All classes from the java.lang.foreign package are in the com.v7878.foreign package because it is a port and not part of the Java core library
 - Due to technical difficulties, my implementation of VarHandle is used instead of java.lang.invoke.VarHandle
 - MemoryLayouts of zero size are not allowed (in the original version their behavior does not coincide with the actual behavior in the C and C++ compilers)
-- Added MemoryLayout.valueLayout() and PaddedStructLayout() methods, which were removed in recent versions of the source API
+- Added MemoryLayout.valueLayout() and paddedStructLayout() methods, which were removed in recent versions of the source API
 
 ### Interaction with jextract
 I have not tested this tool in practice, but all classes it generates should work after manually replacing java.lang.foreign with com.v7878.foreign and java.lang.invoke.VarHandle with com.v7878.invoke.VarHandle
