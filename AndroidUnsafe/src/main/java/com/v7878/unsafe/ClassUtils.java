@@ -9,79 +9,124 @@ import com.v7878.unsafe.Reflection.ClassMirror;
 import java.lang.reflect.Modifier;
 
 public class ClassUtils {
-    //TODO: add all statuses
+
     @ApiSensitive
     public enum ClassStatus {
-        NotReady,  // Zero-initialized Class object starts in this state.
-        Retired,  // Retired, should not be used. Use the newly cloned one instead.
+        NotReady,
+        Retired,
         ErrorResolved,
         ErrorUnresolved,
-        Idx,  // Loaded, DEX idx in super_class_type_idx_ and interfaces_type_idx_.
-        Loaded,  // DEX idx values resolved.
-        Resolving,  // Just cloned from temporary class object.
-        Resolved,  // Part of linking.
-        Verifying,  // In the process of being verified.
-        RetryVerificationAtRuntime,  // Compile time verification failed, retry at runtime.
-        Verified,  // Logically part of linking; done pre-init.
-        Initializing,  // Class init in progress.
-        Initialized;  // Ready to go.
+        Idx,
+        Loaded,
+        Resolving,
+        Resolved,
+        Verifying,
+        RetryVerificationAtRuntime,
+        VerifyingAtRuntime,
+        VerifiedNeedsAccessChecks,
+        Verified,
+        SuperclassValidated,
+        Initializing,
+        Initialized,
+        VisiblyInitialized;
 
         static {
             switch (CORRECT_SDK_INT) {
-                case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/, 32 /*android 12L*/,
-                        31 /*android 12*/, 30 /*android 11*/, 29 /*android 10*/, 28  /*android 9*/ -> {
-                    NotReady.value = 0;
-                    Retired.value = 1;
+                case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/,
+                        32 /*android 12L*/, 31 /*android 12*/, 30 /*android 11*/ -> {
+                    NotReady.value = 0;  // Zero-initialized Class object starts in this state.
+                    Retired.value = 1;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = 2;
                     ErrorUnresolved.value = 3;
-                    Idx.value = 4;
-                    Loaded.value = 5;
-                    Resolving.value = 6;
-                    Resolved.value = 7;
-                    Verifying.value = 8;
-                    RetryVerificationAtRuntime.value = 9;
-                    Verified.value = 11;
-                    Initializing.value = 13;
-                    Initialized.value = 14;
+                    Idx.value = 4;  // Loaded, DEX idx in super_class_type_idx_ and interfaces_type_idx_.
+                    Loaded.value = 5;  // DEX idx values resolved.
+                    Resolving.value = 6;  // Just cloned from temporary class object.
+                    Resolved.value = 7;  // Part of linking.
+                    Verifying.value = 8;  // In the process of being verified.
+                    RetryVerificationAtRuntime.value = 9;  // Compile time verification failed, retry at runtime.
+                    VerifiedNeedsAccessChecks.value = 10;  // Compile time verification only failed for access checks.
+                    Verified.value = 11;  // Logically part of linking; done pre-init.
+                    SuperclassValidated.value = 12;  // Superclass validation part of init done.
+                    Initializing.value = 13;  // Class init in progress.
+                    Initialized.value = 14;  // Ready to go.
+                    VisiblyInitialized.value = 15;  // Initialized and visible to all threads.
+                }
+                case 29 /*android 10*/, 28 /*android 9*/ -> {
+                    NotReady.value = 0;  // Zero-initialized Class object starts in this state.
+                    Retired.value = 1;  // Retired, should not be used. Use the newly cloned one instead.
+                    ErrorResolved.value = 2;
+                    ErrorUnresolved.value = 3;
+                    Idx.value = 4;  // Loaded, DEX idx in super_class_type_idx_ and interfaces_type_idx_.
+                    Loaded.value = 5;  // DEX idx values resolved.
+                    Resolving.value = 6;  // Just cloned from temporary class object.
+                    Resolved.value = 7;  // Part of linking.
+                    Verifying.value = 8;  // In the process of being verified.
+                    RetryVerificationAtRuntime.value = 9;  // Compile time verification failed, retry at runtime.
+                    VerifyingAtRuntime.value = 10;  // Retrying verification at runtime.
+                    Verified.value = 11;  // Logically part of linking; done pre-init.
+                    SuperclassValidated.value = 12;  // Superclass validation part of init done.
+                    Initializing.value = 13;  // Class init in progress.
+                    Initialized.value = 14;  // Ready to go.
                 }
                 case 27 /*android 8.1*/ -> {
-                    NotReady.value = 0;
-                    Retired.value = -3;
+                    Retired.value = -3;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = -2;
                     ErrorUnresolved.value = -1;
-                    Idx.value = 1;
-                    Loaded.value = 2;
-                    Resolving.value = 3;
-                    Resolved.value = 4;
-                    Verifying.value = 5;
-                    RetryVerificationAtRuntime.value = 6;
-                    Verified.value = 8;
-                    Initializing.value = 10;
-                    Initialized.value = 11;
+                    NotReady.value = 0;
+                    Idx.value = 1;  // Loaded, DEX idx in super_class_type_idx_ and interfaces_type_idx_.
+                    Loaded.value = 2;  // DEX idx values resolved.
+                    Resolving.value = 3;  // Just cloned from temporary class object.
+                    Resolved.value = 4;  // Part of linking.
+                    Verifying.value = 5;  // In the process of being verified.
+                    RetryVerificationAtRuntime.value = 6;  // Compile time verification failed, retry at runtime.
+                    VerifyingAtRuntime.value = 7;  // Retrying verification at runtime.
+                    Verified.value = 8;  // Logically part of linking; done pre-init.
+                    SuperclassValidated.value = 9;  // Superclass validation part of init done.
+                    Initializing.value = 10;  // Class init in progress.
+                    Initialized.value = 11;  // Ready to go.
                 }
                 case 26 /*android 8*/ -> {
-                    NotReady.value = 0;
-                    Retired.value = -3;
+                    Retired.value = -3;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = -2;
                     ErrorUnresolved.value = -1;
-                    Idx.value = 1;
-                    Loaded.value = 2;
-                    Resolving.value = 3;
-                    Resolved.value = 4;
-                    Verifying.value = 5;
-                    RetryVerificationAtRuntime.value = 6;
-                    Verified.value = 8;
-                    Initializing.value = 9;
-                    Initialized.value = 10;
+                    NotReady.value = 0;
+                    Idx.value = 1;  // Loaded, DEX idx in super_class_type_idx_ and interfaces_type_idx_.
+                    Loaded.value = 2;  // DEX idx values resolved.
+                    Resolving.value = 3;  // Just cloned from temporary class object.
+                    Resolved.value = 4;  // Part of linking.
+                    Verifying.value = 5;  // In the process of being verified.
+                    RetryVerificationAtRuntime.value = 6;  // Compile time verification failed, retry at runtime.
+                    VerifyingAtRuntime.value = 7;  // Retrying verification at runtime.
+                    Verified.value = 8;  // Logically part of linking; done pre-init.
+                    Initializing.value = 9;  // Class init in progress.
+                    Initialized.value = 10;  // Ready to go.
                 }
                 default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
             }
         }
 
-        private int value;
+        private static final int NOT_VALID = Integer.MIN_VALUE;
+
+        private int value = NOT_VALID;
 
         public int rawValue() {
+            if (value == NOT_VALID) {
+                throw new IllegalStateException("status " + this + " does not exists");
+            }
             return value;
+        }
+
+        public boolean isValid() {
+            return value != NOT_VALID;
+        }
+
+        public static ClassStatus fromRawValue(int value) {
+            for (ClassStatus tmp : ClassStatus.values()) {
+                if (tmp.isValid() && tmp.value == value) {
+                    return tmp;
+                }
+            }
+            throw new IllegalStateException("unknown raw class status: " + value);
         }
     }
 
@@ -92,13 +137,7 @@ public class ClassUtils {
     }
 
     public static ClassStatus getClassStatus(Class<?> clazz) {
-        int status = getRawClassStatus(clazz);
-        for (ClassStatus tmp : ClassStatus.values()) {
-            if (tmp.value == status) {
-                return tmp;
-            }
-        }
-        throw new IllegalStateException("unknown raw class status: " + status);
+        return ClassStatus.fromRawValue(getRawClassStatus(clazz));
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -114,7 +153,7 @@ public class ClassUtils {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setClassStatus(Class<?> clazz, ClassStatus status) {
-        setRawClassStatus(clazz, status.value);
+        setRawClassStatus(clazz, status.rawValue());
     }
 
     public static int getClassFlags(Class<?> clazz) {
