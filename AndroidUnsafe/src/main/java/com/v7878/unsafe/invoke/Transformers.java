@@ -21,6 +21,7 @@ import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.fieldOffset;
+import static com.v7878.unsafe.Reflection.getDeclaredConstructor;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
@@ -67,7 +68,7 @@ public class Transformers {
     private static final MethodHandle directBindTo = nothrows_run(() -> unreflectDirect(
             getDeclaredMethod(MethodHandle.class, "bindTo", Object.class)));
 
-    private static final Constructor<MethodHandle> transformer_constructor;
+    private static final MethodHandle new_transformer;
     private static final InvokerI invoker;
 
     private static final boolean SKIP_CHECK_CAST = !DEBUG_BUILD;
@@ -372,9 +373,8 @@ public class Transformers {
         invoker = (InvokerI) allocateInstance(invoker_class);
 
         Class<?> transformer = loadClass(dex, transformer_name, loader);
-        //noinspection unchecked
-        transformer_constructor = (Constructor<MethodHandle>) nothrows_run(() -> transformer
-                .getDeclaredConstructor(MethodType.class, int.class, TransformerImpl.class));
+        new_transformer = unreflect(getDeclaredConstructor(transformer,
+                MethodType.class, int.class, TransformerImpl.class));
     }
 
     @ApiSensitive
@@ -384,7 +384,7 @@ public class Transformers {
         final int INVOKE_TRANSFORM_26_35 = 5;
         int kind = variadic && CORRECT_SDK_INT < 33 ?
                 INVOKE_CALLSITE_TRANSFORM_26_32 : INVOKE_TRANSFORM_26_35;
-        return nothrows_run(() -> transformer_constructor.newInstance(fixed, kind, impl));
+        return nothrows_run(() -> (MethodHandle) new_transformer.invoke(fixed, kind, impl));
     }
 
     public static MethodHandle makeTransformer(MethodType type, TransformerF callback) {

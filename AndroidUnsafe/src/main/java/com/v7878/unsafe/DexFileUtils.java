@@ -193,9 +193,10 @@ public class DexFileUtils {
     @ApiSensitive
     public static DexFile openDexFile(ByteBuffer data) {
         class Holder {
-            static final Constructor<DexFile> dex_constructor;
+            static final MethodHandle new_dex_file;
 
             static {
+                Constructor<DexFile> dex_constructor;
                 if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 28) {
                     dex_constructor = getDeclaredConstructor(DexFile.class, ByteBuffer.class);
                 } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 35) {
@@ -206,13 +207,14 @@ public class DexFileUtils {
                 } else {
                     throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
                 }
+                new_dex_file = unreflect(dex_constructor);
             }
         }
 
         if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 28) {
-            return nothrows_run(() -> Holder.dex_constructor.newInstance(data));
+            return nothrows_run(() -> (DexFile) Holder.new_dex_file.invokeExact(data));
         } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 35) {
-            return nothrows_run(() -> Holder.dex_constructor.newInstance(
+            return nothrows_run(() -> (DexFile) Holder.new_dex_file.invoke(
                     new ByteBuffer[]{data}, null, null));
         } else {
             throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
