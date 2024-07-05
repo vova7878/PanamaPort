@@ -1,5 +1,3 @@
 1) Cache all BulkLinker usages as much as possible
-2̶)̶ ̶S̶t̶r̶a̶n̶g̶e̶ ̶s̶e̶g̶f̶a̶u̶l̶t̶s̶ ̶i̶n̶ ̶m̶e̶t̶h̶o̶d̶h̶a̶n̶d̶l̶e̶s̶ ̶(̶o̶n̶ ̶a̶l̶l̶ ̶a̶p̶i̶s̶,̶ ̶b̶u̶t̶ ̶2̶6̶-̶2̶8̶ ̶e̶s̶p̶e̶c̶i̶a̶l̶l̶y̶)̶ (Looks fixed)
-3) Fix Xlint:unchecked warnings
-4) Create private empty constructor in classes that should not be instantiated
-5) Autogenerate fake_panama and f̶a̶k̶e̶_̶l̶l̶v̶m̶ classes
+2) Fix Xlint:unchecked warnings
+3) Create private empty constructor in classes that should not be instantiated

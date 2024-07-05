@@ -36,7 +36,6 @@ public class Reflection {
         assert_(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 35, AssertionError::new);
     }
 
-    //TODO: make private
     @Keep
     @ApiSensitive
     @SuppressWarnings("unused")
