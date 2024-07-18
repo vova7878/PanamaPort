@@ -13,7 +13,6 @@ import static com.v7878.unsafe.Reflection.getDeclaredConstructor;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
@@ -40,7 +39,7 @@ public class DexFileUtils {
     private static final GroupLayout dex_file_14_15_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
-            WORD.withName("size_"),
+            WORD.withName("size_"), // unused_size_ for android 15
             array_ref_layout.withName("data_"),
             string.LAYOUT.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
@@ -163,7 +162,7 @@ public class DexFileUtils {
         DEXFILE_LAYOUT = switch (CORRECT_SDK_INT) {
             case 35 /*android 15*/, 34 /*android 14*/ -> dex_file_14_15_layout;
             case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
-                    30 /*android 11*/ -> dex_file_13_11_layout;
+                 30 /*android 11*/ -> dex_file_13_11_layout;
             case 29 /*android 10*/ -> dex_file_10_layout;
             case 28 /*android 9*/ -> dex_file_9_layout;
             case 27 /*android 8.1*/, 26 /*android 8*/ -> dex_file_8xx_layout;
@@ -182,7 +181,9 @@ public class DexFileUtils {
     public static long getDexFile(Class<?> clazz) {
         Object dexCache = Objects.requireNonNull(getDexCache(clazz));
         long address = AndroidUnsafe.getLongO(dexCache, dexFileOffset);
-        assert_(address != 0, () -> new IllegalStateException("dexFile == 0"));
+        if (address == 0) {
+            throw new IllegalStateException("dexFile == 0");
+        }
         return address;
     }
 

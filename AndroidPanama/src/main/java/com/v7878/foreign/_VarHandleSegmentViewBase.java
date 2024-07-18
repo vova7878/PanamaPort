@@ -111,18 +111,20 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
-                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE, COMPARE_AND_EXCHANGE_RELEASE -> {
+                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
+                     COMPARE_AND_EXCHANGE_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndExchangeByte(session, base,
                             offset, accessor.nextByte(), accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
-                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                     WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndSetByte(session, base,
                             offset, accessor.nextByte(), accessor.nextByte());
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
-                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
+                     GET_AND_BITWISE_AND_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseAndByte(session,
                             base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
@@ -132,7 +134,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
-                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
+                     GET_AND_BITWISE_XOR_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseXorByte(session,
                             base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
@@ -177,18 +180,20 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
                 }
-                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE, COMPARE_AND_EXCHANGE_RELEASE -> {
+                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
+                     COMPARE_AND_EXCHANGE_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndExchangeShort(session, base, offset,
                             convEndian(accessor.nextShort(), swap), convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
-                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                     WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndSetShort(session, base, offset,
                             convEndian(accessor.nextShort(), swap), convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
-                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
+                     GET_AND_BITWISE_AND_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseAndShort(session, base,
                             offset, convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
@@ -198,7 +203,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
                 }
-                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
+                     GET_AND_BITWISE_XOR_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseXorShort(session, base,
                             offset, convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
@@ -243,20 +249,22 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
-                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE, COMPARE_AND_EXCHANGE_RELEASE -> {
+                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
+                     COMPARE_AND_EXCHANGE_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndExchangeShort(session, base, offset,
                             convEndian((short) accessor.nextChar(), swap),
                             convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
-                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                     WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndSetShort(session, base, offset,
                             convEndian((short) accessor.nextChar(), swap),
                             convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
-                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
+                     GET_AND_BITWISE_AND_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseAndShort(session, base,
                             offset, convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
@@ -266,7 +274,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
-                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
+                     GET_AND_BITWISE_XOR_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseXorShort(session, base,
                             offset, convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
@@ -311,18 +320,20 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
-                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE, COMPARE_AND_EXCHANGE_RELEASE -> {
+                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
+                     COMPARE_AND_EXCHANGE_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndExchangeInt(session, base, offset,
                             convEndian(accessor.nextInt(), swap), convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
-                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                     WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndSetInt(session, base, offset,
                             convEndian(accessor.nextInt(), swap), convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
-                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
+                     GET_AND_BITWISE_AND_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseAndInt(session, base,
                             offset, convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
@@ -332,7 +343,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
-                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
+                     GET_AND_BITWISE_XOR_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseXorInt(session, base,
                             offset, convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
@@ -377,13 +389,14 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, f2i(accessor.nextFloat(), swap));
                     accessor.moveToReturn().putNextFloat(i2f(tmp, swap));
                 }
-                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE, COMPARE_AND_EXCHANGE_RELEASE -> {
+                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
+                     COMPARE_AND_EXCHANGE_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndExchangeInt(session, base, offset,
                             f2i(accessor.nextFloat(), swap), f2i(accessor.nextFloat(), swap));
                     accessor.moveToReturn().putNextFloat(i2f(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
-                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                     WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndSetInt(session, base, offset,
                             f2i(accessor.nextFloat(), swap), f2i(accessor.nextFloat(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
@@ -428,18 +441,20 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
-                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE, COMPARE_AND_EXCHANGE_RELEASE -> {
+                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
+                     COMPARE_AND_EXCHANGE_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndExchangeLong(session, base, offset,
                             convEndian(accessor.nextLong(), swap), convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
-                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                     WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndSetLong(session, base, offset,
                             convEndian(accessor.nextLong(), swap), convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
-                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE, GET_AND_BITWISE_AND_ACQUIRE -> {
+                case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
+                     GET_AND_BITWISE_AND_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseAndLong(session, base,
                             offset, convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
@@ -449,7 +464,8 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
-                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE, GET_AND_BITWISE_XOR_ACQUIRE -> {
+                case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
+                     GET_AND_BITWISE_XOR_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseXorLong(session, base,
                             offset, convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
@@ -494,13 +510,14 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
                             offset, d2l(accessor.nextDouble(), swap));
                     accessor.moveToReturn().putNextDouble(l2d(tmp, swap));
                 }
-                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE, COMPARE_AND_EXCHANGE_RELEASE -> {
+                case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
+                     COMPARE_AND_EXCHANGE_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndExchangeLong(session, base, offset,
                             d2l(accessor.nextDouble(), swap), d2l(accessor.nextDouble(), swap));
                     accessor.moveToReturn().putNextDouble(l2d(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
-                        WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
+                     WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.compareAndSetLong(session, base, offset,
                             d2l(accessor.nextDouble(), swap), d2l(accessor.nextDouble(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);

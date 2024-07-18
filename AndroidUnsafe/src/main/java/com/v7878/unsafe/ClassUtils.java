@@ -33,7 +33,7 @@ public class ClassUtils {
         static {
             switch (CORRECT_SDK_INT) {
                 case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/,
-                        32 /*android 12L*/, 31 /*android 12*/, 30 /*android 11*/ -> {
+                     32 /*android 12L*/, 31 /*android 12*/, 30 /*android 11*/ -> {
                     NotReady.value = 0;  // Zero-initialized Class object starts in this state.
                     Retired.value = 1;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = 2;
@@ -204,8 +204,8 @@ public class ClassUtils {
     @ApiSensitive
     public static final int kAccSkipHiddenApiChecks = switch (CORRECT_SDK_INT) {
         case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/,
-                32 /*android 12L*/, 31 /*android 12*/, 30 /*android 11*/,
-                29 /*android 10*/, 28 /*android 9*/ -> 0x00100000;
+             32 /*android 12L*/, 31 /*android 12*/, 30 /*android 11*/,
+             29 /*android 10*/, 28 /*android 9*/ -> 0x00100000;
         case 27 /*android 8.1*/, 26 /*android 8*/ -> 0;
         default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
     };

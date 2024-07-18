@@ -150,7 +150,7 @@ public final class VarHandlesImpl {
         return switch (at) {
             case GET, GET_ATOMIC -> 0;
             case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE,
-                    GET_AND_UPDATE_NUMERIC, SET, SET_ATOMIC -> 1;
+                 GET_AND_UPDATE_NUMERIC, SET, SET_ATOMIC -> 1;
             case COMPARE_AND_SET, COMPARE_AND_EXCHANGE -> 2;
         };
     }
