@@ -1,6 +1,6 @@
 plugins {
-    id 'com.android.library'
-    id 'maven-publish'
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.maven.publish)
 }
 
 android {
@@ -26,13 +26,13 @@ android {
 }
 
 dependencies {
-    compileOnly 'com.github.vova7878:KeepAnnotation:v0.0.1'
+    compileOnly libs.keepannotation
 
     api project(':AndroidPanama')
 
     implementation project(':AndroidUnsafe')
 
-    implementation 'com.github.vova7878:AndroidMisc:v0.0.3'
+    implementation libs.androidmisc
 }
 
 publishing {

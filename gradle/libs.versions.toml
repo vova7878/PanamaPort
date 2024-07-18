@@ -1,0 +1,19 @@
+[versions]
+agp = "8.5.1"
+androidmisc = "v0.0.3"
+dexfile = "v0.0.7"
+keepannotation = "v0.0.1"
+optimizationannotations = "v0.0.2"
+
+[libraries]
+androidmisc = { module = "com.github.vova7878:AndroidMisc", version.ref = "androidmisc" }
+dexfile = { module = "com.github.vova7878:DexFile", version.ref = "dexfile" }
+keepannotation = { module = "com.github.vova7878:KeepAnnotation", version.ref = "keepannotation" }
+optimizationannotations = { module = "com.github.vova7878:OptimizationAnnotations", version.ref = "optimizationannotations" }
+suncleanerstub = { module = "com.github.vova7878:SunCleanerStub", version.ref = "keepannotation" }
+sununsafewrapper = { module = "com.github.vova7878:SunUnsafeWrapper", version.ref = "keepannotation" }
+
+[plugins]
+android-library = { id = "com.android.library", version.ref = "agp" }
+maven-publish = { id = 'maven-publish' }
+

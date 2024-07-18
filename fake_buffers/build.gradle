@@ -9,5 +9,5 @@ java {
 
 dependencies {
     api files('libs/FakeByteBuffer.jar')
-    implementation 'com.github.vova7878:SunCleanerStub:v0.0.1'
+    implementation libs.suncleanerstub
 }

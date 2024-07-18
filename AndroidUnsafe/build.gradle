@@ -1,6 +1,6 @@
 plugins {
-    id 'com.android.library'
-    id 'maven-publish'
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.maven.publish)
 }
 
 android {
@@ -30,17 +30,17 @@ android {
 }
 
 dependencies {
-    compileOnly 'com.github.vova7878:KeepAnnotation:v0.0.1'
-    compileOnly 'com.github.vova7878:OptimizationAnnotations:v0.0.2'
+    compileOnly libs.keepannotation
+    compileOnly libs.optimizationannotations
 
     compileOnly project(':fake_buffers')
     compileOnly project(':fake_panama')
     compileOnly project(':fake_llvm')
 
-    api 'com.github.vova7878:DexFile:v0.0.7'
+    api libs.dexfile
 
-    implementation 'com.github.vova7878:SunUnsafeWrapper:v0.0.1'
-    implementation 'com.github.vova7878:AndroidMisc:v0.0.3'
+    implementation libs.sununsafewrapper
+    implementation libs.androidmisc
 
     //TODO: runtimeOnlyApi?
     runtimeOnly project(':AndroidPanama')
