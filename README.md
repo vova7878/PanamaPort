@@ -9,6 +9,8 @@ The project contains 4 sublibraries:
  - VarHandleApi - backport of java.lang.invoke.VarHandle, but without polymorphic behavior. Unfortunately, it did not exist before Android 9
 
 ### Get started
+To use the library you need at least JDK 21 and compileSdk 34
+
 Before you add the library to your project, make sure it supports the dependencies from jitpack.io
 
 Add it in your root settings.gradle at the end of repositories:
