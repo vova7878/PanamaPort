@@ -49,6 +49,28 @@ import java.util.Optional;
 import dalvik.annotation.optimization.CriticalNative;
 
 public class JNIUtils {
+
+    public static final int JNIInvalidRefType = 0;
+    public static final int JNILocalRefType = 1;
+    public static final int JNIGlobalRefType = 2;
+    public static final int JNIWeakGlobalRefType = 3;
+
+    public static final int JNI_VERSION_1_1 = 0x00010001;
+    public static final int JNI_VERSION_1_2 = 0x00010002;
+    public static final int JNI_VERSION_1_4 = 0x00010004;
+    public static final int JNI_VERSION_1_6 = 0x00010006;
+
+    public static final int JNI_OK = 0;  /* no error */
+    public static final int JNI_ERR = -1;  /* generic error */
+    public static final int JNI_EDETACHED = -2;  /* thread detached from the VM */
+    public static final int JNI_EVERSION = -3;  /* JNI version error */
+    public static final int JNI_ENOMEM = -4;  /* Out of memory */
+    public static final int JNI_EEXIST = -5;  /* VM already created */
+    public static final int JNI_EINVAL = -6;  /* Invalid argument */
+
+    public static final int JNI_COMMIT = 1;  /* copy content, do not free buffer */
+    public static final int JNI_ABORT = 2;  /* free buffer w/o copying back */
+
     public static final GroupLayout JNI_NATIVE_INTERFACE_LAYOUT = structLayout(
             ADDRESS.withName("reserved0"),
             ADDRESS.withName("reserved1"),
@@ -441,7 +463,7 @@ public class JNIUtils {
                     MemorySegment ptr = arena.allocate(ADDRESS);
                     int status = IS64BIT ? GetJavaVM64(env.nativeAddress(), ptr.nativeAddress()) :
                             GetJavaVM32((int) env.nativeAddress(), (int) ptr.nativeAddress());
-                    if (status != 0) {
+                    if (status != JNI_OK) {
                         throw new IllegalStateException("can`t get JavaVM: " + status);
                     }
                     jvm = ptr.get(ADDRESS.withTargetLayout(ADDRESS), 0);
@@ -491,7 +513,6 @@ public class JNIUtils {
 
     @Keep
     private abstract static class Native {
-
         private static final Arena SCOPE = Arena.ofAuto();
 
         @LibrarySymbol(name = "NewGlobalRef")
@@ -524,8 +545,8 @@ public class JNIUtils {
         }
 
         @LibrarySymbol(name = "PushLocalFrame")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, INT})
-        abstract void PushLocalFrame(long env, int capacity);
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, INT})
+        abstract int PushLocalFrame(long env, int capacity);
 
         @SuppressWarnings({"SameParameterValue", "UnusedReturnValue"})
         @LibrarySymbol(name = "PopLocalFrame")
@@ -539,6 +560,8 @@ public class JNIUtils {
         @LibrarySymbol(name = "FromReflectedField")
         @CallSignature(type = FAST_VIRTUAL_REPLACE_THIS, ret = LONG_AS_WORD, args = {OBJECT})
         abstract long FromReflectedField(Object field);
+
+        // TODO: GetObjectRefType
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class, ART.or(getJNINativeInterfaceLookup())));
@@ -556,7 +579,9 @@ public class JNIUtils {
 
     public static void PushLocalFrame(int capacity) {
         long env = getCurrentEnvPtr().nativeAddress();
-        Native.INSTANCE.PushLocalFrame(env, capacity);
+        int status = Native.INSTANCE.PushLocalFrame(env, capacity);
+        // Note: if the return value != JNI_OK, then OutOfMemoryError is thrown
+        assert status == JNI_OK;
     }
 
     public static void PopLocalFrame() {
