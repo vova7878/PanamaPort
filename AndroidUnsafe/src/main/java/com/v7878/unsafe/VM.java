@@ -116,6 +116,10 @@ public class VM {
         return Holder.lib;
     }
 
+    public static boolean isDebugVMLibrary() {
+        return "libartd.so".equals(vmLibrary());
+    }
+
     public static String getCurrentInstructionSet() {
         class Holder {
             static final String is;
