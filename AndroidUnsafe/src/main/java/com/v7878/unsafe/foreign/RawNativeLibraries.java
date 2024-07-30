@@ -1,5 +1,6 @@
 package com.v7878.unsafe.foreign;
 
+import static com.v7878.unsafe.foreign.LibDL.RTLD_NOW;
 import static com.v7878.unsafe.foreign.LibDL.dlclose;
 import static com.v7878.unsafe.foreign.LibDL.dlerror;
 import static com.v7878.unsafe.foreign.LibDL.dlopen;
@@ -60,13 +61,17 @@ public class RawNativeLibraries {
     }
 
     public static NativeLibrary load(String pathname, Namespace namespace) {
+        return load(pathname, namespace, RTLD_NOW);
+    }
+
+    public static NativeLibrary load(String pathname, Namespace namespace, int flags) {
         if (Utils.containsNullChars(pathname)) {
             throw new IllegalArgumentException("Cannot open library: " + pathname);
         }
 
         dlerror(); // clear dlerror state before loading
 
-        long handle = namespace == null ? dlopen(pathname) : dlopen_ext(pathname, namespace);
+        long handle = namespace == null ? dlopen(pathname, flags) : dlopen_ext(pathname, namespace, flags);
 
         if (handle == 0) {
             throw new IllegalArgumentException(format_dlerror("Cannot open library: " + pathname));

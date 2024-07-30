@@ -173,10 +173,6 @@ public class LibDL {
         }
     }
 
-    public static long dlopen(String filename) {
-        return dlopen(filename, RTLD_NOW);
-    }
-
     public static void dlclose(long handle) {
         //TODO: check result?
         int ignore = Native.INSTANCE.dlclose(handle);
