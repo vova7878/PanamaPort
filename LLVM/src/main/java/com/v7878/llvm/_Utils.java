@@ -43,7 +43,12 @@ final class _Utils {
     }
 
     public static MemorySegment allocString(Arena scope, String value) {
-        return value == null ? MemorySegment.NULL : scope.allocateFrom(value);
+        class Holder {
+            static final Arena SCOPE = Arena.ofAuto();
+            static final MemorySegment EMPTY_STRING = SCOPE.allocateFrom("");
+        }
+        return value == null ? MemorySegment.NULL : (value.isEmpty() ?
+                Holder.EMPTY_STRING : scope.allocateFrom(value));
     }
 
     public static long stringLength(MemorySegment string) {
