@@ -36,10 +36,7 @@ import static com.v7878.llvm.Core.LLVMBuildSExt;
 import static com.v7878.llvm.Core.LLVMBuildStore;
 import static com.v7878.llvm.Core.LLVMBuildUnreachable;
 import static com.v7878.llvm.Core.LLVMBuildZExt;
-import static com.v7878.llvm.Core.LLVMConstAdd;
 import static com.v7878.llvm.Core.LLVMConstAllOnes;
-import static com.v7878.llvm.Core.LLVMConstInt;
-import static com.v7878.llvm.Core.LLVMConstIntToPtr;
 import static com.v7878.llvm.Core.LLVMConstNull;
 import static com.v7878.llvm.Core.LLVMCreateEnumAttribute;
 import static com.v7878.llvm.Core.LLVMFunctionType;
@@ -75,7 +72,11 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.ptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_ptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
-import static com.v7878.unsafe.llvm.LLVMUtils.buildToJvmAddress;
+import static com.v7878.unsafe.llvm.LLVMUtils.buildRawObjectToAddress;
+import static com.v7878.unsafe.llvm.LLVMUtils.const_int32;
+import static com.v7878.unsafe.llvm.LLVMUtils.const_intptr;
+import static com.v7878.unsafe.llvm.LLVMUtils.const_load_ptr;
+import static com.v7878.unsafe.llvm.LLVMUtils.const_ptr;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeSegment;
 import static com.v7878.unsafe.llvm.LLVMUtils.getBuilderContext;
 
@@ -462,7 +463,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 int t = 0;
                 for (MemoryLayout layout : stub_descriptor.argumentLayouts()) {
                     if (layout instanceof GroupLayout || layout instanceof AddressLayout) {
-                        out.add(buildToJvmAddress(builder, tmp[t++], tmp[t++]));
+                        out.add(buildRawObjectToAddress(builder, tmp[t++], tmp[t++]));
                     } else if (layout instanceof ValueLayout) {
                         out.add(tmp[t++]);
                     } else {
@@ -667,17 +668,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return getDeclaredMethod(stub_class, method_name, stub_type.parameterArray());
     }
 
-    private static LLVMValueRef const_intptr(LLVMContextRef context, long value) {
-        return LLVMConstInt(intptr_t(context), value, false);
-    }
-
-    private static LLVMValueRef const_int32(LLVMContextRef context, int value) {
-        return LLVMConstInt(int32_t(context), value, false);
-    }
-
     private static MemorySegment generateNativeUpcallStub(
             Arena scope, _StorageDescriptor stub_descriptor,
             long arranger_id, long class_id, long function_id) {
+        // TODO: use pthread_key_create to init threadlocal JNIEnv
         class Holder {
             private static final Arena SCOPE = Arena.ofAuto();
             private static int f_ptrs_count = 0;
@@ -718,17 +712,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     this.index = is_function ? f_ptrs_count++ : -1;
                 }
 
-                private static LLVMValueRef const_ptr(LLVMContextRef context, LLVMTypeRef type, long value, long offset) {
-                    var ptr = LLVMConstAdd(const_intptr(context, value), const_intptr(context, offset));
-                    return LLVMConstIntToPtr(ptr, ptr_t(type));
-                }
-
-                private static LLVMValueRef const_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value, long offset) {
-                    var context = getBuilderContext(builder);
-                    var ptr = const_ptr(context, ptr_t(type), value, offset);
-                    return LLVMBuildLoad(builder, ptr, "");
-                }
-
                 public LLVMValueRef getFPtr(LLVMBuilderRef builder, LLVMTypeRef type) {
                     assert is_function;
                     return const_load_ptr(builder, type, pointers.nativeAddress(), (long) ADDRESS_SIZE * index);
@@ -736,7 +719,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
                 public LLVMValueRef getValue(LLVMContextRef context, LLVMTypeRef type) {
                     assert !is_function;
-                    return const_ptr(context, type, value.nativeAddress(), 0);
+                    return const_ptr(context, type, value.nativeAddress());
                 }
             }
 

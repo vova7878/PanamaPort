@@ -65,7 +65,7 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.int64_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int8_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
-import static com.v7878.unsafe.llvm.LLVMUtils.buildToJvmPointer;
+import static com.v7878.unsafe.llvm.LLVMUtils.buildRawObjectToPointer;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeArray;
 
 import androidx.annotation.Keep;
@@ -125,7 +125,7 @@ public class ExtraMemoryAccess {
                 LLVMBasicBlockRef end = LLVMAppendBasicBlock(function, "");
 
                 LLVMPositionBuilderAtEnd(builder, start);
-                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], int8_t(context));
+                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], int8_t(context));
                 LLVMValueRef length = args[2];
                 LLVMValueRef test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
                 LLVMBuildCondBr(builder, test_zero, end, body);
@@ -172,8 +172,8 @@ public class ExtraMemoryAccess {
 
             LLVMPositionBuilderAtEnd(builder, body);
             LLVMValueRef langth_m1 = LLVMBuildSub(builder, length, one, "");
-            LLVMValueRef dst = buildToJvmPointer(builder, args[0], args[1], element_type);
-            LLVMValueRef src = buildToJvmPointer(builder, args[2], args[3], element_type);
+            LLVMValueRef dst = buildRawObjectToPointer(builder, args[0], args[1], element_type);
+            LLVMValueRef src = buildRawObjectToPointer(builder, args[2], args[3], element_type);
             LLVMValueRef test_order = LLVMBuildICmp(builder, LLVMIntULT, dst, src, "");
             LLVMBuildCondBr(builder, test_order, forward, backward);
 
@@ -359,7 +359,7 @@ public class ExtraMemoryAccess {
                 LLVMValueRef[] args = LLVMGetParams(function);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], var_type);
+                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
                 LLVMValueRef load = LLVMBuildLoad(builder, pointer, "");
                 LLVMSetAlignment(load, alignment);
                 LLVMSetOrdering(load, LLVMAtomicOrderingSequentiallyConsistent);
@@ -432,7 +432,7 @@ public class ExtraMemoryAccess {
                 LLVMValueRef[] args = LLVMGetParams(function);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], var_type);
+                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
                 LLVMValueRef store = LLVMBuildStore(builder, args[2], pointer);
                 LLVMSetAlignment(store, alignment);
                 LLVMSetOrdering(store, LLVMAtomicOrderingSequentiallyConsistent);
@@ -513,7 +513,7 @@ public class ExtraMemoryAccess {
                 LLVMValueRef[] args = LLVMGetParams(function);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], var_type);
+                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
                 LLVMValueRef rmw = LLVMBuildAtomicRMW(builder, op, pointer, args[2],
                         LLVMAtomicOrderingSequentiallyConsistent, false);
 
@@ -830,7 +830,7 @@ public class ExtraMemoryAccess {
                 LLVMValueRef[] args = LLVMGetParams(function);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                LLVMValueRef pointer = buildToJvmPointer(builder, args[0], args[1], var_type);
+                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
                 LLVMValueRef cmpxchg = LLVMBuildAtomicCmpXchg(builder, pointer, args[2],
                         args[3], LLVMAtomicOrderingSequentiallyConsistent,
                         LLVMAtomicOrderingSequentiallyConsistent, false);

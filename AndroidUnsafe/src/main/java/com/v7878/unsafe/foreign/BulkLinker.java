@@ -9,7 +9,15 @@ import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
 import static com.v7878.dex.bytecode.CodeBuilder.UnOp.INT_TO_LONG;
 import static com.v7878.dex.bytecode.CodeBuilder.UnOp.LONG_TO_INT;
-import static com.v7878.dex.bytecode.CodeBuilder.UnOp.NEG_INT;
+import static com.v7878.foreign.ValueLayout.ADDRESS;
+import static com.v7878.llvm.Core.LLVMAddFunction;
+import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
+import static com.v7878.llvm.Core.LLVMBuildCall;
+import static com.v7878.llvm.Core.LLVMBuildRet;
+import static com.v7878.llvm.Core.LLVMBuildRetVoid;
+import static com.v7878.llvm.Core.LLVMFunctionType;
+import static com.v7878.llvm.Core.LLVMGetParams;
+import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
@@ -29,6 +37,20 @@ import static com.v7878.unsafe.Utils.LOG_TAG;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.llvm.LLVMGlobals.double_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.float_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int16_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int1_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int64_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int8_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
+import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
+import static com.v7878.unsafe.llvm.LLVMUtils.buildAddressToRawObject;
+import static com.v7878.unsafe.llvm.LLVMUtils.buildRawObjectToAddress;
+import static com.v7878.unsafe.llvm.LLVMUtils.const_intptr;
+import static com.v7878.unsafe.llvm.LLVMUtils.const_load_ptr;
+import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeArray;
 import static java.lang.annotation.ElementType.METHOD;
 
 import android.util.Log;
@@ -47,6 +69,9 @@ import com.v7878.foreign.Arena;
 import com.v7878.foreign.Linker;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
+import com.v7878.llvm.Types.LLVMContextRef;
+import com.v7878.llvm.Types.LLVMTypeRef;
+import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
@@ -75,36 +100,39 @@ import dalvik.system.DexFile;
 public class BulkLinker {
     public enum MapType {
         // normal types
-        VOID(void.class),
-        BYTE(byte.class),
-        BOOL(boolean.class),
-        SHORT(short.class),
-        CHAR(char.class),
-        INT(int.class),
-        FLOAT(float.class),
-        LONG(long.class),
-        DOUBLE(double.class),
+        VOID(false, void.class),
+        BYTE(false, byte.class),
+        BOOL(false, boolean.class),
+        SHORT(false, short.class),
+        CHAR(false, char.class),
+        INT(false, int.class),
+        FLOAT(false, float.class),
+        LONG(false, long.class),
+        DOUBLE(false, double.class),
 
-        OBJECT(Object.class),
+        OBJECT(false, Object.class),
 
         // extra types
-        LONG_AS_WORD(IS64BIT ? long.class : int.class, long.class),
-        BOOL_AS_INT(int.class, boolean.class),
+        LONG_AS_WORD(false, IS64BIT ? long.class : int.class, long.class),
+        BOOL_AS_INT(false, int.class, boolean.class),
         @DangerLevel(DangerLevel.VERY_CAREFUL)
-        OBJECT_AS_RAW_INT(int.class, Object.class),
-        @DangerLevel(DangerLevel.BAD_GC_COLLISION)
-        OBJECT_AS_ADDRESS(IS64BIT ? long.class : int.class, Object.class);
+        OBJECT_AS_RAW_INT(false, int.class, Object.class),
+        @DangerLevel(DangerLevel.VERY_CAREFUL)
+        OBJECT_AS_ADDRESS(true, int.class, Object.class);
+        //TODO: OBJECT_AS_ADDRESS_WITH_OFFSET(true, int.class, Object.class);
 
-        public final Class<?> forStub;
-        public final Class<?> forImpl;
+        final boolean requireNativeStub;
+        final Class<?> forStub;
+        final Class<?> forImpl;
 
-        MapType(Class<?> forStub, Class<?> forImpl) {
+        MapType(boolean requireNativeStub, Class<?> forStub, Class<?> forImpl) {
+            this.requireNativeStub = requireNativeStub;
             this.forStub = forStub;
             this.forImpl = forImpl;
         }
 
-        MapType(Class<?> type) {
-            this(type, type);
+        MapType(boolean requireNativeStub, Class<?> type) {
+            this(requireNativeStub, type, type);
         }
     }
 
@@ -138,21 +166,32 @@ public class BulkLinker {
         }
     }
 
-    public enum CallType {
-        NATIVE_STATIC(false, true, ACC_NATIVE | ACC_STATIC),
-        NATIVE_VIRTUAL(false, false, ACC_NATIVE),
-        NATIVE_VIRTUAL_REPLACE_THIS(true, false, ACC_NATIVE),
-        FAST_STATIC(false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.FastNative()),
-        FAST_VIRTUAL(false, false, ACC_NATIVE, AnnotationItem.FastNative()),
-        FAST_VIRTUAL_REPLACE_THIS(true, false, ACC_NATIVE, AnnotationItem.FastNative()),
-        CRITICAL(false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.CriticalNative());
+    private enum EnvType {
+        FULL_ENV, NO_ENV, OMIT_ENV
+    }
 
+    public enum CallType {
+        NATIVE_STATIC(false, EnvType.FULL_ENV, false, true, ACC_NATIVE | ACC_STATIC),
+        NATIVE_STATIC_OMIT_ENV(true, EnvType.OMIT_ENV, false, true, ACC_NATIVE | ACC_STATIC),
+        NATIVE_VIRTUAL(false, EnvType.FULL_ENV, false, false, ACC_NATIVE),
+        NATIVE_VIRTUAL_REPLACE_THIS(false, EnvType.FULL_ENV, true, false, ACC_NATIVE),
+        FAST_STATIC(false, EnvType.FULL_ENV, false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.FastNative()),
+        FAST_STATIC_OMIT_ENV(true, EnvType.OMIT_ENV, false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.FastNative()),
+        FAST_VIRTUAL(false, EnvType.FULL_ENV, false, false, ACC_NATIVE, AnnotationItem.FastNative()),
+        FAST_VIRTUAL_REPLACE_THIS(false, EnvType.FULL_ENV, true, false, ACC_NATIVE, AnnotationItem.FastNative()),
+        CRITICAL(false, EnvType.NO_ENV, false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.CriticalNative());
+
+        final boolean requireNativeStub;
+        final EnvType envType;
         final boolean replaceThis;
         final boolean isStatic;
         final int flags;
         final AnnotationSet annotations;
 
-        CallType(boolean replaceThis, boolean isStatic, int flags, AnnotationItem... annotations) {
+        CallType(boolean requireNativeStub, EnvType envType, boolean replaceThis,
+                 boolean isStatic, int flags, AnnotationItem... annotations) {
+            this.requireNativeStub = requireNativeStub;
+            this.envType = envType;
             this.replaceThis = replaceThis;
             this.isStatic = isStatic;
             this.flags = flags | ACC_PRIVATE;
@@ -160,8 +199,8 @@ public class BulkLinker {
         }
     }
 
-    private record SymbolInfo(String name, MapType ret, MapType[] args,
-                              SymbolSource source, CallType call_type) {
+    private record SymbolInfo(String name, MapType ret, MapType[] args, SymbolSource source,
+                              CallType call_type, boolean requireNativeStub) {
 
         static SymbolInfo of(String name, CallType call_type, SymbolSource source,
                              MapType ret, MapType... args) {
@@ -173,7 +212,11 @@ public class BulkLinker {
             if (call_type.replaceThis && (args.length < 1 || args[0] != MapType.OBJECT)) {
                 throw new IllegalArgumentException("call_type requires first object parameter");
             }
-            return new SymbolInfo(name, ret, args.clone(), source, call_type);
+            // TODO: MapType.OBJECT incompatible with CallType.CRITICAL
+            // TODO: MapType.OBJECT_AS_* incompatible with CallType.NATIVE_*
+            boolean requireNativeStub = call_type.requireNativeStub || ret.requireNativeStub
+                    || Arrays.stream(args).anyMatch(arg -> arg.requireNativeStub);
+            return new SymbolInfo(name, ret, args.clone(), source, call_type, requireNativeStub);
         }
 
         ProtoId stubProto() {
@@ -208,7 +251,7 @@ public class BulkLinker {
 
     private static final String prefix = "raw_";
 
-    private static byte[] generateStub(Class<?> parent, SymbolInfo[] infos) {
+    private static byte[] generateJavaStub(Class<?> parent, SymbolInfo[] infos) {
         if (parent == null) {
             parent = Object.class;
         }
@@ -260,27 +303,8 @@ public class BulkLinker {
                             }
                             regs[1] += 2;
                         }
-                        case OBJECT, OBJECT_AS_RAW_INT ->
+                        case OBJECT, OBJECT_AS_RAW_INT, OBJECT_AS_ADDRESS ->
                                 b.move_object_auto(b.l(regs[0]++), b.p(regs[1]++));
-                        case OBJECT_AS_ADDRESS -> {
-                            // note: it's broken - object is cast to pointer
-                            // TODO: check how will GC react to this?
-                            b.move_object_auto(b.l(0), b.p(regs[1]));
-                            if (VM.isPoisonReferences()) {
-                                b.unop(NEG_INT, b.l(0), b.l(0));
-                            }
-                            if (IS64BIT) {
-                                b.unop(INT_TO_LONG, b.l(0), b.l(0));
-                                b.const_wide_auto(b.l(2), 0xffffffffL);
-                                b.binop_2addr(AND_LONG, b.l(0), b.l(2));
-                                b.move_wide_auto(b.l(regs[0]), b.l(0));
-                                regs[0] += 2;
-                            } else {
-                                b.move_auto(b.l(regs[0]), b.l(0));
-                                regs[0] += 1;
-                            }
-                            regs[1] += 1;
-                        }
                         default -> throw shouldNotReachHere();
                     }
                 }
@@ -315,22 +339,8 @@ public class BulkLinker {
                             b.return_wide(b.l(0));
                         }
                     }
-                    case OBJECT, OBJECT_AS_RAW_INT -> {
+                    case OBJECT, OBJECT_AS_RAW_INT, OBJECT_AS_ADDRESS -> {
                         b.move_result_object(b.l(0));
-                        b.return_object(b.l(0));
-                    }
-                    case OBJECT_AS_ADDRESS -> {
-                        // note: it's broken - pointer is cast to object
-                        // TODO: check how will GC react to this?
-                        if (IS64BIT) {
-                            b.move_result_wide(b.l(0));
-                            b.unop(LONG_TO_INT, b.l(0), b.l(0));
-                        } else {
-                            b.move_result(b.l(0));
-                        }
-                        if (VM.isPoisonReferences()) {
-                            b.unop(NEG_INT, b.l(0), b.l(0));
-                        }
                         b.return_object(b.l(0));
                     }
                     default -> throw shouldNotReachHere();
@@ -342,37 +352,138 @@ public class BulkLinker {
         return new Dex(impl_def).compile();
     }
 
+    private static LLVMTypeRef toLLVMType(LLVMContextRef context, MapType type, boolean stub) {
+        return switch (type) {
+            case VOID -> void_t(context);
+            case BOOL -> int1_t(context);
+            case BYTE -> int8_t(context);
+            case SHORT, CHAR -> int16_t(context);
+            case INT, BOOL_AS_INT, OBJECT_AS_RAW_INT -> int32_t(context);
+            case FLOAT -> float_t(context);
+            case LONG -> int64_t(context);
+            case DOUBLE -> double_t(context);
+            case OBJECT, LONG_AS_WORD -> intptr_t(context);
+            case OBJECT_AS_ADDRESS -> stub ? int32_t(context) : intptr_t(context);
+            //noinspection UnnecessaryDefault
+            default -> throw shouldNotReachHere();
+        };
+    }
+
+    private static LLVMTypeRef toLLVMType(LLVMContextRef context, SymbolInfo info, boolean stub) {
+        LLVMTypeRef retType = toLLVMType(context, info.ret, stub);
+        List<LLVMTypeRef> argTypes = new ArrayList<>(info.args.length + 2);
+
+        for (var type : info.args) {
+            argTypes.add(toLLVMType(context, type, stub));
+        }
+        var call_type = info.call_type;
+        if ((call_type.envType == EnvType.FULL_ENV) ||
+                (stub && call_type.envType == EnvType.OMIT_ENV)) {
+            argTypes.add(0, intptr_t(context)); // env
+            if (!call_type.replaceThis) {
+                argTypes.add(1, intptr_t(context)); // class or this
+            }
+        }
+
+        return LLVMFunctionType(retType, argTypes.toArray(new LLVMTypeRef[0]), false);
+    }
+
+    private static byte[] generateNativeStub(SymbolInfo info, long symbol_ptr) {
+        final String function_name = "stub";
+        return generateFunctionCodeArray((context, module, builder) -> {
+            LLVMTypeRef stub_type = toLLVMType(context, info, true);
+            LLVMValueRef stub = LLVMAddFunction(module, function_name, stub_type);
+
+            LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(stub, ""));
+
+            LLVMTypeRef target_type = toLLVMType(context, info, false);
+            LLVMValueRef target_ptr = const_load_ptr(builder, target_type, symbol_ptr);
+
+            LLVMValueRef[] args = LLVMGetParams(stub);
+            var call_type = info.call_type;
+            if (call_type.envType == EnvType.OMIT_ENV) {
+                // drop JNIEnv* and (optional) class or this
+                args = Arrays.copyOfRange(args,
+                        call_type.replaceThis ? 1 : 2, args.length);
+            }
+            int index = call_type.envType == EnvType.FULL_ENV ?
+                    (call_type.replaceThis ? 1 : 2) : 0;
+            for (var type : info.args) {
+                if (type == MapType.OBJECT_AS_ADDRESS) {
+                    args[index] = buildRawObjectToAddress(builder,
+                            args[index], const_intptr(context, 0));
+                }
+                index++;
+            }
+            LLVMValueRef ret_val = LLVMBuildCall(builder, target_ptr, args, "");
+            if (info.ret == MapType.VOID) {
+                LLVMBuildRetVoid(builder);
+            } else {
+                if (info.ret == MapType.OBJECT_AS_ADDRESS) {
+                    ret_val = buildAddressToRawObject(
+                            builder, ret_val, const_intptr(context, 0));
+                }
+                LLVMBuildRet(builder, ret_val);
+            }
+        }, function_name);
+    }
+
+    private static void processASMs(Arena scope, MemorySegment[] symbols, byte[][] code, int[] map) {
+        MemorySegment[] blob = NativeCodeBlob.makeCodeBlob(scope, code);
+        for (int i = 0; i < map.length; i++) {
+            symbols[map[i]] = blob[i];
+        }
+    }
+
+    private static void processNativeStubs(Arena scope, SymbolInfo[] infos, MemorySegment[] symbols, int[] map) {
+        MemorySegment pointers = scope.allocate(ADDRESS, map.length);
+        byte[][] code = new byte[map.length][];
+        for (int i = 0; i < map.length; i++) {
+            long offset = i * ADDRESS.byteSize();
+            pointers.set(ADDRESS, offset, symbols[map[i]]);
+            code[i] = generateNativeStub(infos[map[i]], pointers.nativeAddress() + offset);
+        }
+        processASMs(scope, symbols, code, map);
+    }
+
     private static <T> Class<T> processSymbols(Arena scope, Class<T> parent, ClassLoader loader, SymbolInfo[] infos) {
         Objects.requireNonNull(scope);
         Objects.requireNonNull(loader);
         MemorySegment[] symbols = new MemorySegment[infos.length];
         {
-            int count = 0;
-            int[] map = new int[infos.length];
-            byte[][] data = new byte[infos.length][];
+            int asm_count = 0;
+            int[] asm_map = new int[infos.length];
+            byte[][] asm_data = new byte[infos.length][];
+
+            int native_stubs_count = 0;
+            int[] native_stubs_map = new int[infos.length];
+
             for (int i = 0; i < infos.length; i++) {
                 SymbolInfo info = infos[i];
+                if (info.requireNativeStub) native_stubs_map[native_stubs_count++] = i;
                 if (info.source instanceof ASMSource gs) {
-                    map[count] = i;
-                    data[count] = Objects.requireNonNull(gs.generator.get());
-                    count++;
+                    asm_map[asm_count] = i;
+                    asm_data[asm_count] = Objects.requireNonNull(gs.generator.get());
+                    asm_count++;
                 } else if (info.source instanceof SegmentSource ss) {
                     symbols[i] = Objects.requireNonNull(ss.symbol.get());
                 } else {
                     shouldNotReachHere();
                 }
             }
-            if (count != 0) {
-                MemorySegment[] blob = NativeCodeBlob.makeCodeBlob(scope, Arrays.copyOf(data, count));
-                for (int i = 0; i < count; i++) {
-                    symbols[map[i]] = blob[i];
-                }
+            if (asm_count != 0) {
+                processASMs(scope, symbols, Arrays.copyOf(asm_data,
+                        asm_count), Arrays.copyOf(asm_map, asm_count));
+            }
+            if (native_stubs_count != 0) {
+                processNativeStubs(scope, infos, symbols,
+                        Arrays.copyOf(native_stubs_map, native_stubs_count));
             }
         }
         Class<T> impl;
         {
             String name = parent.getName() + "$Impl";
-            DexFile dex = openDexFile(generateStub(parent, infos));
+            DexFile dex = openDexFile(generateJavaStub(parent, infos));
             //noinspection unchecked
             impl = (Class<T>) loadClass(dex, name, loader);
             setClassStatus(impl, ClassStatus.Verified);
