@@ -225,6 +225,11 @@ public class VM {
         clh[0].length = length;
     }
 
+    public static int getDexClassDefIndex(Class<?> clazz) {
+        ClassMirror[] clh = arrayCast(ClassMirror.class, clazz);
+        return clh[0].dexClassDefIndex;
+    }
+
     public static int objectSizeField(Class<?> clazz) {
         ClassMirror[] clh = arrayCast(ClassMirror.class, clazz);
         int out = clh[0].objectSize;
