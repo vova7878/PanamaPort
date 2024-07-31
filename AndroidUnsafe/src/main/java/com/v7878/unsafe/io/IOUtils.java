@@ -102,6 +102,10 @@ public class IOUtils {
         @CallSignature(type = CRITICAL, ret = INT, args = {INT})
         abstract int ashmem_get_size_region(int fd);
 
+        @LibrarySymbol(name = "mprotect")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
+        abstract int mprotect(long addr, long len, int prot);
+
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class, CUTILS));
     }
@@ -154,6 +158,13 @@ public class IOUtils {
             throw new ErrnoException("ashmem_get_size_region", Errno.errno());
         }
         return value;
+    }
+
+    public static void mprotect(MemorySegment segment, int prot) throws ErrnoException {
+        int value = Native.INSTANCE.mprotect(segment.nativeAddress(), segment.byteSize(), prot);
+        if (value < 0) {
+            throw new ErrnoException("mprotect", Errno.errno());
+        }
     }
 
     public static final int MAP_ANONYMOUS = 0x20;
