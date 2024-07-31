@@ -10,6 +10,7 @@ import static com.v7878.llvm.Core.LLVMBuildTrunc;
 import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
 import static com.v7878.llvm.Core.LLVMConstAdd;
 import static com.v7878.llvm.Core.LLVMConstInt;
+import static com.v7878.llvm.Core.LLVMConstIntOfArbitraryPrecision;
 import static com.v7878.llvm.Core.LLVMConstIntToPtr;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMCreatePassManager;
@@ -34,6 +35,7 @@ import static com.v7878.llvm.PassManagerBuilder.LLVMPassManagerBuilderPopulateMo
 import static com.v7878.llvm.TargetMachine.LLVMCodeGenFileType.LLVMObjectFile;
 import static com.v7878.llvm.TargetMachine.LLVMTargetMachineEmitToMemoryBuffer;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
+import static com.v7878.unsafe.llvm.LLVMGlobals.int128_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int16_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int1_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
@@ -137,6 +139,10 @@ public class LLVMUtils {
     public static LLVMValueRef buildPointerToRawObject(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset) {
         base = LLVMBuildPtrToInt(builder, base, intptr_t(getBuilderContext(builder)), "");
         return buildAddressToRawObject(builder, base, offset);
+    }
+
+    public static LLVMValueRef const_int128(LLVMContextRef context, long low, long high) {
+        return LLVMConstIntOfArbitraryPrecision(int128_t(context), low, high);
     }
 
     public static LLVMValueRef const_intptr(LLVMContextRef context, long value) {
