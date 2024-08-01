@@ -351,7 +351,8 @@ public class JavaNioAccess {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     // Yes, it is offset to offset from base (ugly name)
     private static final long OFFSET_OFFSET = AS_BUFFERS.stream()
-            .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "offset")))
+            .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
+                    CORRECT_SDK_INT >= 35 ? "byteOffset" : "offset")))
             .reduce(JavaNioAccess::assert_same).getAsLong();
 
     public static long getBufferAddress(Buffer buffer) {
