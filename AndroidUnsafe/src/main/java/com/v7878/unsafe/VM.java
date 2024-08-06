@@ -32,8 +32,6 @@ import android.os.Build;
 
 import androidx.annotation.Keep;
 
-import com.v7878.misc.Checks;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -261,13 +259,13 @@ public class VM {
     private static final long VTABLE_OFFSET = roundUp(emptyClassSize() + 4, ADDRESS_SIZE) + ADDRESS_SIZE;
 
     public static long getEmbeddedVTableEntry(Class<?> clazz, int index) {
-        Checks.checkIndex(index, getEmbeddedVTableLength(clazz));
+        Objects.checkIndex(index, getEmbeddedVTableLength(clazz));
         return getWordO(clazz, VTABLE_OFFSET + (long) index * ADDRESS_SIZE);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setEmbeddedVTableEntry(Class<?> clazz, int index, long art_method) {
-        Checks.checkIndex(index, getEmbeddedVTableLength(clazz));
+        Objects.checkIndex(index, getEmbeddedVTableLength(clazz));
         putWordO(clazz, VTABLE_OFFSET + (long) index * ADDRESS_SIZE, art_method);
     }
 

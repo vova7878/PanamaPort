@@ -3,11 +3,11 @@ package com.v7878.unsafe.access;
 import static com.v7878.unsafe.access.JavaForeignAccess.lock;
 
 import com.v7878.foreign.MemorySegment.Scope;
-import com.v7878.misc.Checks;
 import com.v7878.unsafe.HeapByteBuffer;
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 public class HeapSegmentByteBuffer extends HeapByteBuffer {
 
@@ -31,7 +31,7 @@ public class HeapSegmentByteBuffer extends HeapByteBuffer {
 
     @Override
     public HeapByteBuffer slice(int index, int length) {
-        Checks.checkFromIndexSize(index, length, limit());
+        Objects.checkFromIndexSize(index, length, limit());
         return new HeapSegmentByteBuffer(hb, -1, 0,
                 length, length, index + offset, isReadOnly, scope);
     }

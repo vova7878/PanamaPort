@@ -12,7 +12,6 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import androidx.annotation.Keep;
 
-import com.v7878.misc.Checks;
 import com.v7878.unsafe.DangerLevel;
 
 import java.lang.invoke.MethodHandle;
@@ -118,8 +117,8 @@ public class EmulatedStackFrame {
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void copyArguments(StackFrameAccessor reader, int reader_start_idx,
                                      StackFrameAccessor writer, int writer_start_idx, int count) {
-        Checks.checkFromIndexSize(reader_start_idx, count, reader.type().parameterCount());
-        Checks.checkFromIndexSize(writer_start_idx, count, writer.type().parameterCount());
+        Objects.checkFromIndexSize(reader_start_idx, count, reader.type().parameterCount());
+        Objects.checkFromIndexSize(writer_start_idx, count, writer.type().parameterCount());
 
         if (count == 0) return;
 

@@ -3,11 +3,11 @@ package com.v7878.unsafe.access;
 import static com.v7878.unsafe.access.JavaForeignAccess.lock;
 
 import com.v7878.foreign.MemorySegment.Scope;
-import com.v7878.misc.Checks;
 import com.v7878.unsafe.DirectByteBuffer;
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 class DirectSegmentByteBuffer extends DirectByteBuffer {
 
@@ -44,7 +44,7 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
         if (!attachment().isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
         }
-        Checks.checkFromIndexSize(index, length, limit());
+        Objects.checkFromIndexSize(index, length, limit());
         return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(),
                 -1, 0, length, length, index, isReadOnly, scope);
     }
