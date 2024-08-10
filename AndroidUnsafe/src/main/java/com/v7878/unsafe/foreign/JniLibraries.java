@@ -26,6 +26,7 @@ import com.v7878.misc.Math;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
+import com.v7878.unsafe.RawOffset;
 import com.v7878.unsafe.cpp_std.map;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
@@ -47,6 +48,7 @@ public class JniLibraries {
     private static final map LIBS_MAP = new map(string.LAYOUT, ADDRESS);
 
     @ApiSensitive
+    @RawOffset
     private static final long libraries_offset;
 
     static {
@@ -123,9 +125,9 @@ public class JniLibraries {
         return Holder.libraries;
     }
 
+    // TODO: should this be used in "native" state?
     @Keep
     private abstract static class Native {
-
         private static final Arena SCOPE = Arena.ofAuto();
 
         @LibrarySymbol(name = "_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE")

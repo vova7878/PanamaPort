@@ -325,6 +325,7 @@ public class JNIUtils {
 
     // TODO: get env from native and compute offset heuristically
     @ApiSensitive
+    @RawOffset
     private static final long env_offset = nothrows_run(() -> {
         long tmp;
         switch (CORRECT_SDK_INT) {
