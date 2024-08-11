@@ -19,6 +19,7 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_STATIC;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_VIRTUAL_REPLACE_THIS;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -558,9 +559,21 @@ public class JNIUtils {
         @CallSignature(type = FAST_VIRTUAL_REPLACE_THIS, ret = LONG_AS_WORD, args = {OBJECT})
         abstract long FromReflectedMethod(Object method);
 
+        @SuppressWarnings("SameParameterValue")
+        @LibrarySymbol(name = "ToReflectedMethod")
+        // (JNIEnv* env, jclass ignored, jmethodID mid, jboolean ignored) -> jmethod
+        @CallSignature(type = FAST_STATIC, ret = OBJECT, args = {LONG_AS_WORD, BOOL})
+        abstract Object ToReflectedMethod(long mid, boolean ignored);
+
         @LibrarySymbol(name = "FromReflectedField")
         @CallSignature(type = FAST_VIRTUAL_REPLACE_THIS, ret = LONG_AS_WORD, args = {OBJECT})
         abstract long FromReflectedField(Object field);
+
+        @SuppressWarnings("SameParameterValue")
+        @LibrarySymbol(name = "ToReflectedField")
+        // (JNIEnv* env, jclass ignored, jfieldID fid, jboolean ignored) -> jfield
+        @CallSignature(type = FAST_STATIC, ret = OBJECT, args = {LONG_AS_WORD, BOOL})
+        abstract Object ToReflectedField(long fid, boolean ignored);
 
         // TODO: GetObjectRefType
 
@@ -616,7 +629,15 @@ public class JNIUtils {
         return Native.INSTANCE.FromReflectedMethod(method);
     }
 
+    public static Method ToReflectedMethod(long mid) {
+        return (Method) Native.INSTANCE.ToReflectedMethod(mid, /*unused*/ false);
+    }
+
     public static long FromReflectedField(Field field) {
         return Native.INSTANCE.FromReflectedField(field);
+    }
+
+    public static Field ToReflectedField(long fid) {
+        return (Field) Native.INSTANCE.ToReflectedField(fid, /*unused*/ false);
     }
 }
