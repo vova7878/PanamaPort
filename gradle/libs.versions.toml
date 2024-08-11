@@ -1,5 +1,5 @@
 [versions]
-agp = "8.5.1"
+agp = "8.5.2"
 androidmisc = "v0.0.3"
 dexfile = "v0.0.8"
 keepannotation = "v0.0.1"
