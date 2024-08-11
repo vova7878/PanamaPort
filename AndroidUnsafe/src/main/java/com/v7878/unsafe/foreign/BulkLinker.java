@@ -758,6 +758,10 @@ public class BulkLinker {
                 throw new IllegalStateException("ASM or Symbol sources are present, but signeture isn`t for method " + method);
             }
 
+            if (!Modifier.isAbstract(method.getModifiers())) {
+                throw new IllegalStateException("Method must be abstract: " + method);
+            }
+
             SymbolSource source = asm_source == null ? sym_source : asm_source;
             var info = SymbolInfo.of(method.getName(), signature.type(), source, signature.ret(), signature.args());
             info.checkImplSignature(method);
