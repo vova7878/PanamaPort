@@ -2,10 +2,13 @@ package com.v7878.unsafe.invoke;
 
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
 
+import androidx.annotation.Keep;
+
 import com.v7878.unsafe.DangerLevel;
 
 import java.lang.invoke.MethodType;
 
+@Keep
 public interface MethodTypeForm {
     MethodType erasedType();
 

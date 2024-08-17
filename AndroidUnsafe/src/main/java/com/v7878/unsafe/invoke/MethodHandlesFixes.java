@@ -25,6 +25,8 @@ import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 import android.util.ArraySet;
 import android.util.SparseArray;
 
+import androidx.annotation.Keep;
+
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
 import com.v7878.dex.EncodedMethod;
@@ -189,6 +191,7 @@ public class MethodHandlesFixes {
         return Utils.newClassLoaderWithClasses(MethodHandlesFixes.class.getClassLoader(), set);
     }
 
+    @Keep
     public static abstract class EmulatedInvoker {
         public abstract void invoke(StackFrameAccessor accessor) throws Throwable;
     }
