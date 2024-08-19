@@ -272,58 +272,68 @@ public class EmulatedStackFrame {
             return this;
         }
 
+        @Keep
         public StackFrameAccessor moveToReturn() {
             return moveTo(RETURN_VALUE_IDX);
         }
 
+        @Keep
         public void putNextBoolean(boolean value) {
             checkWriteType(boolean.class);
             argumentIdx++;
             frameBuf.putInt(value ? 1 : 0);
         }
 
+        @Keep
         public void putNextByte(byte value) {
             checkWriteType(byte.class);
             argumentIdx++;
             frameBuf.putInt(value);
         }
 
+        @Keep
         public void putNextChar(char value) {
             checkWriteType(char.class);
             argumentIdx++;
             frameBuf.putInt(value);
         }
 
+        @Keep
         public void putNextShort(short value) {
             checkWriteType(short.class);
             argumentIdx++;
             frameBuf.putInt(value);
         }
 
+        @Keep
         public void putNextInt(int value) {
             checkWriteType(int.class);
             argumentIdx++;
             frameBuf.putInt(value);
         }
 
+        @Keep
         public void putNextFloat(float value) {
             checkWriteType(float.class);
             argumentIdx++;
             frameBuf.putFloat(value);
         }
 
+        @Keep
         public void putNextLong(long value) {
             checkWriteType(long.class);
             argumentIdx++;
             frameBuf.putLong(value);
         }
 
+        @Keep
         public void putNextDouble(double value) {
             checkWriteType(double.class);
             argumentIdx++;
             frameBuf.putDouble(value);
         }
 
+        @Keep
         public void putNextReference(Object value, Class<?> expectedType) {
             checkWriteType(expectedType);
             argumentIdx++;
@@ -412,54 +422,63 @@ public class EmulatedStackFrame {
             }
         }
 
+        @Keep
         public boolean nextBoolean() {
             checkReadType(boolean.class);
             argumentIdx++;
             return frameBuf.getInt() != 0;
         }
 
+        @Keep
         public byte nextByte() {
             checkReadType(byte.class);
             argumentIdx++;
             return (byte) frameBuf.getInt();
         }
 
+        @Keep
         public char nextChar() {
             checkReadType(char.class);
             argumentIdx++;
             return (char) frameBuf.getInt();
         }
 
+        @Keep
         public short nextShort() {
             checkReadType(short.class);
             argumentIdx++;
             return (short) frameBuf.getInt();
         }
 
+        @Keep
         public int nextInt() {
             checkReadType(int.class);
             argumentIdx++;
             return frameBuf.getInt();
         }
 
+        @Keep
         public float nextFloat() {
             checkReadType(float.class);
             argumentIdx++;
             return frameBuf.getFloat();
         }
 
+        @Keep
         public long nextLong() {
             checkReadType(long.class);
             argumentIdx++;
             return frameBuf.getLong();
         }
 
+        @Keep
         public double nextDouble() {
             checkReadType(double.class);
             argumentIdx++;
             return frameBuf.getDouble();
         }
 
+        @Keep
         public <T> T nextReference(Class<T> expectedType) {
             checkReadType(expectedType);
             argumentIdx++;
