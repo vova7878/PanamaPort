@@ -1,5 +1,6 @@
 package com.v7878.unsafe.access;
 
+import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.access.JavaForeignAccess.lock;
 
 import com.v7878.foreign.MemorySegment.Scope;
@@ -10,6 +11,9 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 class DirectSegmentByteBuffer extends DirectByteBuffer {
+    static {
+        setTrusted(DirectSegmentByteBuffer.class);
+    }
 
     static class SegmentMemoryRef extends MemoryRef {
 

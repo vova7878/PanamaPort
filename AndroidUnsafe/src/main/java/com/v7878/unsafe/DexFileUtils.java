@@ -283,6 +283,10 @@ public class DexFileUtils {
         throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
     }
 
+    public static void setTrusted(Class<?> clazz) {
+        setTrusted(getDexFileStruct(clazz));
+    }
+
     public static Class<?> loadClass(DexFile dex, String name, ClassLoader loader) {
         class Holder {
             static final MethodHandle defineClassNative = unreflect(
