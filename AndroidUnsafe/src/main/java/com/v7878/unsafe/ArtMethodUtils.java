@@ -178,9 +178,6 @@ public class ArtMethodUtils {
     }
 
     @ApiSensitive
-    public static final int kAccSkipAccessChecks = 0x00080000;
-
-    @ApiSensitive
     public static final int kAccCompileDontBother = switch (CORRECT_SDK_INT) {
         case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/, 32 /*android 12L*/,
              31 /*android 12*/, 30 /*android 11*/, 29 /*android 10*/,
