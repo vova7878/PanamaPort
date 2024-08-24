@@ -12,7 +12,7 @@ import static com.v7878.unsafe.foreign.ExtraLayouts.C_LONG_LONG;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemoryLayout;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.access.JavaForeignAccess;
 
 import java.util.Objects;
 
@@ -71,8 +71,7 @@ public final class basic_string {
 
         public void destruct() {
             if (!is_short()) {
-                // TODO: aligned free
-                AndroidUnsafe.freeMemory(get_word(str, ADDRESS.byteSize() * 2));
+                MemoryOperators.delete(get_word(str, ADDRESS.byteSize() * 2), ELEMENT.byteAlignment());
             }
         }
 
@@ -88,8 +87,8 @@ public final class basic_string {
                 (dst = str).set(JAVA_BYTE, 0, (byte) (length << 1));
                 offset = ELEMENT.byteSize();
             } else {
-                // TODO: aligned alloc
-                dst = Arena.global().allocate(bytes + ELEMENT.byteSize(), ADDRESS.byteAlignment());
+                dst = JavaForeignAccess.allocateSegment(bytes + ELEMENT.byteSize(),
+                        ELEMENT.byteAlignment(), Arena.global(), true);
                 offset = 0;
             }
             MemorySegment.copy(data, 0, dst, offset, bytes);

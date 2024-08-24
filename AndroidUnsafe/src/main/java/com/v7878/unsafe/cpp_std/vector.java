@@ -6,7 +6,6 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 
 import com.v7878.foreign.MemoryLayout;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.unsafe.AndroidUnsafe;
 
 import java.util.Objects;
 
@@ -62,8 +61,7 @@ public final class vector {
         public void destruct() {
             long data = begin().nativeAddress();
             if (data != 0) {
-                // TODO: aligned free
-                AndroidUnsafe.freeMemory(data);
+                MemoryOperators.delete(data, ELEMENT.byteAlignment());
             }
         }
 
