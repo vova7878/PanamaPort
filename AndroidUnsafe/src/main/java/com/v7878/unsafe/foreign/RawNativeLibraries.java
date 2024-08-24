@@ -1,5 +1,6 @@
 package com.v7878.unsafe.foreign;
 
+import static com.v7878.unsafe.foreign.LibDL.RTLD_LOCAL;
 import static com.v7878.unsafe.foreign.LibDL.RTLD_NOW;
 import static com.v7878.unsafe.foreign.LibDL.dlclose;
 import static com.v7878.unsafe.foreign.LibDL.dlerror;
@@ -61,7 +62,7 @@ public class RawNativeLibraries {
     }
 
     public static NativeLibrary load(String pathname, Namespace namespace) {
-        return load(pathname, namespace, RTLD_NOW);
+        return load(pathname, namespace, RTLD_NOW | RTLD_LOCAL);
     }
 
     public static NativeLibrary load(String pathname, Namespace namespace, int flags) {
