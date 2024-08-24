@@ -93,10 +93,9 @@ public final class IRReader {
             LLVMContextRef ContextRef, String Data) throws LLVMException {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_Data = allocString(arena, Data);
-            try (LLVMMemoryBufferRef MemBuf = LLVMCreateMemoryBufferWithSegment(
-                    c_Data, "", true)) {
-                return LLVMParseIRInContext(ContextRef, MemBuf);
-            }
+            LLVMMemoryBufferRef MemBuf = LLVMCreateMemoryBufferWithSegment(
+                    c_Data, "", true);
+            return LLVMParseIRInContext(ContextRef, MemBuf);
         }
     }
 }
