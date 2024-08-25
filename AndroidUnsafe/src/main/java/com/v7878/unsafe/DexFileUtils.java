@@ -213,12 +213,30 @@ public class DexFileUtils {
         return openCookie(ByteBuffer.wrap(data));
     }
 
-    private static final long cookieOffset = fieldOffset(nothrows_run(() ->
-            getDeclaredField(DexFile.class, "mCookie")));
+    private static final long COOKIE_OFFSET = fieldOffset(
+            getDeclaredField(DexFile.class, "mCookie"));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static long[] getCookie(DexFile dex) {
-        return (long[]) AndroidUnsafe.getObject(Objects.requireNonNull(dex), cookieOffset);
+        return (long[]) AndroidUnsafe.getObject(Objects.requireNonNull(dex), COOKIE_OFFSET);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setCookie(DexFile dex, long[] cookie) {
+        AndroidUnsafe.putObject(Objects.requireNonNull(dex), COOKIE_OFFSET, cookie);
+    }
+
+    private static final long INTERNAL_COOKIE_OFFSET = fieldOffset(
+            getDeclaredField(DexFile.class, "mInternalCookie"));
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static long[] getInternalCookie(DexFile dex) {
+        return (long[]) AndroidUnsafe.getObject(Objects.requireNonNull(dex), INTERNAL_COOKIE_OFFSET);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setInternalCookie(DexFile dex, long[] cookie) {
+        AndroidUnsafe.putObject(Objects.requireNonNull(dex), INTERNAL_COOKIE_OFFSET, cookie);
     }
 
     @ApiSensitive

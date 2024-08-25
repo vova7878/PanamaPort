@@ -31,6 +31,7 @@ public class DexFileAccess {
             }
         }
         NopConsumer.consume(Holder.done);
+        //noinspection InstantiationOfUtilityClass
         return new DexFile(bufs, loader, null);
     }
 
@@ -45,6 +46,7 @@ public class DexFileAccess {
             }
         }
         NopConsumer.consume(Holder.done);
+        //noinspection InstantiationOfUtilityClass
         return new DexFile(buf);
     }
 
@@ -110,8 +112,4 @@ public class DexFileAccess {
         NopConsumer.consume(Holder.done);
         return DexFile.getClassNameList(cookie);
     }
-
-    //TODO: getCookie/setCookie
-    //TODO: getInternalCookie/setInternalCookie
-    //TODO: getFileName/setFileName
 }
