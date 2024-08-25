@@ -23,7 +23,6 @@ import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.runOnce;
 
 import android.annotation.TargetApi;
 import android.os.Build;
@@ -36,7 +35,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
-import java.util.function.BooleanSupplier;
 
 public class VM {
     @Keep
@@ -287,30 +285,33 @@ public class VM {
         return rawIntToObject(getIntN(address));
     }
 
-    private static final BooleanSupplier kPoisonReferences = runOnce(() -> {
-        Object test = newNonMovableArray(int.class, 0);
-        long address = addressOfNonMovableArray(test);
-        assert_(isSigned32Bit(address), AssertionError::new);
-        int actual = (int) address;
-        int raw = rawObjectToInt(test);
-        if (actual == raw) {
-            return false;
-        } else if (actual == -raw) {
-            return true;
-        } else {
-            throw new AssertionError(
-                    "unknown type of poisoning: actual:" + actual + " raw:" + raw);
-        }
-    });
-
     public static boolean isPoisonReferences() {
-        return kPoisonReferences.getAsBoolean();
+        class Holder {
+            static final boolean kPoisonReferences;
+
+            static {
+                Object test = newNonMovableArray(int.class, 0);
+                long address = addressOfNonMovableArray(test);
+                assert_(isSigned32Bit(address), AssertionError::new);
+                int actual = (int) address;
+                int raw = rawObjectToInt(test);
+                if (actual == raw) {
+                    kPoisonReferences = false;
+                } else if (actual == -raw) {
+                    kPoisonReferences = true;
+                } else {
+                    throw new AssertionError(
+                            "unknown type of poisoning: actual:" + actual + " raw:" + raw);
+                }
+            }
+        }
+        return Holder.kPoisonReferences;
     }
 
     @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
     public static int objectToInt(Object obj) {
         int out = rawObjectToInt(obj);
-        return kPoisonReferences.getAsBoolean() ? -out : out;
+        return isPoisonReferences() ? -out : out;
     }
 
     @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
@@ -320,6 +321,6 @@ public class VM {
 
     @DangerLevel(DangerLevel.GC_COLLISION_MOVABLE_OBJECTS)
     public static Object intToObject(int obj) {
-        return rawIntToObject(kPoisonReferences.getAsBoolean() ? -obj : obj);
+        return rawIntToObject(isPoisonReferences() ? -obj : obj);
     }
 }

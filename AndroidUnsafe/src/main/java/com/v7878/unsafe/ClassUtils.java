@@ -9,7 +9,6 @@ import com.v7878.unsafe.Reflection.ClassMirror;
 import java.lang.reflect.Modifier;
 
 public class ClassUtils {
-
     @ApiSensitive
     public enum ClassStatus {
         NotReady,

@@ -17,7 +17,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 public class ArtFieldUtils {
-
     private static final GroupLayout art_field_layout = paddedStructLayout(
             JAVA_OBJECT.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),

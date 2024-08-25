@@ -1,7 +1,6 @@
 package com.v7878.unsafe;
 
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
-import static com.v7878.unsafe.BuildConfig.DEBUG;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
 import android.annotation.SuppressLint;
@@ -29,12 +28,8 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.DoubleSupplier;
 import java.util.function.Function;
-import java.util.function.IntSupplier;
-import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -43,10 +38,38 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class Utils {
-
-    public static final boolean DEBUG_BUILD = DEBUG;
+    public static final boolean DEBUG_BUILD = BuildConfig.DEBUG;
 
     public static final String LOG_TAG = "PANAMA";
+
+    public static class NopConsumer {
+        @Keep
+        public static void consume(boolean ignored) { /* nop */ }
+
+        @Keep
+        public static void consume(byte ignored) { /* nop */ }
+
+        @Keep
+        public static void consume(short ignored) { /* nop */ }
+
+        @Keep
+        public static void consume(char ignored) { /* nop */ }
+
+        @Keep
+        public static void consume(int ignored) { /* nop */ }
+
+        @Keep
+        public static void consume(float ignored) { /* nop */ }
+
+        @Keep
+        public static void consume(long ignored) { /* nop */ }
+
+        @Keep
+        public static void consume(double ignored) { /* nop */ }
+
+        @Keep
+        public static void consume(Object ignored) { /* nop */ }
+    }
 
     public interface FineClosable extends AutoCloseable {
         void close();
@@ -183,96 +206,6 @@ public class Utils {
         } catch (Throwable th) {
             AndroidUnsafe.throwException(th);
         }
-    }
-
-    public static <T> Supplier<T> runOnce(Supplier<T> task) {
-        return new Supplier<>() {
-            volatile T value;
-
-            @Override
-            public T get() {
-                if (value == null) {
-                    synchronized (this) {
-                        if (value == null) {
-                            value = task.get();
-                        }
-                    }
-                }
-                return value;
-            }
-        };
-    }
-
-    public static BooleanSupplier runOnce(BooleanSupplier task) {
-        return new BooleanSupplier() {
-            volatile Boolean value;
-
-            @Override
-            public boolean getAsBoolean() {
-                if (value == null) {
-                    synchronized (this) {
-                        if (value == null) {
-                            value = task.getAsBoolean();
-                        }
-                    }
-                }
-                return value;
-            }
-        };
-    }
-
-    public static IntSupplier runOnce(IntSupplier task) {
-        return new IntSupplier() {
-            volatile Integer value;
-
-            @Override
-            public int getAsInt() {
-                if (value == null) {
-                    synchronized (this) {
-                        if (value == null) {
-                            value = task.getAsInt();
-                        }
-                    }
-                }
-                return value;
-            }
-        };
-    }
-
-    public static LongSupplier runOnce(LongSupplier task) {
-        return new LongSupplier() {
-            volatile Long value;
-
-            @Override
-            public long getAsLong() {
-                if (value == null) {
-                    synchronized (this) {
-                        if (value == null) {
-                            value = task.getAsLong();
-                        }
-                    }
-                }
-                return value;
-            }
-        };
-    }
-
-    public static DoubleSupplier runOnce(DoubleSupplier task) {
-        return new DoubleSupplier() {
-            volatile Double value;
-
-            @Override
-            public double getAsDouble() {
-                if (value == null) {
-                    synchronized (this) {
-                        if (value == null) {
-                            value = task.getAsDouble();
-                        }
-                    }
-                }
-                return value;
-            }
-        };
     }
 
     @SuppressLint("NewApi")
@@ -420,7 +353,6 @@ public class Utils {
         return new ClassLoader(base) {
             @Override
             protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                //TODO: what if name of array?
                 Class<?> out = map.get(name);
                 if (out != null) {
                     return out;
