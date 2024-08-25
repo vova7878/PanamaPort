@@ -42,6 +42,8 @@ dependencies {
     implementation libs.sununsafewrapper
     implementation libs.androidmisc
 
+    implementation project(':LibcoreAccess')
+
     //TODO: runtimeOnlyApi?
     runtimeOnly project(':AndroidPanama')
     runtimeOnly project(':LLVM')

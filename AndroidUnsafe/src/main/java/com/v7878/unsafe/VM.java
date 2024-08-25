@@ -6,7 +6,6 @@ import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_INDEX_SCALE;
-import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.arrayBaseOffset;
 import static com.v7878.unsafe.AndroidUnsafe.arrayIndexScale;
 import static com.v7878.unsafe.AndroidUnsafe.getInt;
@@ -21,7 +20,6 @@ import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -32,6 +30,8 @@ import android.os.Build;
 
 import androidx.annotation.Keep;
 
+import com.v7878.libcore.VMAccess;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -41,14 +41,12 @@ import java.util.function.BooleanSupplier;
 public class VM {
     @Keep
     private static class ArrayMirror {
-
         public int length;
     }
 
     @Keep
     @SuppressWarnings("unused")
     private static class StringMirror {
-
         public static final boolean COMPACT_STRINGS;
 
         static {
@@ -77,58 +75,6 @@ public class VM {
         assert_(ARRAY_OBJECT_INDEX_SCALE == OBJECT_FIELD_SIZE, AssertionError::new);
         assert_(ARRAY_INT_BASE_OFFSET == 12, AssertionError::new);
         assert_(OBJECT_INSTANCE_SIZE == 8, AssertionError::new);
-    }
-
-    private static Class<?> vmruntime_class() {
-        class Holder {
-            static final Class<?> clazz;
-
-            static {
-                clazz = nothrows_run(() -> Class.forName("dalvik.system.VMRuntime"));
-            }
-        }
-        return Holder.clazz;
-    }
-
-    private static Object vmruntime() {
-        class Holder {
-            static final Object vm;
-
-            static {
-                vm = allocateInstance(vmruntime_class());
-            }
-        }
-        return Holder.vm;
-    }
-
-    public static String vmLibrary() {
-        class Holder {
-            static final String lib;
-
-            static {
-                MethodHandle vmLibrary = unreflectDirect(getDeclaredMethod(
-                        vmruntime_class(), "vmLibrary"));
-                lib = (String) nothrows_run(() -> vmLibrary.invoke(vmruntime()));
-            }
-        }
-        return Holder.lib;
-    }
-
-    public static boolean isDebugVMLibrary() {
-        return "libartd.so".equals(vmLibrary());
-    }
-
-    public static String getCurrentInstructionSet() {
-        class Holder {
-            static final String is;
-
-            static {
-                MethodHandle getCurrentInstructionSet = unreflect(getDeclaredMethod(
-                        vmruntime_class(), "getCurrentInstructionSet"));
-                is = (String) nothrows_run(() -> getCurrentInstructionSet.invoke());
-            }
-        }
-        return Holder.is;
     }
 
     public static Field getShadowKlassField() {
@@ -180,29 +126,49 @@ public class VM {
         return (T) obj;
     }
 
-    public static Object newNonMovableArray(Class<?> componentType, int length) {
-        class Holder {
-            static final MethodHandle newNonMovableArray;
+    public static String[] properties() {
+        return VMAccess.properties();
+    }
 
-            static {
-                newNonMovableArray = unreflectDirect(getDeclaredMethod(vmruntime_class(),
-                        "newNonMovableArray", Class.class, int.class));
-            }
-        }
-        return nothrows_run(() -> Holder.newNonMovableArray
-                .invoke(vmruntime(), componentType, length));
+    public static String bootClassPath() {
+        return VMAccess.bootClassPath();
+    }
+
+    public static String classPath() {
+        return VMAccess.classPath();
+    }
+
+    public static String vmLibrary() {
+        return VMAccess.vmLibrary();
+    }
+
+    public static boolean isDebugVMLibrary() {
+        return "libartd.so".equals(vmLibrary());
+    }
+
+    public static boolean isCheckJniEnabled() {
+        return VMAccess.isCheckJniEnabled();
+    }
+
+    public static boolean isNativeDebuggable() {
+        return VMAccess.isNativeDebuggable();
+    }
+
+    @TargetApi(Build.VERSION_CODES.P)
+    public static boolean isJavaDebuggable() {
+        return VMAccess.isJavaDebuggable();
+    }
+
+    public static String getCurrentInstructionSet() {
+        return VMAccess.getCurrentInstructionSet();
+    }
+
+    public static Object newNonMovableArray(Class<?> componentType, int length) {
+        return VMAccess.newNonMovableArray(componentType, length);
     }
 
     public static long addressOfNonMovableArrayData(Object array) {
-        class Holder {
-            static final MethodHandle addressOf;
-
-            static {
-                addressOf = unreflectDirect(getDeclaredMethod(vmruntime_class(),
-                        "addressOf", Object.class));
-            }
-        }
-        return (long) nothrows_run(() -> Holder.addressOf.invoke(vmruntime(), array));
+        return VMAccess.addressOf(array);
     }
 
     public static long addressOfNonMovableArray(Object array) {
@@ -355,34 +321,5 @@ public class VM {
     @DangerLevel(DangerLevel.GC_COLLISION_MOVABLE_OBJECTS)
     public static Object intToObject(int obj) {
         return rawIntToObject(kPoisonReferences.getAsBoolean() ? -obj : obj);
-    }
-
-    public static boolean isNativeDebuggable() {
-        class Holder {
-            static final boolean isDebuggable;
-
-            static {
-                MethodHandle isNativeDebuggable = unreflect(getDeclaredMethod(
-                        vmruntime_class(), "isNativeDebuggable"));
-                isDebuggable = nothrows_run(() ->
-                        (boolean) isNativeDebuggable.invoke(vmruntime()));
-            }
-        }
-        return Holder.isDebuggable;
-    }
-
-    @TargetApi(Build.VERSION_CODES.P)
-    public static boolean isJavaDebuggable() {
-        class Holder {
-            static final boolean isDebuggable;
-
-            static {
-                MethodHandle isJavaDebuggable = unreflect(getDeclaredMethod(
-                        vmruntime_class(), "isJavaDebuggable"));
-                isDebuggable = nothrows_run(() ->
-                        (boolean) isJavaDebuggable.invoke(vmruntime()));
-            }
-        }
-        return Holder.isDebuggable;
     }
 }
