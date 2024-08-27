@@ -182,10 +182,12 @@ public class ArtMethodUtils {
         }
     }
 
+    private static final int VISIBILITY_MASK = Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
+
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void makeExecutablePublic(Executable ex) {
         checkTypeChange(ex);
-        changeExecutableFlags(ex, Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE, Modifier.PUBLIC);
+        changeExecutableFlags(ex, VISIBILITY_MASK, Modifier.PUBLIC);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -196,7 +198,7 @@ public class ArtMethodUtils {
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void makeExecutablePublicNonFinal(Executable ex) {
         checkTypeChange(ex);
-        changeExecutableFlags(ex, Modifier.FINAL | Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE, Modifier.PUBLIC);
+        changeExecutableFlags(ex, Modifier.FINAL | VISIBILITY_MASK, Modifier.PUBLIC);
     }
 
     @ApiSensitive
