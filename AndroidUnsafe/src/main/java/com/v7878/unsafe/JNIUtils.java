@@ -633,6 +633,8 @@ public class JNIUtils {
         return (Method) Native.INSTANCE.ToReflectedMethod(mid, /*unused*/ false);
     }
 
+    //TODO: public static long ToArtMethod(long mid)
+
     public static long FromReflectedField(Field field) {
         return Native.INSTANCE.FromReflectedField(field);
     }
@@ -640,4 +642,6 @@ public class JNIUtils {
     public static Field ToReflectedField(long fid) {
         return (Field) Native.INSTANCE.ToReflectedField(fid, /*unused*/ false);
     }
+
+    //TODO: public static long ToArtField(long mid)
 }
