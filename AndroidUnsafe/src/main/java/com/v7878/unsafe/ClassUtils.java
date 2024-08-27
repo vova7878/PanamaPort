@@ -3,6 +3,7 @@ package com.v7878.unsafe;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.Reflection.arrayCast;
+import static com.v7878.unsafe.Utils.assert_;
 
 import com.v7878.unsafe.Reflection.ClassMirror;
 
@@ -189,6 +190,17 @@ public class ClassUtils {
         changeClassFlags(clazz, Modifier.FINAL, Modifier.PUBLIC);
     }
 
+    public static boolean isClassInitialized(Class<?> clazz) {
+        return getRawClassStatus(clazz) >= ClassStatus.Initialized.rawValue();
+    }
+
+    public static boolean isClassVisiblyInitialized(Class<?> clazz) {
+        int value = CORRECT_SDK_INT <= 29 ?
+                ClassStatus.Initialized.rawValue() :
+                ClassStatus.VisiblyInitialized.rawValue();
+        return getRawClassStatus(clazz) == value;
+    }
+
     public static void ensureClassInitialized(Class<?> clazz) {
         try {
             Class.forName(clazz.getName(), true, clazz.getClassLoader());
@@ -196,7 +208,9 @@ public class ClassUtils {
         }
     }
 
-    public static boolean isClassInitialized(Class<?> clazz) {
-        return getRawClassStatus(clazz) >= ClassStatus.Initialized.rawValue();
+    public static void ensureClassVisiblyInitialized(Class<?> clazz) {
+        //TODO: maybe this can be done better?
+        ensureClassInitialized(clazz);
+        assert_(isClassVisiblyInitialized(clazz), AssertionError::new);
     }
 }
