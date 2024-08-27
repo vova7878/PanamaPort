@@ -124,6 +124,28 @@ public class ArtMethodUtils {
         setExecutableData(getArtMethod(ex), data);
     }
 
+    private static final long ENTRYPOINT_OFFSET = ARTMETHOD_LAYOUT.byteOffset(
+            groupElement("ptr_sized_fields_"),
+            groupElement("entry_point_from_quick_compiled_code_"));
+
+    public static long getExecutableEntryPoint(long art_method) {
+        return getWordN(art_method + ENTRYPOINT_OFFSET);
+    }
+
+    public static long getExecutableEntryPoint(Executable ex) {
+        return getExecutableEntryPoint(getArtMethod(ex));
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setExecutableEntryPoint(long art_method, long entry_point) {
+        putWordN(art_method + ENTRYPOINT_OFFSET, entry_point);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setExecutableEntryPoint(Executable ex, long entry_point) {
+        setExecutableEntryPoint(getArtMethod(ex), entry_point);
+    }
+
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void registerNativeMethod(Method m, long data) {
         Objects.requireNonNull(m);
