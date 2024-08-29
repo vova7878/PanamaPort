@@ -12,8 +12,9 @@ import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
-import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicNonFinal;
-import static com.v7878.unsafe.ClassUtils.makeClassPublicNonFinal;
+import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
+import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
+import static com.v7878.unsafe.ClassUtils.makeClassInheritable;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
@@ -124,11 +125,11 @@ public class JavaNioAccess {
 
         Class<?> nio_mem_ref_class = nothrows_run(() -> Class.forName(nio_mem_ref_name));
         {
-            makeClassPublicNonFinal(nio_mem_ref_class);
+            makeClassInheritable(nio_mem_ref_class);
 
             Constructor<?>[] constructors = getDeclaredConstructors(nio_mem_ref_class);
             for (Constructor<?> constructor : constructors) {
-                makeExecutablePublicNonFinal(constructor);
+                makeExecutablePublic(constructor);
             }
 
             Field[] fields = getDeclaredFields0(nio_mem_ref_class, false);
@@ -141,8 +142,9 @@ public class JavaNioAccess {
         {
             Method[] methods = getDeclaredMethods(nio_direct_buf_class);
             for (Method method : methods) {
-                if (!Modifier.isPrivate(method.getModifiers())) {
-                    makeExecutablePublicNonFinal(method);
+                int flags = method.getModifiers();
+                if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
+                    makeMethodInheritable(method);
                 }
             }
 
@@ -151,7 +153,7 @@ public class JavaNioAccess {
 
             Constructor<?>[] constructors = getDeclaredConstructors(nio_direct_buf_class);
             for (Constructor<?> constructor : constructors) {
-                makeExecutablePublicNonFinal(constructor);
+                makeExecutablePublic(constructor);
             }
 
             Field[] fields = getDeclaredFields0(nio_direct_buf_class, false);
@@ -162,18 +164,19 @@ public class JavaNioAccess {
 
         Class<?> nio_heap_buf_class = nothrows_run(() -> Class.forName(nio_heap_buf_name));
         {
-            makeClassPublicNonFinal(nio_heap_buf_class);
+            makeClassInheritable(nio_heap_buf_class);
 
             Method[] methods = getDeclaredMethods(nio_heap_buf_class);
             for (Method method : methods) {
-                if (!Modifier.isPrivate(method.getModifiers())) {
-                    makeExecutablePublicNonFinal(method);
+                int flags = method.getModifiers();
+                if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
+                    makeMethodInheritable(method);
                 }
             }
 
             Constructor<?>[] constructors = getDeclaredConstructors(nio_heap_buf_class);
             for (Constructor<?> constructor : constructors) {
-                makeExecutablePublicNonFinal(constructor);
+                makeExecutablePublic(constructor);
             }
         }
 
@@ -197,7 +200,7 @@ public class JavaNioAccess {
                 makeFieldPublic(field);
             }
 
-            makeExecutablePublicNonFinal(getDeclaredMethod(Buffer.class, "markValue"));
+            makeExecutablePublic(getDeclaredMethod(Buffer.class, "markValue"));
         }
 
         String direct_buf_name = "com.v7878.unsafe.DirectByteBuffer";

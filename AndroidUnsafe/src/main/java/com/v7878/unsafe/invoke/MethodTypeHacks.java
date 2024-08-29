@@ -41,7 +41,7 @@ public class MethodTypeHacks {
     public static final Class<MethodTypeForm> FORM_IMPL;
 
     static {
-        ClassUtils.makeClassPublicNonFinal(INVOKE_FORM);
+        ClassUtils.makeClassInheritable(INVOKE_FORM);
 
         TypeId mtf = TypeId.of(MethodTypeForm.class);
         TypeId i_arr = TypeId.of(int[].class);

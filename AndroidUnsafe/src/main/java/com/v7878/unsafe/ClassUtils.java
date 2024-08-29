@@ -8,6 +8,7 @@ import static com.v7878.unsafe.Utils.assert_;
 import com.v7878.unsafe.Reflection.ClassMirror;
 
 import java.lang.reflect.Modifier;
+import java.util.function.IntUnaryOperator;
 
 public class ClassUtils {
     @ApiSensitive
@@ -176,17 +177,19 @@ public class ClassUtils {
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void changeClassFlags(Class<?> clazz, IntUnaryOperator filter) {
+        ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+        mirror[0].accessFlags = filter.applyAsInt(mirror[0].accessFlags);
+        fullFence();
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void makeClassPublic(Class<?> clazz) {
         changeClassFlags(clazz, 0, Modifier.PUBLIC);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static void makeClassNonFinal(Class<?> clazz) {
-        changeClassFlags(clazz, Modifier.FINAL, 0);
-    }
-
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static void makeClassPublicNonFinal(Class<?> clazz) {
+    public static void makeClassInheritable(Class<?> clazz) {
         changeClassFlags(clazz, Modifier.FINAL, Modifier.PUBLIC);
     }
 

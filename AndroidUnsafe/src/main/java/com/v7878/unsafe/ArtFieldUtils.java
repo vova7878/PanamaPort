@@ -15,6 +15,8 @@ import com.v7878.foreign.MemorySegment;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
+import java.util.function.IntUnaryOperator;
 
 public class ArtFieldUtils {
     private static final GroupLayout art_field_layout = paddedStructLayout(
@@ -55,6 +57,13 @@ public class ArtFieldUtils {
     public static void changeFieldFlags(Field f, int remove_flags, int add_flags) {
         int flags = getFieldFlags(f) & ~remove_flags;
         setFieldFlags(f, flags | add_flags);
+        fullFence();
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void changeFieldFlags(Field f, IntUnaryOperator filter) {
+        Objects.requireNonNull(filter);
+        setFieldFlags(f, filter.applyAsInt(getFieldFlags(f)));
         fullFence();
     }
 

@@ -15,7 +15,8 @@ import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
-import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicNonFinal;
+import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
+import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -222,7 +223,7 @@ public class Transformers {
             } else {
                 Method tmp = getDeclaredMethod(MethodHandle.class,
                         "asTypeUncached", MethodType.class);
-                makeExecutablePublicNonFinal(tmp);
+                makeMethodInheritable(tmp);
 
                 //return asTypeCache = super.asTypeUncached(type);
                 fallbackAsType = b -> b
@@ -276,7 +277,7 @@ public class Transformers {
         } else {
             Method tmp = getDeclaredMethod(MethodHandle.class,
                     "asTypeUncached", MethodType.class);
-            makeExecutablePublicNonFinal(tmp);
+            makeMethodInheritable(tmp);
 
             //return super.asTypeUncached(type);
             fallbackAsType = b -> b
@@ -334,7 +335,7 @@ public class Transformers {
             } else {
                 Method tmp = getDeclaredMethod(MethodHandle.class,
                         "invokeExactWithFrame", EmulatedStackFrame.esf_class);
-                makeExecutablePublicNonFinal(tmp);
+                makeExecutablePublic(tmp);
 
                 //handle.invokeExactWithFrame((dalvik.system.EmulatedStackFrame) stack);
                 b.invoke(VIRTUAL, MethodId.of(tmp), b.p(0), b.p(1));
@@ -344,7 +345,7 @@ public class Transformers {
 
         Method tmp = getDeclaredMethod(MethodHandle.class,
                 "transform", EmulatedStackFrame.esf_class);
-        makeExecutablePublicNonFinal(tmp);
+        makeMethodInheritable(tmp);
 
         //public void transform(MethodHandle handle, Object stack) {
         //    handle.transform((dalvik.system.EmulatedStackFrame) stack);
