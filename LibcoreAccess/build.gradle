@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
 }
 
 java {
@@ -9,4 +10,16 @@ java {
 
 dependencies {
     compileOnly project(':fake_libcore')
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version project.version
+
+            from components.java
+        }
+    }
 }
