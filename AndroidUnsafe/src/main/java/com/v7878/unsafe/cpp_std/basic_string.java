@@ -6,8 +6,8 @@ import static com.v7878.foreign.MemoryLayout.unionLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
+import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
-import static com.v7878.unsafe.foreign.ExtraLayouts.C_LONG_LONG;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemoryLayout;
@@ -47,7 +47,7 @@ public final class basic_string {
         }
 
         private static long get_word(MemorySegment ptr, long offset) {
-            return IS64BIT ? ptr.get(C_LONG_LONG, offset) : (ptr.get(JAVA_INT, offset) & 0xffffffffL);
+            return IS64BIT ? ptr.get(JAVA_LONG, offset) : (ptr.get(JAVA_INT, offset) & 0xffffffffL);
         }
 
         public boolean is_short() {
