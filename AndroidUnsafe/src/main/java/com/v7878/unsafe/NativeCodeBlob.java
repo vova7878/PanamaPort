@@ -33,7 +33,7 @@ public class NativeCodeBlob {
 
         MemorySegment data;
         try {
-            data = IOUtils.mmap(null, null, 0, size, CODE_PROT, CODE_FLAGS, arena);
+            data = IOUtils.mmap(0, null, 0, size, CODE_PROT, CODE_FLAGS, arena);
         } catch (ErrnoException e) {
             throw shouldNotHappen(e);
         }

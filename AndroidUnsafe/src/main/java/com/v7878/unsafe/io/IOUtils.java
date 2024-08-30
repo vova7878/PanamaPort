@@ -160,8 +160,8 @@ public class IOUtils {
         return value;
     }
 
-    public static void mprotect(MemorySegment segment, int prot) throws ErrnoException {
-        int value = Native.INSTANCE.mprotect(segment.nativeAddress(), segment.byteSize(), prot);
+    public static void mprotect(long address, long length, int prot) throws ErrnoException {
+        int value = Native.INSTANCE.mprotect(address, length, prot);
         if (value < 0) {
             throw new ErrnoException("mprotect", Errno.errno());
         }
@@ -169,7 +169,7 @@ public class IOUtils {
 
     public static final int MAP_ANONYMOUS = 0x20;
 
-    public static MemorySegment mmap(MemorySegment address, FileDescriptor fd, long offset,
+    public static MemorySegment mmap(long address, FileDescriptor fd, long offset,
                                      long length, int prot, int flags, Arena scope) throws ErrnoException {
         Objects.requireNonNull(scope);
         if (offset < 0) {
@@ -185,10 +185,7 @@ public class IOUtils {
         } else if (!fd.valid()) {
             throw new IllegalStateException("FileDescriptor is not valid");
         }
-        if (address == null) {
-            address = MemorySegment.NULL;
-        }
-        long mmap_address = Os.mmap(address.nativeAddress(), length, prot, flags, fd, offset);
+        long mmap_address = Os.mmap(address, length, prot, flags, fd, offset);
         boolean readOnly = (prot & OsConstants.PROT_WRITE) == 0;
         return JavaForeignAccess.mapSegment(new UnmapperProxy() {
             @Override
@@ -212,7 +209,7 @@ public class IOUtils {
 
     public static MemorySegment mmap(FileDescriptor fd, int prot, long offset,
                                      long length, Arena scope) throws ErrnoException {
-        return mmap(null, fd, offset, length, prot, OsConstants.MAP_PRIVATE, scope);
+        return mmap(0, fd, offset, length, prot, OsConstants.MAP_PRIVATE, scope);
     }
 
     private static final int PROT_RWX = OsConstants.PROT_READ | OsConstants.PROT_WRITE | OsConstants.PROT_EXEC;
