@@ -3,7 +3,6 @@ package com.v7878.unsafe;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.Reflection.arrayCast;
-import static com.v7878.unsafe.Utils.assert_;
 
 import com.v7878.unsafe.Reflection.ClassMirror;
 
@@ -214,6 +213,8 @@ public class ClassUtils {
     public static void ensureClassVisiblyInitialized(Class<?> clazz) {
         //TODO: maybe this can be done better?
         ensureClassInitialized(clazz);
-        assert_(isClassVisiblyInitialized(clazz), AssertionError::new);
+        if (!isClassVisiblyInitialized(clazz)) {
+            AndroidUnsafe.allocateInstance(clazz);
+        }
     }
 }
