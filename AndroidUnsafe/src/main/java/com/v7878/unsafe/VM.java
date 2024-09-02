@@ -29,7 +29,7 @@ import android.os.Build;
 
 import androidx.annotation.Keep;
 
-import com.v7878.libcore.VMAccess;
+import com.v7878.unsafe.libcore.VMAccess;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;

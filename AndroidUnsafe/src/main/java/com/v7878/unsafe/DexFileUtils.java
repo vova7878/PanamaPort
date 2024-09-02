@@ -16,10 +16,10 @@ import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.libcore.DexFileAccess;
 import com.v7878.unsafe.Reflection.ClassMirror;
 import com.v7878.unsafe.cpp_std.shared_ptr;
 import com.v7878.unsafe.cpp_std.unique_ptr;
+import com.v7878.unsafe.libcore.DexFileAccess;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
