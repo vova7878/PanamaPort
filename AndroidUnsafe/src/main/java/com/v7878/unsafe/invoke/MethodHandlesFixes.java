@@ -38,6 +38,7 @@ import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.access.InvokeAccess;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.Transformers.TransformerI;
 
@@ -69,7 +70,7 @@ public class MethodHandlesFixes {
         }
 
         @Override
-        public void transform(EmulatedStackFrame stack) throws Throwable {
+        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
             StackFrameAccessor this_accessor = stack.createAccessor();
 
             // First invoke the collector.
@@ -87,9 +88,9 @@ public class MethodHandlesFixes {
 
             // If return type of collector is not void, we have a return value to copy.
             target_accessor.moveTo(pos);
-            if (Transformers.rtype(collector.type()) != void.class) {
+            if (InvokeAccess.rtype(collector.type()) != void.class) {
                 EmulatedStackFrame.copyNext(collector_accessor.moveToReturn(),
-                        target_accessor, Transformers.rtype(collector.type()));
+                        target_accessor, InvokeAccess.rtype(collector.type()));
             }
 
             // Finish constructing the target frame.
@@ -113,8 +114,8 @@ public class MethodHandlesFixes {
     private static MethodType collectArgumentsChecks(MethodHandle target, int pos, MethodHandle filter) {
         MethodType targetType = target.type();
         MethodType filterType = filter.type();
-        Class<?> rtype = Transformers.rtype(filterType);
-        Class<?>[] filterArgs = Transformers.ptypes(filterType);
+        Class<?> rtype = InvokeAccess.rtype(filterType);
+        Class<?>[] filterArgs = InvokeAccess.ptypes(filterType);
         if (rtype == void.class) {
             return targetType.insertParameterTypes(pos, filterArgs);
         }
@@ -127,7 +128,7 @@ public class MethodHandlesFixes {
     // fix for PLATFORM-BUG!
     public static MethodHandle identity(Class<?> type) {
         Objects.requireNonNull(type);
-        return makeTransformer(MethodType.methodType(type, type), (TransformerI) stack ->
+        return makeTransformer(MethodType.methodType(type, type), (ignored, stack) ->
                 EmulatedStackFrame.copyNext(stack.createAccessor().moveTo(0),
                         stack.createAccessor().moveToReturn(), type));
     }
@@ -144,7 +145,7 @@ public class MethodHandlesFixes {
         }
 
         @Override
-        public void transform(EmulatedStackFrame stackFrame) throws Throwable {
+        public void transform(MethodHandle ignored, EmulatedStackFrame stackFrame) throws Throwable {
             // The first argument to the stack frame is the handle that needs to be invoked.
             StackFrameAccessor thisAccessor = stackFrame.createAccessor();
             MethodHandle target = thisAccessor.nextReference(MethodHandle.class);
@@ -316,7 +317,7 @@ public class MethodHandlesFixes {
         }
 
         @Override
-        public void transform(EmulatedStackFrame stack) throws Throwable {
+        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
             target.invoke(stack.createAccessor());
         }
     }
@@ -360,7 +361,7 @@ public class MethodHandlesFixes {
         }
 
         @Override
-        public void transform(EmulatedStackFrame callerFrame) throws Throwable {
+        public void transform(MethodHandle ignored, EmulatedStackFrame callerFrame) throws Throwable {
             EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
 
             StackFrameAccessor callerAccessor = callerFrame.createAccessor();
@@ -374,16 +375,16 @@ public class MethodHandlesFixes {
         }
 
         private void explicitCastArguments(StackFrameAccessor reader, StackFrameAccessor writer) {
-            Class<?>[] fromTypes = Transformers.ptypes(type);
-            Class<?>[] toTypes = Transformers.ptypes(target.type());
+            Class<?>[] fromTypes = InvokeAccess.ptypes(type);
+            Class<?>[] toTypes = InvokeAccess.ptypes(target.type());
             for (int i = 0; i < fromTypes.length; ++i) {
                 explicitCast(reader, fromTypes[i], writer, toTypes[i]);
             }
         }
 
         private void explicitCastReturnValue(StackFrameAccessor reader, StackFrameAccessor writer) {
-            Class<?> from = Transformers.rtype(target.type());
-            Class<?> to = Transformers.rtype(type);
+            Class<?> from = InvokeAccess.rtype(target.type());
+            Class<?> to = InvokeAccess.rtype(type);
             if (to != void.class) {
                 if (from == void.class) {
                     if (to.isPrimitive()) {
@@ -718,7 +719,7 @@ public class MethodHandlesFixes {
         MethodType oldType = target.type();
         explicitCastArgumentsChecks(oldType, newType);
         if (oldType.equals(newType)) return target;
-        if (Transformers.explicitCastEquivalentToAsType(oldType, newType) &&
+        if (InvokeAccess.explicitCastEquivalentToAsType(oldType, newType) &&
                 !INVOKE_TRANSFORMER.isInstance(target)) {
             return target.asType(newType);
         }
@@ -735,11 +736,11 @@ public class MethodHandlesFixes {
         }
 
         @Override
-        public void transform(EmulatedStackFrame emulatedStackFrame) throws Throwable {
+        public void transform(MethodHandle ignored, EmulatedStackFrame emulatedStackFrame) throws Throwable {
             StackFrameAccessor reader = emulatedStackFrame.createAccessor();
             EmulatedStackFrame calleeFrame = EmulatedStackFrame.create(target.type());
             StackFrameAccessor writer = calleeFrame.createAccessor();
-            Class<?>[] ptypes = Transformers.ptypes(emulatedStackFrame.type());
+            Class<?>[] ptypes = InvokeAccess.ptypes(emulatedStackFrame.type());
             for (int readerIndex : reorder) {
                 reader.moveTo(readerIndex);
                 EmulatedStackFrame.copyNext(reader, writer, ptypes[readerIndex]);
@@ -786,7 +787,7 @@ public class MethodHandlesFixes {
             throw newIllegalArgumentException("type parameter count and reorder array length do not match",
                     type, Arrays.toString(reorder));
 
-        Class<?> rtype = Transformers.rtype(type);
+        Class<?> rtype = InvokeAccess.rtype(type);
         Class<?>[] atypes = new Class[limit];
 
         for (int j = 0; j < reorder.length; j++) {
@@ -816,7 +817,7 @@ public class MethodHandlesFixes {
         }
 
         @Override
-        public void transform(EmulatedStackFrame callerFrame) throws Throwable {
+        public void transform(MethodHandle ignored, EmulatedStackFrame callerFrame) throws Throwable {
             EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
 
             StackFrameAccessor callerAccessor = callerFrame.createAccessor();
@@ -830,16 +831,16 @@ public class MethodHandlesFixes {
         }
 
         private void adaptArguments(StackFrameAccessor reader, StackFrameAccessor writer) {
-            Class<?>[] fromTypes = Transformers.ptypes(type);
-            Class<?>[] toTypes = Transformers.ptypes(target.type());
+            Class<?>[] fromTypes = InvokeAccess.ptypes(type);
+            Class<?>[] toTypes = InvokeAccess.ptypes(target.type());
             for (int i = 0; i < fromTypes.length; ++i) {
                 adaptArgument(reader, fromTypes[i], writer, toTypes[i]);
             }
         }
 
         private void adaptReturnValue(StackFrameAccessor reader, StackFrameAccessor writer) {
-            Class<?> fromType = Transformers.rtype(target.type());
-            Class<?> toType = Transformers.rtype(type);
+            Class<?> fromType = InvokeAccess.rtype(target.type());
+            Class<?> toType = InvokeAccess.rtype(type);
             adaptArgument(reader, fromType, writer, toType);
         }
 
@@ -1019,7 +1020,7 @@ public class MethodHandlesFixes {
     public static MethodHandle asTypeAdapter(MethodHandle target, MethodType newType) {
         MethodType oldType = target.type();
         if (newType.equals(oldType)) return target;
-        if (!Transformers.isConvertibleTo(target.type(), newType)) {
+        if (!InvokeAccess.isConvertibleTo(target.type(), newType)) {
             throw new WrongMethodTypeException("cannot convert " + target + " to " + newType);
         }
         return Transformers.makeTransformer(newType, new AsTypeAdapter(target, newType));

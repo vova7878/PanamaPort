@@ -309,8 +309,7 @@ public abstract class AbstractVarHandle extends VarHandle {
                 mh = getMethodHandleUncached(mode);
             } else {
                 mh = Transformers.makeTransformer(accessModeType(mode), (thiz, stackFrame) -> {
-                    //TODO: correct message
-                    throw new UnsupportedOperationException(mode + " is not supported");
+                    throw new UnsupportedOperationException("Unsupported access mode: " + mode);
                 });
             }
             return mhTable[modeOrdinal] = mh;

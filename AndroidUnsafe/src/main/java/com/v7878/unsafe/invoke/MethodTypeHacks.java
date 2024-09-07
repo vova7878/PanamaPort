@@ -27,6 +27,7 @@ import com.v7878.dex.TypeId;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils;
+import com.v7878.unsafe.access.InvokeAccess;
 
 import java.lang.invoke.MethodType;
 import java.util.Objects;
@@ -122,7 +123,7 @@ public class MethodTypeHacks {
             copyFormData(old_form, new_form);
 
             {
-                Class<?>[] ptypes = Transformers.ptypes(type);
+                Class<?>[] ptypes = InvokeAccess.ptypes(type);
                 int[] frameOffsets = new int[ptypes.length + 1];
                 int[] referencesOffsets = new int[ptypes.length + 1];
                 int frameOffset = 0;

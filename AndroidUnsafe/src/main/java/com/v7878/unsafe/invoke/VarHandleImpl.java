@@ -1,33 +1,41 @@
 package com.v7878.unsafe.invoke;
 
 import com.v7878.invoke.VarHandle;
-import com.v7878.unsafe.invoke.Transformers.TransformerI;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.util.EnumSet;
 import java.util.Objects;
 
 public class VarHandleImpl extends AbstractVarHandle {
-
-    public final boolean isAccessModeSupported(AccessMode accessMode) {
-        int testBit = 1 << accessMode.ordinal();
-        return (accessModesBitMask & testBit) == testBit;
-    }
-
     @FunctionalInterface
     public interface VarHandleTransformer {
         void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack);
     }
 
+    @FunctionalInterface
+    public interface VarHandleFactory {
+        MethodHandle create(VarHandleImpl handle, AccessMode mode, MethodType type);
+    }
+
     public static VarHandle newVarHandle(int accessModesBitMask, VarHandleTransformer impl,
+                                         Class<?> varType, Class<?>... coordinates) {
+        Objects.requireNonNull(impl);
+        return newVarHandle(accessModesBitMask, (thiz, mode, type) -> {
+            return Transformers.makeTransformer(type,
+                    (ignored, stack) -> impl.transform(thiz, mode, stack));
+        }, varType, coordinates);
+    }
+
+    public static VarHandle newVarHandle(int accessModesBitMask, VarHandleFactory handleFactory,
                                          Class<?> varType, Class<?>... coordinates) {
         if ((accessModesBitMask & ~ALL_MODES_BIT_MASK) != 0) {
             throw new IllegalArgumentException("illegal accessModesBitMask: " + accessModesBitMask);
         }
-        Objects.requireNonNull(impl);
+        Objects.requireNonNull(handleFactory);
         checkVarType(varType);
         checkCoordinates(coordinates);
-        return new VarHandleImpl(accessModesBitMask, impl, varType, coordinates);
+        return new VarHandleImpl(accessModesBitMask, handleFactory, varType, coordinates);
     }
 
     /**
@@ -35,18 +43,30 @@ public class VarHandleImpl extends AbstractVarHandle {
      */
     private final int accessModesBitMask;
 
-    private final VarHandleTransformer impl;
+    private final VarHandleFactory handleFactory;
 
-    private VarHandleImpl(int accessModesBitMask, VarHandleTransformer impl,
+    private VarHandleImpl(int accessModesBitMask, VarHandleFactory handleFactory,
                           Class<?> varType, Class<?>... coordinates) {
         super(varType, coordinates);
         this.accessModesBitMask = accessModesBitMask;
-        this.impl = impl;
+        this.handleFactory = handleFactory;
     }
 
+    @Override
+    public final boolean isAccessModeSupported(AccessMode accessMode) {
+        int testBit = 1 << accessMode.ordinal();
+        return (accessModesBitMask & testBit) == testBit;
+    }
+
+    @Override
     protected MethodHandle getMethodHandleUncached(AccessMode mode) {
-        return Transformers.makeTransformer(accessModeType(mode),
-                (TransformerI) stack -> impl.transform(this, mode, stack));
+        MethodType type = accessModeType(mode);
+        MethodHandle out = handleFactory.create(this, mode, type);
+        if (!out.type().equals(type)) { // NPE check
+            throw new IllegalStateException(
+                    "handleFactory returned MethodHandle with wrong type: " + out.type());
+        }
+        return out;
     }
 
     /**

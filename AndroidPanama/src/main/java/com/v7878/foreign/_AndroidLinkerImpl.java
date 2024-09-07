@@ -205,7 +205,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
 
         @Override
-        public void transform(EmulatedStackFrame stack) throws Throwable {
+        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
             StackFrameAccessor thiz_acc = stack.createAccessor();
             EmulatedStackFrame stub_frame = EmulatedStackFrame.create(stub.type());
             StackFrameAccessor stub_acc = stub_frame.createAccessor();
@@ -567,6 +567,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
     @SuppressWarnings("ClassCanBeRecord")
     private static class ReturnWrapper implements TransformerI {
+        //TODO: maybe use TransformerI instead of MethodHandle?
         private final MethodHandle handle;
         private final MemoryLayout ret_layout;
         private final int ret_index;
@@ -578,7 +579,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
 
         @Override
-        public void transform(EmulatedStackFrame stack) throws Throwable {
+        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
             StackFrameAccessor thiz_acc = stack.createAccessor();
             SegmentAllocator allocator = thiz_acc.getReference(ret_index, SegmentAllocator.class);
             MemorySegment ret = allocator.allocate(ret_layout);
@@ -1016,7 +1017,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
 
         @Override
-        public void transform(EmulatedStackFrame stack) {
+        public void transform(MethodHandle ignored, EmulatedStackFrame stack) {
             StackFrameAccessor thiz_acc = stack.createAccessor();
             EmulatedStackFrame stub_frame = EmulatedStackFrame.create(stub.type());
             StackFrameAccessor stub_acc = stub_frame.createAccessor();

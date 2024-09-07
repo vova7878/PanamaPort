@@ -9,11 +9,11 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 
 import com.v7878.unsafe.Utils.SoftReferenceCache;
+import com.v7878.unsafe.access.InvokeAccess;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.cpp_std.CTypes;
 import com.v7878.unsafe.foreign.ExtraLayouts;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
-import com.v7878.unsafe.invoke.Transformers;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -108,7 +108,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
     }
 
     private static void checkExceptions(MethodHandle target) {
-        Class<?>[] exceptions = Transformers.exceptionTypes(target);
+        Class<?>[] exceptions = InvokeAccess.exceptionTypes(target);
         if (exceptions != null && exceptions.length != 0) {
             throw new IllegalArgumentException("Target handle may throw exceptions: " + Arrays.toString(exceptions));
         }

@@ -49,7 +49,6 @@ import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.invoke.Transformers;
-import com.v7878.unsafe.invoke.Transformers.TransformerI;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -822,7 +821,7 @@ public final class Core {
 
     private static MethodHandle invoker(LLVMDiagnosticHandler handler) {
         return Transformers.makeTransformer(MethodType.methodType(
-                void.class, WORD.carrier(), WORD.carrier()), (TransformerI) stack -> {
+                void.class, WORD.carrier(), WORD.carrier()), (ignored, stack) -> {
             var accessor = stack.createAccessor();
             var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
             handler.invoke(LLVMDiagnosticInfoRef.of(value));
@@ -839,7 +838,7 @@ public final class Core {
 
     private static MethodHandle invoker(LLVMYieldCallback callback) {
         return Transformers.makeTransformer(MethodType.methodType(
-                void.class, WORD.carrier(), WORD.carrier()), (TransformerI) stack -> {
+                void.class, WORD.carrier(), WORD.carrier()), (ignored, stack) -> {
             var accessor = stack.createAccessor();
             var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
             callback.invoke(LLVMContextRef.of(value));
