@@ -69,11 +69,16 @@ public class ArtFieldUtils {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void makeFieldPublic(Field f) {
-        changeFieldFlags(f, Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE, Modifier.PUBLIC);
+        changeFieldFlags(f, Modifier.PROTECTED | Modifier.PRIVATE, Modifier.PUBLIC);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void makeFieldNonFinal(Field f) {
         changeFieldFlags(f, Modifier.FINAL, 0);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void makeFieldPublicApi(Field f) {
+        changeFieldFlags(f, ArtModifiers::makePublicApi);
     }
 }

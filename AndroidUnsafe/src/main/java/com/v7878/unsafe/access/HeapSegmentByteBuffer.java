@@ -1,6 +1,5 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.access.JavaForeignAccess.lock;
 
 import com.v7878.foreign.MemorySegment.Scope;
@@ -11,10 +10,6 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public class HeapSegmentByteBuffer extends HeapByteBuffer {
-    static {
-        setTrusted(HeapSegmentByteBuffer.class);
-    }
-
     public final Scope scope;
 
     public HeapSegmentByteBuffer(byte[] buf, int mark, int pos, int lim, int cap,

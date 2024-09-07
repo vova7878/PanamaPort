@@ -12,7 +12,9 @@ import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
+import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublicApi;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
+import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicApi;
 import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
 import static com.v7878.unsafe.ClassUtils.makeClassInheritable;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
@@ -22,8 +24,8 @@ import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructors;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredFields0;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
+import static com.v7878.unsafe.Reflection.getMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
@@ -102,7 +104,6 @@ class SegmentBufferAccess {
 
 @ApiSensitive
 public class JavaNioAccess {
-
     public interface UnmapperProxy {
         long address();
 
@@ -130,11 +131,13 @@ public class JavaNioAccess {
             Constructor<?>[] constructors = getDeclaredConstructors(nio_mem_ref_class);
             for (Constructor<?> constructor : constructors) {
                 makeExecutablePublic(constructor);
+                makeExecutablePublicApi(constructor);
             }
 
             Field[] fields = getDeclaredFields0(nio_mem_ref_class, false);
             for (Field field : fields) {
                 makeFieldPublic(field);
+                makeFieldPublicApi(field);
             }
         }
 
@@ -146,6 +149,7 @@ public class JavaNioAccess {
                 if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
                     makeMethodInheritable(method);
                 }
+                makeExecutablePublicApi(method);
             }
 
             m_attachment = searchMethod(methods, "attachment");
@@ -154,11 +158,13 @@ public class JavaNioAccess {
             Constructor<?>[] constructors = getDeclaredConstructors(nio_direct_buf_class);
             for (Constructor<?> constructor : constructors) {
                 makeExecutablePublic(constructor);
+                makeExecutablePublicApi(constructor);
             }
 
             Field[] fields = getDeclaredFields0(nio_direct_buf_class, false);
             for (Field field : fields) {
                 makeFieldPublic(field);
+                makeFieldPublicApi(field);
             }
         }
 
@@ -172,18 +178,30 @@ public class JavaNioAccess {
                 if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
                     makeMethodInheritable(method);
                 }
+                makeExecutablePublicApi(method);
             }
 
             Constructor<?>[] constructors = getDeclaredConstructors(nio_heap_buf_class);
             for (Constructor<?> constructor : constructors) {
                 makeExecutablePublic(constructor);
+                makeExecutablePublicApi(constructor);
             }
         }
 
         {
+            Method[] methods = getMethods(MappedByteBuffer.class);
+            for (Method method : methods) {
+                int flags = method.getModifiers();
+                if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
+                    makeMethodInheritable(method);
+                }
+                makeExecutablePublicApi(method);
+            }
+
             Field[] fields = getDeclaredFields0(MappedByteBuffer.class, false);
             for (Field field : fields) {
                 makeFieldPublic(field);
+                makeFieldPublicApi(field);
             }
         }
 
@@ -191,6 +209,7 @@ public class JavaNioAccess {
             Field[] fields = getDeclaredFields0(ByteBuffer.class, false);
             for (Field field : fields) {
                 makeFieldPublic(field);
+                makeFieldPublicApi(field);
             }
         }
 
@@ -198,9 +217,8 @@ public class JavaNioAccess {
             Field[] fields = getDeclaredFields0(Buffer.class, false);
             for (Field field : fields) {
                 makeFieldPublic(field);
+                makeFieldPublicApi(field);
             }
-
-            makeExecutablePublic(getDeclaredMethod(Buffer.class, "markValue"));
         }
 
         String direct_buf_name = "com.v7878.unsafe.DirectByteBuffer";

@@ -13,6 +13,9 @@ import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.getWordN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordN;
+import static com.v7878.unsafe.ArtModifiers.kAccCompileDontBother;
+import static com.v7878.unsafe.ArtModifiers.kAccIntrinsic;
+import static com.v7878.unsafe.ArtModifiers.kAccPreCompiled;
 import static com.v7878.unsafe.Reflection.getArtMethod;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
@@ -93,36 +96,6 @@ public class ArtMethodUtils {
         case 30 /*android 11*/, 29 /*android 10*/ -> art_method_11_10_layout;
         case 28 /*android 9*/ -> art_method_9_layout;
         case 27 /*android 8.1*/, 26 /*android 8*/ -> art_method_8xx_layout;
-        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-    };
-
-    @ApiSensitive
-    public static final int kAccIntrinsic = 0x80000000;
-
-    @ApiSensitive
-    public static final int kAccCompileDontBother = switch (CORRECT_SDK_INT) {
-        case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/, 32 /*android 12L*/,
-             31 /*android 12*/, 30 /*android 11*/, 29 /*android 10*/,
-             28 /*android 9*/, 27 /*android 8.1*/ -> 0x02000000;
-        case 26 /*android 8*/ -> 0x01000000;
-        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-    };
-
-    @ApiSensitive
-    public static final int kAccPreCompiled = switch (CORRECT_SDK_INT) {
-        case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/,
-             32 /*android 12L*/, 31 /*android 12*/ -> 0x00800000;
-        case 30 /*android 11*/ -> 0x00200000;
-        case 29 /*android 10*/, 28 /*android 9*/, 27 /*android 8.1*/, 26 /*android 8*/ -> 0;
-        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-    };
-
-    @ApiSensitive
-    public static final int kAccFastInterpreterToInterpreterInvoke = switch (CORRECT_SDK_INT) {
-        case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/ -> 0;
-        case 32 /*android 12L*/, 31 /*android 12*/,
-             30 /*android 11*/, 29 /*android 10*/ -> 0x40000000;
-        case 28 /*android 9*/, 27 /*android 8.1*/, 26 /*android 8*/ -> 0;
         default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
     };
 
@@ -209,7 +182,7 @@ public class ArtMethodUtils {
         fullFence();
     }
 
-    private static final int VISIBILITY_MASK = Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
+    private static final int VISIBILITY_MASK = Modifier.PROTECTED | Modifier.PRIVATE;
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void makeExecutablePublic(Executable ex) {
@@ -238,6 +211,16 @@ public class ArtMethodUtils {
                 throw new IllegalArgumentException("Intrinsic executables are not supported: " + ex);
             }
             return (flags & ~kAccPreCompiled) | kAccCompileDontBother;
+        });
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void makeExecutablePublicApi(Executable ex) {
+        changeExecutableFlags(ex, flags -> {
+            if ((flags & kAccIntrinsic) != 0) {
+                throw new IllegalArgumentException("Intrinsic executables are not supported: " + ex);
+            }
+            return ArtModifiers.makePublicApi(flags);
         });
     }
 }
