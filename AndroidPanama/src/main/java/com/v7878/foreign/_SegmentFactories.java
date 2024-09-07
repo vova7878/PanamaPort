@@ -60,8 +60,9 @@ class _SegmentFactories {
     // Unsafe native segment factories. These are used by the implementation code, to skip the sanity checks
     // associated with MemorySegment::ofAddress.
 
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, boolean readOnly,
-                                                           _MemorySessionImpl sessionImpl, Runnable action) {
+    public static MemorySegment makeNativeSegmentUnchecked(
+            long min, long byteSize, _MemorySessionImpl sessionImpl,
+            boolean readOnly, Runnable action) {
         ensureInitialized();
         if (action == null) {
             sessionImpl.checkValidState();
@@ -73,7 +74,7 @@ class _SegmentFactories {
 
     public static MemorySegment makeNativeSegmentUnchecked(
             long min, long byteSize, _MemorySessionImpl sessionImpl, Runnable action) {
-        return makeNativeSegmentUnchecked(min, byteSize, false, sessionImpl, action);
+        return makeNativeSegmentUnchecked(min, byteSize, sessionImpl, false, action);
     }
 
     public static MemorySegment makeNativeSegmentUnchecked(

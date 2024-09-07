@@ -51,6 +51,7 @@ import com.v7878.foreign.MemoryLayout.PathElement;
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
+import com.v7878.unsafe.invoke.Wrapper;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -76,8 +77,9 @@ final class _Utils {
     private static final MethodHandle BYTE_TO_BOOL;
     private static final MethodHandle BOOL_TO_BYTE;
     private static final MethodHandle ADDRESS_TO_LONG;
-    private static final MethodHandle LONG_TO_ADDRESS;
-    private static final MethodHandle MH_CHECK_CAPTURE_SEGMENT;
+    private static final MethodHandle LONG_TO_ADDRESS_TARGET;
+    private static final MethodHandle LONG_TO_ADDRESS_NO_TARGET;
+    private static final MethodHandle CHECK_CAPTURE_SEGMENT;
 
     static {
         try {
@@ -88,9 +90,11 @@ final class _Utils {
                     MethodType.methodType(byte.class, boolean.class));
             ADDRESS_TO_LONG = lookup.findStatic(_Utils.class, "unboxSegment",
                     MethodType.methodType(long.class, MemorySegment.class));
-            LONG_TO_ADDRESS = lookup.findStatic(_Utils.class, "longToAddress",
-                    MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
-            MH_CHECK_CAPTURE_SEGMENT = lookup.findStatic(_Utils.class, "checkCaptureSegment",
+            LONG_TO_ADDRESS_TARGET = lookup.findStatic(_Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, long.class, AddressLayout.class));
+            LONG_TO_ADDRESS_NO_TARGET = lookup.findStatic(_Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, long.class));
+            CHECK_CAPTURE_SEGMENT = lookup.findStatic(_Utils.class, "checkCaptureSegment",
                     MethodType.methodType(MemorySegment.class, MemorySegment.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
@@ -155,10 +159,13 @@ final class _Utils {
         if (layout.carrier() == boolean.class) {
             handle = VarHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
         } else if (layout instanceof AddressLayout addressLayout) {
+            MethodHandle longToAddressAdapter = addressLayout.targetLayout().isPresent() ?
+                    MethodHandles.insertArguments(LONG_TO_ADDRESS_TARGET, 1, addressLayout) :
+                    LONG_TO_ADDRESS_NO_TARGET;
             handle = VarHandles.filterValue(handle,
-                    MethodHandlesFixes.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
-                    MethodHandlesFixes.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
-                                    pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
+                    MethodHandlesFixes.explicitCastArguments(ADDRESS_TO_LONG,
+                            MethodType.methodType(baseCarrier, MemorySegment.class)),
+                    MethodHandlesFixes.explicitCastArguments(longToAddressAdapter,
                             MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
         return handle;
@@ -193,9 +200,20 @@ final class _Utils {
         if (options.hasCapturedCallState()) {
             int index = options.isReturnInMemory() ? 2 : 1;
             // (<target address>, ?<allocator>, <capture segment>, ...) -> ...
-            handle = MethodHandles.filterArguments(handle, index, MH_CHECK_CAPTURE_SEGMENT);
+            handle = MethodHandles.filterArguments(handle, index, CHECK_CAPTURE_SEGMENT);
         }
         return handle;
+    }
+
+    public static boolean overlaps(Object srcBase, long srcOffset, long srcSize,
+                                   Object destBase, long destOffset, long destSize) {
+        if (srcBase == destBase) {  // both either native or the same heap segment
+            final long srcEnd = srcOffset + srcSize;
+            final long destEnd = destOffset + destSize;
+
+            return (srcOffset < destEnd && srcEnd > destOffset); //overlap occurs?
+        }
+        return false;
     }
 
     private static int distance(int a, int b) {
@@ -226,16 +244,25 @@ final class _Utils {
         return segment.address();
     }
 
+    @Keep
+    public static MemorySegment longToAddress(long addr) {
+        return longToAddress(addr, 0, 1);
+    }
+
+    @Keep
+    public static MemorySegment longToAddress(long addr, AddressLayout layout) {
+        return longToAddress(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
+    }
+
+    public static MemorySegment longToAddress(long addr, long size, long align) {
+        return longToAddress(addr, size, align, _GlobalSession.INSTANCE);
+    }
+
     public static MemorySegment longToAddress(long addr, long size, long align, _MemorySessionImpl scope) {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
         return _SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
-    }
-
-    @Keep
-    public static MemorySegment longToAddress(long addr, long size, long align) {
-        return longToAddress(addr, size, align, _GlobalSession.INSTANCE);
     }
 
     public static boolean isAligned(long offset, long align) {
@@ -346,18 +373,7 @@ final class _Utils {
     }
 
     public static int byteWidthOfPrimitive(Class<?> primitive) {
-        // Port-changed: just check all primitive types
-        //return Wrapper.forPrimitiveType(primitive).bitWidth() / 8;
-        if (primitive == byte.class || primitive == boolean.class) {
-            return 1;
-        } else if (primitive == short.class || primitive == char.class) {
-            return 2;
-        } else if (primitive == int.class || primitive == float.class) {
-            return 4;
-        } else if (primitive == long.class || primitive == double.class) {
-            return 8;
-        }
-        throw new IllegalArgumentException("Unsupported primitive class: " + primitive);
+        return Wrapper.forPrimitiveType(primitive).byteWidth();
     }
 
     public static boolean isPowerOfTwo(long value) {
@@ -373,7 +389,6 @@ final class _Utils {
     }
 
     public enum BaseAndScale {
-
         BYTE(ARRAY_BYTE_BASE_OFFSET, ARRAY_BYTE_INDEX_SCALE),
         CHAR(ARRAY_CHAR_BASE_OFFSET, ARRAY_CHAR_INDEX_SCALE),
         SHORT(ARRAY_SHORT_BASE_OFFSET, ARRAY_SHORT_INDEX_SCALE),

@@ -156,7 +156,7 @@ abstract sealed class _AbstractMemorySegmentImpl
         Runnable action = cleanup == null ? null : () -> cleanup.accept(
                 _SegmentFactories.makeNativeSegmentUnchecked(address(), newSize));
         return _SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
-                (_MemorySessionImpl) scope, action);
+                (_MemorySessionImpl) scope, readOnly, action);
     }
 
     private _AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
@@ -187,8 +187,13 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     @Override
     public final MemorySegment fill(byte value) {
-        checkAccess(0, length, false);
-        _ScopedMemoryAccess.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
+        checkReadOnly(false);
+        if (length == 0) {
+            // Implicit state check
+            checkValidState();
+        } else {
+            _ScopedMemoryAccess.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
+        }
         return this;
     }
 
@@ -258,20 +263,18 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     @Override
     public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
-        _AbstractMemorySegmentImpl that = (_AbstractMemorySegmentImpl) Objects.requireNonNull(other);
-        if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or heap
-            final long thisStart = this.unsafeGetOffset();
-            final long thatStart = that.unsafeGetOffset();
-            final long thisEnd = thisStart + this.byteSize();
-            final long thatEnd = thatStart + that.byteSize();
-
-            if (thisStart < thatEnd && thisEnd > thatStart) {  //overlap occurs
-                long offsetToThat = that.address() - this.address();
-                long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
-                return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
-            }
+        final _AbstractMemorySegmentImpl that = (_AbstractMemorySegmentImpl) Objects.requireNonNull(other);
+        if (overlaps(that)) {
+            final long offsetToThat = that.address() - this.address();
+            final long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
+            return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
         }
         return Optional.empty();
+    }
+
+    private boolean overlaps(_AbstractMemorySegmentImpl that) {
+        return _Utils.overlaps(this.unsafeGetBase(), this.unsafeGetOffset(), this.byteSize(),
+                that.unsafeGetBase(), that.unsafeGetOffset(), that.byteSize());
     }
 
     @Override
@@ -366,6 +369,15 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     public void checkValidState() {
         sessionImpl().checkValidState();
+    }
+
+    public final void checkEnclosingLayout(long offset, MemoryLayout enclosing, boolean readOnly) {
+        checkAccess(offset, enclosing.byteSize(), readOnly);
+        if (!isAlignedForElement(offset, enclosing)) {
+            throw new IllegalArgumentException(String.format(
+                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
+                    , offset, enclosing.byteAlignment(), enclosing, this));
+        }
     }
 
     public abstract long unsafeGetOffset();
@@ -605,6 +617,24 @@ abstract sealed class _AbstractMemorySegmentImpl
             return 3;
         } else {
             throw shouldNotReachHere();
+        }
+    }
+
+    public static void copy(_AbstractMemorySegmentImpl src, long srcOffset,
+                            _AbstractMemorySegmentImpl dst, long dstOffset,
+                            long size) {
+
+        _Utils.checkNonNegativeIndex(size, "size");
+        // Implicit null check for src and dst
+        src.checkAccess(srcOffset, size, true);
+        dst.checkAccess(dstOffset, size, false);
+
+        if (size <= 0) {
+            // Do nothing
+        } else {
+            _ScopedMemoryAccess.copyMemory(src.sessionImpl(), dst.sessionImpl(),
+                    src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
+                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, size);
         }
     }
 

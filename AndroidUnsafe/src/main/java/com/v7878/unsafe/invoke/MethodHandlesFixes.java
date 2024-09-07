@@ -53,8 +53,8 @@ import java.util.Set;
 
 import dalvik.system.DexFile;
 
+//TODO: use codegen to improve performance
 public class MethodHandlesFixes {
-
     private static class CollectArguments implements TransformerI {
         private final MethodHandle target;
         private final MethodHandle collector;

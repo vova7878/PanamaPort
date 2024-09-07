@@ -87,11 +87,11 @@ import com.v7878.unsafe.llvm.LLVMGlobals;
 
 import java.util.function.Function;
 
+//TODO: use jdk.internal.misc.Unsafe if possible
 public class ExtraMemoryAccess {
 
     @Keep
     private abstract static class Native {
-
         private static final Arena SCOPE = Arena.ofAuto();
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {

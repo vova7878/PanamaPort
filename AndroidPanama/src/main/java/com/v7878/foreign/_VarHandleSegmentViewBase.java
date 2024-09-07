@@ -61,7 +61,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         boolean allowAtomicAccess = (alignmentMask & min_align_mask) == min_align_mask;
         int modesMask = VarHandleImpl.accessModesBitMask(carrier, allowAtomicAccess);
         return VarHandleImpl.newVarHandle(modesMask, transformer,
-                carrier, MemorySegment.class, long.class);
+                carrier, MemorySegment.class, MemoryLayout.class, long.class, long.class);
     }
 
     /**
@@ -73,13 +73,13 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         this.swap = swap;
     }
 
-    void checkAddress(_AbstractMemorySegmentImpl ms, boolean ro) {
-        Objects.requireNonNull(ms).checkReadOnly(ro);
+    void checkSegment(_AbstractMemorySegmentImpl ms, MemoryLayout encl, long base, boolean ro) {
+        Objects.requireNonNull(ms).checkEnclosingLayout(base, encl, ro);
     }
 
-    long getOffset(_AbstractMemorySegmentImpl bb, long offset) {
-        long base = bb.unsafeGetOffset();
-        return base + offset;
+    long getOffset(_AbstractMemorySegmentImpl bb, long base, long offset) {
+        long segment_base = bb.unsafeGetOffset();
+        return segment_base + base + offset;
     }
 
     private static final class VarHandleSegmentAsBytes extends _VarHandleSegmentViewBase {
@@ -91,58 +91,63 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
+
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
+            MemoryLayout encl = accessor.nextReference(MemoryLayout.class);
+            long base = accessor.nextLong();
             long offset = accessor.nextLong();
-            checkAddress(ms, isReadOnly(mode));
-            offset = getOffset(ms, offset);
-            Object base = ms.unsafeGetBase();
+
+            checkSegment(ms, encl, base, isReadOnly(mode));
+            offset = getOffset(ms, base, offset);
+            Object heap_base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextByte(
-                        _ScopedMemoryAccess.getByte(session, base, offset));
+                        _ScopedMemoryAccess.getByte(session, heap_base, offset));
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextByte(
-                        _ScopedMemoryAccess.getByteVolatile(session, base, offset));
-                case SET -> _ScopedMemoryAccess.putByte(session, base, offset, accessor.nextByte());
+                        _ScopedMemoryAccess.getByteVolatile(session, heap_base, offset));
+                case SET ->
+                        _ScopedMemoryAccess.putByte(session, heap_base, offset, accessor.nextByte());
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putByteVolatile(
-                        session, base, offset, accessor.nextByte());
+                        session, heap_base, offset, accessor.nextByte());
                 case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
                     var tmp = _ScopedMemoryAccess.getAndSetByte(session,
-                            base, offset, accessor.nextByte());
+                            heap_base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
                 case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
                      COMPARE_AND_EXCHANGE_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndExchangeByte(session, base,
+                    var tmp = _ScopedMemoryAccess.compareAndExchangeByte(session, heap_base,
                             offset, accessor.nextByte(), accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
                      WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndSetByte(session, base,
+                    var tmp = _ScopedMemoryAccess.compareAndSetByte(session, heap_base,
                             offset, accessor.nextByte(), accessor.nextByte());
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
                      GET_AND_BITWISE_AND_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseAndByte(session,
-                            base, offset, accessor.nextByte());
+                            heap_base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
                 case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseOrByte(session,
-                            base, offset, accessor.nextByte());
+                            heap_base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
                 case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
                      GET_AND_BITWISE_XOR_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndBitwiseXorByte(session,
-                            base, offset, accessor.nextByte());
+                            heap_base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
                 case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndAddByteWithCAS(session,
-                            base, offset, accessor.nextByte());
+                            heap_base, offset, accessor.nextByte());
                     accessor.moveToReturn().putNextByte(tmp);
                 }
                 default -> shouldNotReachHere();
@@ -159,59 +164,63 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
+
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
+            MemoryLayout encl = accessor.nextReference(MemoryLayout.class);
+            long base = accessor.nextLong();
             long offset = accessor.nextLong();
-            checkAddress(ms, isReadOnly(mode));
-            offset = getOffset(ms, offset);
-            Object base = ms.unsafeGetBase();
+
+            checkSegment(ms, encl, base, isReadOnly(mode));
+            offset = getOffset(ms, base, offset);
+            Object heap_base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextShort(
-                        _ScopedMemoryAccess.getShortUnaligned(session, base, offset, swap));
+                        _ScopedMemoryAccess.getShortUnaligned(session, heap_base, offset, swap));
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextShort(
-                        convEndian(_ScopedMemoryAccess.getShortVolatile(session, base, offset), swap));
+                        convEndian(_ScopedMemoryAccess.getShortVolatile(session, heap_base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putShortUnaligned(
-                        session, base, offset, accessor.nextShort(), swap);
+                        session, heap_base, offset, accessor.nextShort(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putShortVolatile(
-                        session, base, offset, convEndian(accessor.nextShort(), swap));
+                        session, heap_base, offset, convEndian(accessor.nextShort(), swap));
                 case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.getAndSetShort(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndSetShort(session, heap_base,
                             offset, convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
                 }
                 case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
                      COMPARE_AND_EXCHANGE_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndExchangeShort(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndExchangeShort(session, heap_base, offset,
                             convEndian(accessor.nextShort(), swap), convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
                      WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndSetShort(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndSetShort(session, heap_base, offset,
                             convEndian(accessor.nextShort(), swap), convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
                      GET_AND_BITWISE_AND_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndShort(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndShort(session, heap_base,
                             offset, convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
                 }
                 case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrShort(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrShort(session, heap_base,
                             offset, convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
                 }
                 case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
                      GET_AND_BITWISE_XOR_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorShort(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorShort(session, heap_base,
                             offset, convEndian(accessor.nextShort(), swap));
                     accessor.moveToReturn().putNextShort(convEndian(tmp, swap));
                 }
                 case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndAddShortWithCAS(session,
-                            base, offset, accessor.nextShort(), swap);
+                            heap_base, offset, accessor.nextShort(), swap);
                     accessor.moveToReturn().putNextShort(tmp);
                 }
                 default -> shouldNotReachHere();
@@ -228,61 +237,65 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
+
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
+            MemoryLayout encl = accessor.nextReference(MemoryLayout.class);
+            long base = accessor.nextLong();
             long offset = accessor.nextLong();
-            checkAddress(ms, isReadOnly(mode));
-            offset = getOffset(ms, offset);
-            Object base = ms.unsafeGetBase();
+
+            checkSegment(ms, encl, base, isReadOnly(mode));
+            offset = getOffset(ms, base, offset);
+            Object heap_base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextChar(
-                        _ScopedMemoryAccess.getCharUnaligned(session, base, offset, swap));
+                        _ScopedMemoryAccess.getCharUnaligned(session, heap_base, offset, swap));
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextChar(
-                        (char) convEndian(_ScopedMemoryAccess.getShortVolatile(session, base, offset), swap));
+                        (char) convEndian(_ScopedMemoryAccess.getShortVolatile(session, heap_base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putCharUnaligned(
-                        session, base, offset, accessor.nextChar(), swap);
+                        session, heap_base, offset, accessor.nextChar(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putShortVolatile(
-                        session, base, offset, convEndian((short) accessor.nextChar(), swap));
+                        session, heap_base, offset, convEndian((short) accessor.nextChar(), swap));
                 case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.getAndSetShort(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndSetShort(session, heap_base,
                             offset, convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
                 case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
                      COMPARE_AND_EXCHANGE_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndExchangeShort(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndExchangeShort(session, heap_base, offset,
                             convEndian((short) accessor.nextChar(), swap),
                             convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
                      WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndSetShort(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndSetShort(session, heap_base, offset,
                             convEndian((short) accessor.nextChar(), swap),
                             convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
                      GET_AND_BITWISE_AND_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndShort(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndShort(session, heap_base,
                             offset, convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
                 case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrShort(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrShort(session, heap_base,
                             offset, convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
                 case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
                      GET_AND_BITWISE_XOR_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorShort(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorShort(session, heap_base,
                             offset, convEndian((short) accessor.nextChar(), swap));
                     accessor.moveToReturn().putNextChar((char) convEndian(tmp, swap));
                 }
                 case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndAddShortWithCAS(session,
-                            base, offset, (short) accessor.nextChar(), swap);
+                            heap_base, offset, (short) accessor.nextChar(), swap);
                     accessor.moveToReturn().putNextChar((char) tmp);
                 }
                 default -> shouldNotReachHere();
@@ -299,59 +312,63 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
+
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
+            MemoryLayout encl = accessor.nextReference(MemoryLayout.class);
+            long base = accessor.nextLong();
             long offset = accessor.nextLong();
-            checkAddress(ms, isReadOnly(mode));
-            offset = getOffset(ms, offset);
-            Object base = ms.unsafeGetBase();
+
+            checkSegment(ms, encl, base, isReadOnly(mode));
+            offset = getOffset(ms, base, offset);
+            Object heap_base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextInt(
-                        _ScopedMemoryAccess.getIntUnaligned(session, base, offset, swap));
+                        _ScopedMemoryAccess.getIntUnaligned(session, heap_base, offset, swap));
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextInt(
-                        convEndian(_ScopedMemoryAccess.getIntVolatile(session, base, offset), swap));
+                        convEndian(_ScopedMemoryAccess.getIntVolatile(session, heap_base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putIntUnaligned(
-                        session, base, offset, accessor.nextInt(), swap);
+                        session, heap_base, offset, accessor.nextInt(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putIntVolatile(
-                        session, base, offset, convEndian(accessor.nextInt(), swap));
+                        session, heap_base, offset, convEndian(accessor.nextInt(), swap));
                 case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.getAndSetInt(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndSetInt(session, heap_base,
                             offset, convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
                 case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
                      COMPARE_AND_EXCHANGE_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndExchangeInt(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndExchangeInt(session, heap_base, offset,
                             convEndian(accessor.nextInt(), swap), convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
                      WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndSetInt(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndSetInt(session, heap_base, offset,
                             convEndian(accessor.nextInt(), swap), convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
                      GET_AND_BITWISE_AND_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndInt(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndInt(session, heap_base,
                             offset, convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
                 case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrInt(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrInt(session, heap_base,
                             offset, convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
                 case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
                      GET_AND_BITWISE_XOR_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorInt(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorInt(session, heap_base,
                             offset, convEndian(accessor.nextInt(), swap));
                     accessor.moveToReturn().putNextInt(convEndian(tmp, swap));
                 }
                 case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndAddIntWithCAS(session,
-                            base, offset, accessor.nextInt(), swap);
+                            heap_base, offset, accessor.nextInt(), swap);
                     accessor.moveToReturn().putNextInt(tmp);
                 }
                 default -> shouldNotReachHere();
@@ -368,42 +385,46 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
+
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
+            MemoryLayout encl = accessor.nextReference(MemoryLayout.class);
+            long base = accessor.nextLong();
             long offset = accessor.nextLong();
-            checkAddress(ms, isReadOnly(mode));
-            offset = getOffset(ms, offset);
-            Object base = ms.unsafeGetBase();
+
+            checkSegment(ms, encl, base, isReadOnly(mode));
+            offset = getOffset(ms, base, offset);
+            Object heap_base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextFloat(
-                        _ScopedMemoryAccess.getFloatUnaligned(session, base, offset, swap));
+                        _ScopedMemoryAccess.getFloatUnaligned(session, heap_base, offset, swap));
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextFloat(
-                        i2f(_ScopedMemoryAccess.getIntVolatile(session, base, offset), swap));
+                        i2f(_ScopedMemoryAccess.getIntVolatile(session, heap_base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putFloatUnaligned(
-                        session, base, offset, accessor.nextFloat(), swap);
+                        session, heap_base, offset, accessor.nextFloat(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putIntVolatile(
-                        session, base, offset, f2i(accessor.nextFloat(), swap));
+                        session, heap_base, offset, f2i(accessor.nextFloat(), swap));
                 case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.getAndSetInt(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndSetInt(session, heap_base,
                             offset, f2i(accessor.nextFloat(), swap));
                     accessor.moveToReturn().putNextFloat(i2f(tmp, swap));
                 }
                 case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
                      COMPARE_AND_EXCHANGE_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndExchangeInt(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndExchangeInt(session, heap_base, offset,
                             f2i(accessor.nextFloat(), swap), f2i(accessor.nextFloat(), swap));
                     accessor.moveToReturn().putNextFloat(i2f(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
                      WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndSetInt(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndSetInt(session, heap_base, offset,
                             f2i(accessor.nextFloat(), swap), f2i(accessor.nextFloat(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndAddFloatWithCAS(session,
-                            base, offset, accessor.nextFloat(), swap);
+                            heap_base, offset, accessor.nextFloat(), swap);
                     accessor.moveToReturn().putNextFloat(tmp);
                 }
                 default -> shouldNotReachHere();
@@ -420,59 +441,63 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
+
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
+            MemoryLayout encl = accessor.nextReference(MemoryLayout.class);
+            long base = accessor.nextLong();
             long offset = accessor.nextLong();
-            checkAddress(ms, isReadOnly(mode));
-            offset = getOffset(ms, offset);
-            Object base = ms.unsafeGetBase();
+
+            checkSegment(ms, encl, base, isReadOnly(mode));
+            offset = getOffset(ms, base, offset);
+            Object heap_base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextLong(
-                        _ScopedMemoryAccess.getLongUnaligned(session, base, offset, swap));
+                        _ScopedMemoryAccess.getLongUnaligned(session, heap_base, offset, swap));
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextLong(
-                        convEndian(_ScopedMemoryAccess.getLongVolatile(session, base, offset), swap));
+                        convEndian(_ScopedMemoryAccess.getLongVolatile(session, heap_base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putLongUnaligned(
-                        session, base, offset, accessor.nextLong(), swap);
+                        session, heap_base, offset, accessor.nextLong(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putLongVolatile(
-                        session, base, offset, convEndian(accessor.nextLong(), swap));
+                        session, heap_base, offset, convEndian(accessor.nextLong(), swap));
                 case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.getAndSetLong(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndSetLong(session, heap_base,
                             offset, convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
                 case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
                      COMPARE_AND_EXCHANGE_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndExchangeLong(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndExchangeLong(session, heap_base, offset,
                             convEndian(accessor.nextLong(), swap), convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
                      WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndSetLong(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndSetLong(session, heap_base, offset,
                             convEndian(accessor.nextLong(), swap), convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 case GET_AND_BITWISE_AND, GET_AND_BITWISE_AND_RELEASE,
                      GET_AND_BITWISE_AND_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndLong(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseAndLong(session, heap_base,
                             offset, convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
                 case GET_AND_BITWISE_OR, GET_AND_BITWISE_OR_RELEASE, GET_AND_BITWISE_OR_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrLong(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseOrLong(session, heap_base,
                             offset, convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
                 case GET_AND_BITWISE_XOR, GET_AND_BITWISE_XOR_RELEASE,
                      GET_AND_BITWISE_XOR_ACQUIRE -> {
-                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorLong(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndBitwiseXorLong(session, heap_base,
                             offset, convEndian(accessor.nextLong(), swap));
                     accessor.moveToReturn().putNextLong(convEndian(tmp, swap));
                 }
                 case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndAddLongWithCAS(session,
-                            base, offset, accessor.nextLong(), swap);
+                            heap_base, offset, accessor.nextLong(), swap);
                     accessor.moveToReturn().putNextLong(tmp);
                 }
                 default -> shouldNotReachHere();
@@ -489,42 +514,46 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         @Override
         public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
+
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
                     accessor.nextReference(MemorySegment.class);
+            MemoryLayout encl = accessor.nextReference(MemoryLayout.class);
+            long base = accessor.nextLong();
             long offset = accessor.nextLong();
-            checkAddress(ms, isReadOnly(mode));
-            offset = getOffset(ms, offset);
-            Object base = ms.unsafeGetBase();
+
+            checkSegment(ms, encl, base, isReadOnly(mode));
+            offset = getOffset(ms, base, offset);
+            Object heap_base = ms.unsafeGetBase();
             var session = ms.sessionImpl();
             switch (mode) {
                 case GET -> accessor.moveToReturn().putNextDouble(
-                        _ScopedMemoryAccess.getDoubleUnaligned(session, base, offset, swap));
+                        _ScopedMemoryAccess.getDoubleUnaligned(session, heap_base, offset, swap));
                 case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> accessor.moveToReturn().putNextDouble(
-                        l2d(_ScopedMemoryAccess.getLongVolatile(session, base, offset), swap));
+                        l2d(_ScopedMemoryAccess.getLongVolatile(session, heap_base, offset), swap));
                 case SET -> _ScopedMemoryAccess.putDoubleUnaligned(
-                        session, base, offset, accessor.nextDouble(), swap);
+                        session, heap_base, offset, accessor.nextDouble(), swap);
                 case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> _ScopedMemoryAccess.putLongVolatile(
-                        session, base, offset, d2l(accessor.nextDouble(), swap));
+                        session, heap_base, offset, d2l(accessor.nextDouble(), swap));
                 case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.getAndSetLong(session, base,
+                    var tmp = _ScopedMemoryAccess.getAndSetLong(session, heap_base,
                             offset, d2l(accessor.nextDouble(), swap));
                     accessor.moveToReturn().putNextDouble(l2d(tmp, swap));
                 }
                 case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,
                      COMPARE_AND_EXCHANGE_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndExchangeLong(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndExchangeLong(session, heap_base, offset,
                             d2l(accessor.nextDouble(), swap), d2l(accessor.nextDouble(), swap));
                     accessor.moveToReturn().putNextDouble(l2d(tmp, swap));
                 }
                 case COMPARE_AND_SET, WEAK_COMPARE_AND_SET_PLAIN, WEAK_COMPARE_AND_SET,
                      WEAK_COMPARE_AND_SET_ACQUIRE, WEAK_COMPARE_AND_SET_RELEASE -> {
-                    var tmp = _ScopedMemoryAccess.compareAndSetLong(session, base, offset,
+                    var tmp = _ScopedMemoryAccess.compareAndSetLong(session, heap_base, offset,
                             d2l(accessor.nextDouble(), swap), d2l(accessor.nextDouble(), swap));
                     accessor.moveToReturn().putNextBoolean(tmp);
                 }
                 case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> {
                     var tmp = _ScopedMemoryAccess.getAndAddDoubleWithCAS(session,
-                            base, offset, accessor.nextDouble(), swap);
+                            heap_base, offset, accessor.nextDouble(), swap);
                     accessor.moveToReturn().putNextDouble(tmp);
                 }
                 default -> shouldNotReachHere();
