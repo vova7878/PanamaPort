@@ -570,7 +570,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         if (base != null) heap:{
             if (bb.isDirect()) {
                 assert_(base instanceof byte[], AssertionError::new);
-                // TODO: maybe new MemorySegment implementation for non-movable arrays?
                 break heap;
             } else if (base instanceof byte[]) {
                 return new _HeapMemorySegmentImpl.OfByte(off, base, len, readOnly, bufferScope);
