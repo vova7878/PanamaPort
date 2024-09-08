@@ -27,11 +27,11 @@
 
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.AndroidUnsafe.compareAndExchangeIntO;
-import static com.v7878.unsafe.AndroidUnsafe.compareAndSetIntO;
+import static com.v7878.unsafe.AndroidUnsafe.compareAndExchangeInt;
+import static com.v7878.unsafe.AndroidUnsafe.compareAndSetInt;
 import static com.v7878.unsafe.AndroidUnsafe.compareAndSetObject;
 import static com.v7878.unsafe.AndroidUnsafe.getAndSetObject;
-import static com.v7878.unsafe.AndroidUnsafe.getIntVolatileO;
+import static com.v7878.unsafe.AndroidUnsafe.getIntVolatile;
 import static com.v7878.unsafe.AndroidUnsafe.getObjectVolatile;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 
@@ -58,7 +58,7 @@ sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession 
     public void acquire0() {
         int value;
         do {
-            value = getIntVolatileO(this, STATE_OFFSET);
+            value = getIntVolatile(this, STATE_OFFSET);
             if (value < OPEN) {
                 //segment is not open!
                 throw alreadyClosed();
@@ -66,23 +66,23 @@ sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession 
                 //overflow
                 throw tooManyAcquires();
             }
-        } while (!compareAndSetIntO(this, STATE_OFFSET, value, value + 1));
+        } while (!compareAndSetInt(this, STATE_OFFSET, value, value + 1));
     }
 
     @Override
     public void release0() {
         int value;
         do {
-            value = getIntVolatileO(this, STATE_OFFSET);
+            value = getIntVolatile(this, STATE_OFFSET);
             if (value <= OPEN) {
                 //cannot get here - we can't close segment twice
                 throw alreadyClosed();
             }
-        } while (!compareAndSetIntO(this, STATE_OFFSET, value, value - 1));
+        } while (!compareAndSetInt(this, STATE_OFFSET, value, value - 1));
     }
 
     void justClose() {
-        int prevState = compareAndExchangeIntO(this, STATE_OFFSET, OPEN, CLOSED);
+        int prevState = compareAndExchangeInt(this, STATE_OFFSET, OPEN, CLOSED);
         if (prevState < OPEN) {
             throw alreadyClosed();
         } else if (prevState != OPEN) {

@@ -51,6 +51,14 @@ public class AndroidUnsafe {
     public static final int ARRAY_DOUBLE_INDEX_SCALE = arrayIndexScale(double[].class);
     public static final int ARRAY_OBJECT_INDEX_SCALE = arrayIndexScale(Object[].class);
 
+    public static int addressSize() {
+        return ADDRESS_SIZE;
+    }
+
+    public static int pageSize() {
+        return PAGE_SIZE;
+    }
+
     public static boolean unalignedAccess() {
         return UNALIGNED_ACCESS;
     }
@@ -86,14 +94,6 @@ public class AndroidUnsafe {
 
     public static void fullFence() {
         SunUnsafe.fullFence();
-    }
-
-    public static int addressSize() {
-        return ADDRESS_SIZE;
-    }
-
-    public static int pageSize() {
-        return PAGE_SIZE;
     }
 
     public static long allocateMemory(long bytes) {
@@ -134,66 +134,82 @@ public class AndroidUnsafe {
     }
 
     public static boolean getBooleanO(Object obj, long offset) {
+        assert obj != null;
         return SunUnsafe.getBoolean(obj, offset);
     }
 
     public static void putBooleanO(Object obj, long offset, boolean value) {
+        assert obj != null;
         SunUnsafe.putBoolean(obj, offset, value);
     }
 
     public static byte getByteO(Object obj, long offset) {
+        assert obj != null;
         return SunUnsafe.getByte(obj, offset);
     }
 
     public static void putByteO(Object obj, long offset, byte value) {
+        assert obj != null;
         SunUnsafe.putByte(obj, offset, value);
     }
 
     public static char getCharO(Object obj, long offset) {
+        assert obj != null;
         return SunUnsafe.getChar(obj, offset);
     }
 
     public static void putCharO(Object obj, long offset, char value) {
+        assert obj != null;
         SunUnsafe.putChar(obj, offset, value);
     }
 
     public static short getShortO(Object obj, long offset) {
+        assert obj != null;
         return SunUnsafe.getShort(obj, offset);
     }
 
     public static void putShortO(Object obj, long offset, short value) {
+        assert obj != null;
         SunUnsafe.putShort(obj, offset, value);
     }
 
     public static int getIntO(Object obj, long offset) {
+        assert obj != null;
         return SunUnsafe.getInt(obj, offset);
     }
 
     public static void putIntO(Object obj, long offset, int value) {
+        assert obj != null;
         SunUnsafe.putInt(obj, offset, value);
     }
 
     public static float getFloatO(Object obj, long offset) {
+        assert obj != null;
         return SunUnsafe.getFloat(obj, offset);
     }
 
     public static void putFloatO(Object obj, long offset, float value) {
+        assert obj != null;
         SunUnsafe.putFloat(obj, offset, value);
     }
 
     public static long getLongO(Object obj, long offset) {
+        assert obj != null;
         return SunUnsafe.getLong(obj, offset);
     }
 
     public static void putLongO(Object obj, long offset, long value) {
+        assert obj != null;
         SunUnsafe.putLong(obj, offset, value);
     }
 
     public static double getDoubleO(Object obj, long offset) {
+        assert obj != null;
         return SunUnsafe.getDouble(obj, offset);
     }
 
     public static void putDoubleO(Object obj, long offset, double value) {
+        assert obj != null;
         SunUnsafe.putDouble(obj, offset, value);
     }
 
@@ -262,131 +278,67 @@ public class AndroidUnsafe {
     }
 
     public static boolean getBoolean(Object obj, long offset) {
-        if (obj == null) {
-            return SunUnsafe.getBoolean(offset);
-        } else {
-            return SunUnsafe.getBoolean(obj, offset);
-        }
+        return SunUnsafe.getBoolean(obj, offset);
     }
 
     public static void putBoolean(Object obj, long offset, boolean value) {
-        if (obj == null) {
-            SunUnsafe.putBoolean(offset, value);
-        } else {
-            SunUnsafe.putBoolean(obj, offset, value);
-        }
+        SunUnsafe.putBoolean(obj, offset, value);
     }
 
     public static byte getByte(Object obj, long offset) {
-        if (obj == null) {
-            return SunUnsafe.getByte(offset);
-        } else {
-            return SunUnsafe.getByte(obj, offset);
-        }
+        return SunUnsafe.getByte(obj, offset);
     }
 
     public static void putByte(Object obj, long offset, byte value) {
-        if (obj == null) {
-            SunUnsafe.putByte(offset, value);
-        } else {
-            SunUnsafe.putByte(obj, offset, value);
-        }
+        SunUnsafe.putByte(obj, offset, value);
     }
 
     public static char getChar(Object obj, long offset) {
-        if (obj == null) {
-            return SunUnsafe.getChar(offset);
-        } else {
-            return SunUnsafe.getChar(obj, offset);
-        }
+        return SunUnsafe.getChar(obj, offset);
     }
 
     public static void putChar(Object obj, long offset, char value) {
-        if (obj == null) {
-            SunUnsafe.putChar(offset, value);
-        } else {
-            SunUnsafe.putChar(obj, offset, value);
-        }
+        SunUnsafe.putChar(obj, offset, value);
     }
 
     public static short getShort(Object obj, long offset) {
-        if (obj == null) {
-            return SunUnsafe.getShort(offset);
-        } else {
-            return SunUnsafe.getShort(obj, offset);
-        }
+        return SunUnsafe.getShort(obj, offset);
     }
 
     public static void putShort(Object obj, long offset, short value) {
-        if (obj == null) {
-            SunUnsafe.putShort(offset, value);
-        } else {
-            SunUnsafe.putShort(obj, offset, value);
-        }
+        SunUnsafe.putShort(obj, offset, value);
     }
 
     public static int getInt(Object obj, long offset) {
-        if (obj == null) {
-            return SunUnsafe.getInt(offset);
-        } else {
-            return SunUnsafe.getInt(obj, offset);
-        }
+        return SunUnsafe.getInt(obj, offset);
     }
 
     public static void putInt(Object obj, long offset, int value) {
-        if (obj == null) {
-            SunUnsafe.putInt(offset, value);
-        } else {
-            SunUnsafe.putInt(obj, offset, value);
-        }
+        SunUnsafe.putInt(obj, offset, value);
     }
 
     public static float getFloat(Object obj, long offset) {
-        if (obj == null) {
-            return SunUnsafe.getFloat(offset);
-        } else {
-            return SunUnsafe.getFloat(obj, offset);
-        }
+        return SunUnsafe.getFloat(obj, offset);
     }
 
     public static void putFloat(Object obj, long offset, float value) {
-        if (obj == null) {
-            SunUnsafe.putFloat(offset, value);
-        } else {
-            SunUnsafe.putFloat(obj, offset, value);
-        }
+        SunUnsafe.putFloat(obj, offset, value);
     }
 
     public static long getLong(Object obj, long offset) {
-        if (obj == null) {
-            return SunUnsafe.getLong(offset);
-        } else {
-            return SunUnsafe.getLong(obj, offset);
-        }
+        return SunUnsafe.getLong(obj, offset);
     }
 
     public static void putLong(Object obj, long offset, long value) {
-        if (obj == null) {
-            SunUnsafe.putLong(offset, value);
-        } else {
-            SunUnsafe.putLong(obj, offset, value);
-        }
+        SunUnsafe.putLong(obj, offset, value);
     }
 
     public static double getDouble(Object obj, long offset) {
-        if (obj == null) {
-            return SunUnsafe.getDouble(offset);
-        } else {
-            return SunUnsafe.getDouble(obj, offset);
-        }
+        return SunUnsafe.getDouble(obj, offset);
     }
 
     public static void putDouble(Object obj, long offset, double value) {
-        if (obj == null) {
-            SunUnsafe.putDouble(offset, value);
-        } else {
-            SunUnsafe.putDouble(obj, offset, value);
-        }
+        SunUnsafe.putDouble(obj, offset, value);
     }
 
     public static long getWordO(Object obj, long offset) {
@@ -736,16 +688,6 @@ public class AndroidUnsafe {
                 copyMemory(srcOffset, destOffset, bytes);
                 return;
             }
-            for (long i = 0; i < bytes; i++) {
-                putByteO(destBase, destOffset + i, getByteN(srcOffset + i));
-            }
-            return;
-        }
-        if (destBase == null) {
-            for (long i = 0; i < bytes; i++) {
-                putByteN(destOffset + i, getByteO(srcBase, srcOffset + i));
-            }
-            return;
         }
         for (long i = 0; i < bytes; i++) {
             putByteO(destBase, destOffset + i, getByteO(srcBase, srcOffset + i));
@@ -765,19 +707,19 @@ public class AndroidUnsafe {
         }
     }
 
-    public static int getIntVolatileO(Object obj, long offset) {
+    public static int getIntVolatile(Object obj, long offset) {
         return SunUnsafe.getIntVolatile(obj, offset);
     }
 
-    public static void putIntVolatileO(Object obj, long offset, int value) {
+    public static void putIntVolatile(Object obj, long offset, int value) {
         SunUnsafe.putIntVolatile(obj, offset, value);
     }
 
-    public static long getLongVolatileO(Object obj, long offset) {
+    public static long getLongVolatile(Object obj, long offset) {
         return SunUnsafe.getLongVolatile(obj, offset);
     }
 
-    public static void putLongVolatileO(Object obj, long offset, long value) {
+    public static void putLongVolatile(Object obj, long offset, long value) {
         SunUnsafe.putLongVolatile(obj, offset, value);
     }
 
@@ -789,13 +731,13 @@ public class AndroidUnsafe {
         SunUnsafe.putObjectVolatile(obj, offset, value);
     }
 
-    public static boolean compareAndSetIntO(Object obj, long offset,
-                                            int expectedValue, int newValue) {
+    public static boolean compareAndSetInt(Object obj, long offset,
+                                           int expectedValue, int newValue) {
         return SunUnsafe.compareAndSwapInt(obj, offset, expectedValue, newValue);
     }
 
-    public static boolean compareAndSetLongO(Object obj, long offset,
-                                             long expectedValue, long newValue) {
+    public static boolean compareAndSetLong(Object obj, long offset,
+                                            long expectedValue, long newValue) {
         return SunUnsafe.compareAndSwapLong(obj, offset, expectedValue, newValue);
     }
 
@@ -804,8 +746,8 @@ public class AndroidUnsafe {
         return SunUnsafe.compareAndSwapObject(obj, offset, expectedValue, newValue);
     }
 
-    public static int compareAndExchangeIntO(Object obj, long offset,
-                                             int expectedValue, int newValue) {
+    public static int compareAndExchangeInt(Object obj, long offset,
+                                            int expectedValue, int newValue) {
         int v;
         do {
             v = SunUnsafe.getIntVolatile(obj, offset);
@@ -813,8 +755,8 @@ public class AndroidUnsafe {
         return v;
     }
 
-    public static long compareAndExchangeLongO(Object obj, long offset,
-                                               long expectedValue, long newValue) {
+    public static long compareAndExchangeLong(Object obj, long offset,
+                                              long expectedValue, long newValue) {
         long v;
         do {
             v = SunUnsafe.getLongVolatile(obj, offset);
@@ -831,11 +773,11 @@ public class AndroidUnsafe {
         return v;
     }
 
-    public static boolean compareAndSwapIntO(Object obj, long offset, int expectedValue, int value) {
+    public static boolean compareAndSwapInt(Object obj, long offset, int expectedValue, int value) {
         return SunUnsafe.compareAndSwapInt(obj, offset, expectedValue, value);
     }
 
-    public static boolean compareAndSwapLongO(Object obj, long offset, long expectedValue, long value) {
+    public static boolean compareAndSwapLong(Object obj, long offset, long expectedValue, long value) {
         return SunUnsafe.compareAndSwapLong(obj, offset, expectedValue, value);
     }
 
@@ -843,11 +785,11 @@ public class AndroidUnsafe {
         return SunUnsafe.compareAndSwapObject(obj, offset, expectedValue, value);
     }
 
-    public static int getAndSetIntO(Object obj, long offset, int newValue) {
+    public static int getAndSetInt(Object obj, long offset, int newValue) {
         return SunUnsafe.getAndSetInt(obj, offset, newValue);
     }
 
-    public static long getAndSetLongO(Object obj, long offset, long newValue) {
+    public static long getAndSetLong(Object obj, long offset, long newValue) {
         return SunUnsafe.getAndSetLong(obj, offset, newValue);
     }
 
@@ -855,19 +797,19 @@ public class AndroidUnsafe {
         return SunUnsafe.getAndSetObject(obj, offset, newValue);
     }
 
-    public static int getAndAddIntO(Object o, long offset, int delta) {
+    public static int getAndAddInt(Object o, long offset, int delta) {
         int v;
         do {
-            v = getIntVolatileO(o, offset);
-        } while (!compareAndSwapIntO(o, offset, v, v + delta));
+            v = getIntVolatile(o, offset);
+        } while (!compareAndSwapInt(o, offset, v, v + delta));
         return v;
     }
 
-    public static long getAndAddLongO(Object o, long offset, long delta) {
+    public static long getAndAddLong(Object o, long offset, long delta) {
         long v;
         do {
-            v = getLongVolatileO(o, offset);
-        } while (!compareAndSwapLongO(o, offset, v, v + delta));
+            v = getLongVolatile(o, offset);
+        } while (!compareAndSwapLong(o, offset, v, v + delta));
         return v;
     }
 }
