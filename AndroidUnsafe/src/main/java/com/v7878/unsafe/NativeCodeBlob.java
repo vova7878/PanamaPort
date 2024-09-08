@@ -10,6 +10,7 @@ import android.system.OsConstants;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
+import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.io.IOUtils;
 
 import java.util.Arrays;
@@ -39,10 +40,22 @@ public class NativeCodeBlob {
         }
 
         MemorySegment[] out = new MemorySegment[count];
-        for (int i = 0; i < count; i++) {
-            MemorySegment tmp = data.asSlice(offsets[i], code[i].byteSize());
-            MemorySegment.copy(code[i], 0, tmp, 0, code[i].byteSize());
-            out[i] = tmp;
+        if (ExtraMemoryAccess.isEarlyNativeInitialized()) {
+            for (int i = 0; i < count; i++) {
+                MemorySegment tmp = data.asSlice(offsets[i], code[i].byteSize());
+                MemorySegment.copy(code[i], 0, tmp, 0, code[i].byteSize());
+                out[i] = tmp;
+            }
+        } else {
+            Object data_base = JavaForeignAccess.unsafeGetBase(data);
+            long data_offset = JavaForeignAccess.unsafeGetOffset(data);
+            for (int i = 0; i < count; i++) {
+                Object code_base = JavaForeignAccess.unsafeGetBase(code[i]);
+                long code_offset = JavaForeignAccess.unsafeGetOffset(code[i]);
+                AndroidUnsafe.copyMemory(code_base, code_offset, data_base,
+                        data_offset + offsets[i], code[i].byteSize());
+                out[i] = data.asSlice(offsets[i], code[i].byteSize());
+            }
         }
         return out;
     }

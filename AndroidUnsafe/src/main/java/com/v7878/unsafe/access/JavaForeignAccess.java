@@ -109,4 +109,16 @@ public abstract class JavaForeignAccess {
     public static boolean hasNaturalAlignment(MemoryLayout layout) {
         return INSTANCE._hasNaturalAlignment(layout);
     }
+
+    protected abstract long _unsafeGetOffset(MemorySegment segment);
+
+    public static long unsafeGetOffset(MemorySegment segment) {
+        return INSTANCE._unsafeGetOffset(segment);
+    }
+
+    protected abstract Object _unsafeGetBase(MemorySegment segment);
+
+    public static Object unsafeGetBase(MemorySegment segment) {
+        return INSTANCE._unsafeGetBase(segment);
+    }
 }

@@ -2780,6 +2780,16 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             protected boolean _hasNaturalAlignment(MemoryLayout layout) {
                 return ((_AbstractLayout<?>) layout).hasNaturalAlignment();
             }
+
+            @Override
+            protected long _unsafeGetOffset(MemorySegment segment) {
+                return ((_AbstractMemorySegmentImpl) segment).unsafeGetOffset();
+            }
+
+            @Override
+            protected Object _unsafeGetBase(MemorySegment segment) {
+                return ((_AbstractMemorySegmentImpl) segment).unsafeGetBase();
+            }
         };
     }
 }

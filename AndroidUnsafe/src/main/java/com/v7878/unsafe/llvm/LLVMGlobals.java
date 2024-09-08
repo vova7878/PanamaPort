@@ -42,7 +42,6 @@ import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 
 public class LLVMGlobals {
-
     static {
         if (DEBUG_BUILD) {
             LLVMEnablePrettyStackTrace();

@@ -36,6 +36,7 @@ import static com.v7878.misc.Math.d2l;
 import static com.v7878.misc.Math.f2i;
 import static com.v7878.misc.Math.i2f;
 import static com.v7878.misc.Math.l2d;
+import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BOOLEAN_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_INDEX_SCALE;
@@ -44,10 +45,14 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
+import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
+import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.InstructionSet.ARM;
 import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
+import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BYTE;
@@ -62,7 +67,6 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.int16_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int1_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.int64_t;
-import static com.v7878.unsafe.llvm.LLVMGlobals.int8_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.buildRawObjectToPointer;
@@ -85,13 +89,34 @@ import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.Conditions;
 import com.v7878.unsafe.llvm.LLVMGlobals;
 
+import java.lang.reflect.Method;
+import java.util.Optional;
 import java.util.function.Function;
 
-//TODO: use jdk.internal.misc.Unsafe if possible
+import dalvik.annotation.optimization.FastNative;
+
 public class ExtraMemoryAccess {
+    private static class JDKCopyMemory {
+        static {
+            nothrows_run(() -> {
+                Class<?> unsafe = Class.forName("jdk.internal.misc.Unsafe");
+                Method copy0 = getDeclaredMethod(unsafe, "copyMemory0",
+                        Object.class, long.class, Object.class, long.class, long.class);
+                Method copy = getDeclaredMethod(JDKCopyMemory.class, "copyMemory",
+                        Object.class, long.class, Object.class, long.class, long.class);
+
+                registerNativeMethod(copy, getExecutableData(copy0));
+            });
+        }
+
+        @Keep
+        @FastNative
+        public static native void copyMemory(Object dst_base, long dst_offset,
+                                             Object src_base, long src_offset, long count);
+    }
 
     @Keep
-    private abstract static class Native {
+    private abstract static class EarlyNative {
         private static final Arena SCOPE = Arena.ofAuto();
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -104,48 +129,44 @@ public class ExtraMemoryAccess {
         @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
                 0, 0, 82, -29, 30, -1, 47, 1, 0, 0, -127, -32, 0, 16, -96, -29, 1, 48, -64,
                 -25, 1, 16, -127, -30, 1, 0, 82, -31, -5, -1, -1, 26, 30, -1, 47, -31})
-        @ASMGenerator(method = "gen_memset")
+        //TODO: RISCV64
+        //TODO: poisoning = TRUE
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD, BYTE})
         abstract void memset(Object base, long offset, long bytes, byte value);
 
-        @SuppressWarnings("unused")
-        private static byte[] gen_memset() {
-            final String name = "memset";
-            return generateFunctionCodeArray((context, module, builder) -> {
-                LLVMValueRef one = LLVMConstInt(intptr_t(context), 1, false);
-                LLVMValueRef zero = LLVMConstNull(intptr_t(context));
+        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
+                77, -123, -64, 116, 81, -119, -8, 72, 1, -16, -119, -46, 72, 1, -54, 72, 57, -48, 115, 44, 102,
+                102, 102, 46, 15, 31, -124, 0, 0, 0, 0, 0, 15, -74, 10, -120, 8, 72, -1, -64, 72, -1, -62, 73,
+                -1, -56, 117, -16, -21, 36, 102, 102, 102, 102, 102, 46, 15, 31, -124, 0, 0, 0, 0, 0, 66, 15,
+                -74, 76, 2, -1, 76, -119, -58, 72, -1, -50, 66, -120, 76, 0, -1, 73, -119, -16, 117, -22, -61})
+        @ASM(conditions = @Conditions(arch = X86, poisoning = FALSE), code = {
+                83, 86, -117, 68, 36, 28, -123, -64, 116, 51, -117, 76, 36, 20, -117, 84, 36, 12, 3, 84, 36, 16,
+                3, 76, 36, 24, 57, -54, 115, 16, 49, -10, 15, -74, 28, 49, -120, 28, 50, 70, 57, -16, 117, -12,
+                -21, 15, 72, -112, 15, -74, 28, 1, -120, 28, 2, 72, -125, -8, -1, 117, -13, 94, 91, -61})
+        @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
+                36, 2, 0, -76, 40, 64, 32, -117, 105, 64, 34, -117, 31, 1, 9, -21, -62, 0, 0, 84, 42, 21, 64, 56,
+                10, 21, 0, 56, -124, 4, 0, -47, -92, -1, -1, -75, 8, 0, 0, 20, 42, 1, 4, -117, 74, -15, 95, 56, -117,
+                4, 0, -47, 12, 1, 4, -117, -118, -15, 31, 56, -28, 3, 11, -86, 75, -1, -1, -75, -64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
+                0, -64, -99, -27, 0, 0, 92, -29, 30, -1, 47, 1, 2, 32, -125, -32, 0, 0, -127, -32, 2, 0, 80, -31, 6, 0, 0, 42,
+                0, 16, -96, -29, 1, 48, -46, -25, 1, 48, -64, -25, 1, 16, -127, -30, 1, 0, 92, -31, -6, -1, -1, 26, 5, 0, 0, -22,
+                1, 16, 76, -30, 1, 48, -46, -25, 1, 48, -64, -25, 1, 16, 65, -30, 1, 0, 113, -29, -6, -1, -1, 26, 30, -1, 47, -31})
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
+        //TODO: RISCV64
+        //TODO: poisoning = TRUE
+        abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), intptr_t(context), int8_t(context)};
-                LLVMTypeRef type = LLVMFunctionType(void_t(context), arg_types, false);
-                LLVMValueRef function = LLVMAddFunction(module, name, type);
-                LLVMValueRef[] args = LLVMGetParams(function);
+        static final EarlyNative INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, EarlyNative.class, name -> Optional.empty()));
+    }
 
-                LLVMBasicBlockRef start = LLVMAppendBasicBlock(function, "");
-                LLVMBasicBlockRef body = LLVMAppendBasicBlock(function, "");
-                LLVMBasicBlockRef end = LLVMAppendBasicBlock(function, "");
+    static boolean isEarlyNativeInitialized() {
+        return EarlyNative.INSTANCE != null;
+    }
 
-                LLVMPositionBuilderAtEnd(builder, start);
-                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], int8_t(context));
-                LLVMValueRef length = args[2];
-                LLVMValueRef test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
-                LLVMBuildCondBr(builder, test_zero, end, body);
-
-                LLVMPositionBuilderAtEnd(builder, body);
-                LLVMValueRef counter = LLVMBuildPhi(builder, intptr_t(context), "");
-                LLVMAddIncoming(counter, zero, start);
-                LLVMValueRef ptr = LLVMBuildInBoundsGEP(builder, pointer, new LLVMValueRef[]{counter}, "");
-                LLVMValueRef value = args[3];
-                LLVMValueRef store = LLVMBuildStore(builder, value, ptr);
-                LLVMSetAlignment(store, 1);
-                LLVMValueRef next_counter = LLVMBuildAdd(builder, counter, one, "");
-                LLVMAddIncoming(counter, next_counter, body);
-                LLVMValueRef test_end = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
-                LLVMBuildCondBr(builder, test_end, end, body);
-
-                LLVMPositionBuilderAtEnd(builder, end);
-                LLVMBuildRetVoid(builder);
-            }, name);
-        }
+    @Keep
+    private abstract static class Native {
+        private static final Arena SCOPE = Arena.ofAuto();
 
         @SuppressWarnings("SameParameterValue")
         private static void gen_memmove_modify(
@@ -212,33 +233,6 @@ public class ExtraMemoryAccess {
 
             LLVMPositionBuilderAtEnd(builder, end);
             LLVMBuildRetVoid(builder);
-        }
-
-        @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
-                77, -123, -64, 116, 81, -119, -8, 72, 1, -16, -119, -46, 72, 1, -54, 72, 57, -48, 115, 44, 102,
-                102, 102, 46, 15, 31, -124, 0, 0, 0, 0, 0, 15, -74, 10, -120, 8, 72, -1, -64, 72, -1, -62, 73,
-                -1, -56, 117, -16, -21, 36, 102, 102, 102, 102, 102, 46, 15, 31, -124, 0, 0, 0, 0, 0, 66, 15,
-                -74, 76, 2, -1, 76, -119, -58, 72, -1, -50, 66, -120, 76, 0, -1, 73, -119, -16, 117, -22, -61})
-        @ASM(conditions = @Conditions(arch = X86, poisoning = FALSE), code = {
-                83, 86, -117, 68, 36, 28, -123, -64, 116, 51, -117, 76, 36, 20, -117, 84, 36, 12, 3, 84, 36, 16,
-                3, 76, 36, 24, 57, -54, 115, 16, 49, -10, 15, -74, 28, 49, -120, 28, 50, 70, 57, -16, 117, -12,
-                -21, 15, 72, -112, 15, -74, 28, 1, -120, 28, 2, 72, -125, -8, -1, 117, -13, 94, 91, -61})
-        @ASM(conditions = @Conditions(arch = ARM64, poisoning = FALSE), code = {
-                36, 2, 0, -76, 40, 64, 32, -117, 105, 64, 34, -117, 31, 1, 9, -21, -62, 0, 0, 84, 42, 21, 64, 56,
-                10, 21, 0, 56, -124, 4, 0, -47, -92, -1, -1, -75, 8, 0, 0, 20, 42, 1, 4, -117, 74, -15, 95, 56, -117,
-                4, 0, -47, 12, 1, 4, -117, -118, -15, 31, 56, -28, 3, 11, -86, 75, -1, -1, -75, -64, 3, 95, -42})
-        @ASM(conditions = @Conditions(arch = ARM, poisoning = FALSE), code = {
-                0, -64, -99, -27, 0, 0, 92, -29, 30, -1, 47, 1, 2, 32, -125, -32, 0, 0, -127, -32, 2, 0, 80, -31, 6, 0, 0, 42,
-                0, 16, -96, -29, 1, 48, -46, -25, 1, 48, -64, -25, 1, 16, -127, -30, 1, 0, 92, -31, -6, -1, -1, 26, 5, 0, 0, -22,
-                1, 16, 76, -30, 1, 48, -46, -25, 1, 48, -64, -25, 1, 16, 65, -30, 1, 0, 113, -29, -6, -1, -1, 26, 30, -1, 47, -31})
-        @ASMGenerator(method = "gen_memmove")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
-
-        @SuppressWarnings("unused")
-        private static byte[] gen_memmove() {
-            final String name = "memmove";
-            return generateFunctionCodeArray((context, module, builder) -> gen_memmove_modify(context, module, builder, name, int8_t(context), 1, value -> value), name);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -1005,11 +999,7 @@ public class ExtraMemoryAccess {
             return;
         }
 
-        if (ClassUtils.isClassInitialized(LLVMGlobals.class) && Native.INSTANCE != null) {
-            Native.INSTANCE.memset(base, offset, bytes, value);
-        } else {
-            AndroidUnsafe.setMemory(base, offset, bytes, value);
-        }
+        EarlyNative.INSTANCE.memset(base, offset, bytes, value);
     }
 
     public static void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes) {
@@ -1017,10 +1007,10 @@ public class ExtraMemoryAccess {
             return;
         }
 
-        if (ClassUtils.isClassInitialized(LLVMGlobals.class) && Native.INSTANCE != null) {
-            Native.INSTANCE.memmove(destBase, destOffset, srcBase, srcOffset, bytes);
+        if (CORRECT_SDK_INT >= 33) {
+            JDKCopyMemory.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
         } else {
-            AndroidUnsafe.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
+            EarlyNative.INSTANCE.memmove(destBase, destOffset, srcBase, srcOffset, bytes);
         }
     }
 
