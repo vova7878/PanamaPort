@@ -29,7 +29,6 @@ import static com.v7878.unsafe.Reflection.getMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
-import static com.v7878.unsafe.access.JavaNioAccess.FD_OFFSET;
 
 import androidx.annotation.Keep;
 
@@ -44,7 +43,6 @@ import com.v7878.dex.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
-import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
 import java.io.FileDescriptor;
 import java.lang.invoke.MethodHandle;
@@ -68,42 +66,42 @@ import java.util.stream.Stream;
 
 import dalvik.system.DexFile;
 
-// SegmentByteBuffers should not appear in JavaNioAccess as it breaks class loading order
-@Keep
-class SegmentBufferAccess {
-    public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
-        return new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
-                -1, 0, cap, cap, 0, false, scope);
-    }
-
-    public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapper, long addr,
-                                                 int cap, Object obj, Scope scope) {
-        ByteBuffer out = new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
-                -1, 0, cap, cap, 0, false, scope);
-        if (unmapper != null) {
-            putObject(out, FD_OFFSET, unmapper.fileDescriptor());
-        }
-        return out;
-    }
-
-    public static ByteBuffer newHeapByteBuffer(byte[] buf, int off, int cap, Scope scope) {
-        return new HeapSegmentByteBuffer(buf, -1, 0,
-                cap, cap, off, false, scope);
-    }
-
-    public static Scope getBufferScope(Buffer buffer) {
-        if (buffer instanceof DirectSegmentByteBuffer) {
-            return ((DirectSegmentByteBuffer) buffer).scope;
-        }
-        if (buffer instanceof HeapSegmentByteBuffer) {
-            return ((HeapSegmentByteBuffer) buffer).scope;
-        }
-        return null;
-    }
-}
-
 @ApiSensitive
 public class JavaNioAccess {
+    // SegmentByteBuffers should not appear in JavaNioAccess as it breaks class loading order
+    @Keep
+    private static class SegmentBufferAccess {
+        public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
+            return new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
+                    -1, 0, cap, cap, 0, false, scope);
+        }
+
+        public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapper, long addr,
+                                                     int cap, Object obj, Scope scope) {
+            ByteBuffer out = new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
+                    -1, 0, cap, cap, 0, false, scope);
+            if (unmapper != null) {
+                putObject(out, FD_OFFSET, unmapper.fileDescriptor());
+            }
+            return out;
+        }
+
+        public static ByteBuffer newHeapByteBuffer(byte[] buf, int off, int cap, Scope scope) {
+            return new HeapSegmentByteBuffer(buf, -1, 0,
+                    cap, cap, off, false, scope);
+        }
+
+        public static Scope getBufferScope(Buffer buffer) {
+            if (buffer instanceof DirectSegmentByteBuffer) {
+                return ((DirectSegmentByteBuffer) buffer).scope;
+            }
+            if (buffer instanceof HeapSegmentByteBuffer) {
+                return ((HeapSegmentByteBuffer) buffer).scope;
+            }
+            return null;
+        }
+    }
+
     public interface UnmapperProxy {
         long address();
 
