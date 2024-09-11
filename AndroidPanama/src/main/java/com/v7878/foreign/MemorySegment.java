@@ -35,10 +35,10 @@ import static com.v7878.foreign.ValueLayout.OfFloat;
 import static com.v7878.foreign.ValueLayout.OfLong;
 import static com.v7878.foreign.ValueLayout.OfShort;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.ValueLayout.OfInt;
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
+import com.v7878.r8.annotations.DoNotObfuscateMembers;
+import com.v7878.r8.annotations.DoNotShrinkMembers;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
@@ -672,7 +672,8 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *                                   {@code newSize < 0}, or {@code newSize > byteSize() - offset}
      * @see #asSlice(long, long, long)
      */
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     MemorySegment asSlice(long offset, long newSize);
 
     /**
@@ -726,7 +727,8 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *                                   under the alignment constraint specified by {@code layout}
      * @see #asSlice(long, long, long)
      */
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     MemorySegment asSlice(long offset, MemoryLayout layout);
 
     /**
@@ -2718,7 +2720,8 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
     }
 
     // Port-added: JavaForeignAccess
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     @SuppressWarnings("unused")
     private static JavaForeignAccess initAccess() {
         return new JavaForeignAccess() {

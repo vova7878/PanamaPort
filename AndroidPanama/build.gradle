@@ -26,11 +26,11 @@ android {
 }
 
 dependencies {
-    compileOnly libs.keepannotation
     compileOnly libs.optimizationannotations
     compileOnly libs.suncleanerstub
 
     compileOnly project(':fake_llvm')
+    compileOnly project(':R8Annotations')
 
     api project(':VarHandleApi')
 

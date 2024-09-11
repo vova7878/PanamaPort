@@ -31,10 +31,10 @@ package com.v7878.foreign;
 import static com.v7878.misc.Math.ceilDiv;
 import static java.util.stream.Collectors.joining;
 
-import androidx.annotation.Keep;
-
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
+import com.v7878.r8.annotations.DoNotObfuscateMembers;
+import com.v7878.r8.annotations.DoNotShrinkMembers;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
 
@@ -182,7 +182,8 @@ class _LayoutPath {
         return derefPath(derefLayout, handle, this);
     }
 
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     private static MemorySegment resizeSegment(MemorySegment segment) {
         // Avoid adapting for specific target layout. The check for the root layout
         // size and alignment will be inserted by LayoutPath::dereferenceHandle anyway.
@@ -234,7 +235,8 @@ class _LayoutPath {
         return handle;
     }
 
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     private static long addScaledOffset(long base, long index, long stride, long bound) {
         Objects.checkIndex(index, bound);
         // note: the below can overflow, depending on 'base'. When constructing var handles
@@ -285,7 +287,8 @@ class _LayoutPath {
         return sliceHandle;
     }
 
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     private static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
         ((_AbstractMemorySegmentImpl) segment).checkEnclosingLayout(offset, enclosing, true);
     }

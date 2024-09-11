@@ -27,8 +27,8 @@
 
 package com.v7878.foreign;
 
-import androidx.annotation.Keep;
-
+import com.v7878.r8.annotations.DoNotShrinkMembers;
+import com.v7878.r8.annotations.KeepCodeAttribute;
 import com.v7878.unsafe.Utils;
 
 import java.util.Objects;
@@ -78,11 +78,12 @@ sealed class _ImplicitSession extends _SharedSession {
      * This is an implicit session that wraps a heap object.
      * Possible objects are: Java arrays, buffers and class loaders.
      */
-    @Keep
     static final class ImplicitHeapSession extends _ImplicitSession {
-
+        @DoNotShrinkMembers
         final Object ref;
 
+        @DoNotShrinkMembers
+        @KeepCodeAttribute
         public ImplicitHeapSession(Object ref) {
             this.ref = Objects.requireNonNull(ref);
         }

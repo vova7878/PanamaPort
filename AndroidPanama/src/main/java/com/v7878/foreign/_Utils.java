@@ -45,11 +45,11 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.toHexString;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.MemoryLayout.PathElement;
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
+import com.v7878.r8.annotations.DoNotObfuscateMembers;
+import com.v7878.r8.annotations.DoNotShrinkMembers;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
 import com.v7878.unsafe.invoke.Wrapper;
 
@@ -171,12 +171,14 @@ final class _Utils {
         return handle;
     }
 
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     public static boolean byteToBoolean(byte b) {
         return b != 0;
     }
 
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     private static byte booleanToByte(boolean b) {
         return b ? (byte) 1 : (byte) 0;
     }
@@ -187,7 +189,8 @@ final class _Utils {
             throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     public static MemorySegment checkCaptureSegment(MemorySegment captureSegment) {
         Objects.requireNonNull(captureSegment);
         if (captureSegment.equals(MemorySegment.NULL)) {
@@ -238,18 +241,21 @@ final class _Utils {
         }
     }
 
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     public static long unboxSegment(MemorySegment segment) {
         checkNative(segment);
         return segment.address();
     }
 
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     public static MemorySegment longToAddress(long addr) {
         return longToAddress(addr, 0, 1);
     }
 
-    @Keep
+    @DoNotShrinkMembers
+    @DoNotObfuscateMembers
     public static MemorySegment longToAddress(long addr, AddressLayout layout) {
         return longToAddress(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
     }

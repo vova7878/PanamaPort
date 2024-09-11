@@ -27,7 +27,8 @@
 
 package com.v7878.foreign;
 
-import androidx.annotation.Keep;
+import com.v7878.r8.annotations.DoNotShrinkMembers;
+import com.v7878.r8.annotations.KeepCodeAttribute;
 
 import java.util.Objects;
 
@@ -73,11 +74,12 @@ sealed class _GlobalSession extends _MemorySessionImpl {
      * This is a global session that wraps a heap object.
      * Possible objects are: Java arrays, buffers and class loaders.
      */
-    @Keep
     static final class HeapSession extends _GlobalSession {
-
+        @DoNotShrinkMembers
         final Object ref;
 
+        @DoNotShrinkMembers
+        @KeepCodeAttribute
         public HeapSession(Object ref) {
             this.ref = Objects.requireNonNull(ref);
         }
