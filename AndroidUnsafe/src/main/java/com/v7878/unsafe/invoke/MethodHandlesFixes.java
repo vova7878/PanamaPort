@@ -40,7 +40,7 @@ import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.access.InvokeAccess;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
-import com.v7878.unsafe.invoke.Transformers.TransformerI;
+import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -56,7 +56,7 @@ import dalvik.system.DexFile;
 
 //TODO: use codegen to improve performance
 public class MethodHandlesFixes {
-    private static class CollectArguments implements TransformerI {
+    private static class CollectArguments extends AbstractTransformer {
         private final MethodHandle target;
         private final MethodHandle collector;
         private final int pos;
@@ -125,15 +125,27 @@ public class MethodHandlesFixes {
         return targetType.dropParameterTypes(pos, pos + 1).insertParameterTypes(pos, filterArgs);
     }
 
+    static class Identity extends AbstractTransformer {
+        private final Class<?> type;
+
+        Identity(Class<?> type) {
+            this.type = type;
+        }
+
+        @Override
+        public void transform(MethodHandle ignored, EmulatedStackFrame stack) {
+            EmulatedStackFrame.copyNext(stack.createAccessor().moveTo(0),
+                    stack.createAccessor().moveToReturn(), type);
+        }
+    }
+
     // fix for PLATFORM-BUG!
     public static MethodHandle identity(Class<?> type) {
         Objects.requireNonNull(type);
-        return makeTransformer(MethodType.methodType(type, type), (ignored, stack) ->
-                EmulatedStackFrame.copyNext(stack.createAccessor().moveTo(0),
-                        stack.createAccessor().moveToReturn(), type));
+        return makeTransformer(MethodType.methodType(type, type), new Identity(type));
     }
 
-    static class Invoker implements TransformerI {
+    static class Invoker extends AbstractTransformer {
         private final MethodType targetType;
         private final boolean isExactInvoker;
         private final int args_count;
@@ -308,8 +320,7 @@ public class MethodHandlesFixes {
         return (EmulatedInvoker) AndroidUnsafe.allocateInstance(invoker);
     }
 
-    @SuppressWarnings("ClassCanBeRecord")
-    private static class MethodInvoker implements TransformerI {
+    private static class MethodInvoker extends AbstractTransformer {
         private final EmulatedInvoker target;
 
         MethodInvoker(EmulatedInvoker target) {
@@ -351,7 +362,7 @@ public class MethodHandlesFixes {
         return makeTransformer(type, new MethodInvoker(invoker));
     }
 
-    static class ExplicitCastArguments implements TransformerI {
+    static class ExplicitCastArguments extends AbstractTransformer {
         private final MethodHandle target;
         private final MethodType type;
 
@@ -713,20 +724,26 @@ public class MethodHandlesFixes {
         }
     }
 
+    public static MethodHandle explicitCastArgumentsAdapter(MethodHandle target, MethodType newType) {
+        explicitCastArgumentsChecks(target.type(), newType);
+        return Transformers.makeTransformer(newType, new ExplicitCastArguments(target, newType));
+    }
+
     // fix for PLATFORM-BUG! (Again... Android's MethodHandle API is cursed)
     public static MethodHandle explicitCastArguments(MethodHandle target, MethodType newType) {
         target = target.asFixedArity();
         MethodType oldType = target.type();
-        explicitCastArgumentsChecks(oldType, newType);
         if (oldType.equals(newType)) return target;
+        explicitCastArgumentsChecks(oldType, newType);
         if (InvokeAccess.explicitCastEquivalentToAsType(oldType, newType) &&
+                // TODO: it`s needed for api >= 33?
                 !INVOKE_TRANSFORMER.isInstance(target)) {
             return target.asType(newType);
         }
         return Transformers.makeTransformer(newType, new ExplicitCastArguments(target, newType));
     }
 
-    static class PermuteArguments implements TransformerI {
+    static class PermuteArguments extends AbstractTransformer {
         private final MethodHandle target;
         private final int[] reorder;
 
@@ -807,7 +824,7 @@ public class MethodHandlesFixes {
         return Transformers.makeTransformer(newType, new PermuteArguments(target, reorder));
     }
 
-    static class AsTypeAdapter implements TransformerI {
+    static class AsTypeAdapter extends AbstractTransformer {
         private final MethodHandle target;
         private final MethodType type;
 
@@ -1016,13 +1033,17 @@ public class MethodHandlesFixes {
         }
     }
 
-    // fix for PLATFORM-BUG! (Again... Android's MethodHandle API is cursed x3)
     public static MethodHandle asTypeAdapter(MethodHandle target, MethodType newType) {
-        MethodType oldType = target.type();
-        if (newType.equals(oldType)) return target;
         if (!InvokeAccess.isConvertibleTo(target.type(), newType)) {
             throw new WrongMethodTypeException("cannot convert " + target + " to " + newType);
         }
         return Transformers.makeTransformer(newType, new AsTypeAdapter(target, newType));
+    }
+
+    // fix for PLATFORM-BUG! (Again... Android's MethodHandle API is cursed x3)
+    public static MethodHandle asType(MethodHandle target, MethodType newType) {
+        MethodType oldType = target.type();
+        if (newType.equals(oldType)) return target;
+        return asTypeAdapter(target, newType);
     }
 }

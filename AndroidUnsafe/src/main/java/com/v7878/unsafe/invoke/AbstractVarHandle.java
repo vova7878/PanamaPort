@@ -3,6 +3,7 @@ package com.v7878.unsafe.invoke;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.invoke.VarHandle;
+import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -297,6 +298,19 @@ public abstract class AbstractVarHandle extends VarHandle {
         return type.accessModeType(varType, coordinates);
     }
 
+    private static class UnsupportedAccessMode extends AbstractTransformer {
+        private final AccessMode mode;
+
+        public UnsupportedAccessMode(AccessMode mode) {
+            this.mode = mode;
+        }
+
+        @Override
+        protected void transform(MethodHandle ignored1, EmulatedStackFrame ignored2) {
+            throw new UnsupportedOperationException("Unsupported access mode: " + mode);
+        }
+    }
+
     private MethodHandle getMethodHandle(AccessMode mode) {
         int modeOrdinal = mode.ordinal();
         MethodHandle[] mhTable = methodHandleTable;
@@ -308,9 +322,8 @@ public abstract class AbstractVarHandle extends VarHandle {
             if (isAccessModeSupported(mode)) {
                 mh = getMethodHandleUncached(mode);
             } else {
-                mh = Transformers.makeTransformer(accessModeType(mode), (thiz, stackFrame) -> {
-                    throw new UnsupportedOperationException("Unsupported access mode: " + mode);
-                });
+                mh = Transformers.makeTransformer(accessModeType(mode),
+                        new UnsupportedAccessMode(mode));
             }
             return mhTable[modeOrdinal] = mh;
         }
@@ -320,7 +333,7 @@ public abstract class AbstractVarHandle extends VarHandle {
     private MethodHandle getInvokerHandleUncached(AccessType accessType) {
         MethodType type = accessModeType(accessType);
         MethodHandle invoker = MethodHandlesFixes.exactInvoker(type);
-        invoker = MethodHandlesFixes.asTypeAdapter(invoker,
+        invoker = MethodHandlesFixes.asType(invoker,
                 type.generic().insertParameterTypes(0, MethodHandle.class));
         return invoker.asSpreader(Object[].class, type.parameterCount());
     }

@@ -112,7 +112,7 @@ import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
 import com.v7878.unsafe.invoke.Transformers;
-import com.v7878.unsafe.invoke.Transformers.TransformerI;
+import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -136,7 +136,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return _Utils.longToAddress(value, size, alignment);
     }
 
-    private static class DowncallArranger implements TransformerI {
+    private static class DowncallArranger extends AbstractTransformer {
 
         private final MethodHandle stub;
         private final MemoryLayout[] args;
@@ -565,8 +565,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }, function_name, scope);
     }
 
-    @SuppressWarnings("ClassCanBeRecord")
-    private static class ReturnWrapper implements TransformerI {
+    private static class ReturnWrapper extends AbstractTransformer {
         //TODO: maybe use TransformerI instead of MethodHandle?
         private final MethodHandle handle;
         private final MemoryLayout ret_layout;
@@ -965,7 +964,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }, function_name, scope);
     }
 
-    private static class UpcallArranger implements TransformerI {
+    private static class UpcallArranger extends AbstractTransformer {
         private final MethodHandle stub;
         private final MemoryLayout[] args;
         private final MemoryLayout ret;

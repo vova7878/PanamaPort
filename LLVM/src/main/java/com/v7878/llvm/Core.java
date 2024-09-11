@@ -48,6 +48,7 @@ import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
+import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.Transformers;
 
 import java.lang.invoke.MethodHandle;
@@ -820,11 +821,15 @@ public final class Core {
             FunctionDescriptor.ofVoid(WORD, WORD);
 
     private static MethodHandle invoker(LLVMDiagnosticHandler handler) {
+        //TODO: cleanup
         return Transformers.makeTransformer(MethodType.methodType(
-                void.class, WORD.carrier(), WORD.carrier()), (ignored, stack) -> {
-            var accessor = stack.createAccessor();
-            var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
-            handler.invoke(LLVMDiagnosticInfoRef.of(value));
+                void.class, WORD.carrier(), WORD.carrier()), new Transformers.AbstractTransformer() {
+            @Override
+            protected void transform(MethodHandle ignored, EmulatedStackFrame stack) {
+                var accessor = stack.createAccessor();
+                var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
+                handler.invoke(LLVMDiagnosticInfoRef.of(value));
+            }
         });
     }
 
@@ -837,11 +842,15 @@ public final class Core {
             FunctionDescriptor.ofVoid(WORD, WORD);
 
     private static MethodHandle invoker(LLVMYieldCallback callback) {
+        //TODO: cleanup
         return Transformers.makeTransformer(MethodType.methodType(
-                void.class, WORD.carrier(), WORD.carrier()), (ignored, stack) -> {
-            var accessor = stack.createAccessor();
-            var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
-            callback.invoke(LLVMContextRef.of(value));
+                void.class, WORD.carrier(), WORD.carrier()), new Transformers.AbstractTransformer() {
+            @Override
+            protected void transform(MethodHandle ignored, EmulatedStackFrame stack) {
+                var accessor = stack.createAccessor();
+                var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
+                callback.invoke(LLVMContextRef.of(value));
+            }
         });
     }
 

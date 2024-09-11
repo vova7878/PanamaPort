@@ -1,6 +1,7 @@
 package com.v7878.unsafe.invoke;
 
 import com.v7878.invoke.VarHandle;
+import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -10,7 +11,7 @@ import java.util.Objects;
 public class VarHandleImpl extends AbstractVarHandle {
     @FunctionalInterface
     public interface VarHandleTransformer {
-        void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack);
+        void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) throws Throwable;
     }
 
     @FunctionalInterface
@@ -21,9 +22,14 @@ public class VarHandleImpl extends AbstractVarHandle {
     public static VarHandle newVarHandle(int accessModesBitMask, VarHandleTransformer impl,
                                          Class<?> varType, Class<?>... coordinates) {
         Objects.requireNonNull(impl);
+        //TODO: cleanup
         return newVarHandle(accessModesBitMask, (thiz, mode, type) -> {
-            return Transformers.makeTransformer(type,
-                    (ignored, stack) -> impl.transform(thiz, mode, stack));
+            return Transformers.makeTransformer(type, new AbstractTransformer() {
+                @Override
+                protected void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
+                    impl.transform(thiz, mode, stack);
+                }
+            });
         }, varType, coordinates);
     }
 

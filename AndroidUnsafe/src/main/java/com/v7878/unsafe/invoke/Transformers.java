@@ -381,12 +381,12 @@ public class Transformers {
         return nothrows_run(() -> (MethodHandle) new_transformer.invoke(fixed, kind, impl));
     }
 
-    public static MethodHandle makeTransformer(MethodType type, TransformerI callback) {
-        return makeTransformer(type, regularImpl(callback), false);
+    public static MethodHandle makeTransformer(MethodType type, AbstractTransformer callback) {
+        return makeTransformer(type, callback, false);
     }
 
-    public static MethodHandle makeVariadicTransformer(TransformerI callback) {
-        return makeTransformer(MethodType.methodType(void.class), variadicImpl(callback), true);
+    public static MethodHandle makeVariadicTransformer(AbstractVariadicTransformer callback) {
+        return makeTransformer(MethodType.methodType(void.class), callback, true);
     }
 
     @Keep
@@ -397,107 +397,107 @@ public class Transformers {
                                            Object stackFrame) throws Throwable;
     }
 
-    @FunctionalInterface
-    public interface TransformerI {
-        void transform(MethodHandle thiz, EmulatedStackFrame stackFrame) throws Throwable;
-    }
-
-    private static TransformerImpl regularImpl(TransformerI callback) {
-        return new TransformerImpl() {
-            @Override
-            void transform(MethodHandle thiz, EmulatedStackFrame stackFrame) throws Throwable {
-                callback.transform(thiz, stackFrame);
-            }
-
-            @Override
-            boolean isVarargsCollector(MethodHandle thiz) {
-                return false;
-            }
-
-            @Override
-            MethodHandle asFixedArity(MethodHandle thiz) {
-                return thiz;
-            }
-
-            @Override
-            MethodHandle asTypeUncached(MethodHandle thiz, MethodType newType) {
-                return null; // fallback realization
-            }
-
-            @Override
-            MethodHandle bindTo(MethodHandle thiz, Object value) {
-                return nothrows_run(() -> (MethodHandle) directBindTo.invoke(thiz, value));
-            }
-
-            @Override
-            MethodHandle asVarargsCollector(MethodHandle thiz, Class<?> arrayType) {
-                return (MethodHandle) nothrows_run(
-                        () -> directAsVarargsCollector.invoke(thiz, arrayType));
-            }
-
-            @Override
-            String toString(MethodHandle thiz) {
-                return "Transformer" + thiz.type();
-            }
-        };
-    }
-
-    private static TransformerImpl variadicImpl(TransformerI callback) {
-        return new TransformerImpl() {
-            @Override
-            void transform(MethodHandle thiz, EmulatedStackFrame stackFrame) throws Throwable {
-                callback.transform(thiz, stackFrame);
-            }
-
-            @Override
-            boolean isVarargsCollector(MethodHandle ignored) {
-                return true;
-            }
-
-            @Override
-            MethodHandle asFixedArity(MethodHandle thiz) {
-                return asTypeUncached(thiz, thiz.type());
-            }
-
-            @Override
-            MethodHandle asTypeUncached(MethodHandle thiz, MethodType newType) {
-                return makeTransformer(newType, callback);
-            }
-
-            @Override
-            MethodHandle bindTo(MethodHandle thiz, Object value) {
-                //TODO
-                throw new UnsupportedOperationException("Not implemented yet");
-            }
-
-            @Override
-            MethodHandle asVarargsCollector(MethodHandle thiz, Class<?> arrayType) {
-                return thiz;
-            }
-
-            @Override
-            String toString(MethodHandle thiz) {
-                return "Transformer(...)?";
-            }
-        };
-    }
-
     @Keep
     @SuppressWarnings("unused")
     private abstract static class TransformerImpl {
-        abstract void transform(MethodHandle thiz, EmulatedStackFrame stackFrame) throws Throwable;
+        protected abstract void transform(MethodHandle thiz, EmulatedStackFrame stackFrame) throws Throwable;
 
-        abstract boolean isVarargsCollector(MethodHandle thiz);
+        protected abstract boolean isVarargsCollector(MethodHandle thiz);
 
-        abstract MethodHandle asVarargsCollector(MethodHandle thiz, Class<?> arrayType);
+        protected abstract MethodHandle asVarargsCollector(MethodHandle thiz, Class<?> arrayType);
 
-        abstract MethodHandle asFixedArity(MethodHandle thiz);
+        protected abstract MethodHandle asFixedArity(MethodHandle thiz);
 
-        abstract MethodHandle asTypeUncached(MethodHandle thiz, MethodType newType);
+        protected abstract MethodHandle asTypeUncached(MethodHandle thiz, MethodType newType);
 
-        abstract MethodHandle bindTo(MethodHandle thiz, Object value);
+        protected abstract MethodHandle bindTo(MethodHandle thiz, Object value);
 
-        abstract String toString(MethodHandle thiz);
+        protected abstract String toString(MethodHandle thiz);
+    }
+
+    public static abstract class AbstractTransformer extends TransformerImpl {
+        @Override
+        protected abstract void transform(MethodHandle thiz, EmulatedStackFrame stackFrame) throws Throwable;
+
+        @Override
+        protected boolean isVarargsCollector(MethodHandle thiz) {
+            return false;
+        }
+
+        @Override
+        protected MethodHandle asFixedArity(MethodHandle thiz) {
+            return thiz;
+        }
+
+        @Override
+        protected MethodHandle asTypeUncached(MethodHandle thiz, MethodType newType) {
+            return null; // fallback realization
+        }
+
+        @Override
+        protected MethodHandle bindTo(MethodHandle thiz, Object value) {
+            return nothrows_run(() -> (MethodHandle) directBindTo.invoke(thiz, value));
+        }
+
+        @Override
+        protected MethodHandle asVarargsCollector(MethodHandle thiz, Class<?> arrayType) {
+            return (MethodHandle) nothrows_run(
+                    () -> directAsVarargsCollector.invoke(thiz, arrayType));
+        }
+
+        @Override
+        protected String toString(MethodHandle thiz) {
+            return "Transformer" + thiz.type();
+        }
+    }
+
+    private static class VariadicAsRegular extends AbstractTransformer {
+        private final AbstractVariadicTransformer target;
+
+        VariadicAsRegular(AbstractVariadicTransformer target) {
+            this.target = target;
+        }
+
+        @Override
+        protected void transform(MethodHandle thiz, EmulatedStackFrame stackFrame) throws Throwable {
+            target.transform(thiz, stackFrame);
+        }
+    }
+
+    public static abstract class AbstractVariadicTransformer extends TransformerImpl {
+        @Override
+        protected abstract void transform(MethodHandle thiz, EmulatedStackFrame stackFrame) throws Throwable;
+
+        @Override
+        protected boolean isVarargsCollector(MethodHandle ignored) {
+            return true;
+        }
+
+        @Override
+        protected MethodHandle asFixedArity(MethodHandle thiz) {
+            return asTypeUncached(thiz, thiz.type());
+        }
+
+        @Override
+        protected MethodHandle asTypeUncached(MethodHandle thiz, MethodType newType) {
+            return makeTransformer(newType, new VariadicAsRegular(this));
+        }
+
+        @Override
+        protected MethodHandle bindTo(MethodHandle thiz, Object value) {
+            //TODO
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        protected MethodHandle asVarargsCollector(MethodHandle thiz, Class<?> arrayType) {
+            return thiz;
+        }
+
+        @Override
+        protected String toString(MethodHandle thiz) {
+            return "Transformer(...)?";
+        }
     }
 
     @ApiSensitive
