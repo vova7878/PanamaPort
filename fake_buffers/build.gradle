@@ -1,4 +1,5 @@
 plugins {
+    //TODO: alias(libs.plugins.android.library)
     id 'java-library'
 }
 

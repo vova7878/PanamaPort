@@ -30,11 +30,12 @@ dependencies {
     compileOnly libs.suncleanerstub
 
     compileOnly project(':fake_llvm')
-    compileOnly project(':R8Annotations')
 
     api project(':VarHandleApi')
 
     implementation project(':AndroidUnsafe')
+
+    implementation project(':R8Annotations')
 
     implementation libs.androidmisc
     implementation libs.dexfile
