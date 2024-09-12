@@ -1,6 +1,6 @@
 # com.v7878.r8.annotations.DoNotShrink
 -dontwarn com.v7878.r8.annotations.DoNotShrink
--keepclasseswithmembers, allowoptimization, allowobfuscation
+-keep, allowoptimization, allowobfuscation
     @com.v7878.r8.annotations.DoNotShrink class * {*;}
 -keepclasseswithmembers, allowoptimization, allowobfuscation class * {
     @com.v7878.r8.annotations.DoNotShrink <init>(...);
@@ -20,7 +20,7 @@
 
 # com.v7878.r8.annotations.DoNotObfuscate
 -dontwarn com.v7878.r8.annotations.DoNotObfuscate
--keepclasseswithmembers, allowshrinking, allowoptimization
+-keep, allowshrinking, allowoptimization
     @com.v7878.r8.annotations.DoNotObfuscate class * {*;}
 -keepclasseswithmembers, allowshrinking, allowoptimization class * {
     @com.v7878.r8.annotations.DoNotObfuscate <init>(...);

@@ -28,6 +28,7 @@
 
 package com.v7878.foreign;
 
+import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaNioAccess;
@@ -47,6 +48,8 @@ import java.util.Optional;
  * using sharper types would require use of type-conversions, which in turn would inhibit some C2 optimizations,
  * such as the elimination of store barriers in methods like {@link _HeapMemorySegmentImpl#dup(long, long, boolean, _MemorySessionImpl)}.
  */
+//TODO: Why does GC crash without this annotation?
+@DoNotOptimize
 abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl {
 
     private static final int BYTE_ARRAY_BASE = _Utils.BaseAndScale.BYTE.base();
