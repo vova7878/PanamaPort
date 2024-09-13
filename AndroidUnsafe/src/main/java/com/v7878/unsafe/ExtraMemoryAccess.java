@@ -114,8 +114,8 @@ public class ExtraMemoryAccess {
         @DoNotShrink
         @DoNotObfuscate
         @FastNative
-        public static native void copyMemory(Object dst_base, long dst_offset,
-                                             Object src_base, long src_offset, long count);
+        public static native void copyMemory(Object src_base, long src_offset,
+                                             Object dst_base, long dst_offset, long count);
     }
 
     @DoNotShrinkType

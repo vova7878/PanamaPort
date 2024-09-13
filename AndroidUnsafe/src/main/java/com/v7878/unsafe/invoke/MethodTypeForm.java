@@ -3,12 +3,13 @@ package com.v7878.unsafe.invoke;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
 
 import com.v7878.r8.annotations.DoNotObfuscate;
-import com.v7878.r8.annotations.DoNotShrinkFull;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.DangerLevel;
 
 import java.lang.invoke.MethodType;
 
-@DoNotShrinkFull
+@DoNotShrinkType
 @DoNotObfuscate
 public interface MethodTypeForm {
     MethodType erasedType();
@@ -42,9 +43,11 @@ public interface MethodTypeForm {
     int argSlotToParameter(int argSlot);
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
+    @DoNotShrink
     int[] frameOffsets();
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
+    @DoNotShrink
     int[] referencesOffsets();
 
     default int parameterToFrameOffset(int i) {
