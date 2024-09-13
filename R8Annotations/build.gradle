@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.maven.publish)
 }
 
 android {
@@ -16,7 +17,26 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
+    }
 }
 
 dependencies {
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version project.version
+            afterEvaluate {
+                from components.release
+            }
+        }
+    }
 }
