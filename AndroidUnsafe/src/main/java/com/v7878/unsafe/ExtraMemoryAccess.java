@@ -72,8 +72,6 @@ import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.buildRawObjectToPointer;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeArray;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.Arena;
 import com.v7878.llvm.Core.LLVMAtomicRMWBinOp;
 import com.v7878.llvm.Types.LLVMBasicBlockRef;
@@ -82,6 +80,10 @@ import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.ASM;
 import com.v7878.unsafe.foreign.BulkLinker.ASMGenerator;
@@ -109,14 +111,17 @@ public class ExtraMemoryAccess {
             });
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         @FastNative
         public static native void copyMemory(Object dst_base, long dst_offset,
                                              Object src_base, long src_offset, long count);
     }
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class EarlyNative {
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -164,8 +169,10 @@ public class ExtraMemoryAccess {
         return EarlyNative.INSTANCE != null;
     }
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         @SuppressWarnings("SameParameterValue")
@@ -258,6 +265,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_shorts(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_memmove_swap_shorts() {
             final String name = "memmove_swap_shorts";
@@ -292,6 +301,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_ints(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_memmove_swap_ints() {
             final String name = "memmove_swap_ints";
@@ -330,6 +341,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap_longs(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_memmove_swap_longs() {
             final String name = "memmove_swap_longs";
@@ -370,6 +383,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract byte load_byte_atomic(Object base, long offset);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_load_byte_atomic() {
             return gen_load_atomic("load_byte_atomic", LLVMGlobals::int8_t, 1);
@@ -383,6 +398,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract short load_short_atomic(Object base, long offset);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_load_short_atomic() {
             return gen_load_atomic("load_short_atomic", LLVMGlobals::int16_t, 2);
@@ -396,6 +413,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract int load_int_atomic(Object base, long offset);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_load_int_atomic() {
             return gen_load_atomic("load_int_atomic", LLVMGlobals::int32_t, 4);
@@ -411,6 +430,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD})
         abstract long load_long_atomic(Object base, long offset);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_load_long_atomic() {
             return gen_load_atomic("load_long_atomic", LLVMGlobals::int64_t, 8);
@@ -445,6 +466,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract void store_byte_atomic(Object base, long offset, byte value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_store_byte_atomic() {
             return gen_store_atomic("store_byte_atomic", LLVMGlobals::int8_t, 1);
@@ -460,6 +483,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract void store_short_atomic(Object base, long offset, short value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_store_short_atomic() {
             return gen_store_atomic("store_short_atomic", LLVMGlobals::int16_t, 2);
@@ -475,6 +500,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract void store_int_atomic(Object base, long offset, int value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_store_int_atomic() {
             return gen_store_atomic("store_int_atomic", LLVMGlobals::int32_t, 4);
@@ -492,6 +519,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract void store_long_atomic(Object base, long offset, long value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_store_long_atomic() {
             return gen_store_atomic("store_long_atomic", LLVMGlobals::int64_t, 8);
@@ -527,6 +556,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_exchange_byte(Object base, long offset, byte value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_exchange_byte() {
             return gen_atomic_rmw("atomic_exchange_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpXchg);
@@ -544,6 +575,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_exchange_short(Object base, long offset, short value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_exchange_short() {
             return gen_atomic_rmw("atomic_exchange_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpXchg);
@@ -561,6 +594,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_exchange_int(Object base, long offset, int value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_exchange_int() {
             return gen_atomic_rmw("atomic_exchange_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpXchg);
@@ -579,6 +614,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_exchange_long(Object base, long offset, long value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_exchange_long() {
             return gen_atomic_rmw("atomic_exchange_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpXchg);
@@ -598,6 +635,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_and_byte(Object base, long offset, byte value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_and_byte() {
             return gen_atomic_rmw("atomic_fetch_and_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpAnd);
@@ -617,6 +656,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_and_short(Object base, long offset, short value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_and_short() {
             return gen_atomic_rmw("atomic_fetch_and_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpAnd);
@@ -636,6 +677,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_and_int(Object base, long offset, int value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_and_int() {
             return gen_atomic_rmw("atomic_fetch_and_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpAnd);
@@ -655,6 +698,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_and_long(Object base, long offset, long value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_add_long() {
             return gen_atomic_rmw("atomic_fetch_and_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpAnd);
@@ -674,6 +719,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_or_byte(Object base, long offset, byte value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_or_byte() {
             return gen_atomic_rmw("atomic_fetch_or_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpOr);
@@ -693,6 +740,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_or_short(Object base, long offset, short value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_or_short() {
             return gen_atomic_rmw("atomic_fetch_or_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpOr);
@@ -712,6 +761,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_or_int(Object base, long offset, int value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_or_int() {
             return gen_atomic_rmw("atomic_fetch_or_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpOr);
@@ -731,6 +782,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_or_long(Object base, long offset, long value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_or_long() {
             return gen_atomic_rmw("atomic_fetch_or_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpOr);
@@ -750,6 +803,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_xor_byte(Object base, long offset, byte value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_xor_byte() {
             return gen_atomic_rmw("atomic_fetch_xor_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpXor);
@@ -769,6 +824,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_xor_short(Object base, long offset, short value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_xor_short() {
             return gen_atomic_rmw("atomic_fetch_xor_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpXor);
@@ -788,6 +845,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_xor_int(Object base, long offset, int value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_xor_int() {
             return gen_atomic_rmw("atomic_fetch_xor_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpXor);
@@ -807,6 +866,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_xor_long(Object base, long offset, long value);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_xor_long() {
             return gen_atomic_rmw("atomic_fetch_xor_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpXor);
@@ -848,6 +909,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE, BYTE})
         abstract byte atomic_compare_and_exchange_byte(Object base, long offset, byte expected, byte desired);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_exchange_byte() {
             return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_byte", LLVMGlobals::int8_t, true);
@@ -867,6 +930,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT, SHORT})
         abstract short atomic_compare_and_exchange_short(Object base, long offset, short expected, short desired);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_exchange_short() {
             return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_short", LLVMGlobals::int16_t, true);
@@ -886,6 +951,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT, INT})
         abstract int atomic_compare_and_exchange_int(Object base, long offset, int expected, int desired);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_exchange_int() {
             return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_int", LLVMGlobals::int32_t, true);
@@ -907,6 +974,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG, LONG})
         abstract long atomic_compare_and_exchange_long(Object base, long offset, long expected, long desired);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_exchange_long() {
             return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_long", LLVMGlobals::int64_t, true);
@@ -926,6 +995,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, BYTE, BYTE})
         abstract boolean atomic_compare_and_set_byte(Object base, long offset, byte expected, byte desired);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_set_byte() {
             return gen_atomic_compare_and_exchange("atomic_compare_and_set_byte", LLVMGlobals::int8_t, false);
@@ -945,6 +1016,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, SHORT, SHORT})
         abstract boolean atomic_compare_and_set_short(Object base, long offset, short expected, short desired);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_set_short() {
             return gen_atomic_compare_and_exchange("atomic_compare_and_set_short", LLVMGlobals::int16_t, false);
@@ -964,6 +1037,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, INT, INT})
         abstract boolean atomic_compare_and_set_int(Object base, long offset, int expected, int desired);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_set_int() {
             return gen_atomic_compare_and_exchange("atomic_compare_and_set_int", LLVMGlobals::int32_t, false);
@@ -985,6 +1060,8 @@ public class ExtraMemoryAccess {
         @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT_AS_RAW_INT, LONG_AS_WORD, LONG, LONG})
         abstract boolean atomic_compare_and_set_long(Object base, long offset, long expected, long desired);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_set_long() {
             return gen_atomic_compare_and_exchange("atomic_compare_and_set_long", LLVMGlobals::int64_t, false);

@@ -29,8 +29,6 @@ import static com.v7878.unsafe.Utils.DEBUG_BUILD;
 import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
-import androidx.annotation.Keep;
-
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
 import com.v7878.dex.EncodedField;
@@ -40,6 +38,8 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.dex.bytecode.CodeBuilder;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
 
@@ -389,7 +389,8 @@ public class Transformers {
         return makeTransformer(MethodType.methodType(void.class), callback, true);
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     private abstract static class InvokerI {
         abstract void transform(MethodHandle handle, Object stackFrame) throws Throwable;
 
@@ -397,7 +398,8 @@ public class Transformers {
                                            Object stackFrame) throws Throwable;
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     @SuppressWarnings("unused")
     private abstract static class TransformerImpl {
         protected abstract void transform(MethodHandle thiz, EmulatedStackFrame stackFrame) throws Throwable;

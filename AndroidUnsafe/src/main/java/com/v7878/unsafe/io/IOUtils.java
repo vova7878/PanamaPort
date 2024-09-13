@@ -16,11 +16,12 @@ import android.system.ErrnoException;
 import android.system.Os;
 import android.system.OsConstants;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.access.JavaForeignAccess;
@@ -72,10 +73,12 @@ public class IOUtils {
         return out;
     }
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
-        public static final SymbolLookup CUTILS =
+        private static final SymbolLookup CUTILS =
                 LibDLExt.systemLibraryLookup("libcutils.so", SCOPE);
 
         @LibrarySymbol(name = "ashmem_valid")
@@ -105,6 +108,10 @@ public class IOUtils {
         @LibrarySymbol(name = "mprotect")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
         abstract int mprotect(long addr, long len, int prot);
+
+        @LibrarySymbol(name = "madvise")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
+        abstract int madvise(long address, long length, int advice);
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class, CUTILS));
@@ -164,6 +171,16 @@ public class IOUtils {
         int value = Native.INSTANCE.mprotect(address, length, prot);
         if (value < 0) {
             throw new ErrnoException("mprotect", Errno.errno());
+        }
+    }
+
+    public static final int MADV_WILLNEED = 3;
+    public static final int MADV_DONTNEED = 4;
+
+    public static void madvise(long address, long length, int advice) throws ErrnoException {
+        int value = Native.INSTANCE.madvise(address, length, advice);
+        if (value < 0) {
+            throw new ErrnoException("madvise", Errno.errno());
         }
     }
 

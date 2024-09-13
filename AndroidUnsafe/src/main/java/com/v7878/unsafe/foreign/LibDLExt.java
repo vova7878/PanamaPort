@@ -19,13 +19,15 @@ import static com.v7878.unsafe.io.IOUtils.getDescriptorValue;
 import android.system.ErrnoException;
 import android.system.Os;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
 import com.v7878.invoke.VarHandle;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.access.JavaForeignAccess;
@@ -211,17 +213,21 @@ public class LibDLExt {
                              long library_fd_offset, long library_namespace) {
     }
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
         @ApiSensitive
-        public static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
+        private static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
                 CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", SCOPE);
 
         @SymbolGenerator(method = "s_android_dlopen_ext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long dlopen_ext(long filename, int flags, long info);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static MemorySegment s_android_dlopen_ext() {
             return LibDL.s_android_dlopen_ext;

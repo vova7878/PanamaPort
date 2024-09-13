@@ -7,18 +7,19 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 
 import android.system.Os;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.Arena;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
 public class Errno {
-
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
-
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         @LibrarySymbol(name = "__errno")

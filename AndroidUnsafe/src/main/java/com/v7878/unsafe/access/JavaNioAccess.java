@@ -30,8 +30,6 @@ import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 
-import androidx.annotation.Keep;
-
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
 import com.v7878.dex.EncodedField;
@@ -41,6 +39,7 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
+import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
 
@@ -69,7 +68,7 @@ import dalvik.system.DexFile;
 @ApiSensitive
 public class JavaNioAccess {
     // SegmentByteBuffers should not appear in JavaNioAccess as it breaks class loading order
-    @Keep
+    @DoNotOptimize
     private static class SegmentBufferAccess {
         public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
             return new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),

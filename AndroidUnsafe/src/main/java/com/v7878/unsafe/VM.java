@@ -27,8 +27,8 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import android.annotation.TargetApi;
 import android.os.Build;
 
-import androidx.annotation.Keep;
-
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.access.VMAccess;
 
 import java.lang.invoke.MethodHandle;
@@ -37,12 +37,14 @@ import java.lang.reflect.Modifier;
 import java.util.Objects;
 
 public class VM {
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     private static class ArrayMirror {
         public int length;
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     @SuppressWarnings("unused")
     private static class StringMirror {
         public static final boolean COMPACT_STRINGS;

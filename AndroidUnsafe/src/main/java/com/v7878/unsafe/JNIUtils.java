@@ -28,13 +28,15 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT_AS_ADDRESS;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.LibArt.ART;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.AddressLayout;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
@@ -442,14 +444,17 @@ public class JNIUtils {
     }
 
     public static MemorySegment getJavaVMPtr() {
+        //TODO: refactor
         class Holder {
             static final MemorySegment jvm;
 
-            @Keep
+            @DoNotShrink
+            @DoNotObfuscate
             @CriticalNative
             public static native int GetJavaVM32(int env, int jvm);
 
-            @Keep
+            @DoNotShrink
+            @DoNotObfuscate
             @CriticalNative
             public static native int GetJavaVM64(long env, long jvm);
 
@@ -513,8 +518,10 @@ public class JNIUtils {
         return Holder.ptr;
     }
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         @LibrarySymbol(name = "NewGlobalRef")
@@ -538,6 +545,8 @@ public class JNIUtils {
         @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG, LONG_AS_WORD})
         abstract void putRef(Object obj, long offset, long ref);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static MemorySegment genPutRef() {
             Method method = getDeclaredMethod(SunUnsafe.getUnsafeClass(), "putObject",

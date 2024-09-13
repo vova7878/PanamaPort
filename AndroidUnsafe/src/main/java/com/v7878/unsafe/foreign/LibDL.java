@@ -8,12 +8,14 @@ import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.invoke.VarHandle;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
@@ -102,15 +104,18 @@ public class LibDL {
         s_android_dlopen_ext = symbols.findFunction("android_dlopen_ext", libdl.start());
     }
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
-
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         @SymbolGenerator(method = "s_dlopen")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long dlopen(long filename, int flags);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static MemorySegment s_dlopen() {
             return s_dlopen;
@@ -120,6 +125,8 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int dlclose(long handle);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static MemorySegment s_dlclose() {
             return s_dlclose;
@@ -129,6 +136,8 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long dlerror();
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static MemorySegment s_dlerror() {
             return s_dlerror;
@@ -138,6 +147,8 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long dlsym(long handle, long symbol);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static MemorySegment s_dlsym() {
             return s_dlsym;
@@ -147,6 +158,8 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long dlvsym(long handle, long symbol, long version);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static MemorySegment s_dlvsym() {
             return s_dlvsym;
@@ -156,6 +169,8 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract int dladdr(long addr, long info);
 
+        @DoNotShrink
+        @DoNotObfuscate
         @SuppressWarnings("unused")
         private static MemorySegment s_dladdr() {
             return s_dladdr;

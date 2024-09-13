@@ -30,7 +30,6 @@ android {
 }
 
 dependencies {
-    compileOnly libs.keepannotation
     compileOnly libs.optimizationannotations
 
     compileOnly project(':fake_buffers')
@@ -38,6 +37,8 @@ dependencies {
     compileOnly project(':fake_llvm')
 
     api libs.dexfile
+
+    implementation project(':R8Annotations')
 
     implementation libs.sununsafewrapper
     implementation libs.androidmisc

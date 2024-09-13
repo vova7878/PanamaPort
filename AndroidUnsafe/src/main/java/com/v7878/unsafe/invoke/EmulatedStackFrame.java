@@ -10,8 +10,8 @@ import static com.v7878.unsafe.Utils.assertEq;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
-import androidx.annotation.Keep;
-
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.DangerLevel;
 
 import java.lang.invoke.MethodHandle;
@@ -47,7 +47,8 @@ public class EmulatedStackFrame {
     static final Class<?> esf_class = nothrows_run(() ->
             Class.forName("dalvik.system.EmulatedStackFrame"));
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     public static EmulatedStackFrame wrap(Object esf) {
         //null + class check
         esf.getClass().asSubclass(esf_class);
@@ -272,68 +273,78 @@ public class EmulatedStackFrame {
             return this;
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public StackFrameAccessor moveToReturn() {
             return moveTo(RETURN_VALUE_IDX);
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public void putNextBoolean(boolean value) {
             checkWriteType(boolean.class);
             argumentIdx++;
             frameBuf.putInt(value ? 1 : 0);
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public void putNextByte(byte value) {
             checkWriteType(byte.class);
             argumentIdx++;
             frameBuf.putInt(value);
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public void putNextChar(char value) {
             checkWriteType(char.class);
             argumentIdx++;
             frameBuf.putInt(value);
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public void putNextShort(short value) {
             checkWriteType(short.class);
             argumentIdx++;
             frameBuf.putInt(value);
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public void putNextInt(int value) {
             checkWriteType(int.class);
             argumentIdx++;
             frameBuf.putInt(value);
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public void putNextFloat(float value) {
             checkWriteType(float.class);
             argumentIdx++;
             frameBuf.putFloat(value);
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public void putNextLong(long value) {
             checkWriteType(long.class);
             argumentIdx++;
             frameBuf.putLong(value);
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public void putNextDouble(double value) {
             checkWriteType(double.class);
             argumentIdx++;
             frameBuf.putDouble(value);
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public void putNextReference(Object value, Class<?> expectedType) {
             checkWriteType(expectedType);
             argumentIdx++;
@@ -422,63 +433,72 @@ public class EmulatedStackFrame {
             }
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public boolean nextBoolean() {
             checkReadType(boolean.class);
             argumentIdx++;
             return frameBuf.getInt() != 0;
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public byte nextByte() {
             checkReadType(byte.class);
             argumentIdx++;
             return (byte) frameBuf.getInt();
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public char nextChar() {
             checkReadType(char.class);
             argumentIdx++;
             return (char) frameBuf.getInt();
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public short nextShort() {
             checkReadType(short.class);
             argumentIdx++;
             return (short) frameBuf.getInt();
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public int nextInt() {
             checkReadType(int.class);
             argumentIdx++;
             return frameBuf.getInt();
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public float nextFloat() {
             checkReadType(float.class);
             argumentIdx++;
             return frameBuf.getFloat();
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public long nextLong() {
             checkReadType(long.class);
             argumentIdx++;
             return frameBuf.getLong();
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public double nextDouble() {
             checkReadType(double.class);
             argumentIdx++;
             return frameBuf.getDouble();
         }
 
-        @Keep
+        @DoNotShrink
+        @DoNotObfuscate
         public <T> T nextReference(Class<T> expectedType) {
             checkReadType(expectedType);
             argumentIdx++;

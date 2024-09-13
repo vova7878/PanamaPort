@@ -1,24 +1,17 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.AndroidUnsafe.throwException;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
+import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
-import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
-import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
-import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
+import static com.v7878.unsafe.io.IOUtils.MADV_DONTNEED;
+import static com.v7878.unsafe.io.IOUtils.MADV_WILLNEED;
+import static com.v7878.unsafe.io.IOUtils.madvise;
 
-import android.system.ErrnoException;
-
-import androidx.annotation.Keep;
-
-import com.v7878.foreign.Arena;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.AndroidUnsafe;
-import com.v7878.unsafe.foreign.BulkLinker;
-import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
-import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
-import com.v7878.unsafe.foreign.Errno;
 
 import java.io.FileDescriptor;
 import java.lang.reflect.Method;
@@ -37,7 +30,8 @@ class MappedMemoryUtils {
     }
 
     // not used, but a potential target for a store, see load() for details.
-    @Keep
+    @DoNotShrink
+    //TODO: check if keep rules work correctly
     private static byte unused;
 
     static void load(long address, long length) {
@@ -92,46 +86,21 @@ class MappedMemoryUtils {
 
     // native methods
 
-    @Keep
-    private static native boolean isLoaded0(long address, long length, int pageCount);
-
-    @Keep
-    private static native void force0(FileDescriptor fd, long address, long length);
-
-
-    private static final int MADV_WILLNEED = 3;
-    private static final int MADV_DONTNEED = 4;
-
-    @Keep
-    private abstract static class Native {
-
-        private static final Arena SCOPE = Arena.ofAuto();
-
-        @LibrarySymbol(name = "madvise")
-        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract int madvise(long address, long length, int advice);
-
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class));
-    }
-
-    private static int madvise(long address, long length, int advice) {
-        return Native.INSTANCE.madvise(address, length, advice);
-    }
-
     private static void load0(long address, long length) {
-        int result = madvise(address, length, MADV_WILLNEED);
-        if (result == -1) {
-            throwException(new ErrnoException("madvise", Errno.errno()));
-        }
+        nothrows_run(() -> madvise(address, length, MADV_WILLNEED));
     }
 
     private static void unload0(long address, long length) {
-        int result = madvise(address, length, MADV_DONTNEED);
-        if (result == -1) {
-            throwException(new ErrnoException("madvise", Errno.errno()));
-        }
+        nothrows_run(() -> madvise(address, length, MADV_DONTNEED));
     }
+
+    @DoNotShrink
+    @DoNotObfuscate
+    private static native boolean isLoaded0(long address, long length, int pageCount);
+
+    @DoNotShrink
+    @DoNotObfuscate
+    private static native void force0(FileDescriptor fd, long address, long length);
 
     static {
         Method[] tm = getDeclaredMethods(MappedMemoryUtils.class);

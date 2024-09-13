@@ -5,7 +5,9 @@ import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
-import androidx.annotation.Keep;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
 
 public class Stack {
     static {
@@ -15,10 +17,11 @@ public class Stack {
                         "dalvik.system.VMStack"), "getStackClass2"))));
     }
 
-    @Keep
+    @DoNotObfuscate
+    @DoNotShrink
     public static native Class<?> getStackClass2();
 
-    @Keep
+    @DoNotOptimize
     public static Class<?> getStackClass1() {
         return getStackClass2();
     }

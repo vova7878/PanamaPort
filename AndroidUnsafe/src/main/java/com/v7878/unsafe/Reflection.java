@@ -12,7 +12,8 @@ import static com.v7878.unsafe.Utils.searchConstructor;
 import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
 
-import androidx.annotation.Keep;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -36,7 +37,8 @@ public class Reflection {
         assert_(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 35, AssertionError::new);
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     @ApiSensitive
     @SuppressWarnings("unused")
     static class ClassMirror {
@@ -68,13 +70,15 @@ public class Reflection {
         public short virtualMethodsOffset;
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     @ApiSensitive
     private static class AccessibleObjectMirror {
         public boolean override;
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     @ApiSensitive
     @SuppressWarnings("unused")
     private static class FieldMirror extends AccessibleObjectMirror {
@@ -85,7 +89,8 @@ public class Reflection {
         public Class<?> type;
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     @ApiSensitive
     private static class ExecutableMirror extends AccessibleObjectMirror {
         public volatile boolean hasRealParameterData;
@@ -98,7 +103,8 @@ public class Reflection {
         public int dexMethodIndex;
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     @ApiSensitive
     @SuppressWarnings("unused")
     private static class MethodHandleMirror {
@@ -109,13 +115,15 @@ public class Reflection {
         public long artFieldOrMethod;
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     @ApiSensitive
     private static final class MethodHandleImplMirror extends MethodHandleMirror {
         public HandleInfoMirror info;
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     @ApiSensitive
     @SuppressWarnings("unused")
     private static final class HandleInfoMirror {
@@ -123,7 +131,8 @@ public class Reflection {
         public MethodHandleImplMirror handle;
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     private static class Test {
 
         public static final Method am = nothrows_run(()

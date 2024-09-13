@@ -25,8 +25,6 @@ import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 import android.util.ArraySet;
 import android.util.SparseArray;
 
-import androidx.annotation.Keep;
-
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
 import com.v7878.dex.EncodedMethod;
@@ -34,6 +32,8 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.dex.bytecode.CodeBuilder.InvokeKind;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
@@ -204,7 +204,8 @@ public class MethodHandlesFixes {
         return Utils.newClassLoaderWithClasses(MethodHandlesFixes.class.getClassLoader(), set);
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotObfuscate
     public static abstract class EmulatedInvoker {
         public abstract void invoke(StackFrameAccessor accessor) throws Throwable;
     }

@@ -16,13 +16,13 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JNI_OBJECT;
 import static com.v7878.unsafe.foreign.LibArt.ART;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.AddressLayout;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.misc.Math;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
@@ -35,7 +35,6 @@ import java.util.Objects;
 import java.util.function.Function;
 
 public class JniLibraries {
-
     public static final GroupLayout SHARED_LIBRARY = paddedStructLayout(
             string.LAYOUT.withName("path_"),
             ADDRESS.withName("handle_"),
@@ -126,7 +125,8 @@ public class JniLibraries {
     }
 
     // TODO: should this be used in "native" state?
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
         private static final Arena SCOPE = Arena.ofAuto();
 

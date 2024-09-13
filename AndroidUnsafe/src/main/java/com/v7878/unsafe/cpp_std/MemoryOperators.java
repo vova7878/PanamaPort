@@ -10,9 +10,10 @@ import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.Arena;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
@@ -23,8 +24,10 @@ public class MemoryOperators {
     private static final int __STDCPP_DEFAULT_NEW_ALIGNMENT__ =
             CURRENT_INSTRUCTION_SET.stdcppDefaultNewAlignment();
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         // operator new[](unsigned int, std::align_val_t, std::nothrow_t const&)

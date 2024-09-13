@@ -7,7 +7,8 @@ import android.annotation.SuppressLint;
 import android.util.ArrayMap;
 import android.util.Log;
 
-import androidx.annotation.Keep;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
 
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
@@ -41,35 +42,6 @@ public class Utils {
     public static final boolean DEBUG_BUILD = BuildConfig.DEBUG;
 
     public static final String LOG_TAG = "PANAMA";
-
-    public static class NopConsumer {
-        @Keep
-        public static void consume(boolean ignored) { /* nop */ }
-
-        @Keep
-        public static void consume(byte ignored) { /* nop */ }
-
-        @Keep
-        public static void consume(short ignored) { /* nop */ }
-
-        @Keep
-        public static void consume(char ignored) { /* nop */ }
-
-        @Keep
-        public static void consume(int ignored) { /* nop */ }
-
-        @Keep
-        public static void consume(float ignored) { /* nop */ }
-
-        @Keep
-        public static void consume(long ignored) { /* nop */ }
-
-        @Keep
-        public static void consume(double ignored) { /* nop */ }
-
-        @Keep
-        public static void consume(Object ignored) { /* nop */ }
-    }
 
     public interface FineClosable extends AutoCloseable {
         void close();
@@ -223,7 +195,9 @@ public class Utils {
         }
     }
 
-    @Keep
+    @DoNotShrink
+    @DoNotOptimize
+    //TODO: check if keep rules work correctly
     private static class SinkHolder {
         static volatile Object sink;
         // Ensure that sink looks live to even a reasonably clever compiler.

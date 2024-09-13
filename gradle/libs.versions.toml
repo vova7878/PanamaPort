@@ -2,16 +2,16 @@
 agp = "8.6.0"
 androidmisc = "v0.0.4"
 dexfile = "v0.0.9"
-keepannotation = "v0.0.2"
+suncleanerstub = "v0.0.2"
+sununsafewrapper = "v0.0.2"
 optimizationannotations = "v0.0.3"
 
 [libraries]
 androidmisc = { module = "com.github.vova7878:AndroidMisc", version.ref = "androidmisc" }
 dexfile = { module = "com.github.vova7878:DexFile", version.ref = "dexfile" }
-keepannotation = { module = "com.github.vova7878:KeepAnnotation", version.ref = "keepannotation" }
 optimizationannotations = { module = "com.github.vova7878:OptimizationAnnotations", version.ref = "optimizationannotations" }
-suncleanerstub = { module = "com.github.vova7878:SunCleanerStub", version.ref = "keepannotation" }
-sununsafewrapper = { module = "com.github.vova7878:SunUnsafeWrapper", version.ref = "keepannotation" }
+suncleanerstub = { module = "com.github.vova7878:SunCleanerStub", version.ref = "suncleanerstub" }
+sununsafewrapper = { module = "com.github.vova7878:SunUnsafeWrapper", version.ref = "sununsafewrapper" }
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }
