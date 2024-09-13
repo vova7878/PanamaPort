@@ -26,11 +26,11 @@ android {
 }
 
 dependencies {
-    compileOnly libs.keepannotation
-
     api project(':AndroidPanama')
 
     implementation project(':AndroidUnsafe')
+
+    implementation project(':R8Annotations')
 
     implementation libs.androidmisc
 }

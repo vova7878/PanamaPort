@@ -15,13 +15,14 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Target.LLVMTargetDataRef;
 import com.v7878.llvm.Types.AddressValue;
 import com.v7878.llvm.Types.LLVMMemoryBufferRef;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.foreign.BulkLinker;
@@ -156,9 +157,10 @@ public final class TargetMachine {
         }
     }
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
-
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         @LibrarySymbol(name = "LLVMGetFirstTarget")

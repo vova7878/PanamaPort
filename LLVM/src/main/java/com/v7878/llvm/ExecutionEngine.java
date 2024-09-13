@@ -18,8 +18,6 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.os.Build;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Target.LLVMTargetDataRef;
@@ -28,6 +26,9 @@ import com.v7878.llvm.Types.AddressValue;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.foreign.BulkLinker;
@@ -114,9 +115,10 @@ public final class ExecutionEngine {
     //    LLVMMCJITMemoryManagerRef MCJMM;
     //};
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
-
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         @LibrarySymbol(name = "LLVMLinkInMCJIT")

@@ -8,10 +8,11 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.Keep;
-
 import com.v7878.foreign.Arena;
 import com.v7878.llvm.Types.LLVMPassManagerRef;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
@@ -33,9 +34,10 @@ public final class IPO {
      * @ingroup LLVMCTransforms
      */
 
-    @Keep
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class Native {
-
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         @LibrarySymbol(name = "LLVMAddArgumentPromotionPass")
