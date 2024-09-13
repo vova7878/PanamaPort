@@ -2748,13 +2748,13 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             }
 
             @Override
-            protected Arena _createHeapArena(Object ref) {
-                return _MemorySessionImpl.createHeap(ref).asArena();
+            protected Arena _createGlobalHolderArena(Object ref) {
+                return _MemorySessionImpl.createGlobalHolder(ref).asArena();
             }
 
             @Override
-            protected Arena _createImplicitHeapArena(Object ref) {
-                return _MemorySessionImpl.createImplicitHeap(ref).asArena();
+            protected Arena _createImplicitHolderArena(Object ref) {
+                return _MemorySessionImpl.createImplicitHolder(ref).asArena();
             }
 
             @Override

@@ -31,8 +31,8 @@ package com.v7878.foreign;
 import android.annotation.SuppressLint;
 
 import com.v7878.foreign.MemorySegment.Scope;
-import com.v7878.foreign._GlobalSession.HeapSession;
-import com.v7878.foreign._ImplicitSession.ImplicitHeapSession;
+import com.v7878.foreign._GlobalSession.GlobalHolderSession;
+import com.v7878.foreign._ImplicitSession.ImplicitHolderSession;
 import com.v7878.foreign._ScopedMemoryAccess.ScopedAccessError;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
@@ -122,12 +122,12 @@ abstract sealed class _MemorySessionImpl implements Scope
         return new _ImplicitSession();
     }
 
-    public static _MemorySessionImpl createHeap(Object ref) {
-        return new HeapSession(ref);
+    public static _MemorySessionImpl createGlobalHolder(Object ref) {
+        return new GlobalHolderSession(ref);
     }
 
-    public static _MemorySessionImpl createImplicitHeap(Object ref) {
-        return new ImplicitHeapSession(ref);
+    public static _MemorySessionImpl createImplicitHolder(Object ref) {
+        return new ImplicitHolderSession(ref);
     }
 
     public abstract void release0();

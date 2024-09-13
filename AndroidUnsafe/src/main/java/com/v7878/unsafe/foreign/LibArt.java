@@ -4,9 +4,10 @@ import static com.v7878.unsafe.VM.vmLibrary;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.SymbolLookup;
-import com.v7878.unsafe.access.JavaForeignAccess;
+import com.v7878.r8.annotations.DoNotShrink;
 
 public class LibArt {
-    private static final Arena ART_SCOPE = JavaForeignAccess.createImplicitHeapArena(LibArt.class);
+    @DoNotShrink
+    private static final Arena ART_SCOPE = Arena.ofAuto();
     public static final SymbolLookup ART = LibDLExt.systemLibraryLookup(vmLibrary(), ART_SCOPE);
 }

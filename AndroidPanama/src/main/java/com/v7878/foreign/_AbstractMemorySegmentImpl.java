@@ -562,7 +562,7 @@ abstract sealed class _AbstractMemorySegmentImpl
         int scaleFactor = getScaleFactor(bb);
         _MemorySessionImpl bufferScope = (_MemorySessionImpl) JavaNioAccess.getBufferScope(bb);
         if (bufferScope == null) {
-            bufferScope = _MemorySessionImpl.createHeap(bufferRef(bb));
+            bufferScope = _MemorySessionImpl.createGlobalHolder(bufferRef(bb));
         }
         long off = bbAddress + ((long) pos << scaleFactor);
         long len = (long) size << scaleFactor;

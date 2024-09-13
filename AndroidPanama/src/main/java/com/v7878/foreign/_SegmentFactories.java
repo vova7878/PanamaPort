@@ -91,7 +91,7 @@ class _SegmentFactories {
         ensureInitialized();
         Objects.requireNonNull(obj);
         return new OfObject(0, obj, VM.alignedSizeOf(obj), false,
-                _MemorySessionImpl.createHeap(obj));
+                _MemorySessionImpl.createGlobalHolder(obj));
     }
 
     public static MemorySegment fromArray(byte[] arr) {
@@ -99,7 +99,7 @@ class _SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.BYTE.scale();
         return new OfByte(_Utils.BaseAndScale.BYTE.base(), arr, byteSize, false,
-                _MemorySessionImpl.createHeap(arr));
+                _MemorySessionImpl.createGlobalHolder(arr));
     }
 
     public static MemorySegment fromArray(short[] arr) {
@@ -107,7 +107,7 @@ class _SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.SHORT.scale();
         return new OfShort(_Utils.BaseAndScale.SHORT.base(), arr, byteSize, false,
-                _MemorySessionImpl.createHeap(arr));
+                _MemorySessionImpl.createGlobalHolder(arr));
     }
 
     public static MemorySegment fromArray(int[] arr) {
@@ -115,7 +115,7 @@ class _SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.INT.scale();
         return new OfInt(_Utils.BaseAndScale.INT.base(), arr, byteSize, false,
-                _MemorySessionImpl.createHeap(arr));
+                _MemorySessionImpl.createGlobalHolder(arr));
     }
 
     public static MemorySegment fromArray(char[] arr) {
@@ -123,7 +123,7 @@ class _SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.CHAR.scale();
         return new OfChar(_Utils.BaseAndScale.CHAR.base(), arr, byteSize, false,
-                _MemorySessionImpl.createHeap(arr));
+                _MemorySessionImpl.createGlobalHolder(arr));
     }
 
     public static MemorySegment fromArray(float[] arr) {
@@ -131,7 +131,7 @@ class _SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.FLOAT.scale();
         return new OfFloat(_Utils.BaseAndScale.FLOAT.base(), arr, byteSize, false,
-                _MemorySessionImpl.createHeap(arr));
+                _MemorySessionImpl.createGlobalHolder(arr));
     }
 
     public static MemorySegment fromArray(double[] arr) {
@@ -139,7 +139,7 @@ class _SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.DOUBLE.scale();
         return new OfDouble(_Utils.BaseAndScale.DOUBLE.base(), arr, byteSize, false,
-                _MemorySessionImpl.createHeap(arr));
+                _MemorySessionImpl.createGlobalHolder(arr));
     }
 
     public static MemorySegment fromArray(long[] arr) {
@@ -147,7 +147,7 @@ class _SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.LONG.scale();
         return new OfLong(_Utils.BaseAndScale.LONG.base(), arr, byteSize, false,
-                _MemorySessionImpl.createHeap(arr));
+                _MemorySessionImpl.createGlobalHolder(arr));
     }
 
     public static MemorySegment allocateSegment(long byteSize, long byteAlignment,

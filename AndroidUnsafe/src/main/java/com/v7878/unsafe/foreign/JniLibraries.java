@@ -22,6 +22,7 @@ import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.misc.Math;
 import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
@@ -128,6 +129,7 @@ public class JniLibraries {
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class Native {
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
         @LibrarySymbol(name = "_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE")

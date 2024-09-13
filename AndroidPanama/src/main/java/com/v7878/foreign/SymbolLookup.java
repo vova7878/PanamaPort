@@ -244,7 +244,7 @@ public interface SymbolLookup {
         if (loader == null || loader == Object.class.getClassLoader()) {
             loaderArena = Arena.global();
         } else {
-            _MemorySessionImpl session = _MemorySessionImpl.createHeap(loader);
+            _MemorySessionImpl session = _MemorySessionImpl.createGlobalHolder(loader);
             loaderArena = session.asArena();
         }
 

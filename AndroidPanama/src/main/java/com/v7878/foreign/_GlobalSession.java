@@ -74,13 +74,13 @@ sealed class _GlobalSession extends _MemorySessionImpl {
      * This is a global session that wraps a heap object.
      * Possible objects are: Java arrays, buffers and class loaders.
      */
-    static final class HeapSession extends _GlobalSession {
+    static final class GlobalHolderSession extends _GlobalSession {
         @DoNotShrink
         final Object ref;
 
         @DoNotShrink
         @KeepCodeAttribute
-        public HeapSession(Object ref) {
+        public GlobalHolderSession(Object ref) {
             this.ref = Objects.requireNonNull(ref);
         }
     }

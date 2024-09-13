@@ -47,16 +47,16 @@ public abstract class JavaForeignAccess {
         return INSTANCE._objectSegment(obj);
     }
 
-    protected abstract Arena _createHeapArena(Object ref);
+    protected abstract Arena _createGlobalHolderArena(Object ref);
 
-    public static Arena createHeapArena(Object ref) {
-        return INSTANCE._createHeapArena(ref);
+    public static Arena createGlobalHolderArena(Object ref) {
+        return INSTANCE._createGlobalHolderArena(ref);
     }
 
-    protected abstract Arena _createImplicitHeapArena(Object ref);
+    protected abstract Arena _createImplicitHolderArena(Object ref);
 
-    public static Arena createImplicitHeapArena(Object ref) {
-        return INSTANCE._createImplicitHeapArena(ref);
+    public static Arena createImplicitHolderArena(Object ref) {
+        return INSTANCE._createImplicitHolderArena(ref);
     }
 
     protected abstract MemorySegment _makeNativeSegmentUnchecked(

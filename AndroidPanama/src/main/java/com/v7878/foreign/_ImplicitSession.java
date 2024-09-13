@@ -78,13 +78,13 @@ sealed class _ImplicitSession extends _SharedSession {
      * This is an implicit session that wraps a heap object.
      * Possible objects are: Java arrays, buffers and class loaders.
      */
-    static final class ImplicitHeapSession extends _ImplicitSession {
+    static final class ImplicitHolderSession extends _ImplicitSession {
         @DoNotShrink
         final Object ref;
 
         @DoNotShrink
         @KeepCodeAttribute
-        public ImplicitHeapSession(Object ref) {
+        public ImplicitHolderSession(Object ref) {
             this.ref = Objects.requireNonNull(ref);
         }
     }

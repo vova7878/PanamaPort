@@ -174,6 +174,9 @@ public class IOUtils {
         }
     }
 
+    public static final int MADV_NORMAL = 0;
+    public static final int MADV_RANDOM = 1;
+    public static final int MADV_SEQUENTIAL = 2;
     public static final int MADV_WILLNEED = 3;
     public static final int MADV_DONTNEED = 4;
 

@@ -3,6 +3,7 @@ package com.v7878.unsafe.invoke;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
 
 import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.DangerLevel;
@@ -11,6 +12,7 @@ import java.lang.invoke.MethodType;
 
 @DoNotShrinkType
 @DoNotObfuscate
+@DoNotOptimize
 public interface MethodTypeForm {
     MethodType erasedType();
 
