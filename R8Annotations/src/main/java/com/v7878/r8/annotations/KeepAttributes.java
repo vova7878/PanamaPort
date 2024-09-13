@@ -11,5 +11,5 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
 @Target({TYPE, CONSTRUCTOR, METHOD, FIELD})
-public @interface DoNotObfuscateMembers {
+public @interface KeepAttributes {
 }
