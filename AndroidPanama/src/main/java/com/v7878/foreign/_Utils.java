@@ -48,8 +48,8 @@ import static com.v7878.unsafe.Utils.toHexString;
 import com.v7878.foreign.MemoryLayout.PathElement;
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
-import com.v7878.r8.annotations.DoNotObfuscateMembers;
-import com.v7878.r8.annotations.DoNotShrinkMembers;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
 import com.v7878.unsafe.invoke.Wrapper;
 
@@ -171,14 +171,14 @@ final class _Utils {
         return handle;
     }
 
-    @DoNotShrinkMembers
-    @DoNotObfuscateMembers
+    @DoNotShrink
+    @DoNotObfuscate
     public static boolean byteToBoolean(byte b) {
         return b != 0;
     }
 
-    @DoNotShrinkMembers
-    @DoNotObfuscateMembers
+    @DoNotShrink
+    @DoNotObfuscate
     private static byte booleanToByte(boolean b) {
         return b ? (byte) 1 : (byte) 0;
     }
@@ -189,8 +189,8 @@ final class _Utils {
             throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
-    @DoNotShrinkMembers
-    @DoNotObfuscateMembers
+    @DoNotShrink
+    @DoNotObfuscate
     public static MemorySegment checkCaptureSegment(MemorySegment captureSegment) {
         Objects.requireNonNull(captureSegment);
         if (captureSegment.equals(MemorySegment.NULL)) {
@@ -241,21 +241,21 @@ final class _Utils {
         }
     }
 
-    @DoNotShrinkMembers
-    @DoNotObfuscateMembers
+    @DoNotShrink
+    @DoNotObfuscate
     public static long unboxSegment(MemorySegment segment) {
         checkNative(segment);
         return segment.address();
     }
 
-    @DoNotShrinkMembers
-    @DoNotObfuscateMembers
+    @DoNotShrink
+    @DoNotObfuscate
     public static MemorySegment longToAddress(long addr) {
         return longToAddress(addr, 0, 1);
     }
 
-    @DoNotShrinkMembers
-    @DoNotObfuscateMembers
+    @DoNotShrink
+    @DoNotObfuscate
     public static MemorySegment longToAddress(long addr, AddressLayout layout) {
         return longToAddress(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
     }

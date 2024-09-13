@@ -1,42 +1,52 @@
+# com.v7878.r8.annotations.DoNotShrinkFull
+-dontwarn com.v7878.r8.annotations.DoNotShrinkFull
+-keep, allowoptimization, allowobfuscation
+    @com.v7878.r8.annotations.DoNotShrinkFull class * {*;}
+-keepclasseswithmembers, allowoptimization, allowobfuscation class * {
+    @com.v7878.r8.annotations.DoNotShrinkFull <init>(...);
+    @com.v7878.r8.annotations.DoNotShrinkFull <methods>;
+    @com.v7878.r8.annotations.DoNotShrinkFull <fields>;
+}
+
 # com.v7878.r8.annotations.DoNotShrink
 -dontwarn com.v7878.r8.annotations.DoNotShrink
--keep, allowoptimization, allowobfuscation
+-keepclassmembers, allowoptimization, allowobfuscation
     @com.v7878.r8.annotations.DoNotShrink class * {*;}
--keepclasseswithmembers, allowoptimization, allowobfuscation class * {
+-keepclassmembers, allowoptimization, allowobfuscation class * {
     @com.v7878.r8.annotations.DoNotShrink <init>(...);
     @com.v7878.r8.annotations.DoNotShrink <methods>;
     @com.v7878.r8.annotations.DoNotShrink <fields>;
 }
 
-# com.v7878.r8.annotations.DoNotShrinkMembers
--dontwarn com.v7878.r8.annotations.DoNotShrinkMembers
--keepclassmembers, allowoptimization, allowobfuscation
-    @com.v7878.r8.annotations.DoNotShrinkMembers class * {*;}
--keepclassmembers, allowoptimization, allowobfuscation class * {
-    @com.v7878.r8.annotations.DoNotShrinkMembers <init>(...);
-    @com.v7878.r8.annotations.DoNotShrinkMembers <methods>;
-    @com.v7878.r8.annotations.DoNotShrinkMembers <fields>;
+# com.v7878.r8.annotations.DoNotShrinkType
+-dontwarn com.v7878.r8.annotations.DoNotShrinkType
+-keep, allowoptimization, allowobfuscation
+    @com.v7878.r8.annotations.DoNotShrinkType class * {}
+
+# com.v7878.r8.annotations.DoNotObfuscateFull
+-dontwarn com.v7878.r8.annotations.DoNotObfuscateFull
+-keep, allowshrinking, allowoptimization
+    @com.v7878.r8.annotations.DoNotObfuscateFull class * {*;}
+-keepclasseswithmembers, allowshrinking, allowoptimization class * {
+    @com.v7878.r8.annotations.DoNotObfuscateFull <init>(...);
+    @com.v7878.r8.annotations.DoNotObfuscateFull <methods>;
+    @com.v7878.r8.annotations.DoNotObfuscateFull <fields>;
 }
 
 # com.v7878.r8.annotations.DoNotObfuscate
 -dontwarn com.v7878.r8.annotations.DoNotObfuscate
--keep, allowshrinking, allowoptimization
+-keepclassmembers, allowshrinking, allowoptimization
     @com.v7878.r8.annotations.DoNotObfuscate class * {*;}
--keepclasseswithmembers, allowshrinking, allowoptimization class * {
+-keepclassmembers, allowshrinking, allowoptimization class * {
     @com.v7878.r8.annotations.DoNotObfuscate <init>(...);
     @com.v7878.r8.annotations.DoNotObfuscate <methods>;
     @com.v7878.r8.annotations.DoNotObfuscate <fields>;
 }
 
-# com.v7878.r8.annotations.DoNotObfuscateMembers
--dontwarn com.v7878.r8.annotations.DoNotObfuscateMembers
--keepclassmembers, allowshrinking, allowoptimization
-    @com.v7878.r8.annotations.DoNotObfuscateMembers class * {*;}
--keepclassmembers, allowshrinking, allowoptimization class * {
-    @com.v7878.r8.annotations.DoNotObfuscateMembers <init>(...);
-    @com.v7878.r8.annotations.DoNotObfuscateMembers <methods>;
-    @com.v7878.r8.annotations.DoNotObfuscateMembers <fields>;
-}
+# com.v7878.r8.annotations.DoNotObfuscateType
+-dontwarn com.v7878.r8.annotations.DoNotObfuscateType
+-keep, allowshrinking, allowoptimization
+    @com.v7878.r8.annotations.DoNotObfuscateType class * {}
 
 # com.v7878.r8.annotations.DoNotOptimize
 -dontwarn com.v7878.r8.annotations.DoNotOptimize
@@ -55,4 +65,14 @@
 -keepclassmembers, allowshrinking, allowobfuscation, allowoptimization, includecode class * {
     @com.v7878.r8.annotations.KeepCodeAttribute <init>(...);
     @com.v7878.r8.annotations.KeepCodeAttribute <methods>;
+}
+
+# com.v7878.r8.annotations.KeepAttributes
+-dontwarn com.v7878.r8.annotations.KeepAttributes
+-keep, allowshrinking, allowobfuscation, allowoptimization
+    @com.v7878.r8.annotations.KeepAttributes class * {*;}
+-keepclassmembers, allowshrinking, allowobfuscation, allowoptimization class * {
+    @com.v7878.r8.annotations.KeepAttributes <init>(...);
+    @com.v7878.r8.annotations.KeepAttributes <methods>;
+    @com.v7878.r8.annotations.KeepAttributes <fields>;
 }

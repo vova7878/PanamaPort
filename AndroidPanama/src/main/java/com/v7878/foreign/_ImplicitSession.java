@@ -27,7 +27,7 @@
 
 package com.v7878.foreign;
 
-import com.v7878.r8.annotations.DoNotShrinkMembers;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.KeepCodeAttribute;
 import com.v7878.unsafe.Utils;
 
@@ -79,10 +79,10 @@ sealed class _ImplicitSession extends _SharedSession {
      * Possible objects are: Java arrays, buffers and class loaders.
      */
     static final class ImplicitHeapSession extends _ImplicitSession {
-        @DoNotShrinkMembers
+        @DoNotShrink
         final Object ref;
 
-        @DoNotShrinkMembers
+        @DoNotShrink
         @KeepCodeAttribute
         public ImplicitHeapSession(Object ref) {
             this.ref = Objects.requireNonNull(ref);

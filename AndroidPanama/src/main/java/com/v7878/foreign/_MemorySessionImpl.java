@@ -34,8 +34,8 @@ import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.foreign._GlobalSession.HeapSession;
 import com.v7878.foreign._ImplicitSession.ImplicitHeapSession;
 import com.v7878.foreign._ScopedMemoryAccess.ScopedAccessError;
-import com.v7878.r8.annotations.DoNotObfuscateMembers;
-import com.v7878.r8.annotations.DoNotShrinkMembers;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 
 import java.util.Objects;
 
@@ -53,8 +53,8 @@ abstract sealed class _MemorySessionImpl implements Scope
 
     final ResourceList resourceList;
     final Thread owner;
-    @DoNotShrinkMembers
-    @DoNotObfuscateMembers
+    @DoNotShrink
+    @DoNotObfuscate
     int state = OPEN;
 
     public Arena asArena() {
@@ -212,8 +212,8 @@ abstract sealed class _MemorySessionImpl implements Scope
      * and {@link _SharedSession.SharedResourceList}.
      */
     public abstract static class ResourceList implements Runnable {
-        @DoNotShrinkMembers
-        @DoNotObfuscateMembers
+        @DoNotShrink
+        @DoNotObfuscate
         ResourceCleanup fst;
 
         abstract void add(ResourceCleanup cleanup);

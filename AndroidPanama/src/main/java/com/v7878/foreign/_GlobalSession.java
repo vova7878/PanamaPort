@@ -27,7 +27,7 @@
 
 package com.v7878.foreign;
 
-import com.v7878.r8.annotations.DoNotShrinkMembers;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.KeepCodeAttribute;
 
 import java.util.Objects;
@@ -75,10 +75,10 @@ sealed class _GlobalSession extends _MemorySessionImpl {
      * Possible objects are: Java arrays, buffers and class loaders.
      */
     static final class HeapSession extends _GlobalSession {
-        @DoNotShrinkMembers
+        @DoNotShrink
         final Object ref;
 
-        @DoNotShrinkMembers
+        @DoNotShrink
         @KeepCodeAttribute
         public HeapSession(Object ref) {
             this.ref = Objects.requireNonNull(ref);
