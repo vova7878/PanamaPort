@@ -25,14 +25,22 @@ import java.util.Arrays;
 final class _LLVMCallingConvention {
     private static class x86_android {
         public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
-            LLVMStorage retStorage = descriptor.returnLayout()
-                    .map(layout -> layout instanceof GroupLayout ?
-                            new MemoryStorage(layout, true) : new RawStorage(layout))
-                    .orElse(new NoStorage(null));
-            LLVMStorage[] argStorages = descriptor.argumentLayouts().stream()
-                    .map(layout -> layout instanceof GroupLayout ?
-                            new MemoryStorage(layout, true) : new RawStorage(layout))
-                    .toArray(LLVMStorage[]::new);
+            LLVMStorage retStorage = descriptor.returnLayout().map(layout -> {
+                assert layout.byteSize() != 0 || layout instanceof GroupLayout;
+                if (layout instanceof GroupLayout) {
+                    return new MemoryStorage(layout, true);
+                }
+                return new RawStorage(layout);
+            }).orElse(new NoStorage(null));
+            LLVMStorage[] argStorages = descriptor.argumentLayouts().stream().map(layout -> {
+                if (layout.byteSize() == 0) {
+                    return new NoStorage(layout);
+                }
+                if (layout instanceof GroupLayout) {
+                    return new MemoryStorage(layout, true);
+                }
+                return new RawStorage(layout);
+            }).toArray(LLVMStorage[]::new);
             return new _LLVMStorageDescriptor(retStorage, argStorages);
         }
     }
@@ -132,6 +140,9 @@ final class _LLVMCallingConvention {
         public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
             final int[] arg_regs = {/* integer regs */ 6, /* floating point regs */ 8};
             LLVMStorage retStorage = descriptor.returnLayout().map(layout -> {
+                if (layout.byteSize() == 0) {
+                    return new NoStorage(layout);
+                }
                 if (layout instanceof ValueLayout vl) {
                     return new RawStorage(vl);
                 }
@@ -146,8 +157,11 @@ final class _LLVMCallingConvention {
                 }
                 throw shouldNotReachHere();
             }).orElse(new NoStorage(null));
-            //TODO: this operation is ordered?
+            // Note: Collection.stream() is sequential
             LLVMStorage[] argStorages = descriptor.argumentLayouts().stream().map(layout -> {
+                if (layout.byteSize() == 0) {
+                    return new NoStorage(layout);
+                }
                 if (layout instanceof ValueLayout vl) {
                     int type = isFP(vl) ? 1 : 0;
                     arg_regs[type] = Math.max(0, arg_regs[type] - 1);
@@ -275,6 +289,9 @@ final class _LLVMCallingConvention {
 
         public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
             LLVMStorage retStorage = descriptor.returnLayout().map(layout -> {
+                if (layout.byteSize() == 0) {
+                    return new NoStorage(layout);
+                }
                 if (layout instanceof ValueLayout vl) {
                     return new RawStorage(vl);
                 }
@@ -289,6 +306,9 @@ final class _LLVMCallingConvention {
                 throw shouldNotReachHere();
             }).orElse(new NoStorage(null));
             LLVMStorage[] argStorages = descriptor.argumentLayouts().stream().map(layout -> {
+                if (layout.byteSize() == 0) {
+                    return new NoStorage(layout);
+                }
                 if (layout instanceof ValueLayout vl) {
                     return new RawStorage(vl);
                 }
@@ -328,21 +348,31 @@ final class _LLVMCallingConvention {
         }
 
         public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
-            LLVMStorage retStorage = descriptor.returnLayout()
-                    .map(layout -> layout instanceof GroupLayout ? (layout.byteSize() <= 4 ?
+            LLVMStorage retStorage = descriptor.returnLayout().map(layout -> {
+                if (layout.byteSize() == 0) {
+                    return new NoStorage(layout);
+                }
+                if (layout instanceof GroupLayout) {
+                    return layout.byteSize() <= 4 ?
                             new WrapperStorage(layout, getRetWrapper(layout)) :
-                            new MemoryStorage(layout, true)) : new RawStorage(layout))
-                    .orElse(new NoStorage(null));
-            LLVMStorage[] argStorages = descriptor.argumentLayouts().stream()
-                    .map(layout -> layout instanceof GroupLayout ?
-                            new WrapperStorage(layout, getArgWrapper(layout)) : new RawStorage(layout))
-                    .toArray(LLVMStorage[]::new);
+                            new MemoryStorage(layout, true);
+                }
+                return new RawStorage(layout);
+            }).orElse(new NoStorage(null));
+            LLVMStorage[] argStorages = descriptor.argumentLayouts().stream().map(layout -> {
+                if (layout.byteSize() == 0) {
+                    return new NoStorage(layout);
+                }
+                if (layout instanceof GroupLayout) {
+                    return new WrapperStorage(layout, getArgWrapper(layout));
+                }
+                return new RawStorage(layout);
+            }).toArray(LLVMStorage[]::new);
             return new _LLVMStorageDescriptor(retStorage, argStorages);
         }
     }
 
     public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
-        // TODO: process zero-sized layouts
         return switch (CURRENT_INSTRUCTION_SET) {
             case X86 -> x86_android.computeStorages(descriptor);
             case X86_64 -> x86_64_android.computeStorages(descriptor);

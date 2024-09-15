@@ -159,6 +159,7 @@ class _SegmentFactories {
         //    byteAlignment = Math.max(byteAlignment, AndroidUnsafe.pageSize());
         //}
         if (use_new) {
+            //TODO: what if byteSize is 0?
             long buf = allocateMemoryWrapperOperatorNew(byteSize, byteAlignment);
             if (!_Utils.isAligned(buf, byteAlignment)) {
                 throw shouldNotReachHere();
