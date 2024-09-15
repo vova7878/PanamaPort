@@ -63,13 +63,13 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT_AS_RAW_INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.SHORT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.BulkLinker.Tristate.FALSE;
-import static com.v7878.unsafe.llvm.LLVMGlobals.int16_t;
-import static com.v7878.unsafe.llvm.LLVMGlobals.int1_t;
-import static com.v7878.unsafe.llvm.LLVMGlobals.int32_t;
-import static com.v7878.unsafe.llvm.LLVMGlobals.int64_t;
-import static com.v7878.unsafe.llvm.LLVMGlobals.intptr_t;
-import static com.v7878.unsafe.llvm.LLVMGlobals.void_t;
-import static com.v7878.unsafe.llvm.LLVMUtils.buildRawObjectToPointer;
+import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToPointer;
+import static com.v7878.unsafe.llvm.LLVMTypes.int16_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.int1_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.int64_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.intptr_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeArray;
 
 import com.v7878.foreign.Arena;
@@ -89,7 +89,7 @@ import com.v7878.unsafe.foreign.BulkLinker.ASM;
 import com.v7878.unsafe.foreign.BulkLinker.ASMGenerator;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.Conditions;
-import com.v7878.unsafe.llvm.LLVMGlobals;
+import com.v7878.unsafe.llvm.LLVMTypes;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -387,7 +387,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_load_byte_atomic() {
-            return gen_load_atomic("load_byte_atomic", LLVMGlobals::int8_t, 1);
+            return gen_load_atomic("load_byte_atomic", LLVMTypes::int8_t, 1);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 102, -117, 4, 48, -61})
@@ -402,7 +402,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_load_short_atomic() {
-            return gen_load_atomic("load_short_atomic", LLVMGlobals::int16_t, 2);
+            return gen_load_atomic("load_short_atomic", LLVMTypes::int16_t, 2);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -117, 4, 48, -61})
@@ -417,7 +417,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_load_int_atomic() {
-            return gen_load_atomic("load_int_atomic", LLVMGlobals::int32_t, 4);
+            return gen_load_atomic("load_int_atomic", LLVMTypes::int32_t, 4);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 72, -117, 4, 48, -61})
@@ -434,7 +434,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_load_long_atomic() {
-            return gen_load_atomic("load_long_atomic", LLVMGlobals::int64_t, 8);
+            return gen_load_atomic("load_long_atomic", LLVMTypes::int64_t, 8);
         }
 
         private static byte[] gen_store_atomic(
@@ -470,7 +470,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_store_byte_atomic() {
-            return gen_store_atomic("store_byte_atomic", LLVMGlobals::int8_t, 1);
+            return gen_store_atomic("store_byte_atomic", LLVMTypes::int8_t, 1);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 102, -121, 20, 48, -61})
@@ -487,7 +487,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_store_short_atomic() {
-            return gen_store_atomic("store_short_atomic", LLVMGlobals::int16_t, 2);
+            return gen_store_atomic("store_short_atomic", LLVMTypes::int16_t, 2);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -121, 20, 48, -61})
@@ -504,7 +504,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_store_int_atomic() {
-            return gen_store_atomic("store_int_atomic", LLVMGlobals::int32_t, 4);
+            return gen_store_atomic("store_int_atomic", LLVMTypes::int32_t, 4);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 72, -121, 20, 48, -61})
@@ -523,7 +523,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_store_long_atomic() {
-            return gen_store_atomic("store_long_atomic", LLVMGlobals::int64_t, 8);
+            return gen_store_atomic("store_long_atomic", LLVMTypes::int64_t, 8);
         }
 
         private static byte[] gen_atomic_rmw(
@@ -560,7 +560,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_exchange_byte() {
-            return gen_atomic_rmw("atomic_exchange_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpXchg);
+            return gen_atomic_rmw("atomic_exchange_byte", LLVMTypes::int8_t, LLVMAtomicRMWBinOpXchg);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 102, -121, 20, 48, -119, -48, -61})
@@ -579,7 +579,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_exchange_short() {
-            return gen_atomic_rmw("atomic_exchange_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpXchg);
+            return gen_atomic_rmw("atomic_exchange_short", LLVMTypes::int16_t, LLVMAtomicRMWBinOpXchg);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, -121, 20, 48, -119, -48, -61})
@@ -598,7 +598,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_exchange_int() {
-            return gen_atomic_rmw("atomic_exchange_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpXchg);
+            return gen_atomic_rmw("atomic_exchange_int", LLVMTypes::int32_t, LLVMAtomicRMWBinOpXchg);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -8, 72, -121, 20, 48, 72, -119, -48, -61})
@@ -618,7 +618,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_exchange_long() {
-            return gen_atomic_rmw("atomic_exchange_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpXchg);
+            return gen_atomic_rmw("atomic_exchange_long", LLVMTypes::int64_t, LLVMAtomicRMWBinOpXchg);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -639,7 +639,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_and_byte() {
-            return gen_atomic_rmw("atomic_fetch_and_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpAnd);
+            return gen_atomic_rmw("atomic_fetch_and_byte", LLVMTypes::int8_t, LLVMAtomicRMWBinOpAnd);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -660,7 +660,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_and_short() {
-            return gen_atomic_rmw("atomic_fetch_and_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpAnd);
+            return gen_atomic_rmw("atomic_fetch_and_short", LLVMTypes::int16_t, LLVMAtomicRMWBinOpAnd);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -681,7 +681,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_and_int() {
-            return gen_atomic_rmw("atomic_fetch_and_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpAnd);
+            return gen_atomic_rmw("atomic_fetch_and_int", LLVMTypes::int32_t, LLVMAtomicRMWBinOpAnd);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -702,7 +702,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_add_long() {
-            return gen_atomic_rmw("atomic_fetch_and_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpAnd);
+            return gen_atomic_rmw("atomic_fetch_and_long", LLVMTypes::int64_t, LLVMAtomicRMWBinOpAnd);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -723,7 +723,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_or_byte() {
-            return gen_atomic_rmw("atomic_fetch_or_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpOr);
+            return gen_atomic_rmw("atomic_fetch_or_byte", LLVMTypes::int8_t, LLVMAtomicRMWBinOpOr);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -744,7 +744,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_or_short() {
-            return gen_atomic_rmw("atomic_fetch_or_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpOr);
+            return gen_atomic_rmw("atomic_fetch_or_short", LLVMTypes::int16_t, LLVMAtomicRMWBinOpOr);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -765,7 +765,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_or_int() {
-            return gen_atomic_rmw("atomic_fetch_or_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpOr);
+            return gen_atomic_rmw("atomic_fetch_or_int", LLVMTypes::int32_t, LLVMAtomicRMWBinOpOr);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -786,7 +786,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_or_long() {
-            return gen_atomic_rmw("atomic_fetch_or_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpOr);
+            return gen_atomic_rmw("atomic_fetch_or_long", LLVMTypes::int64_t, LLVMAtomicRMWBinOpOr);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -807,7 +807,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_xor_byte() {
-            return gen_atomic_rmw("atomic_fetch_xor_byte", LLVMGlobals::int8_t, LLVMAtomicRMWBinOpXor);
+            return gen_atomic_rmw("atomic_fetch_xor_byte", LLVMTypes::int8_t, LLVMAtomicRMWBinOpXor);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -828,7 +828,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_xor_short() {
-            return gen_atomic_rmw("atomic_fetch_xor_short", LLVMGlobals::int16_t, LLVMAtomicRMWBinOpXor);
+            return gen_atomic_rmw("atomic_fetch_xor_short", LLVMTypes::int16_t, LLVMAtomicRMWBinOpXor);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -849,7 +849,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_xor_int() {
-            return gen_atomic_rmw("atomic_fetch_xor_int", LLVMGlobals::int32_t, LLVMAtomicRMWBinOpXor);
+            return gen_atomic_rmw("atomic_fetch_xor_int", LLVMTypes::int32_t, LLVMAtomicRMWBinOpXor);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {
@@ -870,7 +870,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_fetch_xor_long() {
-            return gen_atomic_rmw("atomic_fetch_xor_long", LLVMGlobals::int64_t, LLVMAtomicRMWBinOpXor);
+            return gen_atomic_rmw("atomic_fetch_xor_long", LLVMTypes::int64_t, LLVMAtomicRMWBinOpXor);
         }
 
         //TODO: weak version?
@@ -913,7 +913,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_exchange_byte() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_byte", LLVMGlobals::int8_t, true);
+            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_byte", LLVMTypes::int8_t, true);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, 102, -16, 15, -79, 12, 55, -61})
@@ -934,7 +934,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_exchange_short() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_short", LLVMGlobals::int16_t, true);
+            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_short", LLVMTypes::int16_t, true);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, -16, 15, -79, 12, 55, -61})
@@ -955,7 +955,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_exchange_int() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_int", LLVMGlobals::int32_t, true);
+            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_int", LLVMTypes::int32_t, true);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, 72, -119, -48, -16, 72, 15, -79, 12, 55, -61})
@@ -978,7 +978,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_exchange_long() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_long", LLVMGlobals::int64_t, true);
+            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_long", LLVMTypes::int64_t, true);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, -16, 15, -80, 12, 55, 15, -108, -64, -61})
@@ -999,7 +999,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_set_byte() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_set_byte", LLVMGlobals::int8_t, false);
+            return gen_atomic_compare_and_exchange("atomic_compare_and_set_byte", LLVMTypes::int8_t, false);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, 102, -16, 15, -79, 12, 55, 15, -108, -64, -61})
@@ -1020,7 +1020,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_set_short() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_set_short", LLVMGlobals::int16_t, false);
+            return gen_atomic_compare_and_exchange("atomic_compare_and_set_short", LLVMTypes::int16_t, false);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, -119, -48, -16, 15, -79, 12, 55, 15, -108, -64, -61})
@@ -1041,7 +1041,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_set_int() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_set_int", LLVMGlobals::int32_t, false);
+            return gen_atomic_compare_and_exchange("atomic_compare_and_set_int", LLVMTypes::int32_t, false);
         }
 
         @ASM(conditions = @Conditions(arch = X86_64, poisoning = FALSE), code = {-119, -1, 72, -119, -48, -16, 72, 15, -79, 12, 55, 15, -108, -64, -61})
@@ -1064,7 +1064,7 @@ public class ExtraMemoryAccess {
         @DoNotObfuscate
         @SuppressWarnings("unused")
         private static byte[] gen_atomic_compare_and_set_long() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_set_long", LLVMGlobals::int64_t, false);
+            return gen_atomic_compare_and_exchange("atomic_compare_and_set_long", LLVMTypes::int64_t, false);
         }
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
