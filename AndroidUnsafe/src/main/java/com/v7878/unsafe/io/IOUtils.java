@@ -38,8 +38,8 @@ import java.nio.channels.FileChannel;
 import java.util.Objects;
 
 public class IOUtils {
-    private static final int file_descriptor_offset = nothrows_run(
-            () -> fieldOffset(getDeclaredField(FileDescriptor.class, "descriptor")));
+    private static final int file_descriptor_offset =
+            fieldOffset(getDeclaredField(FileDescriptor.class, "descriptor"));
 
     public static FileChannel openFileChannel(FileDescriptor fd, String path,
                                               boolean readable, boolean writable,

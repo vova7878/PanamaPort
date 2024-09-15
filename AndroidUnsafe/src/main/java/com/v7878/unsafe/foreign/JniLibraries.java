@@ -118,7 +118,7 @@ public class JniLibraries {
             static final MemorySegment libraries;
 
             static {
-                libraries = JNIUtils.getJavaVMPtr().reinterpret(Long.MAX_VALUE)
+                libraries = JNIUtils.getJavaVM().reinterpret(Long.MAX_VALUE)
                         .get(ADDRESS, libraries_offset).reinterpret(LIBS_MAP.LAYOUT.byteSize());
             }
         }

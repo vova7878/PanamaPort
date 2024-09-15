@@ -2,20 +2,19 @@ package com.v7878.unsafe;
 
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.structLayout;
-import static com.v7878.foreign.MemorySegment.NULL;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
-import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
-import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
+import static com.v7878.unsafe.InstructionSet.ARM;
+import static com.v7878.unsafe.InstructionSet.ARM64;
+import static com.v7878.unsafe.InstructionSet.X86;
+import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Utils.assert_;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_STATIC;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_VIRTUAL_REPLACE_THIS;
@@ -39,7 +38,9 @@ import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker;
+import com.v7878.unsafe.foreign.BulkLinker.ASM;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
+import com.v7878.unsafe.foreign.BulkLinker.Conditions;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
 
@@ -49,9 +50,9 @@ import java.lang.reflect.Modifier;
 import java.util.Objects;
 import java.util.Optional;
 
-import dalvik.annotation.optimization.CriticalNative;
-
 public class JNIUtils {
+    @DoNotShrink
+    private static final Arena SCOPE = Arena.ofAuto();
 
     public static final int JNIInvalidRefType = 0;
     public static final int JNILocalRefType = 1;
@@ -323,77 +324,12 @@ public class JNIUtils {
             ADDRESS.withName("GetEnv"),
             ADDRESS.withName("AttachCurrentThreadAsDaemon")
     );
+
     public static final AddressLayout JavaVM_LAYOUT
             = ADDRESS.withTargetLayout(JNI_INVOKE_INTERFACE_LAYOUT);
 
-    // TODO: get env from native and compute offset heuristically
-    @ApiSensitive
-    @RawOffset
-    private static final long env_offset = nothrows_run(() -> {
-        long tmp;
-        switch (CORRECT_SDK_INT) {
-            case 35 /*android 15*/ -> {
-                tmp = 20 * 4; // tls32_
-                tmp += 8 * 8; // tls64_
-                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
-                return tmp;
-            }
-            case 34 /*android 14*/ -> {
-                tmp = 21 * 4; // tls32_
-                tmp += 4; // padding
-                tmp += 8 * 8; // tls64_
-                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
-                return tmp;
-            }
-            case 33 /*android 13*/ -> {
-                tmp = 20 * 4; // tls32_
-                tmp += 8 * 8; // tls64_
-                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
-                return tmp;
-            }
-            case 32 /*android 12L*/, 31 /*android 12*/ -> {
-                tmp = 4; // StateAndFlags
-                tmp += 21 * 4; // tls32_
-                tmp += 8 * 8; // tls64_
-                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
-                return tmp;
-            }
-            case 30 /*android 11*/ -> {
-                tmp = 4; // StateAndFlags
-                tmp += 22 * 4; // tls32_
-                tmp += 4; // padding
-                tmp += 8 * 8; // tls64_
-                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
-                return tmp;
-            }
-            case 29 /*android 10*/ -> {
-                tmp = 4; // StateAndFlags
-                tmp += 20 * 4; // tls32_
-                tmp += 4; // padding
-                tmp += 8 * 8; // tls64_
-                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
-                return tmp;
-            }
-            case 28 /*android 9*/, 27 /*android 8.1*/ -> {
-                tmp = 4; // StateAndFlags
-                tmp += 17 * 4; // tls32_
-                tmp += 8 * 8; // tls64_
-                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
-                return tmp;
-            }
-            case 26 /*android 8*/ -> {
-                tmp = 4; // StateAndFlags
-                tmp += 15 * 4; // tls32_
-                tmp += 8 * 8; // tls64_
-                tmp += 7L * ADDRESS_SIZE; // tlsPtr_
-                return tmp;
-            }
-            default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-        }
-    });
-
-    private static final long nativePeerOffset = nothrows_run(
-            () -> fieldOffset(getDeclaredField(Thread.class, "nativePeer")));
+    private static final long nativePeerOffset =
+            fieldOffset(getDeclaredField(Thread.class, "nativePeer"));
 
     public static long getRawNativePeer(Thread thread) {
         Objects.requireNonNull(thread);
@@ -406,23 +342,41 @@ public class JNIUtils {
         return MemorySegment.ofAddress(getRawNativePeer(thread));
     }
 
-    public static MemorySegment getEnvPtr(Thread thread) {
-        MemorySegment out = getNativePeer(thread).reinterpret(Long.MAX_VALUE)
-                .get(ADDRESS.withTargetLayout(ADDRESS), env_offset);
-        assert_(!NULL.equals(out), () -> new IllegalStateException("env == nullptr"));
-        return out;
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class ENV {
+        @ASM(conditions = @Conditions(arch = X86_64), code = {72, -119, -8, -61})
+        @ASM(conditions = @Conditions(arch = X86), code = {-117, 68, 36, 4, -61})
+        @ASM(conditions = @Conditions(arch = ARM64), code = {-64, 3, 95, -42})
+        @ASM(conditions = @Conditions(arch = ARM), code = {30, -1, 47, -31})
+        //TODO: @ASM(conditions = @Conditions(arch = RISCV64), code = {})
+        @CallSignature(type = FAST_STATIC, ret = LONG_AS_WORD, args = {})
+        abstract long current();
+
+        static final ENV INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, ENV.class));
     }
 
-    public static MemorySegment getCurrentEnvPtr() {
-        return getEnvPtr(Thread.currentThread());
+    public static long getCurrentEnvPtr() {
+        long env = ENV.INSTANCE.current();
+        if (env == 0) {
+            throw new IllegalStateException("env == nullptr");
+        }
+        return env;
     }
+
+    public static MemorySegment getCurrentEnv() {
+        return MemorySegment.ofAddress(getCurrentEnvPtr()).reinterpret(ADDRESS.byteSize());
+    }
+
+    //TODO: public static MemorySegment getEnvPtr(Thread thread) { }
 
     public static MemorySegment getJNINativeInterface() {
         class Holder {
             static final MemorySegment jni_interface;
 
             static {
-                jni_interface = getCurrentEnvPtr().get(JNIEnv_LAYOUT, 0);
+                jni_interface = getCurrentEnv().get(JNIEnv_LAYOUT, 0);
             }
         }
         return Holder.jni_interface;
@@ -443,41 +397,37 @@ public class JNIUtils {
         };
     }
 
-    public static MemorySegment getJavaVMPtr() {
-        //TODO: refactor
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class JVM {
+        @LibrarySymbol(name = "GetJavaVM")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
+        abstract int get_java_vm(long env, long jvm);
+
+        static final JVM INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, JVM.class, getJNINativeInterfaceLookup()));
+    }
+
+    public static MemorySegment getJavaVM() {
         class Holder {
             static final MemorySegment jvm;
 
-            @DoNotShrink
-            @DoNotObfuscate
-            @CriticalNative
-            public static native int GetJavaVM32(int env, int jvm);
-
-            @DoNotShrink
-            @DoNotObfuscate
-            @CriticalNative
-            public static native int GetJavaVM64(long env, long jvm);
-
             static {
-                Class<?> word = IS64BIT ? long.class : int.class;
-                String suffix = IS64BIT ? "64" : "32";
-                String name = "GetJavaVM";
-
-                MemorySegment env = getCurrentEnvPtr();
-                Method get_vm = getDeclaredMethod(Holder.class, name + suffix, word, word);
-                registerNativeMethod(get_vm, getJNINativeInterfaceFunction(name).nativeAddress());
                 try (Arena arena = Arena.ofConfined()) {
-                    MemorySegment ptr = arena.allocate(ADDRESS);
-                    int status = IS64BIT ? GetJavaVM64(env.nativeAddress(), ptr.nativeAddress()) :
-                            GetJavaVM32((int) env.nativeAddress(), (int) ptr.nativeAddress());
+                    MemorySegment tmp = arena.allocate(ADDRESS);
+                    int status = JVM.INSTANCE.get_java_vm(getCurrentEnvPtr(), tmp.nativeAddress());
                     if (status != JNI_OK) {
-                        throw new IllegalStateException("can`t get JavaVM: " + status);
+                        throw new IllegalStateException("Can`t get JavaVM: " + status);
                     }
-                    jvm = ptr.get(ADDRESS.withTargetLayout(ADDRESS), 0);
+                    jvm = tmp.get(ADDRESS.withTargetLayout(ADDRESS), 0);
                 }
             }
         }
         return Holder.jvm;
+    }
+
+    public static long getJavaVMPtr() {
+        return getJavaVM().nativeAddress();
     }
 
     public static MemorySegment getJNIInvokeInterface() {
@@ -485,7 +435,7 @@ public class JNIUtils {
             static final MemorySegment jni_interface;
 
             static {
-                jni_interface = getJavaVMPtr().get(JavaVM_LAYOUT, 0);
+                jni_interface = getJavaVM().get(JavaVM_LAYOUT, 0);
             }
         }
         return Holder.jni_interface;
@@ -506,7 +456,7 @@ public class JNIUtils {
         };
     }
 
-    public static MemorySegment getRuntimePtr() {
+    public static MemorySegment getRuntime() {
         class Holder {
             static final MemorySegment ptr;
 
@@ -518,12 +468,13 @@ public class JNIUtils {
         return Holder.ptr;
     }
 
+    public static long getRuntimePtr() {
+        return getRuntime().nativeAddress();
+    }
+
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class Native {
-        @DoNotShrink
-        private static final Arena SCOPE = Arena.ofAuto();
-
         @LibrarySymbol(name = "NewGlobalRef")
         @CallSignature(type = FAST_VIRTUAL_REPLACE_THIS, ret = LONG_AS_WORD, args = {OBJECT})
         abstract long NewGlobalRef(Object obj);
@@ -591,24 +542,24 @@ public class JNIUtils {
     }
 
     public static long NewLocalRef(Object obj) {
-        long env = getCurrentEnvPtr().nativeAddress();
+        long env = getCurrentEnvPtr();
         return Native.INSTANCE.NewLocalRef(env, obj);
     }
 
     public static void DeleteLocalRef(long ref) {
-        long env = getCurrentEnvPtr().nativeAddress();
+        long env = getCurrentEnvPtr();
         Native.INSTANCE.DeleteLocalRef(env, ref);
     }
 
     public static void PushLocalFrame(int capacity) {
-        long env = getCurrentEnvPtr().nativeAddress();
+        long env = getCurrentEnvPtr();
         int status = Native.INSTANCE.PushLocalFrame(env, capacity);
         // Note: if the return value != JNI_OK, then OutOfMemoryError is thrown
         assert status == JNI_OK;
     }
 
     public static void PopLocalFrame() {
-        long env = getCurrentEnvPtr().nativeAddress();
+        long env = getCurrentEnvPtr();
         Native.INSTANCE.PopLocalFrame(env, 0);
     }
 
@@ -617,7 +568,7 @@ public class JNIUtils {
     }
 
     public static void DeleteGlobalRef(long ref) {
-        long env = getCurrentEnvPtr().nativeAddress();
+        long env = getCurrentEnvPtr();
         Native.INSTANCE.DeleteGlobalRef(env, ref);
     }
 

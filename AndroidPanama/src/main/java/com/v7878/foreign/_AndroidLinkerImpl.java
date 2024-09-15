@@ -684,7 +684,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 CALL(true, JNIUtils.getJNINativeInterfaceFunction("CallStaticVoidMethod")),
                 EXCEPTION_CHECK(true, JNIUtils.getJNINativeInterfaceFunction("ExceptionCheck")),
                 FATAL_ERROR(true, JNIUtils.getJNINativeInterfaceFunction("FatalError")),
-                JVM(false, JNIUtils.getJavaVMPtr()),
+                JVM(false, JNIUtils.getJavaVM()),
                 LOG_TAG(false, SCOPE.allocateFrom(Utils.LOG_TAG)),
                 LOG_GET_ENV_MSG(false, SCOPE.allocateFrom("Could not get JNIEnv for upcall. JNI error code: %d")),
                 LOG_ATTACH_MSG(false, SCOPE.allocateFrom("Could not attach thread for upcall. JNI error code: %d")),
