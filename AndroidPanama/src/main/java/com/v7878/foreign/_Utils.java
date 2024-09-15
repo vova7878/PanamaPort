@@ -326,15 +326,6 @@ final class _Utils {
         }
     }
 
-    public static void checkPositiveArgument(long value, String name) {
-        if (value < 0) {
-            throw new IllegalArgumentException("The provided " + name + " is negative: " + value);
-        }
-        if (value == 0) {
-            throw new IllegalArgumentException("The provided " + name + " is equals to zero");
-        }
-    }
-
     public static void checkNonNegativeIndex(long value, String name) {
         if (value < 0) {
             throw new IndexOutOfBoundsException("The provided " + name + " is negative: " + value);

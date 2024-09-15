@@ -7,6 +7,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_CHAR;
 import static com.v7878.foreign.ValueLayout.JAVA_FLOAT;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.access.InvokeAccess;
@@ -17,13 +18,13 @@ import com.v7878.unsafe.foreign.RawNativeLibraries;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidLinkerImpl {
 
@@ -128,11 +129,6 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         }
     }
 
-    // some ABIs have special handling for struct members
-    protected void checkStructMember(MemoryLayout member, long offset) {
-        checkLayoutRecursive(member);
-    }
-
     private void checkLayoutRecursive(MemoryLayout layout) {
         if (layout instanceof ValueLayout vl) {
             checkSupported(vl);
@@ -144,7 +140,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                 // check element offset before recursing so that an error points at the
                 // outermost layout first
                 checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
-                checkStructMember(member, offset);
+                checkLayoutRecursive(member);
 
                 offset += member.byteSize();
                 if (!(member instanceof PaddingLayout)) {
@@ -165,6 +161,12 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         } else if (layout instanceof SequenceLayout sl) {
             checkHasNaturalAlignment(layout);
             checkLayoutRecursive(sl.elementLayout());
+            //TODO: what if elementLayout is PaddingLayout?
+            // Hotspot allows this, but it's clearly wrong
+        } else if (layout instanceof PaddingLayout) {
+            // skip
+        } else {
+            throw shouldNotReachHere();
         }
     }
 
@@ -209,35 +211,51 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
         if (ml instanceof StructLayout sl) {
-            MemoryLayout[] memberLayouts = stripNames(sl.memberLayouts(), true);
-            List<MemoryLayout> members = new ArrayList<>(memberLayouts.length);
-            for (MemoryLayout member : memberLayouts) {
-                if (member instanceof StructLayout sl_sl) {
-                    members.addAll(sl_sl.memberLayouts());
-                    continue;
+            //TODO: deduplicate PaddingLayout`s
+            MemoryLayout[] members = sl.memberLayouts().stream().flatMap(member -> {
+                if (member.byteSize() == 0) {
+                    return null;
                 }
-                members.add(member);
+                member = stripNames(member, true);
+                if (member instanceof StructLayout sl_sl) {
+                    return sl_sl.memberLayouts().stream();
+                }
+                return Stream.of(member);
+            }).toArray(MemoryLayout[]::new);
+            if (nested && members.length == 1) {
+                return members[0];
             }
-            if (nested && members.size() == 1) {
-                return members.get(0);
-            }
-            return MemoryLayout.structLayout(members.toArray(new MemoryLayout[0]));
+            return MemoryLayout.structLayout(members);
         } else if (ml instanceof UnionLayout ul) {
-            MemoryLayout[] members = stripNames(ul.memberLayouts(), true);
+            MemoryLayout[] members = ul.memberLayouts().stream().flatMap(member -> {
+                if (member.byteSize() == 0 || member instanceof PaddingLayout) {
+                    return null;
+                }
+                member = stripNames(member, true);
+                if (member instanceof UnionLayout ul_ul) {
+                    return ul_ul.memberLayouts().stream();
+                }
+                return Stream.of(member);
+            }).toArray(MemoryLayout[]::new);
             if (nested && members.length == 1) {
                 return members[0];
             }
             return MemoryLayout.unionLayout(members);
         } else if (ml instanceof SequenceLayout sl) {
-            MemoryLayout el = stripNames(sl.elementLayout(), true);
-            if (nested && sl.elementCount() == 1) {
-                return el;
+            assert nested;
+            MemoryLayout element = stripNames(sl.elementLayout(), true);
+            if (element.byteSize() == 0) {
+                return element;
             }
-            if (el instanceof SequenceLayout el_sl) {
-                long count = sl.elementCount() * el_sl.elementCount();
-                return MemoryLayout.sequenceLayout(count, el_sl.elementLayout());
+            long count = sl.elementCount();
+            if (count == 1) {
+                return element;
             }
-            return MemoryLayout.sequenceLayout(sl.elementCount(), el);
+            if (element instanceof SequenceLayout el_sl) {
+                count *= el_sl.elementCount();
+                element = el_sl.elementLayout();
+            }
+            return MemoryLayout.sequenceLayout(count, element);
         } else if (ml instanceof AddressLayout al) {
             al = al.withoutName();
             if (nested) {
@@ -254,21 +272,21 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         return ml.withoutName(); // ValueLayout and PaddingLayout
     }
 
-    private static MemoryLayout[] stripNames(List<MemoryLayout> layouts, boolean nested) {
-        return layouts.stream()
-                .map(layout -> stripNames(layout, nested))
-                .toArray(MemoryLayout[]::new);
+    private static Stream<MemoryLayout> stripNames(Stream<MemoryLayout> layouts) {
+        return layouts.map(layout -> stripNames(layout, false));
     }
 
-    private static List<MemoryLayout> removeTargets(List<MemoryLayout> layouts) {
-        return List.of(layouts.stream()
-                .map(l -> l instanceof AddressLayout al ? al.withoutTargetLayout() : l)
-                .toArray(MemoryLayout[]::new));
+    private static Stream<MemoryLayout> removeTargets(Stream<MemoryLayout> layouts) {
+        return layouts.map(l -> l instanceof AddressLayout al ? al.withoutTargetLayout() : l);
     }
 
     private static FunctionDescriptor stripNames(FunctionDescriptor function, boolean forUpcall) {
-        var arg_layouts = function.argumentLayouts();
-        MemoryLayout[] args = stripNames(forUpcall ? arg_layouts : removeTargets(arg_layouts), false);
+        var arg_layouts = function.argumentLayouts().stream();
+        if (!forUpcall) {
+            arg_layouts = removeTargets(arg_layouts);
+        }
+        arg_layouts = stripNames(arg_layouts);
+        MemoryLayout[] args = arg_layouts.toArray(MemoryLayout[]::new);
         return function.returnLayout()
                 .map(rl -> FunctionDescriptor.of(stripNames(rl, false), args))
                 .orElseGet(() -> FunctionDescriptor.ofVoid(args));

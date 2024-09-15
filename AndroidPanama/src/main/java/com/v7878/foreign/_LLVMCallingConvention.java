@@ -14,19 +14,17 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import android.util.Pair;
 
-import com.v7878.foreign._StorageDescriptor.LLVMStorage;
-import com.v7878.foreign._StorageDescriptor.MemoryStorage;
-import com.v7878.foreign._StorageDescriptor.NoStorage;
-import com.v7878.foreign._StorageDescriptor.RawStorage;
-import com.v7878.foreign._StorageDescriptor.WrapperStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.LLVMStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.MemoryStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.NoStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.RawStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.WrapperStorage;
 
 import java.util.Arrays;
 
 final class _LLVMCallingConvention {
-
     private static class x86_android {
-
-        public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
+        public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
             LLVMStorage retStorage = descriptor.returnLayout()
                     .map(layout -> layout instanceof GroupLayout ?
                             new MemoryStorage(layout, true) : new RawStorage(layout))
@@ -35,12 +33,11 @@ final class _LLVMCallingConvention {
                     .map(layout -> layout instanceof GroupLayout ?
                             new MemoryStorage(layout, true) : new RawStorage(layout))
                     .toArray(LLVMStorage[]::new);
-            return new _StorageDescriptor(retStorage, argStorages);
+            return new _LLVMStorageDescriptor(retStorage, argStorages);
         }
     }
 
     private static class x86_64_android {
-
         private enum WrapperType {
             FP, INT
         }
@@ -81,7 +78,7 @@ final class _LLVMCallingConvention {
                 }
                 markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
             } else if (layout instanceof PaddingLayout) {
-                /* skip */
+                // skip
             } else {
                 throw shouldNotReachHere();
             }
@@ -132,7 +129,7 @@ final class _LLVMCallingConvention {
                     || layout instanceof ValueLayout.OfFloat;
         }
 
-        public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
+        public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
             final int[] arg_regs = {/* integer regs */ 6, /* floating point regs */ 8};
             LLVMStorage retStorage = descriptor.returnLayout().map(layout -> {
                 if (layout instanceof ValueLayout vl) {
@@ -187,12 +184,11 @@ final class _LLVMCallingConvention {
                 }
                 throw shouldNotReachHere();
             }).toArray(LLVMStorage[]::new);
-            return new _StorageDescriptor(retStorage, argStorages);
+            return new _LLVMStorageDescriptor(retStorage, argStorages);
         }
     }
 
     private static class aarch64_android {
-
         private enum WrapperType {
             FLOAT, DOUBLE, INT
         }
@@ -237,7 +233,7 @@ final class _LLVMCallingConvention {
                 }
                 markWrapperType(types, offset, Math.toIntExact(vl.byteSize()), type);
             } else if (layout instanceof PaddingLayout) {
-                /* skip */
+                // skip
             } else {
                 throw shouldNotReachHere();
             }
@@ -277,7 +273,7 @@ final class _LLVMCallingConvention {
             };
         }
 
-        public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
+        public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
             LLVMStorage retStorage = descriptor.returnLayout().map(layout -> {
                 if (layout instanceof ValueLayout vl) {
                     return new RawStorage(vl);
@@ -306,12 +302,11 @@ final class _LLVMCallingConvention {
                 }
                 throw shouldNotReachHere();
             }).toArray(LLVMStorage[]::new);
-            return new _StorageDescriptor(retStorage, argStorages);
+            return new _LLVMStorageDescriptor(retStorage, argStorages);
         }
     }
 
     private static class arm32_android {
-
         private static MemoryLayout getRetWrapper(MemoryLayout layout) {
             var size = layout.byteSize();
             if (size == 1) {
@@ -332,7 +327,7 @@ final class _LLVMCallingConvention {
                     layout.byteSize(), alignment - 1)) / alignment, type);
         }
 
-        public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
+        public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
             LLVMStorage retStorage = descriptor.returnLayout()
                     .map(layout -> layout instanceof GroupLayout ? (layout.byteSize() <= 4 ?
                             new WrapperStorage(layout, getRetWrapper(layout)) :
@@ -342,11 +337,12 @@ final class _LLVMCallingConvention {
                     .map(layout -> layout instanceof GroupLayout ?
                             new WrapperStorage(layout, getArgWrapper(layout)) : new RawStorage(layout))
                     .toArray(LLVMStorage[]::new);
-            return new _StorageDescriptor(retStorage, argStorages);
+            return new _LLVMStorageDescriptor(retStorage, argStorages);
         }
     }
 
-    public static _StorageDescriptor computeStorages(FunctionDescriptor descriptor) {
+    public static _LLVMStorageDescriptor computeStorages(FunctionDescriptor descriptor) {
+        // TODO: process zero-sized layouts
         return switch (CURRENT_INSTRUCTION_SET) {
             case X86 -> x86_android.computeStorages(descriptor);
             case X86_64 -> x86_64_android.computeStorages(descriptor);

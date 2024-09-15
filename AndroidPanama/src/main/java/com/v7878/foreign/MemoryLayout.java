@@ -1023,13 +1023,13 @@ public sealed interface MemoryLayout
      * @param elementCount  the sequence element count
      * @param elementLayout the sequence element layout
      * @return the new sequence layout with the given element layout and size
-     * @throws IllegalArgumentException if {@code elementCount <= 0}
+     * @throws IllegalArgumentException if {@code elementCount} is negative
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() * elementCount} overflows
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}
      */
     // Port-changed: elementCount can`t be zero
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
-        _Utils.checkPositiveArgument(elementCount, "elementCount");
+        _Utils.checkNonNegativeArgument(elementCount, "elementCount");
         Objects.requireNonNull(elementLayout);
         _Utils.checkElementAlignment(elementLayout,
                 "Element layout size is not multiple of alignment");
@@ -1063,7 +1063,6 @@ public sealed interface MemoryLayout
      * @return a struct layout with the given member layouts
      * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes}
      *                                  of the member layouts overflows
-     * @throws IllegalArgumentException if {@code elements.length == 0}
      * @throws IllegalArgumentException if a member layout in {@code elements} occurs at
      *                                  an offset (relative to the start of the struct layout) which is not
      *                                  compatible with its alignment constraint
@@ -1089,12 +1088,8 @@ public sealed interface MemoryLayout
      * structLayout(JAVA_SHORT, JAVA_INT.withByteAlignment(2));
      *}
      */
-    // Port-changed: elements.length can`t be zero
     static StructLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        if (elements.length == 0) {
-            throw new IllegalArgumentException("elements.length == 0 ");
-        }
         return _Utils.wrapOverflow(() ->
                 _StructLayoutImpl.of(List.of(elements)));
     }
@@ -1107,7 +1102,6 @@ public sealed interface MemoryLayout
      * @return a struct layout with the given member layouts
      * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes}
      *                                  of the member layouts overflows
-     * @throws IllegalArgumentException if {@code elements.length == 0}
      */
     // Port-added
     static StructLayout paddedStructLayout(MemoryLayout... elements) {
@@ -1119,13 +1113,9 @@ public sealed interface MemoryLayout
      *
      * @param elements The member layouts of the union layout
      * @return a union layout with the given member layouts
-     * @throws IllegalArgumentException if {@code elements.length == 0}
      */
     static UnionLayout unionLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        if (elements.length == 0) {
-            throw new IllegalArgumentException("elements.length == 0 ");
-        }
         return _UnionLayoutImpl.of(List.of(elements));
     }
 

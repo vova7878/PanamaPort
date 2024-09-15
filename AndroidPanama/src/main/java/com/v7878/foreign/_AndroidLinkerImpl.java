@@ -93,11 +93,11 @@ import com.v7878.dex.TypeId;
 import com.v7878.foreign.ValueLayout.OfBoolean;
 import com.v7878.foreign.ValueLayout.OfByte;
 import com.v7878.foreign.ValueLayout.OfShort;
-import com.v7878.foreign._StorageDescriptor.LLVMStorage;
-import com.v7878.foreign._StorageDescriptor.MemoryStorage;
-import com.v7878.foreign._StorageDescriptor.NoStorage;
-import com.v7878.foreign._StorageDescriptor.RawStorage;
-import com.v7878.foreign._StorageDescriptor.WrapperStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.LLVMStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.MemoryStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.NoStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.RawStorage;
+import com.v7878.foreign._LLVMStorageDescriptor.WrapperStorage;
 import com.v7878.foreign._ValueLayouts.JavaValueLayout;
 import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.Types.LLVMAttributeRef;
@@ -396,7 +396,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return LLVMFunctionType(returnType, argTypes.toArray(new LLVMTypeRef[0]), false);
     }
 
-    private static LLVMTypeRef sdToLLVMType(LLVMContextRef context, _StorageDescriptor descriptor,
+    private static LLVMTypeRef sdToLLVMType(LLVMContextRef context, _LLVMStorageDescriptor descriptor,
                                             int firstVariadicArgIndex) {
         LLVMStorage retStorage = descriptor.returnStorage();
         LLVMStorage[] argStorages = descriptor.argumentStorages();
@@ -440,7 +440,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     private static MemorySegment generateNativeDowncallStub(
-            Arena scope, _StorageDescriptor target_descriptor,
+            Arena scope, _LLVMStorageDescriptor target_descriptor,
             _FunctionDescriptorImpl stub_descriptor, _LinkerOptions options) {
         final String function_name = "stub";
         return generateFunctionCodeSegment((context, module, builder) -> {
@@ -594,7 +594,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     @Override
     protected MethodHandle arrangeDowncall(FunctionDescriptor descriptor, _LinkerOptions options) {
         _FunctionDescriptorImpl descriptor_impl = (_FunctionDescriptorImpl) descriptor;
-        _StorageDescriptor target_descriptor = _LLVMCallingConvention.computeStorages(descriptor_impl);
+        _LLVMStorageDescriptor target_descriptor = _LLVMCallingConvention.computeStorages(descriptor_impl);
         MemoryLayout ret = null;
         _FunctionDescriptorImpl stub_descriptor = descriptor_impl;
         if (options.isReturnInMemory()) {
@@ -669,7 +669,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     private static MemorySegment generateNativeUpcallStub(
-            Arena scope, _StorageDescriptor stub_descriptor,
+            Arena scope, _LLVMStorageDescriptor stub_descriptor,
             long arranger_id, long class_id, long function_id) {
         // TODO: use pthread_key_create to init threadlocal JNIEnv
         class Holder {
@@ -1040,7 +1040,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     protected UpcallStubFactory arrangeUpcall(
             MethodType target_type, FunctionDescriptor descriptor, _LinkerOptions unused) {
         _FunctionDescriptorImpl descriptor_impl = (_FunctionDescriptorImpl) descriptor;
-        _StorageDescriptor stub_descriptor = _LLVMCallingConvention.computeStorages(descriptor_impl);
+        _LLVMStorageDescriptor stub_descriptor = _LLVMCallingConvention.computeStorages(descriptor_impl);
         MemoryLayout ret = descriptor_impl.returnLayoutPlain();
         _FunctionDescriptorImpl arranger_descriptor = ret == null ? descriptor_impl :
                 descriptor_impl.dropReturnLayout().insertArgumentLayouts(0, ADDRESS);

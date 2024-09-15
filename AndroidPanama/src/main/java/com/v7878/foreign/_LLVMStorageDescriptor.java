@@ -2,7 +2,7 @@ package com.v7878.foreign;
 
 import java.util.Objects;
 
-final class _StorageDescriptor {
+final class _LLVMStorageDescriptor {
     public static sealed class LLVMStorage {
         public final MemoryLayout layout;
 
@@ -51,7 +51,7 @@ final class _StorageDescriptor {
     private final LLVMStorage ret;
     private final LLVMStorage[] args;
 
-    _StorageDescriptor(LLVMStorage ret, LLVMStorage[] args) {
+    _LLVMStorageDescriptor(LLVMStorage ret, LLVMStorage[] args) {
         this.ret = ret;
         this.args = args;
     }

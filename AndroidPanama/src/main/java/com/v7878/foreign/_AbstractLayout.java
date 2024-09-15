@@ -51,7 +51,7 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
     private final String name;
 
     _AbstractLayout(long byteSize, long byteAlignment, String name) {
-        this.byteSize = _Utils.requireByteSizeValid(byteSize, /* Port-changed */ false);
+        this.byteSize = _Utils.requireByteSizeValid(byteSize, true);
         this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToOne(byteAlignment);
         this.name = name;
     }
