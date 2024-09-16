@@ -566,6 +566,7 @@ public class BulkLinker {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
     @DoNotShrinkFull
+    //TODO: add conditions
     public @interface CallSignature {
         CallType type();
 
