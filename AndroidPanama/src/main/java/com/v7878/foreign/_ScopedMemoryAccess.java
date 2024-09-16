@@ -1,8 +1,5 @@
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.InstructionSet.ARM64;
-import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
-
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ExtraMemoryAccess;
 import com.v7878.unsafe.Utils.FineClosable;
@@ -58,57 +55,13 @@ final class _ScopedMemoryAccess {
         return session == null ? null : new SessionScopedLock(session);
     }
 
-    // COPY_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
-    private static final long COPY_NATIVE_THRESHOLD = 1 << 6;
-
     public static void copyMemory(_MemorySessionImpl srcSession, _MemorySessionImpl dstSession,
                                   Object srcBase, long srcOffset,
                                   Object destBase, long destOffset,
                                   long bytes) {
         try (var ignored1 = lock(srcSession);
              var ignored2 = lock(dstSession)) {
-            // TODO: Will this work on android?
-            //if (bytes < COPY_NATIVE_THRESHOLD && !_Utils.overlaps(
-            //        srcBase, srcOffset, bytes, destBase, destOffset, bytes)) {
-            if (false) {
-                // 0 < size < FILL_NATIVE_LIMIT : 0...0X...XXXX
-                //
-                // Strictly, we could check for !src.asSlice(srcOffset, size).overlaps(dst.asSlice(dstOffset, size) but
-                // this is a bit slower and it likely very unusual there is any difference in the outcome. Also, if there
-                // is an overlap, we could tolerate one particular direction of overlap (but not the other).
-
-                // 0...0X...X000
-                final int limit = (int) (bytes & (COPY_NATIVE_THRESHOLD - 8));
-                int copied = 0;
-                for (; copied < limit; copied += 8) {
-                    final long v = AndroidUnsafe.getLongUnaligned(srcBase, srcOffset + copied);
-                    AndroidUnsafe.putLongUnaligned(destBase, destOffset + copied, v);
-                }
-                int remaining = (int) bytes - copied;
-                // 0...0X00
-                if (remaining >= 4) {
-                    final int v = AndroidUnsafe.getIntUnaligned(srcBase, srcOffset + copied);
-                    AndroidUnsafe.putIntUnaligned(destBase, destOffset + copied, v);
-                    copied += 4;
-                    remaining -= 4;
-                }
-                // 0...00X0
-                if (remaining >= 2) {
-                    final short v = AndroidUnsafe.getShortUnaligned(srcBase, srcOffset + copied);
-                    AndroidUnsafe.putShortUnaligned(destBase, destOffset + copied, v);
-                    copied += 2;
-                    remaining -= 2;
-                }
-                // 0...000X
-                if (remaining == 1) {
-                    final byte v = AndroidUnsafe.getByte(srcBase, srcOffset + copied);
-                    AndroidUnsafe.putByte(destBase, destOffset + copied, v);
-                }
-                // We have now fully handled 0...0X...XXXX
-            } else {
-                // For larger sizes, the transition to native code pays off
-                ExtraMemoryAccess.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
-            }
+            ExtraMemoryAccess.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
         }
     }
 
@@ -122,49 +75,9 @@ final class _ScopedMemoryAccess {
         }
     }
 
-    // FILL_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
-    // Update the value for Aarch64 once 8338975 is fixed.
-    private static final long FILL_NATIVE_THRESHOLD = 1L << (CURRENT_INSTRUCTION_SET == ARM64 ? 10 : 5);
-
     public static void setMemory(_MemorySessionImpl session, Object base, long offset, long bytes, byte value) {
         try (var ignored = lock(session)) {
-            // TODO: Will this work on android?
-            //if (bytes < FILL_NATIVE_THRESHOLD) {
-            if (false) {
-                // 0 <= length < FILL_NATIVE_LIMIT : 0...0X...XXXX
-
-                // Handle smaller segments directly without transitioning to native code
-                final long u = Byte.toUnsignedLong(value);
-                final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
-
-                int filled = 0;
-                // 0...0X...X000
-                final int limit = (int) (bytes & (FILL_NATIVE_THRESHOLD - 8));
-                for (; filled < limit; filled += 8) {
-                    AndroidUnsafe.putLongUnaligned(base, offset + filled, longValue);
-                }
-                int remaining = (int) bytes - filled;
-                // 0...0X00
-                if (remaining >= 4) {
-                    AndroidUnsafe.putIntUnaligned(base, offset + filled, (int) longValue);
-                    filled += 4;
-                    remaining -= 4;
-                }
-                // 0...00X0
-                if (remaining >= 2) {
-                    AndroidUnsafe.putShortUnaligned(base, offset + filled, (short) longValue);
-                    filled += 2;
-                    remaining -= 2;
-                }
-                // 0...000X
-                if (remaining == 1) {
-                    AndroidUnsafe.putByte(base, offset + filled, value);
-                }
-                // We have now fully handled 0...0X...XXXX
-            } else {
-                // Handle larger segments via native calls
-                ExtraMemoryAccess.setMemory(base, offset, bytes, value);
-            }
+            ExtraMemoryAccess.setMemory(base, offset, bytes, value);
         }
     }
 
