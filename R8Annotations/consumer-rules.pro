@@ -76,3 +76,30 @@
     @com.v7878.r8.annotations.KeepAttributes <methods>;
     @com.v7878.r8.annotations.KeepAttributes <fields>;
 }
+
+# com.v7878.r8.annotations.NoSideEffects
+-dontwarn com.v7878.r8.annotations.NoSideEffects
+-assumenosideeffects @com.v7878.r8.annotations.NoSideEffects class * {*;}
+-assumenosideeffects class * {
+    @com.v7878.r8.annotations.NoSideEffects <init>(...);
+    @com.v7878.r8.annotations.NoSideEffects <methods>;
+    @com.v7878.r8.annotations.NoSideEffects <fields>;
+}
+
+# R8 specific annotations
+
+# com.v7878.r8.annotations.AlwaysInline
+-dontwarn com.v7878.r8.annotations.AlwaysInline
+-alwaysinline class * {
+    @com.v7878.r8.annotations.AlwaysInline <init>(...);
+    @com.v7878.r8.annotations.AlwaysInline <methods>;
+}
+
+# com.v7878.r8.annotations.CheckDiscard
+-dontwarn com.v7878.r8.annotations.CheckDiscard
+-checkdiscard @com.v7878.r8.annotations.CheckDiscard class *
+-checkdiscard class * {
+    @com.v7878.r8.annotations.CheckDiscard <init>(...);
+    @com.v7878.r8.annotations.CheckDiscard <methods>;
+    @com.v7878.r8.annotations.CheckDiscard <fields>;
+}
