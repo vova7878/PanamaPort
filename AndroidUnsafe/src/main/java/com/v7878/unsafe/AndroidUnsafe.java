@@ -6,6 +6,8 @@ import static com.v7878.misc.Math.toUnsignedLong;
 import static com.v7878.unsafe.Utils.assert_;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
+import com.v7878.r8.annotations.AlwaysInline;
+
 import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -59,11 +61,21 @@ public class AndroidUnsafe {
         return IS_BIG_ENDIAN;
     }
 
+    public static int addressSize() {
+        return ADDRESS_SIZE;
+    }
+
+    public static int pageSize() {
+        return PAGE_SIZE;
+    }
+
+    @AlwaysInline
     private static <E extends Throwable, T> T throwException0(Throwable th) throws E {
         //noinspection unchecked
         throw (E) th;
     }
 
+    @AlwaysInline
     public static <T> T throwException(Throwable th) {
         return throwException0(th);
     }
@@ -86,14 +98,6 @@ public class AndroidUnsafe {
 
     public static void fullFence() {
         SunUnsafe.fullFence();
-    }
-
-    public static int addressSize() {
-        return ADDRESS_SIZE;
-    }
-
-    public static int pageSize() {
-        return PAGE_SIZE;
     }
 
     public static long allocateMemory(long bytes) {
@@ -435,15 +439,18 @@ public class AndroidUnsafe {
         SunUnsafe.putObject(obj, offset, value);
     }
 
+    @AlwaysInline
     private static int pickPos(int top, int pos) {
         return isBigEndian() ? top - pos : pos;
     }
 
+    @AlwaysInline
     private static long makeLong(int i0, int i1) {
         return (toUnsignedLong(i0) << pickPos(32, 0))
                 | (toUnsignedLong(i1) << pickPos(32, 32));
     }
 
+    @AlwaysInline
     private static long makeLong(short i0, short i1, short i2, short i3) {
         return ((toUnsignedLong(i0) << pickPos(48, 0))
                 | (toUnsignedLong(i1) << pickPos(48, 16))
@@ -451,6 +458,7 @@ public class AndroidUnsafe {
                 | (toUnsignedLong(i3) << pickPos(48, 48)));
     }
 
+    @AlwaysInline
     private static long makeLong(byte i0, byte i1, byte i2, byte i3, byte i4, byte i5, byte i6, byte i7) {
         return ((toUnsignedLong(i0) << pickPos(56, 0))
                 | (toUnsignedLong(i1) << pickPos(56, 8))
@@ -462,11 +470,13 @@ public class AndroidUnsafe {
                 | (toUnsignedLong(i7) << pickPos(56, 56)));
     }
 
+    @AlwaysInline
     private static int makeInt(short i0, short i1) {
         return (toUnsignedInt(i0) << pickPos(16, 0))
                 | (toUnsignedInt(i1) << pickPos(16, 16));
     }
 
+    @AlwaysInline
     private static int makeInt(byte i0, byte i1, byte i2, byte i3) {
         return ((toUnsignedInt(i0) << pickPos(24, 0))
                 | (toUnsignedInt(i1) << pickPos(24, 8))
@@ -474,6 +484,7 @@ public class AndroidUnsafe {
                 | (toUnsignedInt(i3) << pickPos(24, 24)));
     }
 
+    @AlwaysInline
     private static short makeShort(byte i0, byte i1) {
         return (short) ((toUnsignedInt(i0) << pickPos(8, 0))
                 | (toUnsignedInt(i1) << pickPos(8, 8)));
@@ -571,18 +582,22 @@ public class AndroidUnsafe {
                 : getIntUnaligned(obj, offset) & 0xffffffffL;
     }
 
+    @AlwaysInline
     private static byte pick(byte le, byte be) {
         return isBigEndian() ? be : le;
     }
 
+    @AlwaysInline
     private static short pick(short le, short be) {
         return isBigEndian() ? be : le;
     }
 
+    @AlwaysInline
     private static int pick(int le, int be) {
         return isBigEndian() ? be : le;
     }
 
+    @AlwaysInline
     private static void putLongParts(Object o, long offset, byte i0, byte i1, byte i2, byte i3, byte i4, byte i5, byte i6, byte i7) {
         putByte(o, offset, pick(i0, i7));
         putByte(o, offset + 1, pick(i1, i6));
@@ -594,6 +609,7 @@ public class AndroidUnsafe {
         putByte(o, offset + 7, pick(i7, i0));
     }
 
+    @AlwaysInline
     private static void putLongParts(Object o, long offset, short i0, short i1, short i2, short i3) {
         putShort(o, offset, pick(i0, i3));
         putShort(o, offset + 2, pick(i1, i2));
@@ -601,16 +617,19 @@ public class AndroidUnsafe {
         putShort(o, offset + 6, pick(i3, i0));
     }
 
+    @AlwaysInline
     private static void putLongParts(Object o, long offset, int i0, int i1) {
         putInt(o, offset, pick(i0, i1));
         putInt(o, offset + 4, pick(i1, i0));
     }
 
+    @AlwaysInline
     private static void putIntParts(Object o, long offset, short i0, short i1) {
         putShort(o, offset, pick(i0, i1));
         putShort(o, offset + 2, pick(i1, i0));
     }
 
+    @AlwaysInline
     private static void putIntParts(Object o, long offset, byte i0, byte i1, byte i2, byte i3) {
         putByte(o, offset, pick(i0, i3));
         putByte(o, offset + 1, pick(i1, i2));
@@ -618,6 +637,7 @@ public class AndroidUnsafe {
         putByte(o, offset + 3, pick(i3, i0));
     }
 
+    @AlwaysInline
     private static void putShortParts(Object o, long offset, byte i0, byte i1) {
         putByte(o, offset, pick(i0, i1));
         putByte(o, offset + 1, pick(i1, i0));

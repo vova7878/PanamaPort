@@ -7,6 +7,7 @@ import android.annotation.SuppressLint;
 import android.util.ArrayMap;
 import android.util.Log;
 
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 
@@ -146,6 +147,7 @@ public class Utils {
         throw new IllegalArgumentException("a(" + a + ") != b(" + b + ")");
     }
 
+    @AlwaysInline
     public static <T extends Throwable> void assert_(boolean value, Supplier<T> th) {
         if (!value) {
             AndroidUnsafe.throwException(th.get());
@@ -154,16 +156,15 @@ public class Utils {
 
     @FunctionalInterface
     public interface TRun<T> {
-
         T run() throws Throwable;
     }
 
     @FunctionalInterface
     public interface VTRun {
-
         void run() throws Throwable;
     }
 
+    @AlwaysInline
     public static <T> T nothrows_run(TRun<T> r) {
         try {
             return r.run();
@@ -172,6 +173,7 @@ public class Utils {
         }
     }
 
+    @AlwaysInline
     public static void nothrows_run(VTRun r) {
         try {
             r.run();
@@ -214,7 +216,6 @@ public class Utils {
     }
 
     public static final class SoftReferenceCache<K, V> {
-
         private final Map<K, Node<K, V>> cache = new ConcurrentHashMap<>();
 
         public V get(K key, Function<K, V> valueFactory) {
@@ -246,7 +247,6 @@ public class Utils {
     }
 
     public static final class WeakReferenceCache<K, V> {
-
         private final Map<K, Node<K, V>> cache = new ConcurrentHashMap<>();
 
         public V get(K key, Function<K, V> valueFactory) {
@@ -372,68 +372,6 @@ public class Utils {
 
     public static RuntimeException badCast(Class<?> from, Class<?> to) {
         throw new ClassCastException("Cannot cast from " + from + " to " + to);
-    }
-
-    public static char boxedTypeAsPrimitiveChar(Class<?> boxed) {
-        if (boxed == Boolean.class) {
-            return 'Z';
-        } else if (boxed == Byte.class) {
-            return 'B';
-        } else if (boxed == Short.class) {
-            return 'S';
-        } else if (boxed == Character.class) {
-            return 'C';
-        } else if (boxed == Integer.class) {
-            return 'I';
-        } else if (boxed == Float.class) {
-            return 'F';
-        } else if (boxed == Long.class) {
-            return 'J';
-        } else if (boxed == Double.class) {
-            return 'D';
-        } else if (boxed == Void.class) {
-            return 'V';
-        }
-        throw unexpectedType(boxed);
-    }
-
-    public static Class<?> primitiveCharAsBoxedType(char prim) {
-        return switch (prim) {
-            case 'Z' -> Boolean.class;
-            case 'B' -> Byte.class;
-            case 'S' -> Short.class;
-            case 'C' -> Character.class;
-            case 'I' -> Integer.class;
-            case 'J' -> Long.class;
-            case 'F' -> Float.class;
-            case 'D' -> Double.class;
-            case 'V' -> Void.class;
-            default -> throw new InternalError(
-                    "Unexpected type char: " + prim);
-        };
-    }
-
-    public static class Lock<T> implements FineClosable {
-        private final T value;
-        private final Consumer<T> action;
-
-        private Lock(T value, Consumer<T> action) {
-            this.value = value;
-            this.action = action;
-        }
-
-        public T value() {
-            return value;
-        }
-
-        @Override
-        public void close() {
-            action.accept(value);
-        }
-    }
-
-    public static <T> Lock<T> lock(T value, Consumer<T> action) {
-        return new Lock<>(value, action);
     }
 
     @SuppressWarnings("finally")

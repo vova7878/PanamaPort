@@ -12,10 +12,8 @@ import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Utils.badCast;
-import static com.v7878.unsafe.Utils.boxedTypeAsPrimitiveChar;
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
-import static com.v7878.unsafe.Utils.primitiveCharAsBoxedType;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.Utils.unexpectedType;
 import static com.v7878.unsafe.invoke.Transformers.INVOKE_TRANSFORMER;
@@ -543,7 +541,7 @@ public class MethodHandlesFixes {
 
         private static void unboxNonNull(Object ref, StackFrameAccessor writer, Class<?> to) {
             Class<?> from = ref.getClass();
-            char from_char = boxedTypeAsPrimitiveChar(from);
+            char from_char = Wrapper.basicTypeChar(Wrapper.asPrimitiveType(from));
             char to_char = Wrapper.basicTypeChar(to);
             switch (from_char) {
                 case 'Z' -> {
@@ -949,6 +947,20 @@ public class MethodHandlesFixes {
             }
         }
 
+        private static Class<?> getBoxedPrimitiveClass(char baseType) {
+            return switch (baseType) {
+                case 'Z' -> Boolean.class;
+                case 'B' -> Byte.class;
+                case 'S' -> Short.class;
+                case 'C' -> Character.class;
+                case 'I' -> Integer.class;
+                case 'J' -> Long.class;
+                case 'F' -> Float.class;
+                case 'D' -> Double.class;
+                default -> null;
+            };
+        }
+
         private void adaptArgument(StackFrameAccessor reader, Class<?> from,
                                    StackFrameAccessor writer, Class<?> to) {
             if (from.equals(to)) {
@@ -1004,9 +1016,9 @@ public class MethodHandlesFixes {
                 if (from.isPrimitive()) {
                     // Boxing conversion
                     char fromBaseType = Wrapper.basicTypeChar(from);
-                    Class<?> fromBoxed = primitiveCharAsBoxedType(fromBaseType);
+                    Class<?> fromBoxed = getBoxedPrimitiveClass(fromBaseType);
                     // 'to' maybe a super class of the boxed `from` type, e.g. Number.
-                    if (!to.isAssignableFrom(fromBoxed)) {
+                    if (fromBoxed != null && !to.isAssignableFrom(fromBoxed)) {
                         throw wrongType();
                     }
                     Object boxed = switch (fromBaseType) {
