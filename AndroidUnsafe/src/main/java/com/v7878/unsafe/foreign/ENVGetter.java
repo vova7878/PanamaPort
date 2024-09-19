@@ -16,7 +16,6 @@ import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Types.LLVMBuilderRef;
 import static com.v7878.llvm.Types.LLVMContextRef;
-import static com.v7878.llvm.Types.LLVMTypeRef;
 import static com.v7878.llvm.Types.LLVMValueRef;
 import static com.v7878.unsafe.JNIUtils.getJNIInvokeInterfaceOffset;
 import static com.v7878.unsafe.foreign.LibArt.ART;
@@ -95,8 +94,8 @@ public class ENVGetter {
     static {
         final String name = "detach";
         DESTRUCTOR = generateFunctionCodeSegment((context, module, builder) -> {
-            LLVMTypeRef f_type = function_t(void_t(context), intptr_t(context));
-            LLVMValueRef function = LLVMAddFunction(module, name, f_type);
+            var f_type = function_t(void_t(context), intptr_t(context));
+            var function = LLVMAddFunction(module, name, f_type);
 
             LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
             var jvm_ptr = JVM.apply(context);
@@ -118,8 +117,8 @@ public class ENVGetter {
             var jni_edetached = const_int32(context, -2);
             var jni_version = const_int32(context, /* JNI_VERSION_1_6 */ 0x00010006);
 
-            LLVMTypeRef f_type = function_t(intptr_t(context));
-            LLVMValueRef function = LLVMAddFunction(module, name, f_type);
+            var f_type = function_t(intptr_t(context));
+            var function = LLVMAddFunction(module, name, f_type);
 
             var init = LLVMAppendBasicBlock(function, "");
             var get_cached_env = LLVMAppendBasicBlock(function, "");
@@ -185,7 +184,7 @@ public class ENVGetter {
             LLVMAddIncoming(abort_code, status, attach);
             LLVMAddIncoming(cache_env_ptr, env_ptr, attach);
             LLVMBuildCondBr(builder, test, cache, abort);
-        }, name, SCOPE).asReadOnly();
+        }, name, SCOPE);
     }
 
     public static MemorySegment INSTANCE = MemorySegment.ofAddress(GETTER.nativeAddress());
