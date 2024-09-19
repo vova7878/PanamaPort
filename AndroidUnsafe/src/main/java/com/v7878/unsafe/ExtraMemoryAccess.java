@@ -11,7 +11,6 @@ import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXor;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildAtomicCmpXchg;
 import static com.v7878.llvm.Core.LLVMBuildAtomicRMW;
-import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildCondBr;
 import static com.v7878.llvm.Core.LLVMBuildExtractValue;
 import static com.v7878.llvm.Core.LLVMBuildICmp;
@@ -22,9 +21,6 @@ import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMBuildStore;
 import static com.v7878.llvm.Core.LLVMBuildSub;
-import static com.v7878.llvm.Core.LLVMConstInt;
-import static com.v7878.llvm.Core.LLVMConstNull;
-import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMGetParams;
 import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
 import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntULT;
@@ -64,6 +60,9 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.SHORT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.BulkLinker.Tristate.FALSE;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToPointer;
+import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
+import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
+import static com.v7878.unsafe.llvm.LLVMTypes.function_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int16_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int1_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
@@ -74,7 +73,6 @@ import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeArray;
 
 import com.v7878.foreign.Arena;
 import com.v7878.llvm.Core.LLVMAtomicRMWBinOp;
-import com.v7878.llvm.Types.LLVMBasicBlockRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMModuleRef;
@@ -179,62 +177,62 @@ public class ExtraMemoryAccess {
         private static void gen_memmove_modify(
                 LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder, String name,
                 LLVMTypeRef element_type, int align, Function<LLVMValueRef, LLVMValueRef> action) {
-            LLVMValueRef one = LLVMConstInt(intptr_t(context), 1, false);
-            LLVMValueRef zero = LLVMConstNull(intptr_t(context));
+            var one = const_intptr(context, 1);
+            var zero = const_intptr(context, 0);
 
-            LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), int32_t(context), intptr_t(context), intptr_t(context)};
-            LLVMTypeRef type = LLVMFunctionType(void_t(context), arg_types, false);
-            LLVMValueRef function = LLVMAddFunction(module, name, type);
-            LLVMValueRef[] args = LLVMGetParams(function);
+            var type = function_t(void_t(context), int32_t(context),
+                    intptr_t(context), int32_t(context), intptr_t(context), intptr_t(context));
+            var function = LLVMAddFunction(module, name, type);
+            var args = LLVMGetParams(function);
 
-            LLVMBasicBlockRef start = LLVMAppendBasicBlock(function, "");
-            LLVMBasicBlockRef body = LLVMAppendBasicBlock(function, "");
-            LLVMBasicBlockRef forward = LLVMAppendBasicBlock(function, "");
-            LLVMBasicBlockRef backward = LLVMAppendBasicBlock(function, "");
-            LLVMBasicBlockRef end = LLVMAppendBasicBlock(function, "");
+            var start = LLVMAppendBasicBlock(function, "");
+            var body = LLVMAppendBasicBlock(function, "");
+            var forward = LLVMAppendBasicBlock(function, "");
+            var backward = LLVMAppendBasicBlock(function, "");
+            var end = LLVMAppendBasicBlock(function, "");
 
             LLVMPositionBuilderAtEnd(builder, start);
-            LLVMValueRef length = args[4];
-            LLVMValueRef test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
+            var length = args[4];
+            var test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
             LLVMBuildCondBr(builder, test_zero, end, body);
 
             LLVMPositionBuilderAtEnd(builder, body);
-            LLVMValueRef langth_m1 = LLVMBuildSub(builder, length, one, "");
-            LLVMValueRef dst = buildRawObjectToPointer(builder, args[0], args[1], element_type);
-            LLVMValueRef src = buildRawObjectToPointer(builder, args[2], args[3], element_type);
-            LLVMValueRef test_order = LLVMBuildICmp(builder, LLVMIntULT, dst, src, "");
+            var langth_m1 = LLVMBuildSub(builder, length, one, "");
+            var dst = buildRawObjectToPointer(builder, args[0], args[1], element_type);
+            var src = buildRawObjectToPointer(builder, args[2], args[3], element_type);
+            var test_order = LLVMBuildICmp(builder, LLVMIntULT, dst, src, "");
             LLVMBuildCondBr(builder, test_order, forward, backward);
 
             {
                 LLVMPositionBuilderAtEnd(builder, forward);
-                LLVMValueRef counter = LLVMBuildPhi(builder, intptr_t(context), "");
+                var counter = LLVMBuildPhi(builder, intptr_t(context), "");
                 LLVMAddIncoming(counter, zero, body);
-                LLVMValueRef src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
-                LLVMValueRef dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
-                LLVMValueRef load = LLVMBuildLoad(builder, src_element, "");
+                var src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
+                var dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
+                var load = LLVMBuildLoad(builder, src_element, "");
                 LLVMSetAlignment(load, align);
-                LLVMValueRef value = action.apply(load);
-                LLVMValueRef store = LLVMBuildStore(builder, value, dst_element);
+                var value = action.apply(load);
+                var store = LLVMBuildStore(builder, value, dst_element);
                 LLVMSetAlignment(store, align);
-                LLVMValueRef next_counter = LLVMBuildAdd(builder, counter, one, "");
+                var next_counter = LLVMBuildAdd(builder, counter, one, "");
                 LLVMAddIncoming(counter, next_counter, forward);
-                LLVMValueRef test_end = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
+                var test_end = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
                 LLVMBuildCondBr(builder, test_end, end, forward);
             }
             {
                 LLVMPositionBuilderAtEnd(builder, backward);
-                LLVMValueRef counter = LLVMBuildPhi(builder, intptr_t(context), "");
+                var counter = LLVMBuildPhi(builder, intptr_t(context), "");
                 LLVMAddIncoming(counter, langth_m1, body);
-                LLVMValueRef src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
-                LLVMValueRef dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
-                LLVMValueRef load = LLVMBuildLoad(builder, src_element, "");
+                var src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
+                var dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
+                var load = LLVMBuildLoad(builder, src_element, "");
                 LLVMSetAlignment(load, align);
-                LLVMValueRef value = action.apply(load);
-                LLVMValueRef store = LLVMBuildStore(builder, value, dst_element);
+                var value = action.apply(load);
+                var store = LLVMBuildStore(builder, value, dst_element);
                 LLVMSetAlignment(store, align);
-                LLVMValueRef next_counter = LLVMBuildSub(builder, counter, one, "");
+                var next_counter = LLVMBuildSub(builder, counter, one, "");
                 LLVMAddIncoming(counter, next_counter, backward);
-                LLVMValueRef test_end = LLVMBuildICmp(builder, LLVMIntEQ, counter, zero, "");
+                var test_end = LLVMBuildICmp(builder, LLVMIntEQ, counter, zero, "");
                 LLVMBuildCondBr(builder, test_end, end, backward);
             }
 
@@ -271,12 +269,11 @@ public class ExtraMemoryAccess {
         private static byte[] gen_memmove_swap_shorts() {
             final String name = "memmove_swap_shorts";
             return generateFunctionCodeArray((context, module, builder) -> {
-                LLVMTypeRef[] bswap16_args = {int16_t(context)};
-                LLVMTypeRef bswap16_type = LLVMFunctionType(int16_t(context), bswap16_args, false);
-                LLVMValueRef bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
+                var bswap16_type = function_t(int16_t(context), int16_t(context));
+                var bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
 
                 gen_memmove_modify(context, module, builder, name, int16_t(context), 1,
-                        value -> LLVMBuildCall(builder, bswap16, new LLVMValueRef[]{value}, ""));
+                        value -> build_call(builder, bswap16, value));
             }, name);
         }
 
@@ -307,12 +304,11 @@ public class ExtraMemoryAccess {
         private static byte[] gen_memmove_swap_ints() {
             final String name = "memmove_swap_ints";
             return generateFunctionCodeArray((context, module, builder) -> {
-                LLVMTypeRef[] bswap32_args = {int32_t(context)};
-                LLVMTypeRef bswap32_type = LLVMFunctionType(int32_t(context), bswap32_args, false);
-                LLVMValueRef bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
+                var bswap32_type = function_t(int32_t(context), int32_t(context));
+                var bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
 
                 gen_memmove_modify(context, module, builder, name, int32_t(context), 1,
-                        value -> LLVMBuildCall(builder, bswap32, new LLVMValueRef[]{value}, ""));
+                        value -> build_call(builder, bswap32, value));
             }, name);
         }
 
@@ -347,27 +343,25 @@ public class ExtraMemoryAccess {
         private static byte[] gen_memmove_swap_longs() {
             final String name = "memmove_swap_longs";
             return generateFunctionCodeArray((context, module, builder) -> {
-                LLVMTypeRef[] bswap64_args = {int64_t(context)};
-                LLVMTypeRef bswap64_type = LLVMFunctionType(int64_t(context), bswap64_args, false);
-                LLVMValueRef bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
+                var bswap64_type = function_t(int64_t(context), int64_t(context));
+                var bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
 
                 gen_memmove_modify(context, module, builder, name, int64_t(context), 1,
-                        value -> LLVMBuildCall(builder, bswap64, new LLVMValueRef[]{value}, ""));
+                        value -> build_call(builder, bswap64, value));
             }, name);
         }
 
         private static byte[] gen_load_atomic(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
             return generateFunctionCodeArray((context, module, builder) -> {
-                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context)};
-                LLVMTypeRef var_type = type.apply(context);
-                LLVMTypeRef f_type = LLVMFunctionType(var_type, arg_types, false);
-                LLVMValueRef function = LLVMAddFunction(module, name, f_type);
-                LLVMValueRef[] args = LLVMGetParams(function);
+                var var_type = type.apply(context);
+                var f_type = function_t(var_type, int32_t(context), intptr_t(context));
+                var function = LLVMAddFunction(module, name, f_type);
+                var args = LLVMGetParams(function);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
-                LLVMValueRef load = LLVMBuildLoad(builder, pointer, "");
+                var pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
+                var load = LLVMBuildLoad(builder, pointer, "");
                 LLVMSetAlignment(load, alignment);
                 LLVMSetOrdering(load, LLVMAtomicOrderingSequentiallyConsistent);
 
@@ -440,15 +434,14 @@ public class ExtraMemoryAccess {
         private static byte[] gen_store_atomic(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
             return generateFunctionCodeArray((context, module, builder) -> {
-                LLVMTypeRef var_type = type.apply(context);
-                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), var_type};
-                LLVMTypeRef f_type = LLVMFunctionType(void_t(context), arg_types, false);
-                LLVMValueRef function = LLVMAddFunction(module, name, f_type);
-                LLVMValueRef[] args = LLVMGetParams(function);
+                var var_type = type.apply(context);
+                var f_type = function_t(void_t(context), int32_t(context), intptr_t(context), var_type);
+                var function = LLVMAddFunction(module, name, f_type);
+                var args = LLVMGetParams(function);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
-                LLVMValueRef store = LLVMBuildStore(builder, args[2], pointer);
+                var pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
+                var store = LLVMBuildStore(builder, args[2], pointer);
                 LLVMSetAlignment(store, alignment);
                 LLVMSetOrdering(store, LLVMAtomicOrderingSequentiallyConsistent);
 
@@ -529,15 +522,14 @@ public class ExtraMemoryAccess {
         private static byte[] gen_atomic_rmw(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, LLVMAtomicRMWBinOp op) {
             return generateFunctionCodeArray((context, module, builder) -> {
-                LLVMTypeRef var_type = type.apply(context);
-                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), var_type};
-                LLVMTypeRef f_type = LLVMFunctionType(var_type, arg_types, false);
-                LLVMValueRef function = LLVMAddFunction(module, name, f_type);
-                LLVMValueRef[] args = LLVMGetParams(function);
+                var var_type = type.apply(context);
+                var f_type = function_t(var_type, int32_t(context), intptr_t(context), var_type);
+                var function = LLVMAddFunction(module, name, f_type);
+                var args = LLVMGetParams(function);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
-                LLVMValueRef rmw = LLVMBuildAtomicRMW(builder, op, pointer, args[2],
+                var pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
+                var rmw = LLVMBuildAtomicRMW(builder, op, pointer, args[2],
                         LLVMAtomicOrderingSequentiallyConsistent, false);
 
                 LLVMBuildRet(builder, rmw);
@@ -877,19 +869,18 @@ public class ExtraMemoryAccess {
         private static byte[] gen_atomic_compare_and_exchange(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, boolean ret_value) {
             return generateFunctionCodeArray((context, module, builder) -> {
-                LLVMTypeRef var_type = type.apply(context);
-                LLVMTypeRef[] arg_types = {int32_t(context), intptr_t(context), var_type, var_type};
-                LLVMTypeRef r_type = ret_value ? var_type : int1_t(context);
-                LLVMTypeRef f_type = LLVMFunctionType(r_type, arg_types, false);
-                LLVMValueRef function = LLVMAddFunction(module, name, f_type);
-                LLVMValueRef[] args = LLVMGetParams(function);
+                var var_type = type.apply(context);
+                var r_type = ret_value ? var_type : int1_t(context);
+                var f_type = function_t(r_type, int32_t(context), intptr_t(context), var_type, var_type);
+                var function = LLVMAddFunction(module, name, f_type);
+                var args = LLVMGetParams(function);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                LLVMValueRef pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
-                LLVMValueRef cmpxchg = LLVMBuildAtomicCmpXchg(builder, pointer, args[2],
+                var pointer = buildRawObjectToPointer(builder, args[0], args[1], var_type);
+                var cmpxchg = LLVMBuildAtomicCmpXchg(builder, pointer, args[2],
                         args[3], LLVMAtomicOrderingSequentiallyConsistent,
                         LLVMAtomicOrderingSequentiallyConsistent, false);
-                LLVMValueRef ret = LLVMBuildExtractValue(builder, cmpxchg, ret_value ? 0 : 1, "");
+                var ret = LLVMBuildExtractValue(builder, cmpxchg, ret_value ? 0 : 1, "");
 
                 LLVMBuildRet(builder, ret);
             }, name);

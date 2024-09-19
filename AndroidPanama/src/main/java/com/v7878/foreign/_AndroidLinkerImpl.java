@@ -21,7 +21,6 @@ import static com.v7878.llvm.Core.LLVMArrayType;
 import static com.v7878.llvm.Core.LLVMAttributeIndex.LLVMAttributeFirstArgIndex;
 import static com.v7878.llvm.Core.LLVMBuildAlloca;
 import static com.v7878.llvm.Core.LLVMBuildBr;
-import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildCondBr;
 import static com.v7878.llvm.Core.LLVMBuildFPCast;
 import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
@@ -56,6 +55,7 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToAddress;
+import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_load_ptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.functionPointerFactory;
@@ -64,6 +64,7 @@ import static com.v7878.unsafe.llvm.LLVMBuilder.pointerFactory;
 import static com.v7878.unsafe.llvm.LLVMTypes.double_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.float_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.function_ptr_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.function_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int16_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int1_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
@@ -103,6 +104,7 @@ import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.JNIUtils;
+import com.v7878.unsafe.foreign.ENVGetter;
 import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
@@ -394,7 +396,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             argTypes.add(0, void_ptr_t(context)); // JNIEnv*
             argTypes.add(1, void_ptr_t(context)); // jclass
         }
-        return LLVMFunctionType(returnType, argTypes.toArray(new LLVMTypeRef[0]), false);
+        return function_t(returnType, argTypes.toArray(new LLVMTypeRef[0]));
     }
 
     private static LLVMTypeRef sdToLLVMType(LLVMContextRef context, _LLVMStorageDescriptor descriptor,
@@ -542,7 +544,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 }
             }
 
-            LLVMValueRef call = LLVMBuildCall(builder, target, Arrays.copyOf(target_args, count), "");
+            LLVMValueRef call = build_call(builder, target, Arrays.copyOf(target_args, count));
 
             final int offset = LLVMAttributeFirstArgIndex;
             for (int i = 0; i < count; i++) {
@@ -681,7 +683,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     intptrFactory(SCOPE.allocateFrom("Uncaught exception in upcall:"));
 
             private static final Function<LLVMBuilderRef, LLVMValueRef> INIT =
-                    functionPointerFactory(SCOPE, _ENVGetter.getter(), context ->
+                    functionPointerFactory(SCOPE, ENVGetter.INSTANCE, context ->
                             function_ptr_t(intptr_t(context)));
 
             private static final BiFunction<LLVMBuilderRef, LLVMValueRef, LLVMValueRef> CALL =
@@ -712,8 +714,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             var normal_exit = LLVMAppendBasicBlock(stub, "");
 
             LLVMPositionBuilderAtEnd(builder, init);
-            var env_ptr = LLVMBuildCall(builder, Holder.INIT.apply(builder),
-                    new LLVMValueRef[0], "");
+            var env_ptr = build_call(builder, Holder.INIT.apply(builder));
             var env_iface = build_load_ptr(builder, intptr_t(context), env_ptr);
             LLVMBuildBr(builder, body);
 
@@ -796,14 +797,14 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 }
             }
 
-            LLVMBuildCall(builder, target, Arrays.copyOf(target_args, count), "");
-            var test_exceptions = LLVMBuildCall(builder,
-                    Holder.EXCEPTION_CHECK.apply(builder, env_iface), new LLVMValueRef[]{env_ptr}, "");
+            build_call(builder, target, Arrays.copyOf(target_args, count));
+            var test_exceptions = build_call(builder,
+                    Holder.EXCEPTION_CHECK.apply(builder, env_iface), env_ptr);
             LLVMBuildCondBr(builder, test_exceptions, uncaught_exception, normal_exit);
 
             LLVMPositionBuilderAtEnd(builder, uncaught_exception);
-            LLVMBuildCall(builder, Holder.FATAL_ERROR.apply(builder, env_iface), new LLVMValueRef[]{
-                    env_ptr, Holder.UNCAUGHT_EXCEPTION_MSG.apply(context)}, "");
+            build_call(builder, Holder.FATAL_ERROR.apply(builder, env_iface),
+                    env_ptr, Holder.UNCAUGHT_EXCEPTION_MSG.apply(context));
             LLVMBuildUnreachable(builder);
 
             LLVMPositionBuilderAtEnd(builder, normal_exit);

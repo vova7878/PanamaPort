@@ -1,6 +1,7 @@
 package com.v7878.unsafe.llvm;
 
 import static com.v7878.llvm.Core.LLVMBuildAdd;
+import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
 import static com.v7878.llvm.Core.LLVMBuildNeg;
@@ -133,6 +134,10 @@ public class LLVMBuilder {
     public static LLVMValueRef build_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value, long offset) {
         var context = getBuilderContext(builder);
         return build_load_ptr(builder, type, value, const_intptr(context, offset));
+    }
+
+    public static LLVMValueRef build_call(LLVMBuilderRef builder, LLVMValueRef target, LLVMValueRef... args) {
+        return LLVMBuildCall(builder, target, args, "");
     }
 
     public static BiFunction<LLVMBuilderRef, LLVMValueRef, LLVMValueRef> pointerFactory(

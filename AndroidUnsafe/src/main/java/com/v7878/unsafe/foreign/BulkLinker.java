@@ -12,10 +12,8 @@ import static com.v7878.dex.bytecode.CodeBuilder.UnOp.LONG_TO_INT;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
-import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
-import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMGetParams;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
@@ -39,10 +37,12 @@ import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildAddressToRawObject;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToAddress;
+import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_const_load_ptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
 import static com.v7878.unsafe.llvm.LLVMTypes.double_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.float_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.function_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int16_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int1_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
@@ -385,7 +385,7 @@ public class BulkLinker {
             }
         }
 
-        return LLVMFunctionType(retType, argTypes.toArray(new LLVMTypeRef[0]), false);
+        return function_t(retType, argTypes.toArray(new LLVMTypeRef[0]));
     }
 
     private static byte[] generateNativeStub(SymbolInfo info, long symbol_ptr) {
@@ -415,7 +415,7 @@ public class BulkLinker {
                 }
                 index++;
             }
-            LLVMValueRef ret_val = LLVMBuildCall(builder, target_ptr, args, "");
+            LLVMValueRef ret_val = build_call(builder, target_ptr, args);
             if (info.ret == MapType.VOID) {
                 LLVMBuildRetVoid(builder);
             } else {

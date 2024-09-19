@@ -1,11 +1,10 @@
-package com.v7878.foreign;
+package com.v7878.unsafe.foreign;
 
 import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAddIncoming;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMBuildAlloca;
 import static com.v7878.llvm.Core.LLVMBuildBr;
-import static com.v7878.llvm.Core.LLVMBuildCall;
 import static com.v7878.llvm.Core.LLVMBuildCondBr;
 import static com.v7878.llvm.Core.LLVMBuildICmp;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
@@ -13,7 +12,6 @@ import static com.v7878.llvm.Core.LLVMBuildPhi;
 import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMBuildUnreachable;
-import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Types.LLVMBuilderRef;
@@ -22,6 +20,7 @@ import static com.v7878.llvm.Types.LLVMTypeRef;
 import static com.v7878.llvm.Types.LLVMValueRef;
 import static com.v7878.unsafe.JNIUtils.getJNIInvokeInterfaceOffset;
 import static com.v7878.unsafe.foreign.LibArt.ART;
+import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_load_ptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.const_int32;
 import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
@@ -29,6 +28,7 @@ import static com.v7878.unsafe.llvm.LLVMBuilder.functionPointerFactory;
 import static com.v7878.unsafe.llvm.LLVMBuilder.intptrFactory;
 import static com.v7878.unsafe.llvm.LLVMBuilder.pointerFactory;
 import static com.v7878.unsafe.llvm.LLVMTypes.function_ptr_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.function_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.ptr_t;
@@ -36,16 +36,16 @@ import static com.v7878.unsafe.llvm.LLVMTypes.variadic_function_ptr_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeSegment;
 
+import com.v7878.foreign.Arena;
+import com.v7878.foreign.MemorySegment;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.Utils;
-import com.v7878.unsafe.foreign.PThread;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-//TODO: more correct names
-public class _ENVGetter {
+public class ENVGetter {
     @DoNotShrink
     private static final Arena SCOPE = Arena.ofAuto();
 
@@ -90,40 +90,35 @@ public class _ENVGetter {
             pointerFactory(getJNIInvokeInterfaceOffset("DetachCurrentThread"), context ->
                     function_ptr_t(int32_t(context), intptr_t(context)));
 
-    private static final MemorySegment destructor;
+    private static final MemorySegment DESTRUCTOR;
 
     static {
         final String name = "detach";
-        destructor = generateFunctionCodeSegment((context, module, builder) -> {
-            LLVMTypeRef[] arg_types = {intptr_t(context)};
-            LLVMTypeRef ret_type = void_t(context);
-            LLVMTypeRef f_type = LLVMFunctionType(ret_type, arg_types, false);
+        DESTRUCTOR = generateFunctionCodeSegment((context, module, builder) -> {
+            LLVMTypeRef f_type = function_t(void_t(context), intptr_t(context));
             LLVMValueRef function = LLVMAddFunction(module, name, f_type);
 
             LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
             var jvm_ptr = JVM.apply(context);
             var jvm_iface = build_load_ptr(builder, intptr_t(context), jvm_ptr);
-            LLVMBuildCall(builder, DETACH.apply(builder, jvm_iface),
-                    new LLVMValueRef[]{jvm_ptr}, "");
+            build_call(builder, DETACH.apply(builder, jvm_iface), jvm_ptr);
             LLVMBuildRetVoid(builder);
         }, name, SCOPE);
     }
 
-    private static final int KEY = PThread.pthread_key_create(destructor.nativeAddress());
+    private static final int KEY = PThread.pthread_key_create(DESTRUCTOR.nativeAddress());
 
-    private static final MemorySegment getter;
+    private static final MemorySegment GETTER;
 
     static {
         final String name = "getter";
-        getter = generateFunctionCodeSegment((context, module, builder) -> {
+        GETTER = generateFunctionCodeSegment((context, module, builder) -> {
             var nullptr = const_intptr(context, 0);
             var zero32 = const_int32(context, 0);
             var jni_edetached = const_int32(context, -2);
             var jni_version = const_int32(context, /* JNI_VERSION_1_6 */ 0x00010006);
 
-            LLVMTypeRef[] arg_types = {};
-            LLVMTypeRef ret_type = intptr_t(context);
-            LLVMTypeRef f_type = LLVMFunctionType(ret_type, arg_types, false);
+            LLVMTypeRef f_type = function_t(intptr_t(context));
             LLVMValueRef function = LLVMAddFunction(module, name, f_type);
 
             var init = LLVMAppendBasicBlock(function, "");
@@ -143,9 +138,9 @@ public class _ENVGetter {
 
             LLVMPositionBuilderAtEnd(builder, abort);
             var abort_msg = LLVMBuildPhi(builder, intptr_t(context), "");
-            var msg_code = LLVMBuildPhi(builder, int32_t(context), "");
-            LLVMBuildCall(builder, LOG_ASSERT.apply(builder), new LLVMValueRef[]{
-                    const_intptr(context, 0), LOG_TAG.apply(context), abort_msg, msg_code}, "");
+            var abort_code = LLVMBuildPhi(builder, int32_t(context), "");
+            build_call(builder, LOG_ASSERT.apply(builder), const_intptr(context, 0),
+                    LOG_TAG.apply(context), abort_msg, abort_code);
             LLVMBuildUnreachable(builder);
 
             LLVMPositionBuilderAtEnd(builder, exit);
@@ -153,49 +148,45 @@ public class _ENVGetter {
             LLVMBuildRet(builder, ret_env);
 
             LLVMPositionBuilderAtEnd(builder, cache);
-            var ret_env_ptr = LLVMBuildPhi(builder, ptr_t(intptr_t(context)), "");
-            var env_ = LLVMBuildLoad(builder, ret_env_ptr, "");
-            LLVMAddIncoming(ret_env, env_, cache);
-            var status = LLVMBuildCall(builder, SET_SPECIFIC.apply(builder), new LLVMValueRef[]{
-                    pthread_key, env_}, "");
+            var cache_env_ptr = LLVMBuildPhi(builder, ptr_t(intptr_t(context)), "");
+            var cache_env = LLVMBuildLoad(builder, cache_env_ptr, "");
+            LLVMAddIncoming(ret_env, cache_env, cache);
+            var status = build_call(builder, SET_SPECIFIC.apply(builder), pthread_key, cache_env);
             var test = LLVMBuildICmp(builder, LLVMIntEQ, status, zero32, "");
             LLVMAddIncoming(abort_msg, LOG_SET_SPECIFIC.apply(context), cache);
-            LLVMAddIncoming(msg_code, status, cache);
+            LLVMAddIncoming(abort_code, status, cache);
             LLVMBuildCondBr(builder, test, exit, abort);
 
             LLVMPositionBuilderAtEnd(builder, get_cached_env);
-            var env = LLVMBuildCall(builder, GET_SPECIFIC.apply(builder),
-                    new LLVMValueRef[]{pthread_key}, "");
+            var env = build_call(builder, GET_SPECIFIC.apply(builder), pthread_key);
             LLVMAddIncoming(ret_env, env, get_cached_env);
             test = LLVMBuildICmp(builder, LLVMIntEQ, env, nullptr, "");
             LLVMBuildCondBr(builder, test, get_env, exit);
 
             LLVMPositionBuilderAtEnd(builder, get_env);
             var env_ptr = LLVMBuildAlloca(builder, intptr_t(context), "");
-            status = LLVMBuildCall(builder, GET_ENV.apply(builder, jvm_iface), new LLVMValueRef[]{
-                    jvm_ptr, env_ptr, jni_version}, "");
+            status = build_call(builder, GET_ENV.apply(builder, jvm_iface),
+                    jvm_ptr, env_ptr, jni_version);
             test = LLVMBuildICmp(builder, LLVMIntEQ, status, zero32, "");
-            LLVMAddIncoming(ret_env_ptr, env_ptr, get_env);
+            LLVMAddIncoming(cache_env_ptr, env_ptr, get_env);
             LLVMBuildCondBr(builder, test, cache, check_detached);
 
             LLVMPositionBuilderAtEnd(builder, check_detached);
             test = LLVMBuildICmp(builder, LLVMIntEQ, status, jni_edetached, "");
             LLVMAddIncoming(abort_msg, LOG_GET_ENV_MSG.apply(context), check_detached);
-            LLVMAddIncoming(msg_code, status, check_detached);
+            LLVMAddIncoming(abort_code, status, check_detached);
             LLVMBuildCondBr(builder, test, attach, abort);
 
             LLVMPositionBuilderAtEnd(builder, attach);
-            status = LLVMBuildCall(builder, ATTACH.apply(builder, jvm_iface), new LLVMValueRef[]{
-                    jvm_ptr, env_ptr, nullptr}, "");
+            status = build_call(builder, ATTACH.apply(builder, jvm_iface),
+                    jvm_ptr, env_ptr, nullptr);
             test = LLVMBuildICmp(builder, LLVMIntEQ, status, zero32, "");
             LLVMAddIncoming(abort_msg, LOG_ATTACH_MSG.apply(context), attach);
-            LLVMAddIncoming(msg_code, status, attach);
-            LLVMAddIncoming(ret_env_ptr, env_ptr, attach);
+            LLVMAddIncoming(abort_code, status, attach);
+            LLVMAddIncoming(cache_env_ptr, env_ptr, attach);
             LLVMBuildCondBr(builder, test, cache, abort);
         }, name, SCOPE).asReadOnly();
     }
 
-    public static MemorySegment getter() {
-        return getter;
-    }
+    public static MemorySegment INSTANCE = MemorySegment.ofAddress(GETTER.nativeAddress());
 }

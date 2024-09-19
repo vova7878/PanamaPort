@@ -16,7 +16,6 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 public class RawNativeLibraries {
-
     public static final NativeLibrary DEFAULT = load("libc.so");
 
     public static long findNative(ClassLoader loader, String name) {
@@ -135,8 +134,7 @@ public class RawNativeLibraries {
             return "RawNativeLibraryImpl{" +
                     "name='" + name + '\'' +
                     ", handle=" + handle +
-                    ", closed=" + closed +
-                    '}';
+                    ", closed=" + closed + '}';
         }
     }
 }
