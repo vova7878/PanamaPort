@@ -130,7 +130,7 @@ public class IOUtils {
         }
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_name = arena.allocateFrom(name);
-            int value = Native.INSTANCE.ashmem_create_region(c_name.address(), size);
+            int value = Native.INSTANCE.ashmem_create_region(c_name.nativeAddress(), size);
             if (value == -1) {
                 throw new ErrnoException("ashmem_create_region", Errno.errno());
             }

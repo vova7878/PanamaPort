@@ -1,5 +1,6 @@
 package com.v7878.unsafe;
 
+import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
@@ -7,6 +8,8 @@ import android.annotation.SuppressLint;
 import android.util.ArrayMap;
 import android.util.Log;
 
+import com.v7878.foreign.Arena;
+import com.v7878.foreign.MemorySegment;
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
@@ -383,6 +386,12 @@ public class Utils {
                 System.exit(1);
             }
         }
+    }
+
+    public static MemorySegment allocateAddress(Arena scope, MemorySegment value) {
+        MemorySegment out = scope.allocate(ADDRESS);
+        out.set(ADDRESS, 0, value);
+        return out;
     }
 
     public static <T> Stream<T> iterate(T seed, Predicate<? super T> hasNext, UnaryOperator<T> next) {

@@ -8,9 +8,11 @@ import static com.v7878.foreign.ValueLayout.OfLong;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 
 import com.v7878.foreign.ValueLayout;
+import com.v7878.unsafe.foreign.ExtraLayouts;
 
-public class CTypes {
+public class CLayouts {
     public static final ValueLayout C_WCHAR_T = JAVA_INT;
+    public static final ValueLayout C_LONG = ExtraLayouts.WORD;
     public static final OfLong C_LONG_LONG = JAVA_LONG.withByteAlignment(
             CURRENT_INSTRUCTION_SET.alignofLongLong());
     public static final OfDouble C_DOUBLE = JAVA_DOUBLE.withByteAlignment(

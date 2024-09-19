@@ -387,6 +387,10 @@ public class JNIUtils {
                 JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
     }
 
+    public static long getJNINativeInterfaceOffset(String name) {
+        return JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name));
+    }
+
     public static SymbolLookup getJNINativeInterfaceLookup() {
         return (name) -> {
             try {
@@ -444,6 +448,10 @@ public class JNIUtils {
     public static MemorySegment getJNIInvokeInterfaceFunction(String name) {
         return getJNIInvokeInterface().get(ADDRESS,
                 JNI_INVOKE_INTERFACE_LAYOUT.byteOffset(groupElement(name)));
+    }
+
+    public static long getJNIInvokeInterfaceOffset(String name) {
+        return JNI_INVOKE_INTERFACE_LAYOUT.byteOffset(groupElement(name));
     }
 
     public static SymbolLookup getJNIInvokeInterfaceLookup() {

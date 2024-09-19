@@ -12,8 +12,7 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.access.InvokeAccess;
 import com.v7878.unsafe.access.JavaForeignAccess;
-import com.v7878.unsafe.cpp_std.CTypes;
-import com.v7878.unsafe.foreign.ExtraLayouts;
+import com.v7878.unsafe.cpp_std.CLayouts;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
 
 import java.lang.invoke.MethodHandle;
@@ -310,19 +309,19 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                         Map.entry("short", JAVA_SHORT),
                         Map.entry("int", JAVA_INT),
                         Map.entry("float", JAVA_FLOAT),
-                        Map.entry("long", ExtraLayouts.WORD),
-                        Map.entry("long long", CTypes.C_LONG_LONG),
-                        Map.entry("double", CTypes.C_DOUBLE),
+                        Map.entry("long", CLayouts.C_LONG),
+                        Map.entry("long long", CLayouts.C_LONG_LONG),
+                        Map.entry("double", CLayouts.C_DOUBLE),
                         Map.entry("void*", ADDRESS),
-                        Map.entry("size_t", ExtraLayouts.WORD),
-                        Map.entry("wchar_t", CTypes.C_WCHAR_T),
+                        Map.entry("size_t", CLayouts.C_LONG),
+                        Map.entry("wchar_t", CLayouts.C_WCHAR_T),
 
                         // unspecified size-dependent layouts
                         Map.entry("int8_t", JAVA_BYTE),
                         Map.entry("int16_t", JAVA_SHORT),
                         Map.entry("int32_t", JAVA_INT),
-                        Map.entry("int64_t", CTypes.C_LONG_LONG),
-                        Map.entry("intptr_t", ExtraLayouts.WORD),
+                        Map.entry("int64_t", CLayouts.C_LONG_LONG),
+                        Map.entry("intptr_t", CLayouts.C_LONG),
 
                         // unspecified JNI layouts
                         Map.entry("jboolean", JAVA_BOOLEAN),
@@ -330,9 +329,9 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                         Map.entry("jbyte", JAVA_BYTE),
                         Map.entry("jshort", JAVA_SHORT),
                         Map.entry("jint", JAVA_INT),
-                        Map.entry("jlong", CTypes.C_LONG_LONG),
+                        Map.entry("jlong", CLayouts.C_LONG_LONG),
                         Map.entry("jfloat", JAVA_FLOAT),
-                        Map.entry("jdouble", CTypes.C_DOUBLE)
+                        Map.entry("jdouble", CLayouts.C_DOUBLE)
                 );
             }
         }

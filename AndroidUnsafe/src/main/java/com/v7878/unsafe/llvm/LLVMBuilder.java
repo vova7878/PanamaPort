@@ -7,7 +7,6 @@ import static com.v7878.llvm.Core.LLVMBuildNeg;
 import static com.v7878.llvm.Core.LLVMBuildPtrToInt;
 import static com.v7878.llvm.Core.LLVMBuildTrunc;
 import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
-import static com.v7878.llvm.Core.LLVMConstAdd;
 import static com.v7878.llvm.Core.LLVMConstInt;
 import static com.v7878.llvm.Core.LLVMConstIntOfArbitraryPrecision;
 import static com.v7878.llvm.Core.LLVMConstIntToPtr;
@@ -29,7 +28,13 @@ import static com.v7878.unsafe.llvm.LLVMTypes.int8_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.ptr_t;
 
+import com.v7878.foreign.Arena;
+import com.v7878.foreign.MemorySegment;
+import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.VM;
+
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class LLVMBuilder {
     public static LLVMModuleRef getBuilderModule(LLVMBuilderRef builder) {
@@ -98,22 +103,53 @@ public class LLVMBuilder {
         return LLVMConstInt(int1_t(context), value ? 1 : 0, false);
     }
 
-    public static LLVMValueRef const_ptr(LLVMContextRef context, LLVMTypeRef type, long value, long offset) {
-        var ptr = LLVMConstAdd(const_intptr(context, value), const_intptr(context, offset));
-        return LLVMConstIntToPtr(ptr, ptr_t(type));
-    }
-
     public static LLVMValueRef const_ptr(LLVMContextRef context, LLVMTypeRef type, long value) {
-        return const_ptr(context, type, value, 0);
+        return LLVMConstIntToPtr(const_intptr(context, value), ptr_t(type));
     }
 
-    public static LLVMValueRef const_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value, long offset) {
+    public static LLVMValueRef const_ptr(LLVMContextRef context, LLVMTypeRef type, long value, long offset) {
+        return const_ptr(context, type, value + offset);
+    }
+
+    public static LLVMValueRef build_const_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value) {
         var context = getBuilderContext(builder);
-        var ptr = const_ptr(context, ptr_t(type), value, offset);
+        var ptr = const_ptr(context, type, value);
         return LLVMBuildLoad(builder, ptr, "");
     }
 
-    public static LLVMValueRef const_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value) {
-        return const_load_ptr(builder, type, value, 0);
+    public static LLVMValueRef build_const_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value, long offset) {
+        return build_const_load_ptr(builder, type, value + offset);
+    }
+
+    public static LLVMValueRef build_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value) {
+        var ptr = LLVMBuildIntToPtr(builder, value, ptr_t(type), "");
+        return LLVMBuildLoad(builder, ptr, "");
+    }
+
+    public static LLVMValueRef build_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value, LLVMValueRef offset) {
+        return build_load_ptr(builder, type, LLVMBuildAdd(builder, value, offset, ""));
+    }
+
+    public static LLVMValueRef build_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value, long offset) {
+        var context = getBuilderContext(builder);
+        return build_load_ptr(builder, type, value, const_intptr(context, offset));
+    }
+
+    public static BiFunction<LLVMBuilderRef, LLVMValueRef, LLVMValueRef> pointerFactory(
+            long offset, Function<LLVMContextRef, LLVMTypeRef> type) {
+        return (builder, base) -> build_load_ptr(builder,
+                type.apply(getBuilderContext(builder)), base, offset);
+    }
+
+    public static Function<LLVMBuilderRef, LLVMValueRef> functionPointerFactory(
+            Arena scope, MemorySegment value, Function<LLVMContextRef, LLVMTypeRef> type) {
+        //TODO: indirect pointers may be unnecessary for some architectures
+        MemorySegment holder = Utils.allocateAddress(scope, value);
+        return builder -> build_const_load_ptr(builder,
+                type.apply(getBuilderContext(builder)), holder.nativeAddress());
+    }
+
+    public static Function<LLVMContextRef, LLVMValueRef> intptrFactory(MemorySegment value) {
+        return context -> const_intptr(context, value.nativeAddress());
     }
 }

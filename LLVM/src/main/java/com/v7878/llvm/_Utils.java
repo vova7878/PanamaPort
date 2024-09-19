@@ -11,6 +11,7 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.llvm.Types.AddressValue;
+import com.v7878.r8.annotations.DoNotShrink;
 
 import java.lang.reflect.Array;
 import java.util.function.LongFunction;
@@ -44,6 +45,7 @@ final class _Utils {
 
     public static MemorySegment allocString(Arena scope, String value) {
         class Holder {
+            @DoNotShrink
             static final Arena SCOPE = Arena.ofAuto();
             static final MemorySegment EMPTY_STRING = SCOPE.allocateFrom("");
         }

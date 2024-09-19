@@ -64,6 +64,7 @@ public final class ErrorHandling {
     }
 
     private static class ErrorHandlerHolder {
+        @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
         public static final MemorySegment NATIVE_HANDLER;
         public static volatile LLVMFatalErrorHandler JAVA_HANDLER;

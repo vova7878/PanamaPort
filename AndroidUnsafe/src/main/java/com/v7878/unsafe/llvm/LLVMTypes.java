@@ -3,6 +3,7 @@ package com.v7878.unsafe.llvm;
 import static com.v7878.llvm.Core.LLVMDoubleTypeInContext;
 import static com.v7878.llvm.Core.LLVMFP128TypeInContext;
 import static com.v7878.llvm.Core.LLVMFloatTypeInContext;
+import static com.v7878.llvm.Core.LLVMFunctionType;
 import static com.v7878.llvm.Core.LLVMHalfTypeInContext;
 import static com.v7878.llvm.Core.LLVMInt128TypeInContext;
 import static com.v7878.llvm.Core.LLVMInt16TypeInContext;
@@ -72,5 +73,21 @@ public class LLVMTypes {
 
     public static LLVMTypeRef fp128_t(LLVMContextRef context) {
         return LLVMFP128TypeInContext(context);
+    }
+
+    public static LLVMTypeRef function_t(LLVMTypeRef ret, LLVMTypeRef... args) {
+        return LLVMFunctionType(ret, args, false);
+    }
+
+    public static LLVMTypeRef function_ptr_t(LLVMTypeRef ret, LLVMTypeRef... args) {
+        return ptr_t(function_t(ret, args));
+    }
+
+    public static LLVMTypeRef variadic_function_t(LLVMTypeRef ret, LLVMTypeRef... args) {
+        return LLVMFunctionType(ret, args, true);
+    }
+
+    public static LLVMTypeRef variadic_function_ptr_t(LLVMTypeRef ret, LLVMTypeRef... args) {
+        return ptr_t(variadic_function_t(ret, args));
     }
 }
