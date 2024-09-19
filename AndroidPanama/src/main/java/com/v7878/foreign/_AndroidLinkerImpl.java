@@ -267,7 +267,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return MethodType.methodType(returnValue, argCarriers);
     }
 
-    public static MethodType fdToRawMethodType(_FunctionDescriptorImpl descriptor, boolean allowsHeapAccess) {
+    public static MethodType fdToRawMethodType(_FunctionDescriptorImpl descriptor, boolean heap_pointers) {
         MemoryLayout retLayout = descriptor.returnLayoutPlain();
         Class<?> returnValue = retLayout != null ? carrierTypeFor(retLayout) : void.class;
         if (returnValue == MemorySegment.class) {
@@ -278,7 +278,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         for (MemoryLayout tmp : argLayouts) {
             Class<?> carrier = carrierTypeFor(tmp);
             if (carrier == MemorySegment.class) {
-                if (allowsHeapAccess) {
+                if (heap_pointers) {
                     argCarriers.add(Object.class);
                 }
                 argCarriers.add(WORD.carrier());
@@ -289,7 +289,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return MethodType.methodType(returnValue, argCarriers);
     }
 
-    private static MethodType replaceObjectParameters(MethodType stubType) {
+    private static MethodType fixObjectParameters(MethodType stubType) {
         return MethodType.methodType(stubType.returnType(), stubType.parameterList().stream()
                 .map(a -> a == Object.class ? int.class : a).toArray(Class[]::new));
     }
@@ -304,8 +304,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         final String method_name = "function";
         final String field_name = "scope";
 
-        MethodType gType = replaceObjectParameters(stubType);
-        ProtoId stub_proto = ProtoId.of(gType);
+        MethodType primitive_type = fixObjectParameters(stubType);
+        ProtoId stub_proto = ProtoId.of(primitive_type);
         String stub_name = getStubName(stub_proto, true);
         TypeId stub_id = TypeId.of(stub_name);
         ClassDef stub_def = new ClassDef(stub_id);
@@ -328,7 +328,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         Field field = getDeclaredField(stub_class, field_name);
         putObject(stub_class, fieldOffset(field), scope);
 
-        Method function = getDeclaredMethod(stub_class, method_name, gType.parameterArray());
+        Method function = getDeclaredMethod(stub_class, method_name, primitive_type.parameterArray());
         registerNativeMethod(function, nativeStub.nativeAddress());
 
         return MethodHandlesFixes.unreflectWithTransform(function, stubType);
@@ -450,19 +450,20 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             var sret_attr = LLVMCreateEnumAttribute(context, "sret", 0);
             var byval_attr = LLVMCreateEnumAttribute(context, "byval", 0);
 
-            LLVMTypeRef stub_type = fdToLLVMType(context, stub_descriptor,
+            var stub_type = fdToLLVMType(context, stub_descriptor,
                     options.allowsHeapAccess(), !options.isCritical());
-            LLVMValueRef stub = LLVMAddFunction(module, function_name, stub_type);
+            var stub = LLVMAddFunction(module, function_name, stub_type);
 
-            LLVMTypeRef target_type = sdToLLVMType(context, target_descriptor, options.firstVariadicArgIndex());
-            LLVMTypeRef target_type_ptr = ptr_t(target_type);
+            var target_type = sdToLLVMType(context, target_descriptor,
+                    options.firstVariadicArgIndex());
+            var target_type_ptr = ptr_t(target_type);
 
             LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(stub, ""));
 
             LLVMValueRef[] stub_args;
             if (options.allowsHeapAccess()) {
                 List<LLVMValueRef> out = new ArrayList<>();
-                LLVMValueRef[] tmp = LLVMGetParams(stub);
+                var tmp = LLVMGetParams(stub);
                 int t = 0;
                 for (MemoryLayout layout : stub_descriptor.argumentLayouts()) {
                     if (layout instanceof GroupLayout || layout instanceof AddressLayout) {
@@ -485,9 +486,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             int count = 0; // current index in target_args[] and their count
             int index = 0; // current index in stub_args[]
-            LLVMValueRef target = LLVMBuildIntToPtr(builder, stub_args[index++], target_type_ptr, "");
-            LLVMValueRef[] target_args = new LLVMValueRef[stub_args.length - index];
-            LLVMAttributeRef[] attrs = new LLVMAttributeRef[target_args.length];
+            var target = LLVMBuildIntToPtr(builder, stub_args[index++], target_type_ptr, "");
+            var target_args = new LLVMValueRef[stub_args.length - index];
+            var attrs = new LLVMAttributeRef[target_args.length];
             int[] aligns = new int[target_args.length];
             boolean retVoid = true;
             LLVMValueRef retStore = null;
@@ -544,7 +545,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 }
             }
 
-            LLVMValueRef call = build_call(builder, target, Arrays.copyOf(target_args, count));
+            var call = build_call(builder, target, Arrays.copyOf(target_args, count));
 
             final int offset = LLVMAttributeFirstArgIndex;
             for (int i = 0; i < count; i++) {
