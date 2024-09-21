@@ -32,7 +32,7 @@ dependencies {
 For example:
 ```
 dependencies {
-    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.4-preview'
+    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.5-preview'
 }
 ```
 
@@ -50,7 +50,6 @@ PanamaPort implements FULL Foreign Function & Memory API support, including:
 Important differences:
 - All classes from the java.lang.foreign package are in the com.v7878.foreign package because it is a port and not part of the Java core library
 - Due to technical difficulties, my implementation of VarHandle is used instead of java.lang.invoke.VarHandle
-- MemoryLayouts of zero size are not allowed (in the original version their behavior does not coincide with the actual behavior in the C and C++ compilers)
 - Added MemoryLayout.valueLayout() and paddedStructLayout() methods, which were removed in recent versions of the source API
 
 ### Interaction with jextract
