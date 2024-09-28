@@ -49,7 +49,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkLayouts(function);
-        function = stripNames(function, false);
+        function = stripNames(function, true);
         _LinkerOptions optionSet = _LinkerOptions.forDowncall(function, options);
         validateVariadicLayouts(function, optionSet);
 
@@ -70,7 +70,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         Objects.requireNonNull(function);
         checkLayouts(function);
         checkExceptions(target);
-        function = stripNames(function, true);
+        function = stripNames(function, false);
         _LinkerOptions optionSet = _LinkerOptions.forUpcall(function, options);
 
         MethodType type = function.toMethodType();
@@ -210,9 +210,8 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
         if (ml instanceof StructLayout sl) {
-            //TODO: deduplicate PaddingLayout`s
             MemoryLayout[] members = sl.memberLayouts().stream().flatMap(member -> {
-                if (member.byteSize() == 0) {
+                if (member.byteSize() == 0 || member instanceof PaddingLayout) {
                     return null;
                 }
                 member = stripNames(member, true);
@@ -224,7 +223,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
             if (nested && members.length == 1) {
                 return members[0];
             }
-            return MemoryLayout.structLayout(members);
+            return MemoryLayout.paddedStructLayout(members);
         } else if (ml instanceof UnionLayout ul) {
             MemoryLayout[] members = ul.memberLayouts().stream().flatMap(member -> {
                 if (member.byteSize() == 0 || member instanceof PaddingLayout) {
@@ -271,20 +270,13 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         return ml.withoutName(); // ValueLayout and PaddingLayout
     }
 
-    private static Stream<MemoryLayout> stripNames(Stream<MemoryLayout> layouts) {
-        return layouts.map(layout -> stripNames(layout, false));
-    }
-
-    private static Stream<MemoryLayout> removeTargets(Stream<MemoryLayout> layouts) {
-        return layouts.map(l -> l instanceof AddressLayout al ? al.withoutTargetLayout() : l);
-    }
-
-    private static FunctionDescriptor stripNames(FunctionDescriptor function, boolean forUpcall) {
+    private static FunctionDescriptor stripNames(FunctionDescriptor function, boolean forDownCall) {
         var arg_layouts = function.argumentLayouts().stream();
-        if (!forUpcall) {
-            arg_layouts = removeTargets(arg_layouts);
+        if (forDownCall) {
+            arg_layouts = arg_layouts
+                    .map(l -> l instanceof AddressLayout al ? al.withoutTargetLayout() : l);
         }
-        arg_layouts = stripNames(arg_layouts);
+        arg_layouts = arg_layouts.map(layout -> stripNames(layout, false));
         MemoryLayout[] args = arg_layouts.toArray(MemoryLayout[]::new);
         return function.returnLayout()
                 .map(rl -> FunctionDescriptor.of(stripNames(rl, false), args))
