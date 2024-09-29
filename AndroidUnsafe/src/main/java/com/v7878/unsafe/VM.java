@@ -21,7 +21,7 @@ import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
-import static com.v7878.unsafe.Utils.assert_;
+import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import android.annotation.TargetApi;
@@ -72,9 +72,9 @@ public class VM {
     public static final int STRING_HEADER_SIZE = objectSizeField(StringMirror.class);
 
     static {
-        assert_(ARRAY_OBJECT_INDEX_SCALE == OBJECT_FIELD_SIZE, AssertionError::new);
-        assert_(ARRAY_INT_BASE_OFFSET == 12, AssertionError::new);
-        assert_(OBJECT_INSTANCE_SIZE == 8, AssertionError::new);
+        check(ARRAY_OBJECT_INDEX_SCALE == OBJECT_FIELD_SIZE, AssertionError::new);
+        check(ARRAY_INT_BASE_OFFSET == 12, AssertionError::new);
+        check(OBJECT_INSTANCE_SIZE == 8, AssertionError::new);
     }
 
     public static Field getShadowKlassField() {
@@ -176,15 +176,15 @@ public class VM {
     }
 
     public static int getArrayLength(Object arr) {
-        assert_(arr.getClass().isArray(), IllegalArgumentException::new);
+        check(arr.getClass().isArray(), IllegalArgumentException::new);
         ArrayMirror[] clh = arrayCast(ArrayMirror.class, arr);
         return clh[0].length;
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setArrayLength(Object arr, int length) {
-        assert_(arr.getClass().isArray(), IllegalArgumentException::new);
-        assert_(length >= 0, IllegalArgumentException::new);
+        check(arr.getClass().isArray(), IllegalArgumentException::new);
+        check(length >= 0, IllegalArgumentException::new);
         ArrayMirror[] clh = arrayCast(ArrayMirror.class, arr);
         clh[0].length = length;
     }
@@ -197,7 +197,7 @@ public class VM {
     public static int objectSizeField(Class<?> clazz) {
         ClassMirror[] clh = arrayCast(ClassMirror.class, clazz);
         int out = clh[0].objectSize;
-        assert_(out != 0, IllegalArgumentException::new);
+        check(out != 0, IllegalArgumentException::new);
         return out;
     }
 
@@ -218,7 +218,7 @@ public class VM {
     }
 
     public static int getEmbeddedVTableLength(Class<?> clazz) {
-        assert_(shouldHaveEmbeddedVTableAndImt(clazz), IllegalArgumentException::new);
+        check(shouldHaveEmbeddedVTableAndImt(clazz), IllegalArgumentException::new);
         return getIntO(clazz, emptyClassSize());
     }
 
@@ -263,26 +263,26 @@ public class VM {
         return roundUp(sizeOf(obj), OBJECT_ALIGNMENT);
     }
 
-    @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
+    @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)
     public static int rawObjectToInt(Object obj) {
         Object[] arr = new Object[1];
         arr[0] = obj;
         return getInt(arr, ARRAY_OBJECT_BASE_OFFSET);
     }
 
-    @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
+    @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)
     public static void putObjectRaw(long address, Object value) {
         putIntN(address, rawObjectToInt(value));
     }
 
-    @DangerLevel(DangerLevel.GC_COLLISION_MOVABLE_OBJECTS)
+    @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)
     public static Object rawIntToObject(int obj) {
         int[] arr = new int[1];
         arr[0] = obj;
         return getObject(arr, ARRAY_INT_BASE_OFFSET);
     }
 
-    @DangerLevel(DangerLevel.GC_COLLISION_MOVABLE_OBJECTS)
+    @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)
     public static Object getObjectRaw(long address) {
         return rawIntToObject(getIntN(address));
     }
@@ -294,7 +294,7 @@ public class VM {
             static {
                 Object test = newNonMovableArray(int.class, 0);
                 long address = addressOfNonMovableArray(test);
-                assert_(isSigned32Bit(address), AssertionError::new);
+                check(isSigned32Bit(address), AssertionError::new);
                 int actual = (int) address;
                 int raw = rawObjectToInt(test);
                 if (actual == raw) {
@@ -310,18 +310,18 @@ public class VM {
         return Holder.kPoisonReferences;
     }
 
-    @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
+    @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)
     public static int objectToInt(Object obj) {
         int out = rawObjectToInt(obj);
         return isPoisonReferences() ? -out : out;
     }
 
-    @DangerLevel(DangerLevel.POTENTIAL_GC_COLLISION)
+    @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)
     public static long objectToLong(Object obj) {
         return objectToInt(obj) & 0xffffffffL;
     }
 
-    @DangerLevel(DangerLevel.GC_COLLISION_MOVABLE_OBJECTS)
+    @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)
     public static Object intToObject(int obj) {
         return rawIntToObject(isPoisonReferences() ? -obj : obj);
     }

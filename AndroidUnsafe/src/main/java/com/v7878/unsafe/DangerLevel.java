@@ -8,11 +8,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
 public @interface DangerLevel {
-
     int VERY_CAREFUL = Integer.MAX_VALUE / 2;
-    int POTENTIAL_GC_COLLISION = VERY_CAREFUL + 1;
-    int GC_COLLISION_MOVABLE_OBJECTS = VERY_CAREFUL + 2;
-    int BAD_GC_COLLISION = VERY_CAREFUL + 3;
+    int ONLY_NONMOVABLE_OBJECTS = VERY_CAREFUL + 1;
     int MAX = Integer.MAX_VALUE;
 
     int value();

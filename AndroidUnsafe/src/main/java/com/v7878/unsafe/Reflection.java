@@ -6,12 +6,13 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putObject;
-import static com.v7878.unsafe.Utils.assert_;
+import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchConstructor;
 import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
 
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 
@@ -34,7 +35,7 @@ import java.util.Objects;
 public class Reflection {
     static {
         // SDK version checks
-        assert_(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 35, AssertionError::new);
+        check(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 35, AssertionError::new);
     }
 
     @DoNotShrink
@@ -134,7 +135,6 @@ public class Reflection {
     @DoNotShrink
     @DoNotObfuscate
     private static class Test {
-
         public static final Method am = nothrows_run(()
                 -> Test.class.getDeclaredMethod("a"));
         public static final Method bm = nothrows_run(()
@@ -156,11 +156,9 @@ public class Reflection {
         }
     }
 
-    private static final Class<MethodHandle> MethodHandleImplClass = nothrows_run(() -> {
-        //noinspection unchecked
-        return (Class<MethodHandle>) Class.forName(
-                "java.lang.invoke.MethodHandleImpl");
-    });
+    @SuppressWarnings("unchecked")
+    private static final Class<MethodHandle> MethodHandleImplClass = nothrows_run(() ->
+            (Class<MethodHandle>) Class.forName("java.lang.invoke.MethodHandleImpl"));
 
     public static final int ART_METHOD_SIZE;
     public static final int ART_METHOD_PADDING;
@@ -190,8 +188,9 @@ public class Reflection {
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
+    @AlwaysInline
     public static <T> T[] arrayCast(Class<T> clazz, Object... data) {
-        assert_(!clazz.isPrimitive(), IllegalArgumentException::new);
+        assert !clazz.isPrimitive();
         //noinspection unchecked
         T[] out = (T[]) Array.newInstance(clazz, data.length);
         for (int i = 0; i < data.length; i++) {
@@ -211,17 +210,17 @@ public class Reflection {
     }
 
     public static long instanceFieldOffset(Field f) {
-        assert_(!Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
+        check(!Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
         return fieldOffset(f);
     }
 
     public static long staticFieldOffset(Field f) {
-        assert_(Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
+        check(Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
         return fieldOffset(f);
     }
 
     public static Object staticFieldBase(Field f) {
-        assert_(Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
+        check(Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
         return f.getDeclaringClass();
     }
 
@@ -353,7 +352,7 @@ public class Reflection {
         if (out.length == 0) {
             return null;
         }
-        assert_(out.length == 1, IllegalStateException::new);
+        check(out.length == 1, IllegalStateException::new);
         return convertConstructorToMethod(out[0]);
     }
 

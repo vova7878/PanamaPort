@@ -3,7 +3,7 @@ package com.v7878.unsafe;
 import static com.v7878.misc.Math.convEndian;
 import static com.v7878.misc.Math.toUnsignedInt;
 import static com.v7878.misc.Math.toUnsignedLong;
-import static com.v7878.unsafe.Utils.assert_;
+import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.r8.annotations.AlwaysInline;
@@ -18,7 +18,7 @@ public class AndroidUnsafe {
     public static final int PAGE_SIZE = SunUnsafe.pageSize();
 
     static {
-        assert_((ADDRESS_SIZE == 4) || (ADDRESS_SIZE == 8), AssertionError::new);
+        check((ADDRESS_SIZE == 4) || (ADDRESS_SIZE == 8), AssertionError::new);
     }
 
     public static final boolean IS64BIT = ADDRESS_SIZE == 8;
@@ -53,18 +53,22 @@ public class AndroidUnsafe {
     public static final int ARRAY_DOUBLE_INDEX_SCALE = arrayIndexScale(double[].class);
     public static final int ARRAY_OBJECT_INDEX_SCALE = arrayIndexScale(Object[].class);
 
+    @AlwaysInline
     public static boolean unalignedAccess() {
         return UNALIGNED_ACCESS;
     }
 
+    @AlwaysInline
     public static boolean isBigEndian() {
         return IS_BIG_ENDIAN;
     }
 
+    @AlwaysInline
     public static int addressSize() {
         return ADDRESS_SIZE;
     }
 
+    @AlwaysInline
     public static int pageSize() {
         return PAGE_SIZE;
     }
@@ -80,191 +84,237 @@ public class AndroidUnsafe {
         return throwException0(th);
     }
 
+    @AlwaysInline
     public static void park(boolean absolute, long time) {
         SunUnsafe.park(absolute, time);
     }
 
+    @AlwaysInline
     public static void unpark(Object obj) {
         SunUnsafe.unpark(obj);
     }
 
+    @AlwaysInline
     public static void loadFence() {
         SunUnsafe.loadFence();
     }
 
+    @AlwaysInline
     public static void storeFence() {
         SunUnsafe.storeFence();
     }
 
+    @AlwaysInline
     public static void fullFence() {
         SunUnsafe.fullFence();
     }
 
+    @AlwaysInline
     public static long allocateMemory(long bytes) {
         return SunUnsafe.allocateMemory(bytes);
     }
 
+    @AlwaysInline
     public static void freeMemory(long address) {
         SunUnsafe.freeMemory(address);
     }
 
+    @AlwaysInline
     public static void setMemory(long address, long bytes, byte value) {
         SunUnsafe.setMemory(address, bytes, value);
     }
 
+    @AlwaysInline
     public static void copyMemory(long srcAddr, long dstAddr, long bytes) {
         SunUnsafe.copyMemory(srcAddr, dstAddr, bytes);
     }
 
+    @AlwaysInline
     public static <T> T allocateInstance(Class<T> clazz) {
         //noinspection unchecked
         return (T) nothrows_run(() -> SunUnsafe.allocateInstance(clazz));
     }
 
+    @AlwaysInline
     public static long objectFieldOffset(Field field) {
         return SunUnsafe.objectFieldOffset(field);
     }
 
+    @AlwaysInline
     public static int arrayBaseOffset(Class<?> clazz) {
         int out = SunUnsafe.arrayBaseOffset(clazz);
-        assert_(out != 0, IllegalStateException::new);
+        check(out != 0, IllegalStateException::new);
         return out;
     }
 
+    @AlwaysInline
     public static int arrayIndexScale(Class<?> clazz) {
         int out = SunUnsafe.arrayIndexScale(clazz);
-        assert_(out != 0, IllegalStateException::new);
+        check(out != 0, IllegalStateException::new);
         return out;
     }
 
+    @AlwaysInline
     public static boolean getBooleanO(Object obj, long offset) {
         return SunUnsafe.getBoolean(obj, offset);
     }
 
+    @AlwaysInline
     public static void putBooleanO(Object obj, long offset, boolean value) {
         SunUnsafe.putBoolean(obj, offset, value);
     }
 
+    @AlwaysInline
     public static byte getByteO(Object obj, long offset) {
         return SunUnsafe.getByte(obj, offset);
     }
 
+    @AlwaysInline
     public static void putByteO(Object obj, long offset, byte value) {
         SunUnsafe.putByte(obj, offset, value);
     }
 
+    @AlwaysInline
     public static char getCharO(Object obj, long offset) {
         return SunUnsafe.getChar(obj, offset);
     }
 
+    @AlwaysInline
     public static void putCharO(Object obj, long offset, char value) {
         SunUnsafe.putChar(obj, offset, value);
     }
 
+    @AlwaysInline
     public static short getShortO(Object obj, long offset) {
         return SunUnsafe.getShort(obj, offset);
     }
 
+    @AlwaysInline
     public static void putShortO(Object obj, long offset, short value) {
         SunUnsafe.putShort(obj, offset, value);
     }
 
+    @AlwaysInline
     public static int getIntO(Object obj, long offset) {
         return SunUnsafe.getInt(obj, offset);
     }
 
+    @AlwaysInline
     public static void putIntO(Object obj, long offset, int value) {
         SunUnsafe.putInt(obj, offset, value);
     }
 
+    @AlwaysInline
     public static float getFloatO(Object obj, long offset) {
         return SunUnsafe.getFloat(obj, offset);
     }
 
+    @AlwaysInline
     public static void putFloatO(Object obj, long offset, float value) {
         SunUnsafe.putFloat(obj, offset, value);
     }
 
+    @AlwaysInline
     public static long getLongO(Object obj, long offset) {
         return SunUnsafe.getLong(obj, offset);
     }
 
+    @AlwaysInline
     public static void putLongO(Object obj, long offset, long value) {
         SunUnsafe.putLong(obj, offset, value);
     }
 
+    @AlwaysInline
     public static double getDoubleO(Object obj, long offset) {
         return SunUnsafe.getDouble(obj, offset);
     }
 
+    @AlwaysInline
     public static void putDoubleO(Object obj, long offset, double value) {
         SunUnsafe.putDouble(obj, offset, value);
     }
 
+    @AlwaysInline
     public static boolean getBooleanN(long address) {
         return SunUnsafe.getBoolean(address);
     }
 
+    @AlwaysInline
     public static void putBooleanN(long address, boolean value) {
         SunUnsafe.putBoolean(address, value);
     }
 
+    @AlwaysInline
     public static byte getByteN(long address) {
         return SunUnsafe.getByte(address);
     }
 
+    @AlwaysInline
     public static void putByteN(long address, byte value) {
         SunUnsafe.putByte(address, value);
     }
 
+    @AlwaysInline
     public static char getCharN(long address) {
         return SunUnsafe.getChar(address);
     }
 
+    @AlwaysInline
     public static void putCharN(long address, char value) {
         SunUnsafe.putChar(address, value);
     }
 
+    @AlwaysInline
     public static short getShortN(long address) {
         return SunUnsafe.getShort(address);
     }
 
+    @AlwaysInline
     public static void putShortN(long address, short value) {
         SunUnsafe.putShort(address, value);
     }
 
+    @AlwaysInline
     public static int getIntN(long address) {
         return SunUnsafe.getInt(address);
     }
 
+    @AlwaysInline
     public static void putIntN(long address, int value) {
         SunUnsafe.putInt(address, value);
     }
 
+    @AlwaysInline
     public static float getFloatN(long address) {
         return SunUnsafe.getFloat(address);
     }
 
+    @AlwaysInline
     public static void putFloatN(long address, float value) {
         SunUnsafe.putFloat(address, value);
     }
 
+    @AlwaysInline
     public static long getLongN(long address) {
         return SunUnsafe.getLong(address);
     }
 
+    @AlwaysInline
     public static void putLongN(long address, long value) {
         SunUnsafe.putLong(address, value);
     }
 
+    @AlwaysInline
     public static double getDoubleN(long address) {
         return SunUnsafe.getDouble(address);
     }
 
+    @AlwaysInline
     public static void putDoubleN(long address, double value) {
         SunUnsafe.putDouble(address, value);
     }
 
+    @AlwaysInline
     public static boolean getBoolean(Object obj, long offset) {
         if (obj == null) {
             return SunUnsafe.getBoolean(offset);
@@ -273,6 +323,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putBoolean(Object obj, long offset, boolean value) {
         if (obj == null) {
             SunUnsafe.putBoolean(offset, value);
@@ -281,6 +332,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static byte getByte(Object obj, long offset) {
         if (obj == null) {
             return SunUnsafe.getByte(offset);
@@ -289,6 +341,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putByte(Object obj, long offset, byte value) {
         if (obj == null) {
             SunUnsafe.putByte(offset, value);
@@ -297,6 +350,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static char getChar(Object obj, long offset) {
         if (obj == null) {
             return SunUnsafe.getChar(offset);
@@ -305,6 +359,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putChar(Object obj, long offset, char value) {
         if (obj == null) {
             SunUnsafe.putChar(offset, value);
@@ -313,6 +368,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static short getShort(Object obj, long offset) {
         if (obj == null) {
             return SunUnsafe.getShort(offset);
@@ -321,6 +377,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putShort(Object obj, long offset, short value) {
         if (obj == null) {
             SunUnsafe.putShort(offset, value);
@@ -329,6 +386,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static int getInt(Object obj, long offset) {
         if (obj == null) {
             return SunUnsafe.getInt(offset);
@@ -337,6 +395,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putInt(Object obj, long offset, int value) {
         if (obj == null) {
             SunUnsafe.putInt(offset, value);
@@ -345,6 +404,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static float getFloat(Object obj, long offset) {
         if (obj == null) {
             return SunUnsafe.getFloat(offset);
@@ -353,6 +413,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putFloat(Object obj, long offset, float value) {
         if (obj == null) {
             SunUnsafe.putFloat(offset, value);
@@ -361,6 +422,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static long getLong(Object obj, long offset) {
         if (obj == null) {
             return SunUnsafe.getLong(offset);
@@ -369,6 +431,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putLong(Object obj, long offset, long value) {
         if (obj == null) {
             SunUnsafe.putLong(offset, value);
@@ -377,6 +440,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static double getDouble(Object obj, long offset) {
         if (obj == null) {
             return SunUnsafe.getDouble(offset);
@@ -385,6 +449,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putDouble(Object obj, long offset, double value) {
         if (obj == null) {
             SunUnsafe.putDouble(offset, value);
@@ -393,10 +458,12 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static long getWordO(Object obj, long offset) {
         return IS64BIT ? getLongO(obj, offset) : getIntO(obj, offset) & 0xffffffffL;
     }
 
+    @AlwaysInline
     public static void putWordO(Object obj, long offset, long value) {
         if (IS64BIT) {
             putLongO(obj, offset, value);
@@ -405,10 +472,12 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static long getWordN(long address) {
         return IS64BIT ? getLongN(address) : getIntN(address) & 0xffffffffL;
     }
 
+    @AlwaysInline
     public static void putWordN(long address, long value) {
         if (IS64BIT) {
             putLongN(address, value);
@@ -417,10 +486,12 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static long getWord(Object obj, long offset) {
         return IS64BIT ? getLong(obj, offset) : getInt(obj, offset) & 0xffffffffL;
     }
 
+    @AlwaysInline
     public static void putWord(Object obj, long offset, long value) {
         if (IS64BIT) {
             putLong(obj, offset, value);
@@ -429,11 +500,13 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static Object getObject(Object obj, long offset) {
         Objects.requireNonNull(obj);
         return SunUnsafe.getObject(obj, offset);
     }
 
+    @AlwaysInline
     public static void putObject(Object obj, long offset, Object value) {
         Objects.requireNonNull(obj);
         SunUnsafe.putObject(obj, offset, value);
@@ -513,14 +586,17 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static long getLongUnaligned(Object obj, long offset, boolean swap) {
         return convEndian(getLongUnaligned(obj, offset), swap);
     }
 
+    @AlwaysInline
     public static double getDoubleUnaligned(Object obj, long offset) {
         return Double.longBitsToDouble(getLongUnaligned(obj, offset));
     }
 
+    @AlwaysInline
     public static double getDoubleUnaligned(Object obj, long offset, boolean swap) {
         return Double.longBitsToDouble(getLongUnaligned(obj, offset, swap));
     }
@@ -539,14 +615,17 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static int getIntUnaligned(Object obj, long offset, boolean swap) {
         return convEndian(getIntUnaligned(obj, offset), swap);
     }
 
+    @AlwaysInline
     public static float getFloatUnaligned(Object obj, long offset) {
         return Float.intBitsToFloat(getIntUnaligned(obj, offset));
     }
 
+    @AlwaysInline
     public static float getFloatUnaligned(Object obj, long offset, boolean swap) {
         return Float.intBitsToFloat(getIntUnaligned(obj, offset, swap));
     }
@@ -560,23 +639,28 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static short getShortUnaligned(Object obj, long offset, boolean swap) {
         return convEndian(getShortUnaligned(obj, offset), swap);
     }
 
+    @AlwaysInline
     public static char getCharUnaligned(Object obj, long offset) {
         return (char) getShortUnaligned(obj, offset);
     }
 
+    @AlwaysInline
     public static char getCharUnaligned(Object obj, long offset, boolean swap) {
         return (char) getShortUnaligned(obj, offset, swap);
     }
 
+    @AlwaysInline
     public static long getWordUnaligned(Object obj, long offset, boolean swap) {
         return IS64BIT ? getLongUnaligned(obj, offset, swap)
                 : getIntUnaligned(obj, offset, swap) & 0xffffffffL;
     }
 
+    @AlwaysInline
     public static long getWordUnaligned(Object obj, long offset) {
         return IS64BIT ? getLongUnaligned(obj, offset)
                 : getIntUnaligned(obj, offset) & 0xffffffffL;
@@ -669,14 +753,17 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putLongUnaligned(Object o, long offset, long value, boolean swap) {
         putLongUnaligned(o, offset, convEndian(value, swap));
     }
 
+    @AlwaysInline
     public static void putDoubleUnaligned(Object o, long offset, double value) {
         putLongUnaligned(o, offset, Double.doubleToRawLongBits(value));
     }
 
+    @AlwaysInline
     public static void putDoubleUnaligned(Object o, long offset, double value, boolean swap) {
         putLongUnaligned(o, offset, Double.doubleToRawLongBits(value), swap);
     }
@@ -697,14 +784,17 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putIntUnaligned(Object o, long offset, int value, boolean swap) {
         putIntUnaligned(o, offset, convEndian(value, swap));
     }
 
+    @AlwaysInline
     public static void putFloatUnaligned(Object o, long offset, float value) {
         putIntUnaligned(o, offset, Float.floatToRawIntBits(value));
     }
 
+    @AlwaysInline
     public static void putFloatUnaligned(Object o, long offset, float value, boolean swap) {
         putIntUnaligned(o, offset, Float.floatToRawIntBits(value), swap);
     }
@@ -719,18 +809,22 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putShortUnaligned(Object o, long offset, short value, boolean swap) {
         putShortUnaligned(o, offset, convEndian(value, swap));
     }
 
+    @AlwaysInline
     public static void putCharUnaligned(Object o, long offset, char value) {
         putShortUnaligned(o, offset, (short) value);
     }
 
+    @AlwaysInline
     public static void putCharUnaligned(Object o, long offset, char value, boolean swap) {
         putShortUnaligned(o, offset, (short) value, swap);
     }
 
+    @AlwaysInline
     public static void putWordUnaligned(Object obj, long offset, long value, boolean swap) {
         if (IS64BIT) {
             putLongUnaligned(obj, offset, value, swap);
@@ -739,6 +833,7 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static void putWordUnaligned(Object obj, long offset, long value) {
         if (IS64BIT) {
             putLongUnaligned(obj, offset, value);
@@ -751,11 +846,12 @@ public class AndroidUnsafe {
         if (bytes == 0) {
             return;
         }
+        if (srcBase == null && destBase == null) {
+            copyMemory(srcOffset, destOffset, bytes);
+            return;
+        }
+        // TODO: what if src and dst overlaps?
         if (srcBase == null) {
-            if (destBase == null) {
-                copyMemory(srcOffset, destOffset, bytes);
-                return;
-            }
             for (long i = 0; i < bytes; i++) {
                 putByteO(destBase, destOffset + i, getByteN(srcOffset + i));
             }
@@ -785,40 +881,50 @@ public class AndroidUnsafe {
         }
     }
 
+    @AlwaysInline
     public static int getIntVolatileO(Object obj, long offset) {
         return SunUnsafe.getIntVolatile(obj, offset);
     }
 
+    @AlwaysInline
     public static void putIntVolatileO(Object obj, long offset, int value) {
         SunUnsafe.putIntVolatile(obj, offset, value);
     }
+
+    @AlwaysInline
 
     public static long getLongVolatileO(Object obj, long offset) {
         return SunUnsafe.getLongVolatile(obj, offset);
     }
 
+    @AlwaysInline
     public static void putLongVolatileO(Object obj, long offset, long value) {
         SunUnsafe.putLongVolatile(obj, offset, value);
     }
 
+    @AlwaysInline
     public static Object getObjectVolatile(Object obj, long offset) {
         return SunUnsafe.getObjectVolatile(obj, offset);
     }
 
+    @AlwaysInline
     public static void putObjectVolatile(Object obj, long offset, Object value) {
         SunUnsafe.putObjectVolatile(obj, offset, value);
     }
 
+    @AlwaysInline
     public static boolean compareAndSetIntO(Object obj, long offset,
                                             int expectedValue, int newValue) {
         return SunUnsafe.compareAndSwapInt(obj, offset, expectedValue, newValue);
     }
 
+    @AlwaysInline
     public static boolean compareAndSetLongO(Object obj, long offset,
                                              long expectedValue, long newValue) {
         return SunUnsafe.compareAndSwapLong(obj, offset, expectedValue, newValue);
     }
 
+    @AlwaysInline
     public static boolean compareAndSetObject(Object obj, long offset,
                                               Object expectedValue, Object newValue) {
         return SunUnsafe.compareAndSwapObject(obj, offset, expectedValue, newValue);
@@ -851,26 +957,32 @@ public class AndroidUnsafe {
         return v;
     }
 
+    @AlwaysInline
     public static boolean compareAndSwapIntO(Object obj, long offset, int expectedValue, int value) {
         return SunUnsafe.compareAndSwapInt(obj, offset, expectedValue, value);
     }
 
+    @AlwaysInline
     public static boolean compareAndSwapLongO(Object obj, long offset, long expectedValue, long value) {
         return SunUnsafe.compareAndSwapLong(obj, offset, expectedValue, value);
     }
 
+    @AlwaysInline
     public static boolean compareAndSwapObject(Object obj, long offset, Object expectedValue, Object value) {
         return SunUnsafe.compareAndSwapObject(obj, offset, expectedValue, value);
     }
 
+    @AlwaysInline
     public static int getAndSetIntO(Object obj, long offset, int newValue) {
         return SunUnsafe.getAndSetInt(obj, offset, newValue);
     }
 
+    @AlwaysInline
     public static long getAndSetLongO(Object obj, long offset, long newValue) {
         return SunUnsafe.getAndSetLong(obj, offset, newValue);
     }
 
+    @AlwaysInline
     public static Object getAndSetObject(Object obj, long offset, Object newValue) {
         return SunUnsafe.getAndSetObject(obj, offset, newValue);
     }

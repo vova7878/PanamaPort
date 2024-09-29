@@ -27,7 +27,7 @@
 
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.Utils.assert_;
+import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import android.annotation.SuppressLint;
@@ -529,7 +529,7 @@ abstract sealed class _AbstractMemorySegmentImpl
 
         if (base != null) heap:{
             if (bb.isDirect()) {
-                assert_(base instanceof byte[], AssertionError::new);
+                check(base instanceof byte[], AssertionError::new);
                 break heap;
             } else if (base instanceof byte[]) {
                 return new _HeapMemorySegmentImpl.OfByte(off, base, len, readOnly, bufferScope);

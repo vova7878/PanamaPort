@@ -151,7 +151,7 @@ public class Utils {
     }
 
     @AlwaysInline
-    public static <T extends Throwable> void assert_(boolean value, Supplier<T> th) {
+    public static <T extends Throwable> void check(boolean value, Supplier<T> th) {
         if (!value) {
             AndroidUnsafe.throwException(th.get());
         }
@@ -162,11 +162,6 @@ public class Utils {
         T run() throws Throwable;
     }
 
-    @FunctionalInterface
-    public interface VTRun {
-        void run() throws Throwable;
-    }
-
     @AlwaysInline
     public static <T> T nothrows_run(TRun<T> r) {
         try {
@@ -174,6 +169,11 @@ public class Utils {
         } catch (Throwable th) {
             return AndroidUnsafe.throwException(th);
         }
+    }
+
+    @FunctionalInterface
+    public interface VTRun {
+        void run() throws Throwable;
     }
 
     @AlwaysInline

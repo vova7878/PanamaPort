@@ -14,7 +14,7 @@ import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Utils.assert_;
+import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_STATIC;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_VIRTUAL_REPLACE_THIS;
@@ -334,7 +334,7 @@ public class JNIUtils {
     public static long getRawNativePeer(Thread thread) {
         Objects.requireNonNull(thread);
         long tmp = getLongO(thread, nativePeerOffset);
-        assert_(tmp != 0, () -> new IllegalStateException("nativePeer == nullptr"));
+        check(tmp != 0, () -> new IllegalStateException("nativePeer == nullptr"));
         return tmp;
     }
 
