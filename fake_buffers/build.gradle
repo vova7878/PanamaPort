@@ -1,11 +1,14 @@
 plugins {
-    //TODO: alias(libs.plugins.android.library)
-    id 'java-library'
+    alias(libs.plugins.android.library)
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+android {
+    namespace 'com.v7878.nio'
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 
 dependencies {

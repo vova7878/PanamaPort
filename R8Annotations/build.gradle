@@ -5,11 +5,8 @@ plugins {
 
 android {
     namespace 'com.v7878.r8.annotations'
-    compileSdk 35
 
     defaultConfig {
-        minSdk 26
-
         consumerProguardFiles "consumer-rules.pro"
     }
 

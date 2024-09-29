@@ -1,3 +1,15 @@
 plugins {
     alias(libs.plugins.android.library) apply false
 }
+
+subprojects {
+    afterEvaluate {
+        android {
+            compileSdk 35
+
+            defaultConfig {
+                minSdk 26
+            }
+        }
+    }
+}

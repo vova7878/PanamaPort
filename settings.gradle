@@ -13,12 +13,5 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "PanamaPort"
-include ':AndroidUnsafe'
-include ':AndroidPanama'
-include ':VarHandleApi'
-include ':LLVM'
-include ':fake_panama'
-include ':fake_buffers'
-include ':fake_invoke'
-include ':fake_llvm'
-include ':R8Annotations'
+include ':AndroidUnsafe', ':AndroidPanama', ':VarHandleApi', ':LLVM', ':R8Annotations'
+include ':fake_panama', ':fake_buffers', ':fake_invoke', ':fake_llvm'
