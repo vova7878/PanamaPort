@@ -285,7 +285,11 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
 
     @Override
     public SymbolLookup defaultLookup() {
-        return JavaForeignAccess.libraryLookup(RawNativeLibraries.DEFAULT, Arena.global());
+        class Holder {
+            static final SymbolLookup LOOKUP = JavaForeignAccess
+                    .libraryLookup(RawNativeLibraries.DEFAULT, Arena.global());
+        }
+        return Holder.LOOKUP;
     }
 
     @Override
