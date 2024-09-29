@@ -190,15 +190,7 @@ public interface SymbolLookup {
      */
     default SymbolLookup or(SymbolLookup other) {
         Objects.requireNonNull(other);
-        // Port-changed: backport
-        // return name -> find(name).or(() -> other.find(name));
-        return name -> {
-            Optional<MemorySegment> tmp = find(name);
-            if (tmp.isPresent()) {
-                return tmp;
-            }
-            return Objects.requireNonNull(other.find(name));
-        };
+        return name -> find(name).or(() -> other.find(name));
     }
 
     /**

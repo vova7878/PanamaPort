@@ -1027,7 +1027,6 @@ public sealed interface MemoryLayout
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() * elementCount} overflows
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}
      */
-    // Port-changed: elementCount can`t be zero
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
         _Utils.checkNonNegativeArgument(elementCount, "elementCount");
         Objects.requireNonNull(elementLayout);
@@ -1050,7 +1049,7 @@ public sealed interface MemoryLayout
      * @return a new sequence layout with the given element layout and maximum element count.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      */
-    // Port-added
+    @PortApi
     static SequenceLayout sequenceLayout(MemoryLayout elementLayout) {
         Objects.requireNonNull(elementLayout);
         return sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
@@ -1103,7 +1102,7 @@ public sealed interface MemoryLayout
      * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes}
      *                                  of the member layouts overflows
      */
-    // Port-added
+    @PortApi
     static StructLayout paddedStructLayout(MemoryLayout... elements) {
         return _Utils.computePaddedStructLayout(elements);
     }
@@ -1139,7 +1138,7 @@ public sealed interface MemoryLayout
      * @return a value layout with the given Java carrier and byte-order.
      * @throws IllegalArgumentException if the carrier type is not supported.
      */
-    // Port-added
+    @PortApi
     static ValueLayout valueLayout(Class<?> carrier, ByteOrder order) {
         return _ValueLayouts.valueLayout(carrier, order);
     }
