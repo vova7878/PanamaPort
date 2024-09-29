@@ -316,7 +316,7 @@ final class _Utils {
         // alignment should be > 0, and power of two
         if (byteAlignment <= 0 ||
                 ((byteAlignment & (byteAlignment - 1)) != 0L)) {
-            throw new IllegalArgumentException("Invalid alignment constraint : " + byteAlignment);
+            throw new IllegalArgumentException("Invalid alignment constraint: " + byteAlignment);
         }
     }
 

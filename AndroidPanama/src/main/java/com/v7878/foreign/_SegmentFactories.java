@@ -38,6 +38,7 @@ import com.v7878.foreign._HeapMemorySegmentImpl.OfLong;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfObject;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfShort;
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.VM;
@@ -159,7 +160,7 @@ class _SegmentFactories {
         //    byteAlignment = Math.max(byteAlignment, AndroidUnsafe.pageSize());
         //}
         if (use_new) {
-            //TODO: what if byteSize is 0?
+            byteSize = Math.max(1L, byteSize);
             long buf = allocateMemoryWrapperOperatorNew(byteSize, byteAlignment);
             if (!_Utils.isAligned(buf, byteAlignment)) {
                 throw shouldNotReachHere();
@@ -195,6 +196,7 @@ class _SegmentFactories {
         }
     }
 
+    @AlwaysInline
     private static long allocateMemoryWrapperMalloc(long size) {
         try {
             return AndroidUnsafe.allocateMemory(size);
@@ -203,12 +205,9 @@ class _SegmentFactories {
         }
     }
 
+    @AlwaysInline
     private static long allocateMemoryWrapperOperatorNew(long size, long alignment) {
-        long out = MemoryOperators.new_(size, alignment);
-        if (out == 0) {
-            throw new OutOfMemoryError();
-        }
-        return out;
+        return MemoryOperators.new_(size, alignment);
     }
 
     public static MemorySegment mapSegment(UnmapperProxy unmapper, long size,
@@ -232,6 +231,7 @@ class _SegmentFactories {
     // where one thread attempts to initialize e.g. MemorySegment (and then NativeMemorySegmentImpl, via
     // the MemorySegment.NULL field) while another thread is attempting to initialize
     // NativeMemorySegmentImpl (and then MemorySegment, the super-interface).
+    @AlwaysInline
     private static void ensureInitialized() {
         ClassUtils.ensureClassInitialized(MemorySegment.class);
     }

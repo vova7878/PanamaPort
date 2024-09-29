@@ -64,7 +64,6 @@ public abstract class JavaForeignAccess {
 
     public static MemorySegment makeNativeSegment(long min, long byteSize, boolean readOnly,
                                                   Arena scope, Runnable action) {
-        //TODO: minimal checks
         return INSTANCE._makeNativeSegmentUnchecked(min, byteSize, readOnly, scope, action);
     }
 
@@ -75,7 +74,6 @@ public abstract class JavaForeignAccess {
     public static MemorySegment allocateSegment(
             long byteSize, long byteAlignment, Arena scope,
             boolean use_operator_new_instead_of_malloc) {
-        //TODO: minimal checks
         return INSTANCE._allocateSegment(byteSize, byteAlignment,
                 scope, use_operator_new_instead_of_malloc);
     }

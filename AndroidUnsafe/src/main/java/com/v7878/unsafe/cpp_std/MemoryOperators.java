@@ -1,5 +1,6 @@
 package com.v7878.unsafe.cpp_std;
 
+import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.InstructionSet.ARM;
 import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
@@ -11,6 +12,7 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 
 import com.v7878.foreign.Arena;
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
@@ -62,18 +64,89 @@ public class MemoryOperators {
                 BulkLinker.processSymbols(SCOPE, Native.class, LibCpp.CPP));
     }
 
-    public static long new_(long count, long alignment) {
+    @AlwaysInline
+    private static long new0(long count, long alignment) {
         if (alignment > __STDCPP_DEFAULT_NEW_ALIGNMENT__) {
             return Native.INSTANCE.new_(count, alignment);
         }
         return Native.INSTANCE.new_(count);
     }
 
-    public static void delete(long ptr, long alignment) {
+    public static long new_(long count, long alignment) {
+        checkSize(count);
+        checkAlignment(alignment);
+        if (count == 0) {
+            return 0;
+        }
+        var ptr = new0(count, alignment);
+        if (ptr == 0) {
+            throw new OutOfMemoryError("Unable to allocate " +
+                    count + " bytes with alignment " + alignment);
+        }
+        return ptr;
+    }
+
+    @AlwaysInline
+    private static void delete0(long ptr, long alignment) {
         if (alignment > __STDCPP_DEFAULT_NEW_ALIGNMENT__) {
             Native.INSTANCE.delete(ptr, alignment);
         } else {
             Native.INSTANCE.delete(ptr);
         }
+    }
+
+    public static void delete(long ptr, long alignment) {
+        checkNativeAddress(ptr);
+        if (ptr == 0) {
+            return;
+        }
+        delete0(ptr, alignment);
+    }
+
+    @AlwaysInline
+    private static void checkNativeAddress(long address) {
+        if (ADDRESS_SIZE == 4) {
+            // Accept both zero and sign extended pointers. A valid
+            // pointer will, after the +1 below, either have produced
+            // the value 0x0 or 0x1. Masking off the low bit allows
+            // for testing against 0.
+            if ((((address >> 32) + 1) & ~1) != 0) {
+                throw invalidInput("address", address);
+            }
+        }
+    }
+
+    @AlwaysInline
+    private static boolean is32BitClean(long value) {
+        return value >>> 32 == 0;
+    }
+
+    @AlwaysInline
+    private static void checkSize(long size) {
+        if (ADDRESS_SIZE == 4) {
+            // Note: this will also check for negative sizes
+            if (!is32BitClean(size)) {
+                throw invalidInput("size", size);
+            }
+        } else if (size < 0) {
+            throw invalidInput("size", size);
+        }
+    }
+
+    @AlwaysInline
+    private static void checkAlignment(long alignment) {
+        if (alignment <= 0 || (alignment & alignment - 1) != 0L) {
+            throw invalidInput("alignment", alignment);
+        }
+        if (ADDRESS_SIZE == 4) {
+            if (!is32BitClean(alignment)) {
+                throw invalidInput("alignment", alignment);
+            }
+        }
+    }
+
+    @AlwaysInline
+    private static RuntimeException invalidInput(String name, long value) {
+        return new IllegalArgumentException(String.format("Invalid %s: %s", name, value));
     }
 }

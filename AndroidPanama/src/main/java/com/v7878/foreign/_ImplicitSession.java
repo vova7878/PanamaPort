@@ -33,15 +33,12 @@ import com.v7878.unsafe.Utils;
 
 import java.util.Objects;
 
-//TODO
-//import sun.nio.ch.DirectBuffer;
-
 /**
  * This is an implicit, GC-backed memory session. Implicit sessions cannot be closed explicitly.
  * While it would be possible to model an implicit session as a non-closeable view of a shared
  * session, it is better to capture the fact that an implicit session is not just a non-closeable
  * view of some session which might be closeable. This is useful e.g. in the implementations of
- * {@link DirectBuffer#address()}, where obtaining an address of a buffer instance associated
+ * {@link sun.nio.ch.DirectBuffer#address()}, where obtaining an address of a buffer instance associated
  * with a potentially closeable session is forbidden.
  */
 sealed class _ImplicitSession extends _SharedSession {

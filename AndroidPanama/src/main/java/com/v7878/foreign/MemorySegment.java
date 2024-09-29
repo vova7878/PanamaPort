@@ -2769,6 +2769,8 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             @Override
             protected MemorySegment _makeNativeSegmentUnchecked(
                     long min, long byteSize, boolean readOnly, Arena scope, Runnable action) {
+                Objects.requireNonNull(scope);
+                _Utils.checkNonNegativeArgument(byteSize, "byteSize");
                 return _SegmentFactories.makeNativeSegmentUnchecked(min, byteSize,
                         _MemorySessionImpl.toMemorySession(scope), readOnly, action);
             }
@@ -2777,6 +2779,8 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             protected MemorySegment _allocateSegment(
                     long byteSize, long byteAlignment, Arena scope,
                     boolean use_operator_new_instead_of_malloc) {
+                Objects.requireNonNull(scope);
+                _Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
                 return _SegmentFactories.allocateSegment(byteSize, byteAlignment,
                         _MemorySessionImpl.toMemorySession(scope), use_operator_new_instead_of_malloc);
             }
