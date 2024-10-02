@@ -2732,6 +2732,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
     @DoNotShrink
     @DoNotObfuscate
     @SuppressWarnings("unused")
+    //TODO: Remove this method when the module system is enabled
     private static JavaForeignAccess initAccess() {
         return new JavaForeignAccess() {
             @Override

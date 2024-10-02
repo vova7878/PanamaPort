@@ -89,7 +89,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         }
 
         @Override
-        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
+        public void transform(AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
@@ -162,7 +162,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         }
 
         @Override
-        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
+        public void transform(AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
@@ -235,7 +235,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         }
 
         @Override
-        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
+        public void transform(AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
@@ -310,7 +310,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         }
 
         @Override
-        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
+        public void transform(AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
@@ -383,7 +383,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         }
 
         @Override
-        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
+        public void transform(AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
@@ -439,7 +439,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         }
 
         @Override
-        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
+        public void transform(AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)
@@ -512,7 +512,7 @@ abstract sealed class _VarHandleSegmentViewBase implements VarHandleTransformer 
         }
 
         @Override
-        public void transform(VarHandleImpl handle, AccessMode mode, EmulatedStackFrame stack) {
+        public void transform(AccessMode mode, EmulatedStackFrame stack) {
             StackFrameAccessor accessor = stack.createAccessor();
 
             _AbstractMemorySegmentImpl ms = (_AbstractMemorySegmentImpl)

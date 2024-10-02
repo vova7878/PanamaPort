@@ -22,7 +22,8 @@
 
 package com.v7878.invoke;
 
-import com.v7878.unsafe.invoke.AbstractVarHandle.AccessType;
+import com.v7878.r8.annotations.AlwaysInline;
+import com.v7878.unsafe.invoke.VarHandleImpl.AccessType;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -172,10 +173,6 @@ public abstract class VarHandle {
         }
     }
 
-    protected static AccessType accessType(AccessMode accessMode) {
-        return accessMode.at;
-    }
-
     public abstract Class<?> varType();
 
     public abstract List<Class<?>> coordinateTypes();
@@ -191,5 +188,10 @@ public abstract class VarHandle {
         return String.format("VarHandle[varType=%s, coord=%s]",
                 varType().getName(),
                 coordinateTypes());
+    }
+
+    @AlwaysInline
+    protected static AccessType accessType(AccessMode accessMode) {
+        return accessMode.at;
     }
 }

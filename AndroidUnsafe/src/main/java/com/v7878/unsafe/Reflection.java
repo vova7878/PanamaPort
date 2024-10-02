@@ -199,38 +199,46 @@ public class Reflection {
         return out;
     }
 
+    @AlwaysInline
     public static void setAccessible(AccessibleObject ao, boolean value) {
+        if (ao.isAccessible()) return;
         AccessibleObjectMirror[] aob = arrayCast(AccessibleObjectMirror.class, ao);
         aob[0].override = value;
     }
 
+    @AlwaysInline
     public static int fieldOffset(Field f) {
         FieldMirror[] fh = arrayCast(FieldMirror.class, f);
         return fh[0].offset;
     }
 
+    @AlwaysInline
     public static long instanceFieldOffset(Field f) {
         check(!Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
         return fieldOffset(f);
     }
 
+    @AlwaysInline
     public static long staticFieldOffset(Field f) {
         check(Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
         return fieldOffset(f);
     }
 
+    @AlwaysInline
     public static Object staticFieldBase(Field f) {
         check(Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
         return f.getDeclaringClass();
     }
 
+    @AlwaysInline
     public static long getArtMethod(Executable ex) {
         ExecutableMirror[] eh = arrayCast(ExecutableMirror.class, ex);
         return eh[0].artMethod;
     }
 
+    @AlwaysInline
     public static long getArtField(Field f) {
-        return (long) nothrows_run(() -> mGetArtField.invoke(f));
+        return nothrows_run(() -> (long) mGetArtField.invokeExact(f));
     }
 
     public static Executable toExecutable(long art_method) {
@@ -252,7 +260,7 @@ public class Reflection {
         return tmp;
     }
 
-    public static Executable[] getDeclaredExecutables0(Class<?> clazz) {
+    public static Executable[] getDeclaredExecutables(Class<?> clazz) {
         Objects.requireNonNull(clazz);
         ClassMirror[] clh = arrayCast(ClassMirror.class, clazz);
         long methods = clh[0].methods;
@@ -311,21 +319,21 @@ public class Reflection {
     }
 
     public static Method[] getDeclaredMethods(Class<?> clazz) {
-        return Arrays.stream(getDeclaredExecutables0(clazz))
+        return Arrays.stream(getDeclaredExecutables(clazz))
                 .filter((exec) -> exec instanceof Method)
                 .toArray(Method[]::new);
     }
 
     public static <T> Constructor<T>[] getDeclaredConstructors(Class<T> clazz) {
         //noinspection SuspiciousToArrayCall,unchecked
-        return Arrays.stream(getDeclaredExecutables0(clazz))
+        return Arrays.stream(getDeclaredExecutables(clazz))
                 .filter((exec) -> exec instanceof Constructor
                         && !Modifier.isStatic(exec.getModifiers()))
                 .toArray(Constructor[]::new);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static Method convertConstructorToMethod(Constructor<?> ct) {
+    public static Method constructorToMethod(Constructor<?> ct) {
         Method out = allocateInstance(Method.class);
         ExecutableMirror[] eb = arrayCast(ExecutableMirror.class, ct, out);
 
@@ -345,64 +353,72 @@ public class Reflection {
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static Method getDeclaredStaticConstructor(Class<?> clazz) {
         //noinspection SuspiciousToArrayCall,rawtypes
-        Constructor[] out = Arrays.stream(getDeclaredExecutables0(clazz))
+        Constructor[] out = Arrays.stream(getDeclaredExecutables(clazz))
                 .filter((exec) -> exec instanceof Constructor
                         && Modifier.isStatic(exec.getModifiers()))
                 .toArray(Constructor[]::new);
         if (out.length == 0) {
             return null;
         }
-        check(out.length == 1, IllegalStateException::new);
-        return convertConstructorToMethod(out[0]);
+        assert out.length == 1;
+        return constructorToMethod(out[0]);
     }
 
     public static Field getDeclaredField(Class<?> clazz, String name) {
-        return searchField(getDeclaredFields(clazz), name, true);
+        //TODO: improve performance
+        return searchField(getDeclaredFields(clazz), name);
     }
 
     public static Method getDeclaredMethod(Class<?> clazz, String name, Class<?>... params) {
-        return searchMethod(getDeclaredMethods(clazz), name, true, params);
+        //TODO: improve performance
+        return searchMethod(getDeclaredMethods(clazz), name, params);
     }
 
     public static <T> Constructor<T> getDeclaredConstructor(Class<T> clazz, Class<?>... params) {
-        return searchConstructor(getDeclaredConstructors(clazz), true, params);
+        //TODO: improve performance
+        return searchConstructor(getDeclaredConstructors(clazz), params);
     }
 
-    public static Field[] getFields(Class<?> c) {
+    public static Field[] getFields(Class<?> clazz) {
+        Objects.requireNonNull(clazz);
         ArrayList<Field> out = new ArrayList<>();
-        while (c != null) {
-            Field[] af = getDeclaredFields(c);
+        while (clazz != null) {
+            Field[] af = getDeclaredFields(clazz);
             out.addAll(Arrays.asList(af));
-            c = c.getSuperclass();
+            clazz = clazz.getSuperclass();
         }
         return out.toArray(new Field[0]);
     }
 
-    public static Field[] getInstanceFields(Class<?> c) {
+    public static Field[] getInstanceFields(Class<?> clazz) {
+        Objects.requireNonNull(clazz);
         ArrayList<Field> out = new ArrayList<>();
-        while (c != null) {
-            Field[] af = getDeclaredFields0(c, false);
+        while (clazz != null) {
+            Field[] af = getDeclaredFields0(clazz, false);
             out.addAll(Arrays.asList(af));
-            c = c.getSuperclass();
+            clazz = clazz.getSuperclass();
         }
         return out.toArray(new Field[0]);
     }
 
-    public static Method[] getMethods(Class<?> c) {
+    public static Method[] getMethods(Class<?> clazz) {
+        Objects.requireNonNull(clazz);
         ArrayList<Method> out = new ArrayList<>();
-        while (c != null) {
-            Method[] af = getDeclaredMethods(c);
+        while (clazz != null) {
+            Method[] af = getDeclaredMethods(clazz);
             out.addAll(Arrays.asList(af));
-            c = c.getSuperclass();
+            clazz = clazz.getSuperclass();
         }
         return out.toArray(new Method[0]);
     }
 
+    @AlwaysInline
     public static MethodHandle unreflect(Method m) {
         setAccessible(m, true);
         return nothrows_run(() -> MethodHandles.publicLookup().unreflect(m));
     }
 
+    @AlwaysInline
     public static MethodHandle unreflect(Constructor<?> c) {
         setAccessible(c, true);
         return nothrows_run(() -> MethodHandles.publicLookup().unreflectConstructor(c));
@@ -414,15 +430,14 @@ public class Reflection {
             throw new IllegalArgumentException("only non-static and non-abstract methods allowed");
         }
 
-        setAccessible(m, true);
-        MethodHandle out = nothrows_run(() -> MethodHandles.publicLookup().unreflect(m));
-
+        MethodHandle out = unreflect(m);
         setMethodHandleKind(out, /*INVOKE_DIRECT*/ 2);
 
         return out;
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
+    @AlwaysInline
     public static void setMethodType(MethodHandle handle, MethodType type) {
         Objects.requireNonNull(handle);
         Objects.requireNonNull(type);
@@ -431,6 +446,7 @@ public class Reflection {
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
+    @AlwaysInline
     public static void setMethodHandleKind(MethodHandle handle, int kind) {
         Objects.requireNonNull(handle);
         MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, handle);

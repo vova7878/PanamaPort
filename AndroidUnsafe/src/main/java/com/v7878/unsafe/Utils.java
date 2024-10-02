@@ -136,6 +136,7 @@ public class Utils {
         return MethodType.methodType(ret, args);
     }
 
+    @AlwaysInline
     public static int assertEq(int a, int b) {
         if (a == b) {
             return a;
@@ -143,6 +144,7 @@ public class Utils {
         throw new IllegalArgumentException("a(" + a + ") != b(" + b + ")");
     }
 
+    @AlwaysInline
     public static long assertEq(long a, long b) {
         if (a == b) {
             return a;

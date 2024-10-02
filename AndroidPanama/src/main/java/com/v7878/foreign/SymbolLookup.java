@@ -305,7 +305,8 @@ public interface SymbolLookup {
         return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
-    private static <Z> SymbolLookup libraryLookup(Z libDesc, Function<Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
+    private static <Z> SymbolLookup libraryLookup(
+            Z libDesc, Function<Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
         Objects.requireNonNull(libDesc);
         Objects.requireNonNull(libArena);
 

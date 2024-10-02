@@ -32,7 +32,6 @@ import static com.v7878.misc.Math.d2l;
 import static com.v7878.misc.Math.f2i;
 import static com.v7878.misc.Math.i2f;
 import static com.v7878.misc.Math.l2d;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BOOLEAN_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_INDEX_SCALE;
@@ -41,14 +40,10 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
-import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
-import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.InstructionSet.ARM;
 import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BYTE;
@@ -89,33 +84,10 @@ import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.Conditions;
 import com.v7878.unsafe.llvm.LLVMTypes;
 
-import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
 
-import dalvik.annotation.optimization.FastNative;
-
 public class ExtraMemoryAccess {
-    private static class JDKCopyMemory {
-        static {
-            nothrows_run(() -> {
-                Class<?> unsafe = Class.forName("jdk.internal.misc.Unsafe");
-                Method copy0 = getDeclaredMethod(unsafe, "copyMemory0",
-                        Object.class, long.class, Object.class, long.class, long.class);
-                Method copy = getDeclaredMethod(JDKCopyMemory.class, "copyMemory",
-                        Object.class, long.class, Object.class, long.class, long.class);
-
-                registerNativeMethod(copy, getExecutableData(copy0));
-            });
-        }
-
-        @DoNotShrink
-        @DoNotObfuscate
-        @FastNative
-        public static native void copyMemory(Object src_base, long src_offset,
-                                             Object dst_base, long dst_offset, long count);
-    }
-
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class EarlyNative {
@@ -1075,11 +1047,7 @@ public class ExtraMemoryAccess {
             return;
         }
 
-        if (CORRECT_SDK_INT >= 33) {
-            JDKCopyMemory.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
-        } else {
-            EarlyNative.INSTANCE.memmove(destBase, destOffset, srcBase, srcOffset, bytes);
-        }
+        EarlyNative.INSTANCE.memmove(destBase, destOffset, srcBase, srcOffset, bytes);
     }
 
     public static void swapShorts(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {

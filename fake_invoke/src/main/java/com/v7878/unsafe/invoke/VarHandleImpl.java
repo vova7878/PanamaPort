@@ -4,8 +4,7 @@ import com.v7878.invoke.VarHandle;
 
 import java.lang.invoke.MethodType;
 
-public abstract class AbstractVarHandle extends VarHandle {
-
+public abstract class VarHandleImpl extends VarHandle {
     public enum AccessType {
         GET,
         SET,

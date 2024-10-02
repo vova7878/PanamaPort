@@ -892,7 +892,6 @@ public class AndroidUnsafe {
     }
 
     @AlwaysInline
-
     public static long getLongVolatileO(Object obj, long offset) {
         return SunUnsafe.getLongVolatile(obj, offset);
     }

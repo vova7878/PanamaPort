@@ -46,7 +46,7 @@ public class PThread {
             MemorySegment key = arena.allocate(JAVA_INT);
             int err = Native.INSTANCE.pthread_key_create(key.nativeAddress(), destructor);
             if (err != 0) {
-                throw new NativeCodeException("pthread_key_create returned", err);
+                throw new NativeCodeException("pthread_key_create", err);
             }
             return key.get(JAVA_INT, 0);
         }
@@ -55,7 +55,7 @@ public class PThread {
     public static void pthread_key_delete(int key) {
         int err = Native.INSTANCE.pthread_key_delete(key);
         if (err != 0) {
-            throw new NativeCodeException("pthread_key_delete returned", err);
+            throw new NativeCodeException("pthread_key_delete", err);
         }
     }
 
@@ -66,7 +66,7 @@ public class PThread {
     public static void pthread_setspecific(int key, long value) {
         int err = Native.INSTANCE.pthread_setspecific(key, value);
         if (err != 0) {
-            throw new NativeCodeException("pthread_setspecific returned", err);
+            throw new NativeCodeException("pthread_setspecific", err);
         }
     }
 }

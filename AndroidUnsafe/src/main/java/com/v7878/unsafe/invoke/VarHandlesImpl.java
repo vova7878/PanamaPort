@@ -2,9 +2,10 @@ package com.v7878.unsafe.invoke;
 
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
-import static com.v7878.unsafe.invoke.AbstractVarHandle.accessType;
+import static com.v7878.unsafe.invoke.VarHandleImpl.accessType;
 
 import com.v7878.invoke.VarHandle;
+import com.v7878.invoke.VarHandle.AccessMode;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -41,30 +42,30 @@ public final class VarHandlesImpl {
         } else if (target.varType() != filterToTarget.type().returnType()) {
             throw newIllegalArgumentException("filterFromTarget filter type does not match target var handle type", filterToTarget.type(), target.varType());
         }
-        return new IndirectVarHandle(target, filterFromTarget.type().returnType(),
+        return newIndirectVarHandle(target, filterFromTarget.type().returnType(),
                 target.coordinateTypes().toArray(new Class[0]), (mode, modeHandle) -> {
-            int lastParameterPos = modeHandle.type().parameterCount() - 1;
-            switch (accessType(mode)) {
-                case GET, GET_ATOMIC -> {
-                    return MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                }
-                case SET, SET_ATOMIC -> {
-                    return MethodHandles.filterArguments(modeHandle, lastParameterPos, filterToTarget);
-                }
-                case COMPARE_AND_SET -> {
-                    return MethodHandles.filterArguments(modeHandle, lastParameterPos - 1, filterToTarget, filterToTarget);
-                }
-                case COMPARE_AND_EXCHANGE -> {
-                    MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                    return MethodHandles.filterArguments(adapter, lastParameterPos - 1, filterToTarget, filterToTarget);
-                }
-                case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC -> {
-                    MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                    return MethodHandles.filterArguments(adapter, lastParameterPos, filterToTarget);
-                }
-            }
-            throw shouldNotReachHere();
-        });
+                    int lastParameterPos = modeHandle.type().parameterCount() - 1;
+                    switch (accessType(mode)) {
+                        case GET, GET_ATOMIC -> {
+                            return MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                        }
+                        case SET, SET_ATOMIC -> {
+                            return MethodHandles.filterArguments(modeHandle, lastParameterPos, filterToTarget);
+                        }
+                        case COMPARE_AND_SET -> {
+                            return MethodHandles.filterArguments(modeHandle, lastParameterPos - 1, filterToTarget, filterToTarget);
+                        }
+                        case COMPARE_AND_EXCHANGE -> {
+                            MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                            return MethodHandles.filterArguments(adapter, lastParameterPos - 1, filterToTarget, filterToTarget);
+                        }
+                        case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC -> {
+                            MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                            return MethodHandles.filterArguments(adapter, lastParameterPos, filterToTarget);
+                        }
+                    }
+                    throw shouldNotReachHere();
+                });
     }
 
     public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
@@ -92,7 +93,7 @@ public final class VarHandlesImpl {
             newCoordinates.set(pos + i, filters[i].type().parameterType(0));
         }
 
-        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+        return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
                 (mode, modeHandle) -> MethodHandles.filterArguments(modeHandle, pos, filters));
     }
 
@@ -113,7 +114,7 @@ public final class VarHandlesImpl {
         }
         newCoordinates.addAll(pos, filter.type().parameterList());
 
-        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+        return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
                 (mode, modeHandle) -> MethodHandlesFixes.collectArguments(modeHandle, pos, filter));
     }
 
@@ -142,11 +143,11 @@ public final class VarHandlesImpl {
             newCoordinates.remove(pos);
         }
 
-        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+        return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
                 (mode, modeHandle) -> MethodHandles.insertArguments(modeHandle, pos, values));
     }
 
-    private static int numTrailingArgs(AbstractVarHandle.AccessType at) {
+    private static int numTrailingArgs(VarHandleImpl.AccessType at) {
         return switch (at) {
             case GET, GET_ATOMIC -> 0;
             case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE,
@@ -155,7 +156,7 @@ public final class VarHandlesImpl {
         };
     }
 
-    private static int[] reorderArrayFor(AbstractVarHandle.AccessType at, List<Class<?>> newCoordinates, int[] reorder) {
+    private static int[] reorderArrayFor(VarHandleImpl.AccessType at, List<Class<?>> newCoordinates, int[] reorder) {
         int numTrailingArgs = numTrailingArgs(at);
         int[] adjustedReorder = new int[reorder.length + numTrailingArgs];
         System.arraycopy(reorder, 0, adjustedReorder, 0, reorder.length);
@@ -165,7 +166,7 @@ public final class VarHandlesImpl {
         return adjustedReorder;
     }
 
-    private static MethodType methodTypeFor(AbstractVarHandle.AccessType at, MethodType oldType,
+    private static MethodType methodTypeFor(VarHandleImpl.AccessType at, MethodType oldType,
                                             List<Class<?>> oldCoordinates, List<Class<?>> newCoordinates) {
         int numTrailingArgs = numTrailingArgs(at);
         MethodType adjustedType = MethodType.methodType(oldType.returnType(), newCoordinates);
@@ -186,7 +187,7 @@ public final class VarHandlesImpl {
                 MethodType.methodType(void.class, newCoordinates),
                 MethodType.methodType(void.class, targetCoordinates));
 
-        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+        return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
                 (mode, modeHandle) -> MethodHandlesFixes.permuteArguments(modeHandle,
                         methodTypeFor(accessType(mode), modeHandle.type(), targetCoordinates, newCoordinates),
                         reorderArrayFor(accessType(mode), newCoordinates, reorder)));
@@ -206,34 +207,18 @@ public final class VarHandlesImpl {
         List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
         newCoordinates.addAll(pos, List.of(valueTypes));
 
-        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+        return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
                 (mode, modeHandle) -> MethodHandles.dropArguments(modeHandle, pos, valueTypes));
     }
 
-    private static class IndirectVarHandle extends AbstractVarHandle {
-        private final VarHandle target;
-        private final BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory;
-
-        IndirectVarHandle(VarHandle target, Class<?> varType, Class<?>[] coordinates,
-                          BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory) {
-            super(varType, coordinates);
-            this.target = target;
-            this.handleFactory = handleFactory;
-        }
-
-        @Override
-        protected MethodHandle getMethodHandleUncached(AccessMode mode) {
+    private static VarHandle newIndirectVarHandle(
+            VarHandle target, Class<?> varType, Class<?>[] coordinates,
+            BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory) {
+        VarHandleImpl impl = (VarHandleImpl) target;
+        int modeMask = impl.getAccessModesBitMask();
+        return new VarHandleImpl(modeMask, (mode, type) -> {
             MethodHandle targetHandle = target.toMethodHandle(mode);
-            MethodHandle out = handleFactory.apply(mode, targetHandle);
-            if (!out.type().equals(accessModeType(mode))) { // NPE check
-                throw new IllegalStateException("handleFactory returned MethodHandle with wrong type: " + out.type());
-            }
-            return out;
-        }
-
-        @Override
-        public boolean isAccessModeSupported(AccessMode accessMode) {
-            return target.isAccessModeSupported(accessMode);
-        }
+            return handleFactory.apply(mode, targetHandle);
+        }, varType, coordinates);
     }
 }

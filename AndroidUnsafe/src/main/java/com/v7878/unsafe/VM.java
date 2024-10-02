@@ -207,7 +207,10 @@ public class VM {
     }
 
     public static int emptyClassSize() {
-        return classSizeField(void.class);
+        class Holder {
+            static final int size = classSizeField(void.class);
+        }
+        return Holder.size;
     }
 
     public static boolean shouldHaveEmbeddedVTableAndImt(Class<?> clazz) {
