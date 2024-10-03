@@ -216,7 +216,7 @@ public final class VarHandlesImpl {
             BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory) {
         VarHandleImpl impl = (VarHandleImpl) target;
         int modeMask = impl.getAccessModesBitMask();
-        return new VarHandleImpl(modeMask, (mode, type) -> {
+        return VarHandleImpl.newVarHandle(modeMask, (mode, type) -> {
             MethodHandle targetHandle = target.toMethodHandle(mode);
             return handleFactory.apply(mode, targetHandle);
         }, varType, coordinates);

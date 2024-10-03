@@ -183,6 +183,12 @@ public class VarHandleImpl extends VarHandle {
         return invoke(AccessMode.GET_AND_BITWISE_XOR_RELEASE, args);
     }
 
+    @AlwaysInline
+    private Object invoke(AccessMode mode, Object[] args) {
+        return nothrows_run(() -> invokerMHTable[accessType(mode).ordinal()]
+                .invokeExact(modeMHTable[mode.ordinal()], args));
+    }
+
     //
 
     @Override
@@ -369,6 +375,7 @@ public class VarHandleImpl extends VarHandle {
         return bitMask;
     }
 
+    @AlwaysInline
     public static boolean isReadOnly(AccessMode accessMode) {
         var type = accessType(accessMode);
         return type == AccessType.GET || type == AccessType.GET_ATOMIC;
@@ -399,6 +406,11 @@ public class VarHandleImpl extends VarHandle {
         MethodHandle create(AccessMode mode, MethodType type);
     }
 
+    public static VarHandle newVarHandle(int accessModesBitMask, VarHandleFactory handleFactory,
+                                         Class<?> varType, Class<?>... coordinates) {
+        return new VarHandleImpl(accessModesBitMask, handleFactory, varType, coordinates);
+    }
+
     private static final AccessType[] ALL_TYPES = AccessType.values();
     private static final AccessMode[] ALL_MODES = AccessMode.values();
 
@@ -420,8 +432,8 @@ public class VarHandleImpl extends VarHandle {
     private final MethodHandle[] invokerMHTable;
     private final MethodHandle[] modeMHTable;
 
-    VarHandleImpl(int accessModesBitMask, VarHandleFactory handleFactory,
-                  Class<?> varType, Class<?>... coordinates) {
+    private VarHandleImpl(int accessModesBitMask, VarHandleFactory handleFactory,
+                          Class<?> varType, Class<?>... coordinates) {
         this.accessModesBitMask = checkAccessModes(accessModesBitMask);
         this.varType = checkVarType(varType);
         this.coordinates = checkCoordinates(coordinates);
@@ -431,7 +443,7 @@ public class VarHandleImpl extends VarHandle {
         this.modeMHTable = getMethodHandles(handleFactory);
     }
 
-    public int getAccessModesBitMask() {
+    public final int getAccessModesBitMask() {
         return accessModesBitMask;
     }
 
@@ -494,12 +506,6 @@ public class VarHandleImpl extends VarHandle {
             table[i] = mh;
         }
         return table;
-    }
-
-    @AlwaysInline
-    private Object invoke(AccessMode mode, Object[] args) {
-        return nothrows_run(() -> invokerMHTable[accessType(mode).ordinal()]
-                .invokeExact(toMethodHandle(mode), args));
     }
 
     @AlwaysInline

@@ -119,7 +119,7 @@ final class _Utils {
     // Port-added: specific implementation
     private static VarHandle rawMemorySegmentViewHandle(
             Class<?> carrier, long alignmentMask, ByteOrder order) {
-        return _VarHandleSegmentViewBase.rawMemorySegmentViewHandle(carrier,
+        return _VarHandleSegmentView.rawMemorySegmentViewHandle(carrier,
                 alignmentMask, !ByteOrder.nativeOrder().equals(order));
     }
 
