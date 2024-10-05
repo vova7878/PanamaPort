@@ -14,6 +14,7 @@ import com.v7878.unsafe.access.InvokeAccess;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.cpp_std.CLayouts;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
+import com.v7878.unsafe.invoke.MethodHandlesFixes;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -41,7 +42,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
     @Override
     public final MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
         _Utils.checkSymbol(symbol);
-        return downcallHandle(function, options).bindTo(symbol);
+        return MethodHandlesFixes.bindTo(downcallHandle(function, options), symbol);
     }
 
     @Override

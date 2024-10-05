@@ -160,7 +160,7 @@ final class _Utils {
             handle = VarHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
         } else if (layout instanceof AddressLayout addressLayout) {
             MethodHandle longToAddressAdapter = addressLayout.targetLayout().isPresent() ?
-                    MethodHandles.insertArguments(LONG_TO_ADDRESS_TARGET, 1, addressLayout) :
+                    MethodHandlesFixes.insertArguments(LONG_TO_ADDRESS_TARGET, 1, addressLayout) :
                     LONG_TO_ADDRESS_NO_TARGET;
             handle = VarHandles.filterValue(handle,
                     MethodHandlesFixes.explicitCastArguments(ADDRESS_TO_LONG,
@@ -203,7 +203,7 @@ final class _Utils {
         if (options.hasCapturedCallState()) {
             int index = options.isReturnInMemory() ? 2 : 1;
             // (<target address>, ?<allocator>, <capture segment>, ...) -> ...
-            handle = MethodHandles.filterArguments(handle, index, CHECK_CAPTURE_SEGMENT);
+            handle = MethodHandlesFixes.filterArguments(handle, index, CHECK_CAPTURE_SEGMENT);
         }
         return handle;
     }

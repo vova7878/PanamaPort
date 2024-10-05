@@ -178,7 +178,7 @@ class _LayoutPath {
         }
         MemoryLayout derefLayout = addressLayout.targetLayout().get();
         MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
-        handle = MethodHandles.filterReturnValue(handle, MH_SEGMENT_RESIZE);
+        handle = MethodHandlesFixes.filterReturnValue(handle, MH_SEGMENT_RESIZE);
         return derefPath(derefLayout, handle, this);
     }
 
@@ -210,7 +210,7 @@ class _LayoutPath {
         handle = VarHandles.insertCoordinates(handle, 1, rootLayout());          // (MS, long, long)
         if (strides.length > 0) {
             MethodHandle offsetAdapter = offsetHandle();
-            offsetAdapter = MethodHandles.insertArguments(offsetAdapter, 0, 0L);
+            offsetAdapter = MethodHandlesFixes.insertArguments(offsetAdapter, 0, 0L);
             handle = VarHandles.collectCoordinates(handle, 2, offsetAdapter);    // (MS, long)
         } else {
             // simpler adaptation
@@ -227,7 +227,7 @@ class _LayoutPath {
                 // the first/outermost adapter will have a base offset coordinate, the rest are constant 0
                 if (i > 0) {
                     // plug in a constant 0 base offset for all but the outermost access in a deref chain
-                    adapter = MethodHandles.insertArguments(adapter, 1, 0);
+                    adapter = MethodHandlesFixes.insertArguments(adapter, 1, 0);
                 }
                 handle = VarHandles.collectCoordinates(handle, 0, adapter);
             }
@@ -247,7 +247,7 @@ class _LayoutPath {
     public MethodHandle offsetHandle() {
         MethodHandle mh = MH_ADD_EXACT;
         for (int i = strides.length - 1; i >= 0; i--) {
-            MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i], bounds[i]);
+            MethodHandle collector = MethodHandlesFixes.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i], bounds[i]);
             // (J, J, ...) -> J to (J, J, J, ...) -> J
             // 1. the leading argument is the base offset (externally provided).
             // 2. index arguments are added. The last index correspond to the innermost layout.
@@ -256,7 +256,7 @@ class _LayoutPath {
             // are always < Long.MAX_VALUE.
             mh = MethodHandlesFixes.collectArguments(mh, 1, collector);
         }
-        return MethodHandles.insertArguments(mh, 1, offset);
+        return MethodHandlesFixes.insertArguments(mh, 1, offset);
     }
 
     private MemoryLayout rootLayout() {

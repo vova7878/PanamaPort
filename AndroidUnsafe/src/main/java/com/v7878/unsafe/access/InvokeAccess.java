@@ -8,6 +8,7 @@ import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.unsafe.DangerLevel;
+import com.v7878.unsafe.VM;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -93,5 +94,11 @@ public class InvokeAccess {
                     getDeclaredField(MethodType.class, "ptypes"));
         }
         return (Class<?>[]) getObject(Objects.requireNonNull(type), Holder.PTYPES_OFFSET);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static MethodHandle duplicateHandle(MethodHandle handle) {
+        Objects.requireNonNull(handle);
+        return VM.internalClone(handle);
     }
 }

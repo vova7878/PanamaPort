@@ -8,7 +8,6 @@ import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandle.AccessMode;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,21 +46,21 @@ public final class VarHandlesImpl {
                     int lastParameterPos = modeHandle.type().parameterCount() - 1;
                     switch (accessType(mode)) {
                         case GET, GET_ATOMIC -> {
-                            return MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                            return MethodHandlesFixes.filterReturnValue(modeHandle, filterFromTarget);
                         }
                         case SET, SET_ATOMIC -> {
-                            return MethodHandles.filterArguments(modeHandle, lastParameterPos, filterToTarget);
+                            return MethodHandlesFixes.filterArguments(modeHandle, lastParameterPos, filterToTarget);
                         }
                         case COMPARE_AND_SET -> {
-                            return MethodHandles.filterArguments(modeHandle, lastParameterPos - 1, filterToTarget, filterToTarget);
+                            return MethodHandlesFixes.filterArguments(modeHandle, lastParameterPos - 1, filterToTarget, filterToTarget);
                         }
                         case COMPARE_AND_EXCHANGE -> {
-                            MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                            return MethodHandles.filterArguments(adapter, lastParameterPos - 1, filterToTarget, filterToTarget);
+                            MethodHandle adapter = MethodHandlesFixes.filterReturnValue(modeHandle, filterFromTarget);
+                            return MethodHandlesFixes.filterArguments(adapter, lastParameterPos - 1, filterToTarget, filterToTarget);
                         }
                         case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC -> {
-                            MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
-                            return MethodHandles.filterArguments(adapter, lastParameterPos, filterToTarget);
+                            MethodHandle adapter = MethodHandlesFixes.filterReturnValue(modeHandle, filterFromTarget);
+                            return MethodHandlesFixes.filterArguments(adapter, lastParameterPos, filterToTarget);
                         }
                     }
                     throw shouldNotReachHere();
@@ -94,7 +93,7 @@ public final class VarHandlesImpl {
         }
 
         return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandles.filterArguments(modeHandle, pos, filters));
+                (mode, modeHandle) -> MethodHandlesFixes.filterArguments(modeHandle, pos, filters));
     }
 
     public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
@@ -144,7 +143,7 @@ public final class VarHandlesImpl {
         }
 
         return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandles.insertArguments(modeHandle, pos, values));
+                (mode, modeHandle) -> MethodHandlesFixes.insertArguments(modeHandle, pos, values));
     }
 
     private static int numTrailingArgs(VarHandleImpl.AccessType at) {
@@ -208,7 +207,7 @@ public final class VarHandlesImpl {
         newCoordinates.addAll(pos, List.of(valueTypes));
 
         return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandles.dropArguments(modeHandle, pos, valueTypes));
+                (mode, modeHandle) -> MethodHandlesFixes.dropArguments(modeHandle, pos, valueTypes));
     }
 
     private static VarHandle newIndirectVarHandle(
