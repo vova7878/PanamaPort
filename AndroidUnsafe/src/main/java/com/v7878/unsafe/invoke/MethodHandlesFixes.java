@@ -16,7 +16,6 @@ import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.Utils.unexpectedType;
-import static com.v7878.unsafe.invoke.Transformers.INVOKE_TRANSFORMER;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 
@@ -736,7 +735,7 @@ public class MethodHandlesFixes {
         explicitCastArgumentsChecks(oldType, newType);
         if (InvokeAccess.explicitCastEquivalentToAsType(oldType, newType) &&
                 // TODO: it`s needed for api >= 33?
-                !INVOKE_TRANSFORMER.isInstance(target)) {
+                !Transformers.isTransformer(target)) {
             return target.asType(newType);
         }
         return Transformers.makeTransformer(newType, new ExplicitCastArguments(target, newType));

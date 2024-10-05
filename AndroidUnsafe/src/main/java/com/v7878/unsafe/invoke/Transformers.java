@@ -47,15 +47,13 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import dalvik.system.DexFile;
 
 @ApiSensitive
 public class Transformers {
-
-    public static final Class<?> INVOKE_TRANSFORMER = nothrows_run(
-            () -> Class.forName("java.lang.invoke.Transformers$Transformer"));
 
     private static final MethodHandle directAsVarargsCollector = nothrows_run(() -> unreflectDirect(
             getDeclaredMethod(MethodHandle.class, "asVarargsCollector", Class.class)));
@@ -68,6 +66,10 @@ public class Transformers {
     private static final boolean SKIP_CHECK_CAST = !DEBUG_BUILD;
 
     static {
+        Class<?> invoke_transformer = nothrows_run(() -> Class.forName(
+                "java.lang.invoke.Transformers$Transformer"));
+        TypeId invoke_transformer_id = TypeId.of(invoke_transformer);
+
         TypeId mh = TypeId.of(MethodHandle.class);
         TypeId mt = TypeId.of(MethodType.class);
 
@@ -82,7 +84,7 @@ public class Transformers {
         TypeId transformer_id = TypeId.of(transformer_name);
 
         ClassDef transformer_def = new ClassDef(transformer_id);
-        transformer_def.setSuperClass(TypeId.of(INVOKE_TRANSFORMER));
+        transformer_def.setSuperClass(TypeId.of(invoke_transformer));
         transformer_def.getInterfaces().add(TypeId.of(Cloneable.class));
         transformer_def.setAccessFlags(ACC_PUBLIC | ACC_FINAL);
 
@@ -99,7 +101,7 @@ public class Transformers {
         transformer_def.getClassData().getDirectMethods().add(new EncodedMethod(
                 MethodId.constructor(transformer_id, mt, TypeId.I, TypeId.of(TransformerImpl.class)),
                 ACC_PUBLIC | ACC_CONSTRUCTOR).withCode(0, b -> b
-                .invoke(DIRECT, MethodId.constructor(TypeId.of(INVOKE_TRANSFORMER), mt, TypeId.I),
+                .invoke(DIRECT, MethodId.constructor(invoke_transformer_id, mt, TypeId.I),
                         b.this_(), b.p(0), b.p(1))
                 .iop(PUT_OBJECT, b.p(2), b.this_(), impl_field)
                 .return_void()
@@ -355,6 +357,18 @@ public class Transformers {
                 }
         ));
 
+        //public boolean isTransformer(MethodHandle handle) {
+        //    return handle instanceof Transformer;
+        //}
+        invoker_def.getClassData().getVirtualMethods().add(new EncodedMethod(
+                new MethodId(invoker_id, new ProtoId(TypeId.Z,
+                        TypeId.of(MethodHandle.class)), "isTransformer"),
+                ACC_PUBLIC).withCode(0, b -> {
+                    b.instance_of(b.p(0), b.p(0), invoke_transformer_id);
+                    b.return_(b.p(0));
+                }
+        ));
+
         DexFile dex = openDexFile(new Dex(transformer_def, invoker_def).compile());
         setTrusted(dex);
 
@@ -392,6 +406,8 @@ public class Transformers {
     @DoNotShrink
     @DoNotObfuscate
     private abstract static class InvokerI {
+        abstract boolean isTransformer(MethodHandle handle);
+
         abstract void transform(MethodHandle handle, Object stackFrame) throws Throwable;
 
         abstract void invokeExactWithFrame(MethodHandle handle,
@@ -502,10 +518,14 @@ public class Transformers {
         }
     }
 
+    public static boolean isTransformer(MethodHandle handle) {
+        return invoker.isTransformer(Objects.requireNonNull(handle));
+    }
+
     @ApiSensitive
     public static void invokeExactWithFrameNoChecks(
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        if (INVOKE_TRANSFORMER.isInstance(target)) {
+        if (invoker.isTransformer(target)) {
             // FIXME: android 8-12L convert nominalType to type (PLATFORM-BUG!)
             invoker.transform(target, stackFrame.esf);
         } else {
