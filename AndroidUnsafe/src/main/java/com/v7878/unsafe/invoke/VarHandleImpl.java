@@ -185,8 +185,18 @@ public class VarHandleImpl extends VarHandle {
 
     @AlwaysInline
     private Object invoke(AccessMode mode, Object[] args) {
-        return nothrows_run(() -> invokerMHTable[accessType(mode).ordinal()]
-                .invokeExact(modeMHTable[mode.ordinal()], args));
+        MethodHandle generic = genericMHTable[mode.ordinal()];
+        MethodType type = generic.type();
+        int arrayLength = Objects.requireNonNull(args).length;
+        int numArrayArgs = type.parameterCount();
+        if (arrayLength != numArrayArgs) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid array length %s expected %s", arrayLength, numArrayArgs));
+        }
+        EmulatedStackFrame frame = EmulatedStackFrame.create(type);
+        System.arraycopy(args, 0, frame.references(), 0, arrayLength);
+        nothrows_run(() -> Transformers.invokeExactWithFrameNoChecks(generic, frame));
+        return frame.references()[arrayLength];
     }
 
     //
@@ -384,24 +394,6 @@ public class VarHandleImpl extends VarHandle {
     // implementation details
 
     @FunctionalInterface
-    public interface VarHandleTransformer {
-        void transform(AccessMode mode, EmulatedStackFrame stack) throws Throwable;
-    }
-
-    public static VarHandle newVarHandle(int accessModesBitMask, VarHandleTransformer impl,
-                                         Class<?> varType, Class<?>... coordinates) {
-        Objects.requireNonNull(impl);
-        //TODO: cleanup
-        return new VarHandleImpl(accessModesBitMask, (mode, type) ->
-                Transformers.makeTransformer(type, new AbstractTransformer() {
-                    @Override
-                    protected void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-                        impl.transform(mode, stack);
-                    }
-                }), varType, coordinates);
-    }
-
-    @FunctionalInterface
     public interface VarHandleFactory {
         MethodHandle create(AccessMode mode, MethodType type);
     }
@@ -429,7 +421,7 @@ public class VarHandleImpl extends VarHandle {
 
     // cache tables
     private final MethodType[] modeMTTable;
-    private final MethodHandle[] invokerMHTable;
+    private final MethodHandle[] genericMHTable;
     private final MethodHandle[] modeMHTable;
 
     private VarHandleImpl(int accessModesBitMask, VarHandleFactory handleFactory,
@@ -439,8 +431,8 @@ public class VarHandleImpl extends VarHandle {
         this.coordinates = checkCoordinates(coordinates);
 
         this.modeMTTable = accessModeTypes();
-        this.invokerMHTable = getInvokerHandles();
         this.modeMHTable = getMethodHandles(handleFactory);
+        this.genericMHTable = getGenericHandles();
     }
 
     public final int getAccessModesBitMask() {
@@ -523,19 +515,16 @@ public class VarHandleImpl extends VarHandle {
     }
 
     @AlwaysInline
-    private MethodHandle getInvokerHandleUncached(AccessType accessType) {
-        MethodType type = modeMTTable[accessType.ordinal()];
-        MethodHandle invoker = MethodHandlesFixes.exactInvoker(type);
-        invoker = MethodHandlesFixes.asType(invoker,
-                type.generic().insertParameterTypes(0, MethodHandle.class));
-        return invoker.asSpreader(Object[].class, type.parameterCount());
+    private MethodHandle getGenericHandleUncached(int index) {
+        var type = accessModeType(ALL_MODES[index]);
+        return MethodHandlesFixes.asType(modeMHTable[index], type.generic());
     }
 
     @AlwaysInline
-    private MethodHandle[] getInvokerHandles() {
-        MethodHandle[] table = new MethodHandle[ALL_TYPES.length];
-        for (int i = 0; i < ALL_TYPES.length; i++) {
-            table[i] = getInvokerHandleUncached(ALL_TYPES[i]);
+    private MethodHandle[] getGenericHandles() {
+        MethodHandle[] table = new MethodHandle[ALL_MODES.length];
+        for (int i = 0; i < ALL_MODES.length; i++) {
+            table[i] = getGenericHandleUncached(i);
         }
         return table;
     }
