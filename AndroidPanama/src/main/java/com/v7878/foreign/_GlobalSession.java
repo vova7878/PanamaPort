@@ -71,8 +71,11 @@ sealed class _GlobalSession extends _MemorySessionImpl {
     }
 
     /**
-     * This is a global session that wraps a heap object.
-     * Possible objects are: Java arrays, buffers and class loaders.
+     * This is a global session that wraps a heap object. Possible objects are: Java arrays, buffers and
+     * class loaders. Objects of two heap sessions are compared by identity. That is, if the wrapped object is the same,
+     * then the resulting heap sessions are also considered equals. We do not compare the objects using
+     * {@link Object#equals(Object)}, as that would be problematic when comparing buffers, whose equality and
+     * hash codes are content-dependent.
      */
     static final class GlobalHolderSession extends _GlobalSession {
         @DoNotShrink
@@ -82,6 +85,17 @@ sealed class _GlobalSession extends _MemorySessionImpl {
         @KeepCodeAttribute
         public GlobalHolderSession(Object ref) {
             this.ref = Objects.requireNonNull(ref);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof GlobalHolderSession session &&
+                    ref == session.ref;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(ref);
         }
     }
 }
