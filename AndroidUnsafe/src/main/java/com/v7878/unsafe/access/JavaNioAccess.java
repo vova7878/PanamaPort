@@ -7,6 +7,13 @@ import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.SUPER;
 import static com.v7878.dex.bytecode.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_DOUBLE_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_BASE_OFFSET;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
@@ -29,6 +36,7 @@ import static com.v7878.unsafe.Reflection.getMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import com.v7878.dex.ClassDef;
 import com.v7878.dex.Dex;
@@ -41,6 +49,7 @@ import com.v7878.dex.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.ApiSensitive;
+import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
 
 import java.io.FileDescriptor;
@@ -336,10 +345,9 @@ public class JavaNioAccess {
         throw new AssertionError();
     }
 
-    private static final long BASE_OFFSET = Stream.of(ByteBuffer.class, CharBuffer.class,
-            ShortBuffer.class, IntBuffer.class, FloatBuffer.class, LongBuffer.class,
-            DoubleBuffer.class).mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
-            "hb"))).reduce(JavaNioAccess::assert_same).getAsLong();
+    private static final Set<Class<?>> BUFFERS = Set.of(ByteBuffer.class,
+            CharBuffer.class, ShortBuffer.class, IntBuffer.class,
+            FloatBuffer.class, LongBuffer.class, DoubleBuffer.class);
 
     private static final Set<Class<?>> BUFFER_VIEWS = Stream
             .of("Char", "Short", "Int", "Float", "Long", "Double")
@@ -351,58 +359,124 @@ public class JavaNioAccess {
         return BUFFER_VIEWS.contains(buffer.getClass());
     }
 
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
-    private static final long BB_OFFSET = BUFFER_VIEWS.stream()
-            .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "bb")))
-            .reduce(JavaNioAccess::assert_same).getAsLong();
-
-    public static Object getBufferBase(Buffer buffer) {
-        Objects.requireNonNull(buffer);
-        if (isBufferView(buffer)) {
-            return getBufferBase((ByteBuffer) getObject(buffer, BB_OFFSET));
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    private static ByteBuffer getDerivedBuffer(Buffer buffer) {
+        class Holder {
+            @SuppressWarnings("OptionalGetWithoutIsPresent")
+            static final long OFFSET = BUFFER_VIEWS.stream()
+                    .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "bb")))
+                    .reduce(JavaNioAccess::assert_same).getAsLong();
         }
-        return getObject(buffer, BASE_OFFSET);
-    }
-
-    private static final long ADDRESS_OFFSET =
-            fieldOffset(getDeclaredField(Buffer.class, "address"));
-
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
-    // Yes, it is offset to offset from base (ugly name)
-    private static final long OFFSET_OFFSET = BUFFER_VIEWS.stream()
-            .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
-                    CORRECT_SDK_INT >= 35 ? "byteOffset" : "offset")))
-            .reduce(JavaNioAccess::assert_same).getAsLong();
-
-    public static long getBufferAddress(Buffer buffer) {
-        Objects.requireNonNull(buffer);
-        if (!buffer.isDirect() && isBufferView(buffer)) {
-            //FIXME: maybe address+offset?
-            return getIntO(buffer, OFFSET_OFFSET);
-        }
-        return getLongO(buffer, ADDRESS_OFFSET);
+        return (ByteBuffer) getObject(buffer, Holder.OFFSET);
     }
 
     public static Scope getBufferScope(Buffer buffer) {
         Objects.requireNonNull(buffer);
         if (isBufferView(buffer)) {
-            return getBufferScope((ByteBuffer) getObject(buffer, BB_OFFSET));
+            return getBufferScope(getDerivedBuffer(buffer));
         }
         return SegmentBufferAccess.getBufferScope(buffer);
     }
 
-    static final long FD_OFFSET =
-            fieldOffset(getDeclaredField(MappedByteBuffer.class, "fd"));
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    private static Object getBufferBase(Buffer buffer) {
+        class Holder {
+            @SuppressWarnings("OptionalGetWithoutIsPresent")
+            static final long OFFSET = BUFFERS.stream()
+                    .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "hb")))
+                    .reduce(JavaNioAccess::assert_same).getAsLong();
+        }
+        return getObject(buffer, Holder.OFFSET);
+    }
+
+    public static Object getBufferUnsafeBase(Buffer buffer) {
+        Objects.requireNonNull(buffer);
+        if (buffer.isDirect()) return null;
+        buffer = isBufferView(buffer) ? getDerivedBuffer(buffer) : buffer;
+        return getBufferBase(buffer);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    private static long getBufferAddress(Buffer buffer) {
+        class Holder {
+            static final long OFFSET = fieldOffset(
+                    getDeclaredField(Buffer.class, "address"));
+        }
+        return getLongO(buffer, Holder.OFFSET);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    private static int getBufferOffset(Buffer buffer) {
+        class Holder {
+            @SuppressWarnings("OptionalGetWithoutIsPresent")
+            static final long OFFSET = BUFFERS.stream()
+                    .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "offset")))
+                    .reduce(JavaNioAccess::assert_same).getAsLong();
+        }
+        return getIntO(buffer, Holder.OFFSET);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    private static int getBufferDerivedOffset(Buffer buffer) {
+        class Holder {
+            @SuppressWarnings("OptionalGetWithoutIsPresent")
+            static final long OFFSET = BUFFER_VIEWS.stream()
+                    .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
+                            CORRECT_SDK_INT >= 35 ? "byteOffset" : "offset")))
+                    .reduce(JavaNioAccess::assert_same).getAsLong();
+        }
+        return getIntO(buffer, Holder.OFFSET);
+    }
+
+    private static int getArrayBase(Buffer buffer) {
+        if (buffer instanceof ByteBuffer) {
+            return ARRAY_BYTE_BASE_OFFSET;
+        } else if (buffer instanceof CharBuffer) {
+            return ARRAY_CHAR_BASE_OFFSET;
+        } else if (buffer instanceof ShortBuffer) {
+            return ARRAY_SHORT_BASE_OFFSET;
+        } else if (buffer instanceof IntBuffer) {
+            return ARRAY_INT_BASE_OFFSET;
+        } else if (buffer instanceof FloatBuffer) {
+            return ARRAY_FLOAT_BASE_OFFSET;
+        } else if (buffer instanceof LongBuffer) {
+            return ARRAY_LONG_BASE_OFFSET;
+        } else if (buffer instanceof DoubleBuffer) {
+            return ARRAY_DOUBLE_BASE_OFFSET;
+        }
+        throw shouldNotReachHere();
+    }
+
+    public static long getBufferUnsafeOffset(Buffer buffer) {
+        Objects.requireNonNull(buffer);
+        if (buffer.isDirect()) {
+            return getBufferAddress(buffer);
+        }
+        long offset = getArrayBase(buffer);
+        if (isBufferView(buffer)) {
+            offset += getBufferDerivedOffset(buffer);
+            buffer = getDerivedBuffer(buffer);
+        }
+        return offset + getBufferOffset(buffer);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    private static FileDescriptor getBufferFD(MappedByteBuffer buffer) {
+        return (FileDescriptor) getObject(buffer, FD_OFFSET);
+    }
+
+    static final long FD_OFFSET = fieldOffset(
+            getDeclaredField(MappedByteBuffer.class, "fd"));
 
     public static UnmapperProxy unmapper(Buffer buffer) {
-        if (!(buffer instanceof MappedByteBuffer)) {
+        if (!(buffer instanceof MappedByteBuffer mapped)) {
             return null;
         }
-        FileDescriptor fd = (FileDescriptor) getObject(buffer, FD_OFFSET);
+        FileDescriptor fd = getBufferFD(mapped);
         return fd == null ? null : new UnmapperProxy() {
             @Override
             public long address() {
-                return getBufferAddress(buffer);
+                return getBufferUnsafeOffset(buffer);
             }
 
             @Override
@@ -423,8 +497,7 @@ public class JavaNioAccess {
         if (!buffer.isDirect()) {
             throw new IllegalArgumentException("buffer is not direct");
         }
-        var tmp = BUFFER_VIEWS.contains(buffer.getClass()) ?
-                getObject(buffer, BB_OFFSET) : buffer;
+        var tmp = isBufferView(buffer) ? getDerivedBuffer(buffer) : buffer;
         return nothrows_run(() -> attachment.invoke(tmp));
     }
 

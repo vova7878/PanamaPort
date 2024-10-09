@@ -27,7 +27,6 @@
 
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import android.annotation.SuppressLint;
@@ -507,11 +506,11 @@ abstract sealed class _AbstractMemorySegmentImpl
     public static _AbstractMemorySegmentImpl ofBuffer(Buffer bb) {
         //TODO: check buffer.isAccessible or isFreed in segments?
         Objects.requireNonNull(bb);
-        Object base = JavaNioAccess.getBufferBase(bb);
+        Object base = JavaNioAccess.getBufferUnsafeBase(bb);
         if (!bb.isDirect() && base == null) {
             throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
         }
-        long bbAddress = JavaNioAccess.getBufferAddress(bb);
+        long bbAddress = JavaNioAccess.getBufferUnsafeOffset(bb);
         UnmapperProxy unmapper = JavaNioAccess.unmapper(bb);
 
         int pos = bb.position();
@@ -527,11 +526,9 @@ abstract sealed class _AbstractMemorySegmentImpl
         long off = bbAddress + ((long) pos << scaleFactor);
         long len = (long) size << scaleFactor;
 
-        if (base != null) heap:{
-            if (bb.isDirect()) {
-                check(base instanceof byte[], AssertionError::new);
-                break heap;
-            } else if (base instanceof byte[]) {
+        if (base != null) {
+            assert !bb.isDirect();
+            if (base instanceof byte[]) {
                 return new _HeapMemorySegmentImpl.OfByte(off, base, len, readOnly, bufferScope);
             } else if (base instanceof short[]) {
                 return new _HeapMemorySegmentImpl.OfShort(off, base, len, readOnly, bufferScope);
@@ -561,7 +558,7 @@ abstract sealed class _AbstractMemorySegmentImpl
             return Objects.requireNonNull(JavaNioAccess.attachment(buffer));
         } else {
             // heap buffer, return the underlying array
-            return JavaNioAccess.getBufferBase(buffer);
+            return JavaNioAccess.getBufferUnsafeBase(buffer);
         }
     }
 
