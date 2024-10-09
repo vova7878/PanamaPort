@@ -8,6 +8,7 @@ import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.WrongMethodTypeException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -190,7 +191,7 @@ public class VarHandleImpl extends VarHandle {
         int arrayLength = Objects.requireNonNull(args).length;
         int numArrayArgs = type.parameterCount();
         if (arrayLength != numArrayArgs) {
-            throw new IllegalArgumentException(String.format(
+            throw new WrongMethodTypeException(String.format(
                     "Invalid array length %s expected %s", arrayLength, numArrayArgs));
         }
         EmulatedStackFrame frame = EmulatedStackFrame.create(type);
