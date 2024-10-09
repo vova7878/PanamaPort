@@ -341,20 +341,24 @@ public class JavaNioAccess {
             DoubleBuffer.class).mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
             "hb"))).reduce(JavaNioAccess::assert_same).getAsLong();
 
-    private static final Set<Class<?>> AS_BUFFERS = Stream
+    private static final Set<Class<?>> BUFFER_VIEWS = Stream
             .of("Char", "Short", "Int", "Float", "Long", "Double")
             .map(name -> String.format("java.nio.ByteBufferAs%sBuffer", name))
             .map(name -> nothrows_run(() -> Class.forName(name)))
             .collect(Collectors.toSet());
 
+    private static boolean isBufferView(Buffer buffer) {
+        return BUFFER_VIEWS.contains(buffer.getClass());
+    }
+
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    private static final long BB_OFFSET = AS_BUFFERS.stream()
+    private static final long BB_OFFSET = BUFFER_VIEWS.stream()
             .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "bb")))
             .reduce(JavaNioAccess::assert_same).getAsLong();
 
     public static Object getBufferBase(Buffer buffer) {
         Objects.requireNonNull(buffer);
-        if (AS_BUFFERS.contains(buffer.getClass())) {
+        if (isBufferView(buffer)) {
             return getBufferBase((ByteBuffer) getObject(buffer, BB_OFFSET));
         }
         return getObject(buffer, BASE_OFFSET);
@@ -365,20 +369,25 @@ public class JavaNioAccess {
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     // Yes, it is offset to offset from base (ugly name)
-    private static final long OFFSET_OFFSET = AS_BUFFERS.stream()
+    private static final long OFFSET_OFFSET = BUFFER_VIEWS.stream()
             .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
                     CORRECT_SDK_INT >= 35 ? "byteOffset" : "offset")))
             .reduce(JavaNioAccess::assert_same).getAsLong();
 
     public static long getBufferAddress(Buffer buffer) {
         Objects.requireNonNull(buffer);
-        if (!buffer.isDirect() && AS_BUFFERS.contains(buffer.getClass())) {
+        if (!buffer.isDirect() && isBufferView(buffer)) {
+            //FIXME: maybe address+offset?
             return getIntO(buffer, OFFSET_OFFSET);
         }
         return getLongO(buffer, ADDRESS_OFFSET);
     }
 
     public static Scope getBufferScope(Buffer buffer) {
+        Objects.requireNonNull(buffer);
+        if (isBufferView(buffer)) {
+            return getBufferScope((ByteBuffer) getObject(buffer, BB_OFFSET));
+        }
         return SegmentBufferAccess.getBufferScope(buffer);
     }
 
@@ -414,7 +423,7 @@ public class JavaNioAccess {
         if (!buffer.isDirect()) {
             throw new IllegalArgumentException("buffer is not direct");
         }
-        var tmp = AS_BUFFERS.contains(buffer.getClass()) ?
+        var tmp = BUFFER_VIEWS.contains(buffer.getClass()) ?
                 getObject(buffer, BB_OFFSET) : buffer;
         return nothrows_run(() -> attachment.invoke(tmp));
     }
