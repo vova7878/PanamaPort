@@ -830,14 +830,19 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             this.ret = descriptor.returnLayoutPlain();
         }
 
-        private static void copyArg(StackFrameAccessor reader, StackFrameAccessor writer, MemoryLayout layout) {
+        private static void copyArg(StackFrameAccessor reader, StackFrameAccessor writer,
+                                    MemoryLayout layout, Arena arena) {
             if (layout instanceof AddressLayout al) {
                 MemoryLayout target = al.targetLayout().orElse(null);
-                writer.putNextReference(nextSegment(reader, target), MemorySegment.class);
+                MemorySegment segment = nextSegment(reader, target);
+                segment = segment.reinterpret(arena, null);
+                writer.putNextReference(segment, MemorySegment.class);
             } else if (layout instanceof ValueLayout vl) {
                 EmulatedStackFrame.copyNext(reader, writer, vl.carrier());
             } else if (layout instanceof GroupLayout gl) {
-                writer.putNextReference(nextSegment(reader, gl), MemorySegment.class);
+                MemorySegment segment = nextSegment(reader, gl);
+                segment = segment.reinterpret(arena, null);
+                writer.putNextReference(segment, MemorySegment.class);
             } else {
                 throw shouldNotReachHere();
             }
@@ -877,17 +882,19 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             EmulatedStackFrame stub_frame = EmulatedStackFrame.create(stub.type());
             StackFrameAccessor stub_acc = stub_frame.createAccessor();
             MemorySegment retSeg = ret == null ? null : nextSegment(thiz_acc, ret);
-            for (MemoryLayout arg : args) {
-                copyArg(thiz_acc, stub_acc, arg);
-            }
-            try {
-                invokeExactWithFrameNoChecks(stub, stub_frame);
-            } catch (Throwable th) {
-                handleUncaughtException(th);
-            }
-            if (ret != null) {
-                stub_acc.moveToReturn();
-                copyRet(stub_acc, retSeg, ret);
+            try (Arena arena = Arena.ofConfined()) {
+                for (MemoryLayout arg : args) {
+                    copyArg(thiz_acc, stub_acc, arg, arena);
+                }
+                try {
+                    invokeExactWithFrameNoChecks(stub, stub_frame);
+                } catch (Throwable th) {
+                    handleUncaughtException(th);
+                }
+                if (ret != null) {
+                    stub_acc.moveToReturn();
+                    copyRet(stub_acc, retSeg, ret);
+                }
             }
         }
     }
