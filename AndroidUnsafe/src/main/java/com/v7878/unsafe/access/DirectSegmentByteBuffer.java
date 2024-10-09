@@ -25,7 +25,7 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
     }
 
     @Override
-    public final DirectByteBuffer slice() {
+    public final DirectSegmentByteBuffer slice() {
         if (!attachment().isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
         }
@@ -38,7 +38,7 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
     }
 
     @Override
-    public final DirectByteBuffer slice(int index, int length) {
+    public final DirectSegmentByteBuffer slice(int index, int length) {
         if (!attachment().isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
         }
@@ -48,7 +48,7 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
     }
 
     @Override
-    public final DirectByteBuffer duplicate() {
+    public final DirectSegmentByteBuffer duplicate() {
         if (attachment().isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
@@ -57,7 +57,7 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
     }
 
     @Override
-    public final ByteBuffer asReadOnlyBuffer() {
+    public final DirectSegmentByteBuffer asReadOnlyBuffer() {
         if (attachment().isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }

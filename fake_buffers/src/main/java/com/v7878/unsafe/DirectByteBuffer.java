@@ -5,7 +5,7 @@ import java.io.FileDescriptor;
 import sun.misc.Cleaner;
 
 // Compile-time stub, real DirectByteBuffer will be generated at runtime
-public abstract class DirectByteBuffer extends CommonByteBuffer {
+public abstract class DirectByteBuffer extends MappedByteBufferBase {
     public static class MemoryRef {
 
         // from java.nio.DirectByteBuffer$MemoryRef
@@ -61,7 +61,5 @@ public abstract class DirectByteBuffer extends CommonByteBuffer {
     public abstract DirectByteBuffer duplicate();
 
     @Override
-    public DirectByteBuffer compact() {
-        throw new UnsupportedOperationException("Stub!");
-    }
+    public abstract DirectByteBuffer asReadOnlyBuffer();
 }

@@ -19,7 +19,7 @@ public class HeapSegmentByteBuffer extends HeapByteBuffer {
     }
 
     @Override
-    public HeapByteBuffer slice() {
+    public HeapSegmentByteBuffer slice() {
         int pos = position();
         int lim = Math.max(limit(), pos);
         int rem = lim - pos;
@@ -29,20 +29,20 @@ public class HeapSegmentByteBuffer extends HeapByteBuffer {
     }
 
     @Override
-    public HeapByteBuffer slice(int index, int length) {
+    public HeapSegmentByteBuffer slice(int index, int length) {
         Objects.checkFromIndexSize(index, length, limit());
         return new HeapSegmentByteBuffer(hb, -1, 0,
                 length, length, index + offset, isReadOnly, scope);
     }
 
     @Override
-    public HeapByteBuffer duplicate() {
+    public HeapSegmentByteBuffer duplicate() {
         return new HeapSegmentByteBuffer(hb, markValue(), position(), limit(),
                 capacity(), offset, isReadOnly, scope);
     }
 
     @Override
-    public ByteBuffer asReadOnlyBuffer() {
+    public HeapSegmentByteBuffer asReadOnlyBuffer() {
         return new HeapSegmentByteBuffer(hb, markValue(), position(), limit(),
                 capacity(), offset, true, scope);
     }
