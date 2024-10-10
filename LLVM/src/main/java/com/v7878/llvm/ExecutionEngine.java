@@ -388,6 +388,7 @@ public final class ExecutionEngine {
     //void LLVMInitializeMCJITCompilerOptions(struct LLVMMCJITCompilerOptions *Options, size_t SizeOfOptions) {
     //    return Native.INSTANCE.LLVMInitializeMCJITCompilerOptions();
     //}
+
     ///**
     // * Create an MCJIT execution engine for a module, with the given options. It is
     // * the responsibility of the caller to ensure that all fields in Options up to
@@ -408,7 +409,6 @@ public final class ExecutionEngine {
     //LLVMBool LLVMCreateMCJITCompilerForModule(LLVMExecutionEngineRef *OutJIT, LLVMModuleRef M, struct LLVMMCJITCompilerOptions *Options, size_t SizeOfOptions, char **OutError) {
     //    return Native.INSTANCE.LLVMCreateMCJITCompilerForModule();
     //}
-
     public static void LLVMDisposeExecutionEngine(LLVMExecutionEngineRef EE) {
         Native.INSTANCE.LLVMDisposeExecutionEngine(EE.value());
     }
@@ -557,6 +557,7 @@ public final class ExecutionEngine {
     /*===-- Operations on memory managers -------------------------------------===*/
 
     //TODO
+
     ///**
     // * Create a simple custom MCJIT memory manager. This memory manager can
     // * intercept allocations in a module-oblivious way. This will return NULL
@@ -571,7 +572,6 @@ public final class ExecutionEngine {
     //LLVMMCJITMemoryManagerRef LLVMCreateSimpleMCJITMemoryManager(void *Opaque, LLVMMemoryManagerAllocateCodeSectionCallback AllocateCodeSection, LLVMMemoryManagerAllocateDataSectionCallback AllocateDataSection, LLVMMemoryManagerFinalizeMemoryCallback FinalizeMemory, LLVMMemoryManagerDestroyCallback Destroy) {
     //    return Native.INSTANCE.LLVMCreateSimpleMCJITMemoryManager();
     //}
-
     public static void LLVMDisposeMCJITMemoryManager(LLVMMCJITMemoryManagerRef MM) {
         Native.INSTANCE.LLVMDisposeMCJITMemoryManager(MM.value());
     }
