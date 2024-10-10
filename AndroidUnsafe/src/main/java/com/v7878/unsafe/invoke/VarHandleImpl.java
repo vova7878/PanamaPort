@@ -1,7 +1,5 @@
 package com.v7878.unsafe.invoke;
 
-import static com.v7878.unsafe.Utils.nothrows_run;
-
 import com.v7878.invoke.VarHandle;
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
@@ -196,7 +194,11 @@ public class VarHandleImpl extends VarHandle {
         }
         EmulatedStackFrame frame = EmulatedStackFrame.create(type);
         System.arraycopy(args, 0, frame.references(), 0, arrayLength);
-        nothrows_run(() -> Transformers.invokeExactWithFrameNoChecks(generic, frame));
+        try {
+            Transformers.invokeExactWithFrameNoChecks(generic, frame);
+        } catch (Throwable th) {
+            VarHandlesImpl.handleCheckedExceptions(th);
+        }
         return frame.references()[arrayLength];
     }
 

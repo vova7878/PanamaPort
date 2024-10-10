@@ -6,6 +6,8 @@ import static com.v7878.unsafe.invoke.VarHandleImpl.accessType;
 
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandle.AccessMode;
+import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.access.InvokeAccess;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -13,9 +15,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 public final class VarHandlesImpl {
     private VarHandlesImpl() {
+    }
+
+    private static MethodHandle checkExceptions(MethodHandle target) {
+        Objects.requireNonNull(target);
+        Class<?>[] exceptionTypes = InvokeAccess.exceptionTypes(target);
+        if (exceptionTypes != null) { // exceptions known
+            if (Stream.of(exceptionTypes).anyMatch(VarHandlesImpl::isCheckedException)) {
+                throw newIllegalArgumentException("Cannot adapt a var handle with a method handle which throws checked exceptions");
+            }
+        }
+        return target;
+    }
+
+    private static boolean isCheckedException(Class<?> clazz) {
+        return Throwable.class.isAssignableFrom(clazz) &&
+                !RuntimeException.class.isAssignableFrom(clazz) &&
+                !Error.class.isAssignableFrom(clazz);
+    }
+
+    static void handleCheckedExceptions(Throwable th) {
+        if (isCheckedException(th.getClass())) {
+            throw new IllegalStateException("Adapter handle threw checked exception", th);
+        }
+        AndroidUnsafe.throwException(th);
     }
 
     private static Class<?> lastParameterType(MethodType type) {
@@ -25,8 +52,8 @@ public final class VarHandlesImpl {
 
     public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
         Objects.requireNonNull(target);
-        Objects.requireNonNull(filterToTarget);
-        Objects.requireNonNull(filterFromTarget);
+        checkExceptions(filterToTarget);
+        checkExceptions(filterFromTarget);
 
         //check that from/to filters have right signatures
         if (filterFromTarget.type().parameterCount() != 1) {
@@ -82,7 +109,7 @@ public final class VarHandlesImpl {
 
         List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
         for (int i = 0; i < filters.length; i++) {
-            MethodHandle filter = Objects.requireNonNull(filters[i]);
+            MethodHandle filter = checkExceptions(filters[i]);
             MethodType filterType = filter.type();
             if (filterType.parameterCount() != 1) {
                 throw newIllegalArgumentException("Invalid filter type " + filterType);
@@ -98,7 +125,7 @@ public final class VarHandlesImpl {
 
     public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
         Objects.requireNonNull(target);
-        Objects.requireNonNull(filter);
+        checkExceptions(filter);
 
         List<Class<?>> targetCoordinates = target.coordinateTypes();
         if (pos < 0 || pos >= targetCoordinates.size()) {
