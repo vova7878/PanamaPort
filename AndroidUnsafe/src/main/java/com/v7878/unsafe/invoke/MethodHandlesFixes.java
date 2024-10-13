@@ -1113,4 +1113,100 @@ public class MethodHandlesFixes {
     public static MethodHandle bindTo(MethodHandle target, Object value) {
         return target.bindTo(value);
     }
+
+    private static class CollectReturnValue extends AbstractTransformer {
+        private final MethodHandle target;
+        private final MethodHandle collector;
+        private final int target_count;
+        private final int collector_count;
+
+        CollectReturnValue(MethodHandle target, MethodHandle collector, int collector_count) {
+            this.target = target;
+            this.collector = collector;
+            this.target_count = target.type().parameterCount();
+            this.collector_count = collector_count;
+        }
+
+        @Override
+        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
+            StackFrameAccessor this_accessor = stack.createAccessor();
+
+            // Constructing the target frame.
+            MethodType target_type = target.type();
+            EmulatedStackFrame target_frame = EmulatedStackFrame.create(target_type);
+            StackFrameAccessor target_accessor = target_frame.createAccessor();
+            EmulatedStackFrame.copyArguments(this_accessor, 0,
+                    target_accessor, 0, target_count);
+
+            // Invoke the target
+            invokeExactWithFrameNoChecks(target, target_frame);
+
+            // Constructing the collector frame.
+            EmulatedStackFrame collectorFrame = EmulatedStackFrame.create(collector.type());
+            StackFrameAccessor collector_accessor = collectorFrame.createAccessor();
+            EmulatedStackFrame.copyArguments(this_accessor, target_count,
+                    collector_accessor, 0, collector_count);
+
+            // If return type of target is not void, we have a return value to copy.
+            if (rtype(target_type) != void.class) {
+                EmulatedStackFrame.copyNext(target_accessor.moveToReturn(),
+                        collector_accessor.moveTo(collector_count), target_type.returnType());
+            }
+
+            // Invoke the collector and copy its return value back to the original frame.
+            invokeExactWithFrameNoChecks(collector, collectorFrame);
+            collectorFrame.copyReturnValueTo(stack);
+        }
+    }
+
+    /**
+     * The adaptation works as follows:
+     * <blockquote><pre>{@code
+     * T target(A...)
+     * V filter(B... , T)
+     * V adapter(A... a, B... b) {
+     *     T t = target(a...);
+     *     return filter(b..., t);
+     * }
+     * // and if the target has a void return:
+     * void target2(A...);
+     * V filter2(B...);
+     * V adapter2(A... a, B... b) {
+     *   target2(a...);
+     *   return filter2(b...);
+     * }
+     * // and if the filter has a void return:
+     * T target3(A...);
+     * void filter3(B... , T);
+     * void adapter3(A... a, B... b) {
+     *   T t = target3(a...);
+     *   filter3(b..., t);
+     * }
+     * }</pre></blockquote>
+     *
+     * @param target the target method handle
+     * @param filter the filter method handle
+     * @return the adapter method handle
+     */
+    // Backport from Hotspot
+    public static MethodHandle collectReturnValue(MethodHandle target, MethodHandle filter) {
+        MethodType targetType = target.type();
+        MethodType filterType = filter.type();
+        int value = target.type().returnType() == void.class ? 0 : 1;
+        int parameters = filterType.parameterCount() - value;
+        if (parameters == 0) {
+            return MethodHandlesFixes.filterReturnValue(target, filter);
+        }
+        collectReturnValueChecks(targetType, filterType);
+        MethodType newType = targetType.changeReturnType(filterType.returnType());
+        newType = newType.appendParameterTypes(filterType.parameterList().subList(0, parameters));
+        return makeTransformer(newType, new CollectReturnValue(target, filter, parameters));
+    }
+
+    private static void collectReturnValueChecks(MethodType targetType, MethodType filterType) {
+        Class<?> rtype = targetType.returnType();
+        int filterValues = filterType.parameterCount();
+        if (rtype != void.class && (filterValues < 1 || rtype != filterType.parameterType(0)))
+            throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
+    }
 }
