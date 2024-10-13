@@ -1206,7 +1206,7 @@ public class MethodHandlesFixes {
     private static void collectReturnValueChecks(MethodType targetType, MethodType filterType) {
         Class<?> rtype = targetType.returnType();
         int filterValues = filterType.parameterCount();
-        if (rtype != void.class && (filterValues < 1 || rtype != filterType.parameterType(0)))
+        if (rtype != void.class && (filterValues < 1 || rtype != filterType.parameterType(filterValues - 1)))
             throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
     }
 }
