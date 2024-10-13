@@ -224,6 +224,7 @@ public interface SymbolLookup {
      * @see System#load(String)
      * @see System#loadLibrary(String)
      */
+    @SuppressWarnings("resource")
     static SymbolLookup loaderLookup() {
         Class<?> caller = Stack.getStackClass1();
 

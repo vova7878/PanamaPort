@@ -172,7 +172,7 @@ class _LayoutPath {
 
     public _LayoutPath derefElement() {
         if (!(layout instanceof AddressLayout addressLayout) ||
-                !addressLayout.targetLayout().isPresent()) {
+                addressLayout.targetLayout().isEmpty()) {
             throw badLayoutPath(
                     String.format("Cannot dereference layout: %s", breadcrumbs()));
         }

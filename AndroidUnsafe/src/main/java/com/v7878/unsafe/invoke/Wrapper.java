@@ -90,7 +90,8 @@ public enum Wrapper {
             return slots << SLOT_SHIFT;
         }
     }
-    /// format queries:
+
+    // format queries:
 
     /**
      * How many bits are in the wrapped value?  Returns 0 for OBJECT or VOID.
