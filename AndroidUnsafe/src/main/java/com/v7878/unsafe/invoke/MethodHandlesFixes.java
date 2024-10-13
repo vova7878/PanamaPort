@@ -160,7 +160,7 @@ public class MethodHandlesFixes {
         public void transform(MethodHandle ignored, EmulatedStackFrame stackFrame) throws Throwable {
             // The first argument to the stack frame is the handle that needs to be invoked.
             StackFrameAccessor thisAccessor = stackFrame.createAccessor();
-            MethodHandle target = thisAccessor.nextReference(MethodHandle.class);
+            MethodHandle target = thisAccessor.nextReference();
 
             // All other arguments must be copied to the target frame.
             EmulatedStackFrame targetFrame = EmulatedStackFrame.create(targetType);
@@ -215,8 +215,7 @@ public class MethodHandlesFixes {
         makeExecutablePublic(target);
 
         TypeId sfa_id = TypeId.of(StackFrameAccessor.class);
-        TypeId obj_id = TypeId.of(Object.class);
-        TypeId class_id = TypeId.of(Class.class);
+        TypeId obj_id = TypeId.OBJECT;
 
         SparseArray<MethodId> next_ids = new SparseArray<>(9);
         next_ids.append('Z', new MethodId(sfa_id, new ProtoId(TypeId.Z), "nextBoolean"));
@@ -227,7 +226,7 @@ public class MethodHandlesFixes {
         next_ids.append('F', new MethodId(sfa_id, new ProtoId(TypeId.F), "nextFloat"));
         next_ids.append('J', new MethodId(sfa_id, new ProtoId(TypeId.J), "nextLong"));
         next_ids.append('D', new MethodId(sfa_id, new ProtoId(TypeId.D), "nextDouble"));
-        next_ids.append('L', new MethodId(sfa_id, new ProtoId(obj_id, class_id), "nextReference"));
+        next_ids.append('L', new MethodId(sfa_id, new ProtoId(obj_id), "nextReference"));
 
         SparseArray<MethodId> put_next_ids = new SparseArray<>(9);
         put_next_ids.append('Z', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.Z), "putNextBoolean"));
@@ -238,7 +237,7 @@ public class MethodHandlesFixes {
         put_next_ids.append('F', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.F), "putNextFloat"));
         put_next_ids.append('J', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.J), "putNextLong"));
         put_next_ids.append('D', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.D), "putNextDouble"));
-        put_next_ids.append('L', new MethodId(sfa_id, new ProtoId(TypeId.V, obj_id, class_id), "putNextReference"));
+        put_next_ids.append('L', new MethodId(sfa_id, new ProtoId(TypeId.V, obj_id), "putNextReference"));
 
         var move_to_ret = new MethodId(sfa_id, new ProtoId(sfa_id), "moveToReturn");
 
@@ -275,8 +274,7 @@ public class MethodHandlesFixes {
                                 reg += 2;
                             }
                             case 'L' -> {
-                                b.const_class(b.l(0), arg_id);
-                                b.invoke(VIRTUAL, next_ids.get(shorty), b.l(2), b.l(0));
+                                b.invoke(VIRTUAL, next_ids.get(shorty), b.l(2));
                                 b.move_result_object(b.l(0));
                                 b.check_cast(b.l(0), arg_id);
                                 b.move_object_auto(b.l(reg), b.l(0));
@@ -302,9 +300,8 @@ public class MethodHandlesFixes {
                         }
                         case 'L' -> {
                             b.move_result_object(b.l(0));
-                            b.const_class(b.l(1), ret_id);
                             b.invoke(VIRTUAL, move_to_ret, b.l(2));
-                            b.invoke(VIRTUAL, put_next_ids.get(ret_shorty), b.l(2), b.l(0), b.l(1));
+                            b.invoke(VIRTUAL, put_next_ids.get(ret_shorty), b.l(2), b.l(0));
                         }
                         default -> throw shouldNotReachHere();
                     }
@@ -402,7 +399,7 @@ public class MethodHandlesFixes {
                     if (to.isPrimitive()) {
                         unboxNull(writer, to);
                     } else {
-                        writer.putNextReference(null, to);
+                        writer.putNextReference(null);
                     }
                 } else {
                     explicitCast(reader, from, writer, to);
@@ -683,7 +680,7 @@ public class MethodHandlesFixes {
                 case 'D' -> reader.nextDouble();
                 default -> throw unexpectedType(from);
             };
-            writer.putNextReference(to.cast(boxed), to);
+            writer.putNextReference(to.cast(boxed));
         }
 
         private static void explicitCast(StackFrameAccessor reader, Class<?> from,
@@ -702,17 +699,17 @@ public class MethodHandlesFixes {
                 }
             } else {
                 // |from| is a reference type.
-                Object ref = reader.nextReference(from);
+                Object ref = reader.nextReference();
                 if (to.isPrimitive()) {
                     // |from| is a reference type, |to| is a primitive type,
                     unbox(ref, writer, to);
                 } else if (to.isInterface()) {
                     // Pass from without a cast according to description for
                     // {@link java.lang.invoke.MethodHandles#explicitCastArguments()}.
-                    writer.putNextReference(ref, to);
+                    writer.putNextReference(ref);
                 } else {
                     // |to| and from |from| are reference types, perform class cast check.
-                    writer.putNextReference(to.cast(ref), to);
+                    writer.putNextReference(to.cast(ref));
                 }
             }
         }
@@ -987,7 +984,7 @@ public class MethodHandlesFixes {
                     if (to == void.class) {
                         return;
                     }
-                    Object value = reader.nextReference(Object.class);
+                    Object value = reader.nextReference();
                     if (value == null) {
                         throw new NullPointerException();
                     }
@@ -1035,14 +1032,14 @@ public class MethodHandlesFixes {
                         case 'V' -> null;
                         default -> shouldNotReachHere();
                     };
-                    writer.putNextReference(boxed, to);
+                    writer.putNextReference(boxed);
                 } else {
                     // Cast
-                    Object value = reader.nextReference(Object.class);
+                    Object value = reader.nextReference();
                     if (value != null && !to.isAssignableFrom(value.getClass())) {
                         throw badCast(value.getClass(), to);
                     }
-                    writer.putNextReference(value, to);
+                    writer.putNextReference(value);
                 }
             }
         }

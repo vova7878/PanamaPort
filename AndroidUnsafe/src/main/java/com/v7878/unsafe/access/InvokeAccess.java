@@ -80,11 +80,7 @@ public class InvokeAccess {
     }
 
     public static Class<?> rtype(MethodType type) {
-        class Holder {
-            static final long RTYPE_OFFSET = fieldOffset(
-                    getDeclaredField(MethodType.class, "rtype"));
-        }
-        return (Class<?>) getObject(Objects.requireNonNull(type), Holder.RTYPE_OFFSET);
+        return type.returnType();
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)

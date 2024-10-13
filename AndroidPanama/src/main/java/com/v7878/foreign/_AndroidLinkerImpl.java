@@ -165,8 +165,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 EmulatedStackFrame.copyNext(reader, writer, carrier);
                 return;
             }
-            _AbstractMemorySegmentImpl segment = (_AbstractMemorySegmentImpl)
-                    reader.nextReference(MemorySegment.class);
+            _AbstractMemorySegmentImpl segment = reader.nextReference();
             if (layout instanceof AddressLayout) {
                 segment.scope.acquire0();
                 acquiredSessions.add(segment.scope);
@@ -184,7 +183,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             long value;
             if (allowsHeapAccess) {
                 Object base = segment.unsafeGetBase();
-                writer.putNextReference(base, Object.class);
+                writer.putNextReference(base);
                 value = segment.unsafeGetOffset();
             } else {
                 value = _Utils.unboxSegment(segment);
@@ -201,7 +200,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             Class<?> type = layout.carrier();
             if (type == MemorySegment.class) {
                 MemoryLayout target = ((AddressLayout) layout).targetLayout().orElse(null);
-                writer.putNextReference(nextSegment(reader, target), MemorySegment.class);
+                writer.putNextReference(nextSegment(reader, target));
                 return;
             }
             EmulatedStackFrame.copyNext(reader, writer, type);
@@ -217,7 +216,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             try (Arena arena = Arena.ofConfined()) {
                 _AbstractMemorySegmentImpl capturedState = null;
                 if (capturedStateMask < 0) {
-                    capturedState = (_AbstractMemorySegmentImpl) thiz_acc.nextReference(MemorySegment.class);
+                    capturedState = thiz_acc.nextReference();
                     capturedState.scope.acquire0();
                     acquiredSessions.add(capturedState.scope);
                 }
@@ -584,14 +583,14 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         @Override
         public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
             StackFrameAccessor thiz_acc = stack.createAccessor();
-            SegmentAllocator allocator = thiz_acc.getReference(ret_index, SegmentAllocator.class);
+            SegmentAllocator allocator = thiz_acc.getReference(ret_index);
             MemorySegment ret = allocator.allocate(ret_layout);
             MethodType cached_type = stack.type();
-            thiz_acc.setType(handle.type());
-            thiz_acc.setReference(ret_index, ret, MemorySegment.class);
+            stack.setType(handle.type());
+            thiz_acc.setReference(ret_index, ret);
             invokeExactWithFrameNoChecks(handle, stack);
             stack.setType(cached_type);
-            thiz_acc.moveToReturn().putNextReference(ret, MemorySegment.class);
+            thiz_acc.moveToReturn().putNextReference(ret);
         }
     }
 
@@ -836,13 +835,13 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 MemoryLayout target = al.targetLayout().orElse(null);
                 MemorySegment segment = nextSegment(reader, target);
                 segment = segment.reinterpret(arena, null);
-                writer.putNextReference(segment, MemorySegment.class);
+                writer.putNextReference(segment);
             } else if (layout instanceof ValueLayout vl) {
                 EmulatedStackFrame.copyNext(reader, writer, vl.carrier());
             } else if (layout instanceof GroupLayout gl) {
                 MemorySegment segment = nextSegment(reader, gl);
                 segment = segment.reinterpret(arena, null);
-                writer.putNextReference(segment, MemorySegment.class);
+                writer.putNextReference(segment);
             } else {
                 throw shouldNotReachHere();
             }
@@ -866,10 +865,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             } else if (layout instanceof OfDouble dl) {
                 ret.set(dl, 0, reader.nextDouble());
             } else if (layout instanceof AddressLayout al) {
-                ret.set(al, 0, reader.nextReference(MemorySegment.class));
+                ret.set(al, 0, reader.nextReference());
             } else if (layout instanceof GroupLayout gl) {
                 //TODO: optimize if return layout if empty
-                MemorySegment arg = reader.nextReference(MemorySegment.class);
+                MemorySegment arg = reader.nextReference();
                 MemorySegment.copy(arg, 0, ret, 0, gl.byteSize());
             } else {
                 throw shouldNotReachHere();

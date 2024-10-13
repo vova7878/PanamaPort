@@ -10,9 +10,11 @@ import static com.v7878.unsafe.Utils.assertEq;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.DangerLevel;
+import com.v7878.unsafe.access.InvokeAccess;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -21,27 +23,28 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 
-//TODO: improve perfomance
-public class EmulatedStackFrame {
+public final class EmulatedStackFrame {
     public static final int RETURN_VALUE_IDX = -2;
 
+    @AlwaysInline
     private static boolean is64BitPrimitive(Class<?> type) {
         return type == double.class || type == long.class;
     }
 
+    @AlwaysInline
     static int getSize(Class<?> type) {
-        if (!type.isPrimitive()) {
-            throw new IllegalArgumentException("type.isPrimitive() == false: " + type);
-        }
+        assert type.isPrimitive();
         // NOTE: size of void is 4
         return is64BitPrimitive(type) ? 8 : 4;
     }
 
-    private static void checkAssignable(Class<?> expectedType, Class<?> actualType) {
-        if (!expectedType.isAssignableFrom(actualType)) {
-            throw new IllegalArgumentException("Incorrect type: " + actualType
-                    + ", expected: " + expectedType);
+    @AlwaysInline
+    private static void checkAssignable(Class<?> expected, Class<?> actual) {
+        if (expected == actual) {
+            return;
         }
+        throw new IllegalArgumentException(
+                String.format("Incorrect type: %s, expected: %s", actual, expected));
     }
 
     static final Class<?> esf_class = nothrows_run(() ->
@@ -49,14 +52,14 @@ public class EmulatedStackFrame {
 
     @DoNotShrink
     @DoNotObfuscate
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static EmulatedStackFrame wrap(Object esf) {
-        //null + class check
-        esf.getClass().asSubclass(esf_class);
+        assert esf_class.isAssignableFrom(esf.getClass());
         return new EmulatedStackFrame(esf);
     }
 
-    private static final MethodHandle esf_create = nothrows_run(() ->
-            unreflect(getDeclaredMethod(esf_class, "create", MethodType.class)));
+    private static final MethodHandle esf_create =
+            unreflect(getDeclaredMethod(esf_class, "create", MethodType.class));
 
     public static EmulatedStackFrame create(MethodType frameType) {
         return new EmulatedStackFrame(nothrows_run(() -> esf_create.invoke(frameType)));
@@ -68,8 +71,8 @@ public class EmulatedStackFrame {
         this.esf = esf;
     }
 
-    private static final long references_offset = nothrows_run(() ->
-            objectFieldOffset(getDeclaredField(esf_class, "references")));
+    private static final long references_offset =
+            objectFieldOffset(getDeclaredField(esf_class, "references"));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public Object[] references() {
@@ -82,8 +85,8 @@ public class EmulatedStackFrame {
         putObject(esf, references_offset, references);
     }
 
-    private static final long stackFrame_offset = nothrows_run(() ->
-            objectFieldOffset(getDeclaredField(esf_class, "stackFrame")));
+    private static final long stackFrame_offset =
+            objectFieldOffset(getDeclaredField(esf_class, "stackFrame"));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public byte[] stackFrame() {
@@ -96,8 +99,8 @@ public class EmulatedStackFrame {
         putObject(esf, stackFrame_offset, stackFrame);
     }
 
-    private static final long type_offset = nothrows_run(() ->
-            objectFieldOffset(getDeclaredField(esf_class, "type")));
+    private static final long type_offset =
+            objectFieldOffset(getDeclaredField(esf_class, "type"));
 
     public MethodType type() {
         return (MethodType) getObject(esf, type_offset);
@@ -110,16 +113,14 @@ public class EmulatedStackFrame {
     }
 
     public StackFrameAccessor createAccessor() {
-        StackFrameAccessor out = new StackFrameAccessor();
-        out.attach(this);
-        return out;
+        return new StackFrameAccessor(this);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void copyArguments(StackFrameAccessor reader, int reader_start_idx,
                                      StackFrameAccessor writer, int writer_start_idx, int count) {
-        Objects.checkFromIndexSize(reader_start_idx, count, reader.type().parameterCount());
-        Objects.checkFromIndexSize(writer_start_idx, count, writer.type().parameterCount());
+        Objects.checkFromIndexSize(reader_start_idx, count, reader.ptypes.length);
+        Objects.checkFromIndexSize(writer_start_idx, count, writer.ptypes.length);
 
         if (count == 0) return;
 
@@ -141,8 +142,8 @@ public class EmulatedStackFrame {
     }
 
     public void copyReturnValueTo(EmulatedStackFrame other) {
-        final Class<?> returnType = type().returnType();
-        checkAssignable(other.type().returnType(), returnType);
+        final Class<?> returnType = type().erase().returnType();
+        checkAssignable(other.type().erase().returnType(), returnType);
         if (returnType.isPrimitive()) {
             byte[] this_stack = stackFrame();
             byte[] other_stack = other.stackFrame();
@@ -160,7 +161,7 @@ public class EmulatedStackFrame {
     public static void copyNext(StackFrameAccessor reader,
                                 StackFrameAccessor writer, Class<?> type) {
         switch (Wrapper.basicTypeChar(type)) {
-            case 'L' -> writer.putNextReference(reader.nextReference(type), type);
+            case 'L' -> writer.putNextReference(reader.nextReference());
             case 'Z' -> writer.putNextBoolean(reader.nextBoolean());
             case 'B' -> writer.putNextByte(reader.nextByte());
             case 'C' -> writer.putNextChar(reader.nextChar());
@@ -173,95 +174,89 @@ public class EmulatedStackFrame {
         }
     }
 
-    public static class StackFrameAccessor {
+    public static final class StackFrameAccessor {
+        private final int[] frameOffsets;
+        private final int[] referencesOffsets;
+
+        private final ByteBuffer frameBuf;
+        private final Object[] references;
+        private int currentReference;
+
+        private final EmulatedStackFrame frame;
+        private final Class<?>[] ptypes;
+        private final Class<?> rtype;
 
         private int argumentIdx;
 
-        private int[] frameOffsets;
-        private int[] referencesOffsets;
-
-        private ByteBuffer frameBuf;
-        private int currentReference;
-        private Object[] references;
-
-        private EmulatedStackFrame frame;
-        private MethodType type;
-
-        public StackFrameAccessor() {
+        public StackFrameAccessor(EmulatedStackFrame stackFrame) {
+            frame = stackFrame;
+            MethodType type = stackFrame.type().erase();
+            rtype = InvokeAccess.rtype(type);
+            ptypes = InvokeAccess.ptypes(type);
+            frameBuf = ByteBuffer.wrap(stackFrame.stackFrame())
+                    .order(ByteOrder.nativeOrder());
+            references = frame.references();
+            MethodTypeForm form = MethodTypeHacks.getForm(type);
+            frameOffsets = form.frameOffsets();
+            referencesOffsets = form.referencesOffsets();
         }
 
-        public void attach(EmulatedStackFrame stackFrame) {
-            if (frame != stackFrame) {
-                // Re-initialize storage if not re-attaching to the same stackFrame.
-                frame = stackFrame;
-                MethodType tmp_type = stackFrame.type();
-                type = tmp_type;
-                frameBuf = ByteBuffer.wrap(stackFrame.stackFrame()).order(ByteOrder.nativeOrder());
-                references = frame.references();
-                MethodTypeForm form = MethodTypeHacks.getForm(tmp_type);
-                frameOffsets = form.frameOffsets();
-                referencesOffsets = form.referencesOffsets();
-            }
-            currentReference = 0;
-            argumentIdx = 0;
-        }
-
+        @AlwaysInline
         public EmulatedStackFrame frame() {
             return frame;
         }
 
-        @DangerLevel(DangerLevel.VERY_CAREFUL)
-        public void setType(MethodType type) {
-            frame.setType(type);
-            this.type = type;
-        }
-
-        public MethodType type() {
-            return type;
-        }
-
+        @AlwaysInline
         public int currentArgument() {
             return argumentIdx;
         }
 
+        @AlwaysInline
         private void checkIndex(int index) {
-            if ((index < 0 || index >= type.parameterCount()) && (index != RETURN_VALUE_IDX)) {
+            if ((index < 0 || index >= ptypes.length) && (index != RETURN_VALUE_IDX)) {
                 throw new IllegalArgumentException("Invalid argument index: " + index);
             }
         }
 
+        @AlwaysInline
         private int toArrayIndex(int index) {
-            return index == RETURN_VALUE_IDX ? type.parameterCount() : index;
+            return index == RETURN_VALUE_IDX ? ptypes.length : index;
         }
 
+        @AlwaysInline
         private int toFrameOffset(int index) {
             return frameOffsets[toArrayIndex(index)];
         }
 
+        @AlwaysInline
         private int toReferencesOffset(int index) {
             return referencesOffsets[toArrayIndex(index)];
         }
 
+        @AlwaysInline
         public Class<?> getArgumentType(int index) {
             checkIndex(index);
-            MethodType tmp_type = type;
-            return (index == RETURN_VALUE_IDX) ? tmp_type.returnType() : tmp_type.parameterType(index);
+            return (index == RETURN_VALUE_IDX) ? rtype : ptypes[index];
         }
 
-        public void checkWriteType(int index, Class<?> expectedType) {
-            checkAssignable(getArgumentType(index), expectedType);
+        @AlwaysInline
+        private void checkWriteType(int index, Class<?> expected) {
+            checkAssignable(getArgumentType(index), expected);
         }
 
-        public void checkWriteType(Class<?> expectedType) {
-            checkAssignable(getArgumentType(argumentIdx), expectedType);
+        @AlwaysInline
+        private void checkWriteType(Class<?> expected) {
+            checkAssignable(getArgumentType(argumentIdx), expected);
         }
 
-        public void checkReadType(int index, Class<?> expectedType) {
-            checkAssignable(expectedType, getArgumentType(index));
+        @AlwaysInline
+        private void checkReadType(int index, Class<?> expected) {
+            checkAssignable(expected, getArgumentType(index));
         }
 
-        public void checkReadType(Class<?> expectedType) {
-            checkAssignable(expectedType, getArgumentType(argumentIdx));
+        @AlwaysInline
+        private void checkReadType(Class<?> expected) {
+            checkAssignable(expected, getArgumentType(argumentIdx));
         }
 
         public StackFrameAccessor moveTo(int index) {
@@ -345,8 +340,8 @@ public class EmulatedStackFrame {
 
         @DoNotShrink
         @DoNotObfuscate
-        public void putNextReference(Object value, Class<?> expectedType) {
-            checkWriteType(expectedType);
+        public void putNextReference(Object value) {
+            checkWriteType(Object.class);
             argumentIdx++;
             references[currentReference++] = value;
         }
@@ -410,8 +405,8 @@ public class EmulatedStackFrame {
             frameBuf.putDouble(toFrameOffset(index), value);
         }
 
-        public void setReference(int index, Object value, Class<?> expectedType) {
-            checkWriteType(index, expectedType);
+        public void setReference(int index, Object value) {
+            checkWriteType(index, Object.class);
             references[toReferencesOffset(index)] = value;
         }
 
@@ -499,10 +494,10 @@ public class EmulatedStackFrame {
 
         @DoNotShrink
         @DoNotObfuscate
-        public <T> T nextReference(Class<T> expectedType) {
-            checkReadType(expectedType);
+        @SuppressWarnings("unchecked")
+        public <T> T nextReference() {
+            checkReadType(Object.class);
             argumentIdx++;
-            //noinspection unchecked
             return (T) references[currentReference++];
         }
 
@@ -564,9 +559,9 @@ public class EmulatedStackFrame {
             return frameBuf.getDouble(toFrameOffset(index));
         }
 
-        public <T> T getReference(int index, Class<T> expectedType) {
-            checkReadType(index, expectedType);
-            //noinspection unchecked
+        @SuppressWarnings("unchecked")
+        public <T> T getReference(int index) {
+            checkReadType(index, Object.class);
             return (T) references[toReferencesOffset(index)];
         }
 
