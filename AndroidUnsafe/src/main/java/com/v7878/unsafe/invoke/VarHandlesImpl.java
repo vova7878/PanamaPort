@@ -6,6 +6,7 @@ import static com.v7878.unsafe.invoke.VarHandleImpl.accessType;
 
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandle.AccessMode;
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.access.InvokeAccess;
 
@@ -45,9 +46,18 @@ public final class VarHandlesImpl {
         AndroidUnsafe.throwException(th);
     }
 
+    @AlwaysInline
     private static Class<?> lastParameterType(MethodType type) {
         int len = type.parameterCount();
         return len == 0 ? void.class : type.parameterType(len - 1);
+    }
+
+    @AlwaysInline
+    private static int assert_same(int a, int b, String message) {
+        if (a == b) {
+            return a;
+        }
+        throw newIllegalArgumentException(message, a, b);
     }
 
     public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
@@ -55,43 +65,95 @@ public final class VarHandlesImpl {
         checkExceptions(filterToTarget);
         checkExceptions(filterFromTarget);
 
-        //check that from/to filters have right signatures
-        if (filterFromTarget.type().parameterCount() != 1) {
-            throw newIllegalArgumentException("filterFromTarget filter type has wrong arity", filterFromTarget.type());
-        } else if (filterToTarget.type().parameterCount() != 1) {
-            throw newIllegalArgumentException("filterToTarget filter type has wrong arity", filterFromTarget.type());
-        } else if (lastParameterType(filterFromTarget.type()) != filterToTarget.type().returnType() ||
-                lastParameterType(filterToTarget.type()) != filterFromTarget.type().returnType()) {
-            throw newIllegalArgumentException("filterFromTarget and filterToTarget filter types do not match", filterFromTarget.type(), filterToTarget.type());
-        } else if (target.varType() != lastParameterType(filterFromTarget.type())) {
-            throw newIllegalArgumentException("filterFromTarget filter type does not match target var handle type", filterFromTarget.type(), target.varType());
-        } else if (target.varType() != filterToTarget.type().returnType()) {
-            throw newIllegalArgumentException("filterFromTarget filter type does not match target var handle type", filterToTarget.type(), target.varType());
+        List<Class<?>> newCoordinates = new ArrayList<>(target.coordinateTypes());
+
+        MethodType to_type = filterToTarget.type();
+        MethodType from_type = filterFromTarget.type();
+
+        int args_count = assert_same(to_type.parameterCount(),
+                from_type.parameterCount(), "Filter types have different arity");
+        if (args_count < 1) {
+            throw newIllegalArgumentException("Filter types has wrong arity", args_count);
         }
+        int additional_args = args_count - 1;
+
+        if (lastParameterType(from_type) != to_type.returnType() ||
+                lastParameterType(to_type) != from_type.returnType()) {
+            throw newIllegalArgumentException("filterFromTarget and filterToTarget filter types do not match", from_type, to_type);
+        } else if (target.varType() != lastParameterType(from_type)) {
+            throw newIllegalArgumentException("filterFromTarget filter type does not match target var handle type", from_type, target.varType());
+        } else if (target.varType() != filterToTarget.type().returnType()) {
+            throw newIllegalArgumentException("filterToTarget filter type does not match target var handle type", to_type, target.varType());
+        } else for (int i = 0; i < additional_args; i++) {
+            var from = from_type.parameterType(i);
+            if (from != to_type.parameterType(i)) {
+                throw newIllegalArgumentException("filterFromTarget and filterToTarget filter types do not match", from_type, to_type);
+            } else {
+                newCoordinates.add(from);
+            }
+        }
+
         return newIndirectVarHandle(target, filterFromTarget.type().returnType(),
-                target.coordinateTypes().toArray(new Class[0]), (mode, modeHandle) -> {
+                newCoordinates.toArray(new Class<?>[0]), (mode, modeHandle) -> {
                     int lastParameterPos = modeHandle.type().parameterCount() - 1;
                     switch (accessType(mode)) {
                         case GET, GET_ATOMIC -> {
-                            return MethodHandlesFixes.filterReturnValue(modeHandle, filterFromTarget);
+                            return MethodHandlesFixes.collectReturnValue(modeHandle, filterFromTarget);
                         }
                         case SET, SET_ATOMIC -> {
-                            return MethodHandlesFixes.filterArguments(modeHandle, lastParameterPos, filterToTarget);
-                        }
-                        case COMPARE_AND_SET -> {
-                            return MethodHandlesFixes.filterArguments(modeHandle, lastParameterPos - 1, filterToTarget, filterToTarget);
-                        }
-                        case COMPARE_AND_EXCHANGE -> {
-                            MethodHandle adapter = MethodHandlesFixes.filterReturnValue(modeHandle, filterFromTarget);
-                            return MethodHandlesFixes.filterArguments(adapter, lastParameterPos - 1, filterToTarget, filterToTarget);
+                            return MethodHandlesFixes.collectArguments(modeHandle, lastParameterPos, filterToTarget);
                         }
                         case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC -> {
-                            MethodHandle adapter = MethodHandlesFixes.filterReturnValue(modeHandle, filterFromTarget);
-                            return MethodHandlesFixes.filterArguments(adapter, lastParameterPos, filterToTarget);
+                            MethodHandle adapter = MethodHandlesFixes.collectReturnValue(modeHandle, filterFromTarget);
+                            MethodHandle res = MethodHandlesFixes.collectArguments(adapter, lastParameterPos, filterToTarget);
+                            if (additional_args != 0) {
+                                res = joinDuplicateArgs(res, lastParameterPos,
+                                        lastParameterPos + additional_args + 1, additional_args);
+                            }
+                            return res;
+                        }
+                        case COMPARE_AND_EXCHANGE -> {
+                            MethodHandle adapter = MethodHandlesFixes.collectReturnValue(modeHandle, filterFromTarget);
+                            adapter = MethodHandlesFixes.collectArguments(adapter, lastParameterPos, filterToTarget);
+                            if (additional_args != 0) {
+                                adapter = joinDuplicateArgs(adapter, lastParameterPos,
+                                        lastParameterPos + additional_args + 1, additional_args);
+                            }
+                            MethodHandle res = MethodHandlesFixes.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
+                            if (additional_args != 0) {
+                                res = joinDuplicateArgs(res, lastParameterPos - 1,
+                                        lastParameterPos + additional_args, additional_args);
+                            }
+                            return res;
+                        }
+                        case COMPARE_AND_SET -> {
+                            MethodHandle adapter = MethodHandlesFixes.collectArguments(modeHandle, lastParameterPos, filterToTarget);
+                            MethodHandle res = MethodHandlesFixes.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
+                            if (additional_args != 0) {
+                                res = joinDuplicateArgs(res, lastParameterPos - 1,
+                                        lastParameterPos + additional_args, additional_args);
+                            }
+                            return res;
                         }
                     }
                     throw shouldNotReachHere();
                 });
+    }
+
+    private static MethodHandle joinDuplicateArgs(MethodHandle handle, int originalStart, int dropStart, int length) {
+        var type = handle.type();
+        int[] perms = new int[type.parameterCount()];
+        for (int i = 0; i < dropStart; i++) {
+            perms[i] = i;
+        }
+        for (int i = 0; i < length; i++) {
+            perms[dropStart + i] = originalStart + i;
+        }
+        for (int i = dropStart + length; i < perms.length; i++) {
+            perms[i] = i - length;
+        }
+        return MethodHandlesFixes.permuteArguments(handle,
+                type.dropParameterTypes(dropStart, dropStart + length), perms);
     }
 
     public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
