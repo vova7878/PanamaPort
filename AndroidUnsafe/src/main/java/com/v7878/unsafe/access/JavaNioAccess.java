@@ -472,11 +472,12 @@ public class JavaNioAccess {
         if (!(buffer instanceof MappedByteBuffer mapped)) {
             return null;
         }
+        assert mapped.isDirect();
         FileDescriptor fd = getBufferFD(mapped);
         return fd == null ? null : new UnmapperProxy() {
             @Override
             public long address() {
-                return getBufferUnsafeOffset(buffer);
+                return getBufferAddress(buffer);
             }
 
             @Override
@@ -486,7 +487,7 @@ public class JavaNioAccess {
 
             @Override
             public void unmap() {
-                //TODO
+                //TODO: Unsafe.getUnsafe().invokeCleaner(mapped);
                 throw new UnsupportedOperationException("Not supported yet!");
             }
         };
