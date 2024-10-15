@@ -389,7 +389,7 @@ public final class ExecutionEngine {
     //    return Native.INSTANCE.LLVMInitializeMCJITCompilerOptions();
     //}
 
-    ///**
+    /// **
     // * Create an MCJIT execution engine for a module, with the given options. It is
     // * the responsibility of the caller to ensure that all fields in Options up to
     // * the given SizeOfOptions are initialized. It is correct to pass a smaller
@@ -558,7 +558,7 @@ public final class ExecutionEngine {
 
     //TODO
 
-    ///**
+    /// **
     // * Create a simple custom MCJIT memory manager. This memory manager can
     // * intercept allocations in a module-oblivious way. This will return NULL
     // * if any of the passed functions are NULL.
