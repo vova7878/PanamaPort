@@ -2743,6 +2743,11 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             }
 
             @Override
+            protected void _checkValidState(Scope scope) {
+                ((_MemorySessionImpl) scope).checkValidState();
+            }
+
+            @Override
             protected void _addCloseAction(Scope scope, Runnable cleanup) {
                 ((_MemorySessionImpl) scope).addCloseAction(cleanup);
             }

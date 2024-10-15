@@ -29,6 +29,12 @@ public abstract class JavaForeignAccess {
         return INSTANCE._lock(scope);
     }
 
+    protected abstract void _checkValidState(Scope scope);
+
+    public static void checkValidState(Scope scope) {
+        INSTANCE._checkValidState(scope);
+    }
+
     protected abstract void _addCloseAction(Scope scope, Runnable cleanup);
 
     public static void addCloseAction(Scope scope, Runnable cleanup) {

@@ -5,9 +5,6 @@ import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntO;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -33,28 +30,11 @@ import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.foreign.LibDLExt;
 
 import java.io.FileDescriptor;
-import java.lang.invoke.MethodHandle;
-import java.nio.channels.FileChannel;
 import java.util.Objects;
 
 public class IOUtils {
     private static final int file_descriptor_offset =
             fieldOffset(getDeclaredField(FileDescriptor.class, "descriptor"));
-
-    public static FileChannel openFileChannel(FileDescriptor fd, String path,
-                                              boolean readable, boolean writable,
-                                              boolean append, Object parent) {
-        class Holder {
-            static final Class<?> file_channel_impl_class =
-                    nothrows_run(() -> Class.forName("sun.nio.ch.FileChannelImpl"));
-            static final MethodHandle file_channel_open =
-                    unreflect(getDeclaredMethod(file_channel_impl_class,
-                            "open", FileDescriptor.class, String.class, boolean.class,
-                            boolean.class, boolean.class, Object.class));
-        }
-        return nothrows_run(() -> (FileChannel) Holder.file_channel_open
-                .invokeExact(fd, path, readable, writable, append, parent));
-    }
 
     public static int getDescriptorValue(FileDescriptor fd) {
         Objects.requireNonNull(fd);
@@ -200,7 +180,8 @@ public class IOUtils {
         }
         if ((flags & MAP_ANONYMOUS) != 0) {
             if (fd != null) {
-                throw new IllegalArgumentException("FileDescriptor must be null if the MAP_ANONYMOUS flag is set");
+                throw new IllegalArgumentException(
+                        "FileDescriptor must be null if the MAP_ANONYMOUS flag is set");
             }
         } else if (!fd.valid()) {
             throw new IllegalStateException("FileDescriptor is not valid");
@@ -222,7 +203,9 @@ public class IOUtils {
             public void unmap() {
                 try {
                     Os.munmap(mmap_address, length);
-                } catch (ErrnoException e) { /* swallow exception */ }
+                } catch (ErrnoException ignored) {
+                    // swallow exception
+                }
             }
         }, length, readOnly, scope);
     }
