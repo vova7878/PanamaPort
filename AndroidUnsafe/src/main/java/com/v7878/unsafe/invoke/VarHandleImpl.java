@@ -373,7 +373,9 @@ public class VarHandleImpl extends VarHandle {
     public static int accessModesBitMask(Class<?> varType, boolean allowAtomicAccess) {
         int bitMask = ALL_MODES_BIT_MASK;
         if (!allowAtomicAccess) {
-            bitMask &= ~(READ_ATOMIC_ACCESS_MODES_BIT_MASK | WRITE_ATOMIC_ACCESS_MODES_BIT_MASK);
+            bitMask &= ~READ_ATOMIC_ACCESS_MODES_BIT_MASK;
+            bitMask &= ~WRITE_ATOMIC_ACCESS_MODES_BIT_MASK;
+            bitMask &= ~ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK;
         }
         if (!allowAtomicAccess || (varType != byte.class && varType != short.class
                 && varType != char.class && varType != int.class && varType != long.class

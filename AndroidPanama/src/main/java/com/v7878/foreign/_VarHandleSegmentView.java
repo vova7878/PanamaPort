@@ -27,7 +27,8 @@ final class _VarHandleSegmentView {
      * @param alignmentMask alignment requirement to be checked upon access. In bytes. Expressed as a mask.
      * @return the created VarHandle.
      */
-    public static VarHandle rawMemorySegmentViewHandle(Class<?> carrier, long alignmentMask, boolean swap) {
+    public static VarHandle rawMemorySegmentViewHandle(
+            Class<?> carrier, long alignmentMask, boolean swap, int disallowedModes) {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
@@ -35,6 +36,7 @@ final class _VarHandleSegmentView {
         long min_align_mask = Wrapper.forPrimitiveType(carrier).byteWidth() - 1;
         boolean allowAtomicAccess = (alignmentMask & min_align_mask) == min_align_mask;
         int modesMask = VarHandleImpl.accessModesBitMask(carrier, allowAtomicAccess);
+        modesMask &= ~disallowedModes;
 
         Class<?> handle_class;
         if (carrier == byte.class) {

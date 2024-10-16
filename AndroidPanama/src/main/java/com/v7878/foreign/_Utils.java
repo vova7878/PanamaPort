@@ -44,6 +44,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.toHexString;
+import static com.v7878.unsafe.invoke.VarHandleImpl.NUMERIC_ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK;
 
 import com.v7878.foreign.MemoryLayout.PathElement;
 import com.v7878.invoke.VarHandle;
@@ -118,9 +119,9 @@ final class _Utils {
 
     // Port-added: specific implementation
     private static VarHandle rawMemorySegmentViewHandle(
-            Class<?> carrier, long alignmentMask, ByteOrder order) {
+            Class<?> carrier, long alignmentMask, ByteOrder order, int disallowedModes) {
         return _VarHandleSegmentView.rawMemorySegmentViewHandle(carrier,
-                alignmentMask, !ByteOrder.nativeOrder().equals(order));
+                alignmentMask, !ByteOrder.nativeOrder().equals(order), disallowedModes);
     }
 
     /**
@@ -146,15 +147,16 @@ final class _Utils {
 
     private static VarHandle makeRawSegmentViewVarHandleInternal(ValueLayout layout) {
         Class<?> baseCarrier = layout.carrier();
+        int disallowedModes = 0;
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = IS64BIT ? long.class : int.class;
         } else if (layout.carrier() == boolean.class) {
-            //TODO: disallow NUMERIC_ATOMIC_UPDATE_ACCESS_MODES?
+            disallowedModes |= NUMERIC_ATOMIC_UPDATE_ACCESS_MODES_BIT_MASK;
             baseCarrier = byte.class;
         }
 
         VarHandle handle = rawMemorySegmentViewHandle(baseCarrier,
-                layout.byteAlignment() - 1, layout.order());
+                layout.byteAlignment() - 1, layout.order(), disallowedModes);
 
         if (layout.carrier() == boolean.class) {
             handle = VarHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
