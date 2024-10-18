@@ -352,11 +352,10 @@ final class _ValueLayouts {
         // Port-changed
         @Override
         public String toString() {
-            char descriptor = 'A';
-            if (order() == ByteOrder.LITTLE_ENDIAN) {
-                descriptor = Character.toLowerCase(descriptor);
-            }
-            return decorateLayoutString(String.format("%s<%s>", descriptor, targetLayout));
+            String descriptor = order() == ByteOrder.LITTLE_ENDIAN ? "a" : "A";
+            if (targetLayout != null)
+                descriptor = String.format("%s<%s>", descriptor, targetLayout);
+            return decorateLayoutString(descriptor);
         }
     }
 
