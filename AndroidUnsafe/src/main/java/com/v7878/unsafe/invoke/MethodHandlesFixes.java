@@ -17,6 +17,7 @@ import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.Utils.unexpectedType;
 import static com.v7878.unsafe.access.InvokeAccess.rtype;
+import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 
@@ -38,6 +39,7 @@ import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.access.InvokeAccess;
+import com.v7878.unsafe.invoke.EmulatedStackFrame.RelativeStackFrameAccessor;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
 
@@ -70,38 +72,40 @@ public class MethodHandlesFixes {
         }
 
         @Override
-        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-            StackFrameAccessor this_accessor = stack.createAccessor();
+        public void transform(MethodHandle ignored, EmulatedStackFrame stackFrame) throws Throwable {
+            MethodType collector_type = collector.type();
+            StackFrameAccessor this_accessor = stackFrame.accessor();
 
             // First invoke the collector.
-            EmulatedStackFrame collectorFrame = EmulatedStackFrame.create(collector.type());
-            StackFrameAccessor collector_accessor = collectorFrame.createAccessor();
+            EmulatedStackFrame collectorFrame = EmulatedStackFrame.create(collector_type);
+            StackFrameAccessor collector_accessor = collectorFrame.accessor();
             EmulatedStackFrame.copyArguments(this_accessor, pos,
                     collector_accessor, 0, collector_count);
             invokeExactWithFrameNoChecks(collector, collectorFrame);
 
             // Start constructing the target frame.
             EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
-            StackFrameAccessor target_accessor = targetFrame.createAccessor();
+            StackFrameAccessor target_accessor = targetFrame.accessor();
             EmulatedStackFrame.copyArguments(this_accessor, 0,
                     target_accessor, 0, pos);
 
             // If return type of collector is not void, we have a return value to copy.
-            target_accessor.moveTo(pos);
-            if (rtype(collector.type()) != void.class) {
-                EmulatedStackFrame.copyNext(collector_accessor.moveToReturn(),
-                        target_accessor, rtype(collector.type()));
+            int target_pos = pos;
+            if (rtype(collector_type) != void.class) {
+                EmulatedStackFrame.copyValue(collector_accessor, RETURN_VALUE_IDX,
+                        target_accessor, target_pos, rtype(collector_type));
+                target_pos++;
             }
 
             // Finish constructing the target frame.
             int this_pos = pos + collector_count;
             EmulatedStackFrame.copyArguments(this_accessor, this_pos,
-                    target_accessor, target_accessor.currentArgument(),
-                    stack.type().parameterCount() - this_pos);
+                    target_accessor, target_pos,
+                    stackFrame.type().parameterCount() - this_pos);
 
             // Invoke the target.
             invokeExactWithFrameNoChecks(target, targetFrame);
-            targetFrame.copyReturnValueTo(stack);
+            EmulatedStackFrame.copyReturnValue(targetFrame, stackFrame);
         }
     }
 
@@ -134,8 +138,8 @@ public class MethodHandlesFixes {
 
         @Override
         public void transform(MethodHandle ignored, EmulatedStackFrame stack) {
-            EmulatedStackFrame.copyNext(stack.createAccessor().moveTo(0),
-                    stack.createAccessor().moveToReturn(), type);
+            var accessor = stack.accessor();
+            EmulatedStackFrame.copyValue(accessor, 0, accessor, RETURN_VALUE_IDX, type);
         }
     }
 
@@ -159,12 +163,12 @@ public class MethodHandlesFixes {
         @Override
         public void transform(MethodHandle ignored, EmulatedStackFrame stackFrame) throws Throwable {
             // The first argument to the stack frame is the handle that needs to be invoked.
-            StackFrameAccessor thisAccessor = stackFrame.createAccessor();
-            MethodHandle target = thisAccessor.nextReference();
+            StackFrameAccessor thisAccessor = stackFrame.accessor();
+            MethodHandle target = thisAccessor.getReference(0);
 
             // All other arguments must be copied to the target frame.
             EmulatedStackFrame targetFrame = EmulatedStackFrame.create(targetType);
-            StackFrameAccessor targetAccessor = targetFrame.createAccessor();
+            StackFrameAccessor targetAccessor = targetFrame.accessor();
             EmulatedStackFrame.copyArguments(thisAccessor, 1, targetAccessor, 0, args_count);
 
             // Finally, invoke the handle and copy the return value.
@@ -173,7 +177,7 @@ public class MethodHandlesFixes {
             } else {
                 Transformers.invokeWithFrame(target, targetFrame);
             }
-            targetFrame.copyReturnValueTo(stackFrame);
+            EmulatedStackFrame.copyReturnValue(targetFrame, stackFrame);
         }
     }
 
@@ -207,14 +211,14 @@ public class MethodHandlesFixes {
     @DoNotShrink
     @DoNotObfuscate
     public static abstract class EmulatedInvoker {
-        public abstract void invoke(StackFrameAccessor accessor) throws Throwable;
+        public abstract void invoke(RelativeStackFrameAccessor accessor) throws Throwable;
     }
 
     private static EmulatedInvoker emulatedInvoker(Method target, InvokeKind kind, MethodType type) {
         makeClassPublic(target.getDeclaringClass());
         makeExecutablePublic(target);
 
-        TypeId sfa_id = TypeId.of(StackFrameAccessor.class);
+        TypeId sfa_id = TypeId.of(RelativeStackFrameAccessor.class);
         TypeId obj_id = TypeId.OBJECT;
 
         SparseArray<MethodId> next_ids = new SparseArray<>(9);
@@ -327,7 +331,7 @@ public class MethodHandlesFixes {
 
         @Override
         public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-            target.invoke(stack.createAccessor());
+            target.invoke(stack.relativeAccessor());
         }
     }
 
@@ -373,8 +377,8 @@ public class MethodHandlesFixes {
         public void transform(MethodHandle ignored, EmulatedStackFrame callerFrame) throws Throwable {
             EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
 
-            StackFrameAccessor callerAccessor = callerFrame.createAccessor();
-            StackFrameAccessor targetAccessor = targetFrame.createAccessor();
+            var callerAccessor = callerFrame.relativeAccessor();
+            var targetAccessor = targetFrame.relativeAccessor();
 
             explicitCastArguments(callerAccessor, targetAccessor);
 
@@ -383,7 +387,7 @@ public class MethodHandlesFixes {
             explicitCastReturnValue(targetAccessor.moveToReturn(), callerAccessor.moveToReturn());
         }
 
-        private void explicitCastArguments(StackFrameAccessor reader, StackFrameAccessor writer) {
+        private void explicitCastArguments(RelativeStackFrameAccessor reader, RelativeStackFrameAccessor writer) {
             Class<?>[] fromTypes = InvokeAccess.ptypes(type);
             Class<?>[] toTypes = InvokeAccess.ptypes(target.type());
             for (int i = 0; i < fromTypes.length; ++i) {
@@ -391,7 +395,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private void explicitCastReturnValue(StackFrameAccessor reader, StackFrameAccessor writer) {
+        private void explicitCastReturnValue(RelativeStackFrameAccessor reader, RelativeStackFrameAccessor writer) {
             Class<?> from = rtype(target.type());
             Class<?> to = rtype(type);
             if (to != void.class) {
@@ -411,7 +415,7 @@ public class MethodHandlesFixes {
             return (value & 1) == 1;
         }
 
-        private static byte readPrimitiveAsByte(StackFrameAccessor reader, final Class<?> from) {
+        private static byte readPrimitiveAsByte(RelativeStackFrameAccessor reader, final Class<?> from) {
             return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> reader.nextByte();
                 case 'C' -> (byte) reader.nextChar();
@@ -425,7 +429,7 @@ public class MethodHandlesFixes {
             };
         }
 
-        private static char readPrimitiveAsChar(StackFrameAccessor reader, Class<?> from) {
+        private static char readPrimitiveAsChar(RelativeStackFrameAccessor reader, Class<?> from) {
             return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (char) reader.nextByte();
                 case 'C' -> reader.nextChar();
@@ -439,7 +443,7 @@ public class MethodHandlesFixes {
             };
         }
 
-        private static short readPrimitiveAsShort(StackFrameAccessor reader, final Class<?> from) {
+        private static short readPrimitiveAsShort(RelativeStackFrameAccessor reader, final Class<?> from) {
             return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (short) reader.nextByte();
                 case 'C' -> (short) reader.nextChar();
@@ -453,7 +457,7 @@ public class MethodHandlesFixes {
             };
         }
 
-        private static int readPrimitiveAsInt(StackFrameAccessor reader, final Class<?> from) {
+        private static int readPrimitiveAsInt(RelativeStackFrameAccessor reader, final Class<?> from) {
             return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (int) reader.nextByte();
                 case 'C' -> (int) reader.nextChar();
@@ -467,7 +471,7 @@ public class MethodHandlesFixes {
             };
         }
 
-        private static long readPrimitiveAsLong(StackFrameAccessor reader, final Class<?> from) {
+        private static long readPrimitiveAsLong(RelativeStackFrameAccessor reader, final Class<?> from) {
             return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (long) reader.nextByte();
                 case 'C' -> (long) reader.nextChar();
@@ -481,7 +485,7 @@ public class MethodHandlesFixes {
             };
         }
 
-        private static float readPrimitiveAsFloat(StackFrameAccessor reader, final Class<?> from) {
+        private static float readPrimitiveAsFloat(RelativeStackFrameAccessor reader, final Class<?> from) {
             return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (float) reader.nextByte();
                 case 'C' -> (float) reader.nextChar();
@@ -495,7 +499,7 @@ public class MethodHandlesFixes {
             };
         }
 
-        private static double readPrimitiveAsDouble(StackFrameAccessor reader, final Class<?> from) {
+        private static double readPrimitiveAsDouble(RelativeStackFrameAccessor reader, final Class<?> from) {
             return switch (Wrapper.basicTypeChar(from)) {
                 case 'B' -> (double) reader.nextByte();
                 case 'C' -> (double) reader.nextChar();
@@ -509,8 +513,8 @@ public class MethodHandlesFixes {
             };
         }
 
-        private static void explicitCastPrimitives(StackFrameAccessor reader, Class<?> from,
-                                                   StackFrameAccessor writer, Class<?> to) {
+        private static void explicitCastPrimitives(RelativeStackFrameAccessor reader, Class<?> from,
+                                                   RelativeStackFrameAccessor writer, Class<?> to) {
             switch (Wrapper.basicTypeChar(to)) {
                 case 'B' -> writer.putNextByte(readPrimitiveAsByte(reader, from));
                 case 'C' -> writer.putNextChar(readPrimitiveAsChar(reader, from));
@@ -524,7 +528,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private static void unboxNull(StackFrameAccessor writer, final Class<?> to) {
+        private static void unboxNull(RelativeStackFrameAccessor writer, final Class<?> to) {
             switch (Wrapper.basicTypeChar(to)) {
                 case 'Z' -> writer.putNextBoolean(false);
                 case 'B' -> writer.putNextByte((byte) 0);
@@ -538,7 +542,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private static void unboxNonNull(Object ref, StackFrameAccessor writer, Class<?> to) {
+        private static void unboxNonNull(Object ref, RelativeStackFrameAccessor writer, Class<?> to) {
             Class<?> from = ref.getClass();
             char from_char = Wrapper.basicTypeChar(Wrapper.asPrimitiveType(from));
             char to_char = Wrapper.basicTypeChar(to);
@@ -659,7 +663,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private static void unbox(Object ref, StackFrameAccessor writer, Class<?> to) {
+        private static void unbox(Object ref, RelativeStackFrameAccessor writer, Class<?> to) {
             if (ref == null) {
                 unboxNull(writer, to);
             } else {
@@ -667,8 +671,8 @@ public class MethodHandlesFixes {
             }
         }
 
-        private static void box(StackFrameAccessor reader, Class<?> from,
-                                StackFrameAccessor writer, Class<?> to) {
+        private static void box(RelativeStackFrameAccessor reader, Class<?> from,
+                                RelativeStackFrameAccessor writer, Class<?> to) {
             Object boxed = switch (Wrapper.basicTypeChar(from)) {
                 case 'Z' -> reader.nextBoolean();
                 case 'B' -> reader.nextByte();
@@ -683,10 +687,10 @@ public class MethodHandlesFixes {
             writer.putNextReference(to.cast(boxed));
         }
 
-        private static void explicitCast(StackFrameAccessor reader, Class<?> from,
-                                         StackFrameAccessor writer, Class<?> to) {
+        private static void explicitCast(RelativeStackFrameAccessor reader, Class<?> from,
+                                         RelativeStackFrameAccessor writer, Class<?> to) {
             if (from == to) {
-                EmulatedStackFrame.copyNext(reader, writer, from);
+                EmulatedStackFrame.copyNextValue(reader, writer, from);
                 return;
             }
             if (from.isPrimitive()) {
@@ -751,17 +755,17 @@ public class MethodHandlesFixes {
         }
 
         @Override
-        public void transform(MethodHandle ignored, EmulatedStackFrame emulatedStackFrame) throws Throwable {
-            StackFrameAccessor reader = emulatedStackFrame.createAccessor();
-            EmulatedStackFrame calleeFrame = EmulatedStackFrame.create(target.type());
-            StackFrameAccessor writer = calleeFrame.createAccessor();
-            Class<?>[] ptypes = InvokeAccess.ptypes(emulatedStackFrame.type());
-            for (int readerIndex : reorder) {
-                reader.moveTo(readerIndex);
-                EmulatedStackFrame.copyNext(reader, writer, ptypes[readerIndex]);
+        public void transform(MethodHandle ignored, EmulatedStackFrame stackFrame) throws Throwable {
+            MethodType type = target.type();
+            StackFrameAccessor reader = stackFrame.accessor();
+            EmulatedStackFrame calleeFrame = EmulatedStackFrame.create(type);
+            StackFrameAccessor writer = calleeFrame.accessor();
+            Class<?>[] ptypes = InvokeAccess.ptypes(type);
+            for (int i = 0; i < reorder.length; i++) {
+                EmulatedStackFrame.copyValue(reader, reorder[i], writer, i, ptypes[i]);
             }
             invokeExactWithFrameNoChecks(target, calleeFrame);
-            calleeFrame.copyReturnValueTo(emulatedStackFrame);
+            EmulatedStackFrame.copyReturnValue(calleeFrame, stackFrame);
         }
     }
 
@@ -835,8 +839,8 @@ public class MethodHandlesFixes {
         public void transform(MethodHandle ignored, EmulatedStackFrame callerFrame) throws Throwable {
             EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
 
-            StackFrameAccessor callerAccessor = callerFrame.createAccessor();
-            StackFrameAccessor targetAccessor = targetFrame.createAccessor();
+            var callerAccessor = callerFrame.relativeAccessor();
+            var targetAccessor = targetFrame.relativeAccessor();
 
             adaptArguments(callerAccessor, targetAccessor);
 
@@ -845,7 +849,7 @@ public class MethodHandlesFixes {
             adaptReturnValue(targetAccessor.moveToReturn(), callerAccessor.moveToReturn());
         }
 
-        private void adaptArguments(StackFrameAccessor reader, StackFrameAccessor writer) {
+        private void adaptArguments(RelativeStackFrameAccessor reader, RelativeStackFrameAccessor writer) {
             Class<?>[] fromTypes = InvokeAccess.ptypes(type);
             Class<?>[] toTypes = InvokeAccess.ptypes(target.type());
             for (int i = 0; i < fromTypes.length; ++i) {
@@ -853,7 +857,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private void adaptReturnValue(StackFrameAccessor reader, StackFrameAccessor writer) {
+        private void adaptReturnValue(RelativeStackFrameAccessor reader, RelativeStackFrameAccessor writer) {
             Class<?> fromType = rtype(target.type());
             Class<?> toType = rtype(type);
             adaptArgument(reader, fromType, writer, toType);
@@ -863,7 +867,7 @@ public class MethodHandlesFixes {
             throw newWrongMethodTypeException(type, target.type());
         }
 
-        private void writePrimitiveByteAs(StackFrameAccessor writer, char baseType, byte value) {
+        private void writePrimitiveByteAs(RelativeStackFrameAccessor writer, char baseType, byte value) {
             switch (baseType) {
                 case 'B' -> writer.putNextByte(value);
                 case 'S' -> writer.putNextShort(value);
@@ -875,7 +879,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private void writePrimitiveShortAs(StackFrameAccessor writer, char baseType, short value) {
+        private void writePrimitiveShortAs(RelativeStackFrameAccessor writer, char baseType, short value) {
             switch (baseType) {
                 case 'S' -> writer.putNextShort(value);
                 case 'I' -> writer.putNextInt(value);
@@ -886,7 +890,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private void writePrimitiveCharAs(StackFrameAccessor writer, char baseType, char value) {
+        private void writePrimitiveCharAs(RelativeStackFrameAccessor writer, char baseType, char value) {
             switch (baseType) {
                 case 'C' -> writer.putNextChar(value);
                 case 'I' -> writer.putNextInt(value);
@@ -897,7 +901,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private void writePrimitiveIntAs(StackFrameAccessor writer, char baseType, int value) {
+        private void writePrimitiveIntAs(RelativeStackFrameAccessor writer, char baseType, int value) {
             switch (baseType) {
                 case 'I' -> writer.putNextInt(value);
                 case 'J' -> writer.putNextLong(value);
@@ -907,7 +911,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private void writePrimitiveLongAs(StackFrameAccessor writer, char baseType, long value) {
+        private void writePrimitiveLongAs(RelativeStackFrameAccessor writer, char baseType, long value) {
             switch (baseType) {
                 case 'J' -> writer.putNextLong(value);
                 case 'F' -> writer.putNextFloat(value);
@@ -916,7 +920,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private void writePrimitiveFloatAs(StackFrameAccessor writer, char baseType, float value) {
+        private void writePrimitiveFloatAs(RelativeStackFrameAccessor writer, char baseType, float value) {
             switch (baseType) {
                 case 'F' -> writer.putNextFloat(value);
                 case 'D' -> writer.putNextDouble(value);
@@ -924,7 +928,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private void writePrimitiveDoubleAs(StackFrameAccessor writer, char baseType, double value) {
+        private void writePrimitiveDoubleAs(RelativeStackFrameAccessor writer, char baseType, double value) {
             if (baseType == 'D') {
                 writer.putNextDouble(value);
             } else {
@@ -932,7 +936,7 @@ public class MethodHandlesFixes {
             }
         }
 
-        private void writePrimitiveVoidAs(StackFrameAccessor writer, char baseType) {
+        private void writePrimitiveVoidAs(RelativeStackFrameAccessor writer, char baseType) {
             switch (baseType) {
                 case 'Z' -> writer.putNextBoolean(false);
                 case 'B' -> writer.putNextByte((byte) 0);
@@ -960,10 +964,10 @@ public class MethodHandlesFixes {
             };
         }
 
-        private void adaptArgument(StackFrameAccessor reader, Class<?> from,
-                                   StackFrameAccessor writer, Class<?> to) {
+        private void adaptArgument(RelativeStackFrameAccessor reader, Class<?> from,
+                                   RelativeStackFrameAccessor writer, Class<?> to) {
             if (from.equals(to)) {
-                EmulatedStackFrame.copyNext(reader, writer, from);
+                EmulatedStackFrame.copyNextValue(reader, writer, from);
                 return;
             }
             if (to.isPrimitive()) {
@@ -1111,6 +1115,22 @@ public class MethodHandlesFixes {
         return target.bindTo(value);
     }
 
+    public static MethodHandle asCollector(MethodHandle target, Class<?> arrayType, int arrayLength) {
+        return target.asCollector(arrayType, arrayLength);
+    }
+
+    public static MethodHandle asCollector(MethodHandle target, int collectArgPos, Class<?> arrayType, int arrayLength) {
+        return target.asCollector(collectArgPos, arrayType, arrayLength);
+    }
+
+    public static MethodHandle asSpreader(MethodHandle target, Class<?> arrayType, int arrayLength) {
+        return target.asSpreader(arrayType, arrayLength);
+    }
+
+    public static MethodHandle asSpreader(MethodHandle target, int spreadArgPos, Class<?> arrayType, int arrayLength) {
+        return target.asSpreader(spreadArgPos, arrayType, arrayLength);
+    }
+
     private static class CollectReturnValue extends AbstractTransformer {
         private final MethodHandle target;
         private final MethodHandle collector;
@@ -1125,13 +1145,13 @@ public class MethodHandlesFixes {
         }
 
         @Override
-        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-            StackFrameAccessor this_accessor = stack.createAccessor();
+        public void transform(MethodHandle ignored, EmulatedStackFrame stackFrame) throws Throwable {
+            StackFrameAccessor this_accessor = stackFrame.accessor();
 
             // Constructing the target frame.
             MethodType target_type = target.type();
             EmulatedStackFrame target_frame = EmulatedStackFrame.create(target_type);
-            StackFrameAccessor target_accessor = target_frame.createAccessor();
+            StackFrameAccessor target_accessor = target_frame.accessor();
             EmulatedStackFrame.copyArguments(this_accessor, 0,
                     target_accessor, 0, target_count);
 
@@ -1140,19 +1160,19 @@ public class MethodHandlesFixes {
 
             // Constructing the collector frame.
             EmulatedStackFrame collectorFrame = EmulatedStackFrame.create(collector.type());
-            StackFrameAccessor collector_accessor = collectorFrame.createAccessor();
+            StackFrameAccessor collector_accessor = collectorFrame.accessor();
             EmulatedStackFrame.copyArguments(this_accessor, target_count,
                     collector_accessor, 0, collector_count);
 
             // If return type of target is not void, we have a return value to copy.
             if (rtype(target_type) != void.class) {
-                EmulatedStackFrame.copyNext(target_accessor.moveToReturn(),
-                        collector_accessor.moveTo(collector_count), target_type.returnType());
+                EmulatedStackFrame.copyValue(target_accessor, RETURN_VALUE_IDX,
+                        collector_accessor, collector_count, target_type.returnType());
             }
 
             // Invoke the collector and copy its return value back to the original frame.
             invokeExactWithFrameNoChecks(collector, collectorFrame);
-            collectorFrame.copyReturnValueTo(stack);
+            EmulatedStackFrame.copyReturnValue(collectorFrame, stackFrame);
         }
     }
 

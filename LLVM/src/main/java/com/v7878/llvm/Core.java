@@ -827,7 +827,7 @@ public final class Core {
                 void.class, WORD.carrier(), WORD.carrier()), new Transformers.AbstractTransformer() {
             @Override
             protected void transform(MethodHandle ignored, EmulatedStackFrame stack) {
-                var accessor = stack.createAccessor();
+                var accessor = stack.relativeAccessor();
                 var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
                 handler.invoke(LLVMDiagnosticInfoRef.of(value));
             }
@@ -848,7 +848,7 @@ public final class Core {
                 void.class, WORD.carrier(), WORD.carrier()), new Transformers.AbstractTransformer() {
             @Override
             protected void transform(MethodHandle ignored, EmulatedStackFrame stack) {
-                var accessor = stack.createAccessor();
+                var accessor = stack.relativeAccessor();
                 var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
                 callback.invoke(LLVMContextRef.of(value));
             }

@@ -53,6 +53,7 @@ import static com.v7878.unsafe.Utils.handleUncaughtException;
 import static com.v7878.unsafe.Utils.newEmptyClassLoader;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
+import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToAddress;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
@@ -107,6 +108,7 @@ import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.foreign.ENVGetter;
 import com.v7878.unsafe.foreign.Errno;
 import com.v7878.unsafe.invoke.EmulatedStackFrame;
+import com.v7878.unsafe.invoke.EmulatedStackFrame.RelativeStackFrameAccessor;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
 import com.v7878.unsafe.invoke.Transformers;
@@ -129,7 +131,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
     public static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
 
-    private static MemorySegment nextSegment(StackFrameAccessor reader, MemoryLayout layout) {
+    private static MemorySegment nextSegment(RelativeStackFrameAccessor reader, MemoryLayout layout) {
         long size = layout == null ? 0 : layout.byteSize();
         long alignment = layout == null ? 1 : layout.byteAlignment();
         long value = IS64BIT ? reader.nextLong() : reader.nextInt() & 0xffffffffL;
@@ -157,12 +159,13 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     + (capturedStateMask < 0 ? 1 : 0);
         }
 
-        private void copyArg(StackFrameAccessor reader, StackFrameAccessor writer,
+        private void copyArg(RelativeStackFrameAccessor reader,
+                             RelativeStackFrameAccessor writer,
                              MemoryLayout layout, Arena arena,
                              List<_MemorySessionImpl> acquiredSessions) {
             if (layout instanceof JavaValueLayout<?> valueLayout) {
                 Class<?> carrier = valueLayout.carrier();
-                EmulatedStackFrame.copyNext(reader, writer, carrier);
+                EmulatedStackFrame.copyNextValue(reader, writer, carrier);
                 return;
             }
             _AbstractMemorySegmentImpl segment = reader.nextReference();
@@ -195,7 +198,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             }
         }
 
-        private void copyRet(StackFrameAccessor reader, StackFrameAccessor writer,
+        private void copyRet(RelativeStackFrameAccessor reader,
+                             RelativeStackFrameAccessor writer,
                              ValueLayout layout) {
             Class<?> type = layout.carrier();
             if (type == MemorySegment.class) {
@@ -203,14 +207,14 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 writer.putNextReference(nextSegment(reader, target));
                 return;
             }
-            EmulatedStackFrame.copyNext(reader, writer, type);
+            EmulatedStackFrame.copyNextValue(reader, writer, type);
         }
 
         @Override
         public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-            StackFrameAccessor thiz_acc = stack.createAccessor();
+            var thiz_acc = stack.relativeAccessor();
             EmulatedStackFrame stub_frame = EmulatedStackFrame.create(stub.type());
-            StackFrameAccessor stub_acc = stub_frame.createAccessor();
+            var stub_acc = stub_frame.relativeAccessor();
 
             List<_MemorySessionImpl> acquiredSessions = new ArrayList<>(segment_params_count);
             try (Arena arena = Arena.ofConfined()) {
@@ -582,7 +586,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         @Override
         public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-            StackFrameAccessor thiz_acc = stack.createAccessor();
+            StackFrameAccessor thiz_acc = stack.accessor();
             SegmentAllocator allocator = thiz_acc.getReference(ret_index);
             MemorySegment ret = allocator.allocate(ret_layout);
             MethodType cached_type = stack.type();
@@ -590,7 +594,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             thiz_acc.setReference(ret_index, ret);
             invokeExactWithFrameNoChecks(handle, stack);
             stack.setType(cached_type);
-            thiz_acc.moveToReturn().putNextReference(ret);
+            thiz_acc.setReference(RETURN_VALUE_IDX, ret);
         }
     }
 
@@ -829,7 +833,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             this.ret = descriptor.returnLayoutPlain();
         }
 
-        private static void copyArg(StackFrameAccessor reader, StackFrameAccessor writer,
+        private static void copyArg(RelativeStackFrameAccessor reader,
+                                    RelativeStackFrameAccessor writer,
                                     MemoryLayout layout, Arena arena) {
             if (layout instanceof AddressLayout al) {
                 MemoryLayout target = al.targetLayout().orElse(null);
@@ -837,7 +842,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 segment = segment.reinterpret(arena, null);
                 writer.putNextReference(segment);
             } else if (layout instanceof ValueLayout vl) {
-                EmulatedStackFrame.copyNext(reader, writer, vl.carrier());
+                EmulatedStackFrame.copyNextValue(reader, writer, vl.carrier());
             } else if (layout instanceof GroupLayout gl) {
                 MemorySegment segment = nextSegment(reader, gl);
                 segment = segment.reinterpret(arena, null);
@@ -847,7 +852,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             }
         }
 
-        private static void copyRet(StackFrameAccessor reader, MemorySegment ret, MemoryLayout layout) {
+        private static void copyRet(RelativeStackFrameAccessor reader, MemorySegment ret, MemoryLayout layout) {
             if (layout instanceof OfByte bl) {
                 ret.set(bl, 0, reader.nextByte());
             } else if (layout instanceof OfBoolean bl) {
@@ -877,9 +882,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         @Override
         public void transform(MethodHandle ignored, EmulatedStackFrame stack) {
-            StackFrameAccessor thiz_acc = stack.createAccessor();
+            var thiz_acc = stack.relativeAccessor();
             EmulatedStackFrame stub_frame = EmulatedStackFrame.create(stub.type());
-            StackFrameAccessor stub_acc = stub_frame.createAccessor();
+            var stub_acc = stub_frame.relativeAccessor();
             MemorySegment retSeg = ret == null ? null : nextSegment(thiz_acc, ret);
             try (Arena arena = Arena.ofConfined()) {
                 for (MemoryLayout arg : args) {
