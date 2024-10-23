@@ -39,8 +39,8 @@ import com.v7878.foreign._HeapMemorySegmentImpl.OfObject;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfShort;
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import com.v7878.r8.annotations.AlwaysInline;
+import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.AndroidUnsafe;
-import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 import com.v7878.unsafe.cpp_std.MemoryOperators;
@@ -213,7 +213,9 @@ class _SegmentFactories {
     public static MemorySegment mapSegment(UnmapperProxy unmapper, long size,
                                            boolean readOnly, _MemorySessionImpl sessionImpl) {
         ensureInitialized();
-        Objects.requireNonNull(unmapper);
+        if (unmapper == null) {
+            return new _MappedMemorySegmentImpl(0, null, 0, readOnly, sessionImpl);
+        }
         sessionImpl.checkValidState();
         _AbstractMemorySegmentImpl segment = new _MappedMemorySegmentImpl(
                 unmapper.address(), unmapper, size, readOnly, sessionImpl);
@@ -231,8 +233,8 @@ class _SegmentFactories {
     // where one thread attempts to initialize e.g. MemorySegment (and then NativeMemorySegmentImpl, via
     // the MemorySegment.NULL field) while another thread is attempting to initialize
     // NativeMemorySegmentImpl (and then MemorySegment, the super-interface).
-    @AlwaysInline
+    @DoNotOptimize
     private static void ensureInitialized() {
-        ClassUtils.ensureClassInitialized(MemorySegment.class);
+        MemorySegment segment = MemorySegment.NULL;
     }
 }
