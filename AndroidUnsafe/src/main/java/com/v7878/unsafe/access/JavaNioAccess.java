@@ -114,6 +114,22 @@ public class JavaNioAccess {
     }
 
     public interface UnmapperProxy {
+        UnmapperProxy DUMMY = new UnmapperProxy() {
+            @Override
+            public long address() {
+                return 0;
+            }
+
+            @Override
+            public FileDescriptor fileDescriptor() {
+                return null;
+            }
+
+            @Override
+            public void unmap() {
+            }
+        };
+
         long address();
 
         FileDescriptor fileDescriptor();

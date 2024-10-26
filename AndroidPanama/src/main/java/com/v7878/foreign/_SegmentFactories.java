@@ -214,7 +214,7 @@ class _SegmentFactories {
                                            boolean readOnly, _MemorySessionImpl sessionImpl) {
         ensureInitialized();
         if (unmapper == null) {
-            return new _MappedMemorySegmentImpl(0, null, 0, readOnly, sessionImpl);
+            return new _MappedMemorySegmentImpl(0, UnmapperProxy.DUMMY, 0, readOnly, sessionImpl);
         }
         sessionImpl.checkValidState();
         _AbstractMemorySegmentImpl segment = new _MappedMemorySegmentImpl(
