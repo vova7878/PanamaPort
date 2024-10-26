@@ -1,16 +1,5 @@
 package com.v7878.unsafe;
 
-//TODO: generate with jasmin gradle plugin?
-
-/* FakeHeapByteBuffer is
-.class public Lcom/v7878/unsafe/FakeHeapByteBuffer;
-.super Ljava/nio/ByteBuffer;
-
-.method public constructor <init>()V
-    return-void
-.end method
-*/
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.DoubleBuffer;
@@ -18,6 +7,8 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
+
+//TODO: generate FakeHeapByteBuffer with jasmin gradle plugin?
 
 public abstract class HeapByteBufferBase extends FakeHeapByteBuffer {
     public HeapByteBufferBase() {
