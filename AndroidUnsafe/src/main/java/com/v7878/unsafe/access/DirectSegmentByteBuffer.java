@@ -25,6 +25,12 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
     }
 
     @Override
+    public long address() {
+        JavaForeignAccess.checkValidState(scope);
+        return super.address();
+    }
+
+    @Override
     public final DirectSegmentByteBuffer slice() {
         if (!attachment().isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
