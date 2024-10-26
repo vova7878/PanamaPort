@@ -80,8 +80,11 @@ public class JavaNioAccess {
     @DoNotOptimize
     private static class SegmentBufferAccess {
         public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
-            return new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
+            var memref = new SegmentMemoryRef(addr, obj);
+            var buffer = new DirectSegmentByteBuffer(memref,
                     -1, 0, cap, cap, 0, false, scope);
+            JavaForeignAccess.addOrCleanupIfFail(scope, memref::free);
+            return buffer;
         }
 
         public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapper, long addr,
