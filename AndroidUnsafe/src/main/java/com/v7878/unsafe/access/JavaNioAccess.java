@@ -480,11 +480,12 @@ public class JavaNioAccess {
         if (buffer.isDirect()) {
             return getBufferAddress(buffer);
         }
-        long offset = getArrayBase(buffer);
+        long offset = 0;
         if (isBufferView(buffer)) {
             offset += getBufferDerivedOffset(buffer);
             buffer = getDerivedBuffer(buffer);
         }
+        offset += getArrayBase(buffer);
         return offset + getBufferOffset(buffer);
     }
 
