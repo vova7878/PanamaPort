@@ -153,6 +153,15 @@ public class JavaNioAccess {
         {
             makeClassInheritable(nio_mem_ref_class);
 
+            Method[] methods = getDeclaredMethods(nio_mem_ref_class);
+            for (Method method : methods) {
+                int flags = method.getModifiers();
+                if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
+                    makeMethodInheritable(method);
+                }
+                makeExecutablePublicApi(method);
+            }
+
             Constructor<?>[] constructors = getDeclaredConstructors(nio_mem_ref_class);
             for (Constructor<?> constructor : constructors) {
                 makeExecutablePublic(constructor);
