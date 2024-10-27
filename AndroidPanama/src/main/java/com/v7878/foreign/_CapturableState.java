@@ -29,6 +29,8 @@ package com.v7878.foreign;
 
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 
+import com.v7878.unsafe.foreign.Errno;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,6 +41,11 @@ enum _CapturableState {
 
     public static final StructLayout LAYOUT = MemoryLayout.structLayout(
             supportedStates().map(_CapturableState::layout).toArray(MemoryLayout[]::new));
+
+    static {
+        // Init errno
+        Errno.errno();
+    }
 
     private final String stateName;
     private final ValueLayout layout;
