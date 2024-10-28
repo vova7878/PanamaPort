@@ -25,7 +25,7 @@ android {
 dependencies {
     compileOnly project(':fake_invoke')
 
-    implementation project(':R8Annotations')
+    implementation libs.r8.annotations
 
     runtimeOnly project(':AndroidUnsafe')
 }

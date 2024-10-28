@@ -27,7 +27,7 @@ android {
 }
 
 dependencies {
-    compileOnly libs.optimizationannotations
+    compileOnly libs.optimization.annotations
 
     compileOnly project(':fake_buffers')
     compileOnly project(':fake_panama')
@@ -35,9 +35,9 @@ dependencies {
 
     api libs.dexfile
 
-    implementation project(':R8Annotations')
+    implementation libs.r8.annotations
 
-    implementation libs.sununsafewrapper
+    implementation libs.sun.unsafewrapper
     implementation libs.androidmisc
 
     //TODO: runtimeOnlyApi?

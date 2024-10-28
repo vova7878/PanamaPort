@@ -23,8 +23,8 @@ android {
 }
 
 dependencies {
-    compileOnly libs.optimizationannotations
-    compileOnly libs.suncleanerstub
+    compileOnly libs.optimization.annotations
+    compileOnly libs.sun.cleanerstub
 
     compileOnly project(':fake_llvm')
 
@@ -32,8 +32,7 @@ dependencies {
 
     implementation project(':AndroidUnsafe')
 
-    implementation project(':R8Annotations')
-
+    implementation libs.r8.annotations
     implementation libs.androidmisc
     implementation libs.dexfile
 }

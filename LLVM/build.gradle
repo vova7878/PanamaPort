@@ -27,8 +27,7 @@ dependencies {
 
     implementation project(':AndroidUnsafe')
 
-    implementation project(':R8Annotations')
-
+    implementation libs.r8.annotations
     implementation libs.androidmisc
 }
 

@@ -13,5 +13,5 @@ android {
 
 dependencies {
     api files('libs/FakeByteBuffer.jar')
-    implementation libs.suncleanerstub
+    implementation libs.sun.cleanerstub
 }
