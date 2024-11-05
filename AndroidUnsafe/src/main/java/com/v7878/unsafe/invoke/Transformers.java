@@ -11,11 +11,11 @@ import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.VIRTUAL;
 import static com.v7878.dex.bytecode.CodeBuilder.Op.GET_OBJECT;
 import static com.v7878.dex.bytecode.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.dex.bytecode.CodeBuilder.Test.EQ;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -193,7 +193,7 @@ public class Transformers {
         ));
 
         FieldId asTypeCache;
-        if (CORRECT_SDK_INT < 33) {
+        if (ART_SDK_INT < 33) {
             asTypeCache = new FieldId(transformer_id, mh, "asTypeCache");
             transformer_def.getClassData().getInstanceFields().add(
                     new EncodedField(asTypeCache, ACC_PRIVATE, null)
@@ -206,8 +206,8 @@ public class Transformers {
 
         MethodId asTypeUncached = new MethodId(transformer_id, new ProtoId(mh, mt), "asTypeUncached");
         Consumer<CodeBuilder> fallbackAsType;
-        if (CORRECT_SDK_INT < 33) {
-            if (CORRECT_SDK_INT < 30) {
+        if (ART_SDK_INT < 33) {
+            if (ART_SDK_INT < 30) {
                 //return asTypeCache = super.asType(type);
                 fallbackAsType = b -> b
                         .invoke(SUPER, new MethodId(mh, new ProtoId(mh, mt),
@@ -322,7 +322,7 @@ public class Transformers {
             if (!SKIP_CHECK_CAST) {
                 b.check_cast(b.p(1), esf);
             }
-            if (CORRECT_SDK_INT <= 32) {
+            if (ART_SDK_INT <= 32) {
                 //handle.invoke((dalvik.system.EmulatedStackFrame) stack);
                 b.invoke_polymorphic(new MethodId(mh, new ProtoId(TypeId.of(Object.class),
                                 TypeId.of(Object[].class)), "invoke"),
@@ -390,7 +390,7 @@ public class Transformers {
             MethodType fixed, TransformerImpl impl, boolean variadic) {
         final int INVOKE_CALLSITE_TRANSFORM_26_32 = 6;
         final int INVOKE_TRANSFORM_26_35 = 5;
-        int kind = variadic && CORRECT_SDK_INT < 33 ?
+        int kind = variadic && ART_SDK_INT < 33 ?
                 INVOKE_CALLSITE_TRANSFORM_26_32 : INVOKE_TRANSFORM_26_35;
         return nothrows_run(() -> (MethodHandle) new_transformer.invoke(fixed, kind, impl));
     }

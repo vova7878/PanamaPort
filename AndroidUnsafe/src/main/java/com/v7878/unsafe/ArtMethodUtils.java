@@ -7,7 +7,6 @@ import static com.v7878.foreign.MemoryLayout.unionLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.getWordN;
@@ -16,7 +15,9 @@ import static com.v7878.unsafe.AndroidUnsafe.putWordN;
 import static com.v7878.unsafe.ArtModifiers.kAccCompileDontBother;
 import static com.v7878.unsafe.ArtModifiers.kAccIntrinsic;
 import static com.v7878.unsafe.ArtModifiers.kAccPreCompiled;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.getArtMethod;
+import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
 import com.v7878.foreign.GroupLayout;
@@ -90,13 +91,13 @@ public class ArtMethodUtils {
     );
 
     @ApiSensitive
-    public static final GroupLayout ARTMETHOD_LAYOUT = switch (CORRECT_SDK_INT) {
+    public static final GroupLayout ARTMETHOD_LAYOUT = switch (ART_SDK_INT) {
         case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/, 32 /*android 12L*/,
              31 /*android 12*/ -> art_method_15_12_layout;
         case 30 /*android 11*/, 29 /*android 10*/ -> art_method_11_10_layout;
         case 28 /*android 9*/ -> art_method_9_layout;
         case 27 /*android 8.1*/, 26 /*android 8*/ -> art_method_8xx_layout;
-        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+        default -> throw unsupportedSDK(ART_SDK_INT);
     };
 
     public static MemorySegment getArtMethodSegment(Executable ex) {

@@ -1,8 +1,9 @@
 package com.v7878.unsafe;
 
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.arrayCast;
+import static com.v7878.unsafe.Utils.unsupportedSDK;
 
 import com.v7878.unsafe.Reflection.ClassMirror;
 
@@ -31,7 +32,7 @@ public class ClassUtils {
         VisiblyInitialized;
 
         static {
-            switch (CORRECT_SDK_INT) {
+            switch (ART_SDK_INT) {
                 case 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/,
                      32 /*android 12L*/, 31 /*android 12*/, 30 /*android 11*/ -> {
                     NotReady.value = 0;  // Zero-initialized Class object starts in this state.
@@ -101,7 +102,7 @@ public class ClassUtils {
                     Initializing.value = 9;  // Class init in progress.
                     Initialized.value = 10;  // Ready to go.
                 }
-                default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+                default -> throw unsupportedSDK(ART_SDK_INT);
             }
         }
 
@@ -133,7 +134,7 @@ public class ClassUtils {
     @ApiSensitive
     public static int getRawClassStatus(Class<?> clazz) {
         ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
-        return CORRECT_SDK_INT <= 27 ? mirror[0].status : (mirror[0].status >>> 32 - 4);
+        return ART_SDK_INT <= 27 ? mirror[0].status : (mirror[0].status >>> 32 - 4);
     }
 
     public static ClassStatus getClassStatus(Class<?> clazz) {
@@ -144,7 +145,7 @@ public class ClassUtils {
     @ApiSensitive
     public static void setRawClassStatus(Class<?> clazz, int status) {
         ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
-        if (CORRECT_SDK_INT <= 27) {
+        if (ART_SDK_INT <= 27) {
             mirror[0].status = status;
         } else {
             mirror[0].status = (mirror[0].status & ~0 >>> 4) | (status << 32 - 4);
@@ -197,7 +198,7 @@ public class ClassUtils {
     }
 
     public static boolean isClassVisiblyInitialized(Class<?> clazz) {
-        int value = CORRECT_SDK_INT <= 29 ?
+        int value = ART_SDK_INT <= 29 ?
                 ClassStatus.Initialized.rawValue() :
                 ClassStatus.VisiblyInitialized.rawValue();
         return getRawClassStatus(clazz) == value;

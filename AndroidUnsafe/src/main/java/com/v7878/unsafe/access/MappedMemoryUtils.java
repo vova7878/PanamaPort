@@ -1,8 +1,8 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
@@ -28,7 +28,7 @@ class MappedMemoryUtils {
         address -= offset;
         length += offset;
         long pc = pageCount(length);
-        if (CORRECT_SDK_INT < 35) {
+        if (ART_SDK_INT < 35) {
             return isLoaded0_before35(address, length, (int) pc);
         } else {
             return isLoaded0_after35(address, length, pc);
@@ -115,8 +115,8 @@ class MappedMemoryUtils {
     static {
         Method[] tm = getDeclaredMethods(MappedMemoryUtils.class);
         Method[] mm = getDeclaredMethods(MappedByteBuffer.class);
-        Class<?> pc_type = CORRECT_SDK_INT < 35 ? int.class : long.class;
-        String suffix = CORRECT_SDK_INT < 35 ? "_before35" : "_after35";
+        Class<?> pc_type = ART_SDK_INT < 35 ? int.class : long.class;
+        String suffix = ART_SDK_INT < 35 ? "_before35" : "_after35";
         registerNativeMethod(searchMethod(tm, "isLoaded0" + suffix, long.class, long.class, pc_type),
                 getExecutableData(searchMethod(mm, "isLoaded0", long.class, long.class, pc_type)));
         registerNativeMethod(searchMethod(tm, "force0", FileDescriptor.class, long.class, long.class),

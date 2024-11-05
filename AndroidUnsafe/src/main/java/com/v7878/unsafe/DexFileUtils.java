@@ -6,11 +6,12 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BOOLEAN;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
@@ -151,14 +152,14 @@ public class DexFileUtils {
     );
 
     @ApiSensitive
-    public static final GroupLayout DEXFILE_LAYOUT = switch (CORRECT_SDK_INT) {
+    public static final GroupLayout DEXFILE_LAYOUT = switch (ART_SDK_INT) {
         case 35 /*android 15*/, 34 /*android 14*/ -> dex_file_14_15_layout;
         case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
              30 /*android 11*/ -> dex_file_13_11_layout;
         case 29 /*android 10*/ -> dex_file_10_layout;
         case 28 /*android 9*/ -> dex_file_9_layout;
         case 27 /*android 8.1*/, 26 /*android 8*/ -> dex_file_8xx_layout;
-        default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+        default -> throw unsupportedSDK(ART_SDK_INT);
     };
 
     private static final long dexFileOffset = fieldOffset(nothrows_run(() ->
@@ -185,12 +186,12 @@ public class DexFileUtils {
 
     @ApiSensitive
     public static DexFile openDexFile(ByteBuffer data) {
-        if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 28) {
+        if (ART_SDK_INT >= 26 && ART_SDK_INT <= 28) {
             return DexFileAccess.openDexFile(data);
-        } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 35) {
+        } else if (ART_SDK_INT >= 29 && ART_SDK_INT <= 35) {
             return DexFileAccess.openDexFile(new ByteBuffer[]{data}, null);
         } else {
-            throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+            throw unsupportedSDK(ART_SDK_INT);
         }
     }
 
@@ -200,12 +201,12 @@ public class DexFileUtils {
 
     @ApiSensitive
     public static long[] openCookie(ByteBuffer data) {
-        if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 28) {
+        if (ART_SDK_INT >= 26 && ART_SDK_INT <= 28) {
             return (long[]) DexFileAccess.openCookie(data);
-        } else if (CORRECT_SDK_INT >= 29 && CORRECT_SDK_INT <= 35) {
+        } else if (ART_SDK_INT >= 29 && ART_SDK_INT <= 35) {
             return (long[]) DexFileAccess.openCookie(new ByteBuffer[]{data}, null);
         } else {
-            throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+            throw unsupportedSDK(ART_SDK_INT);
         }
     }
 
@@ -241,42 +242,42 @@ public class DexFileUtils {
 
     @ApiSensitive
     public static void setTrusted(long dexfile_struct) {
-        if (CORRECT_SDK_INT <= 27) {
+        if (ART_SDK_INT <= 27) {
             return;
         }
         class Holder {
             static final long offset;
 
             static {
-                if (CORRECT_SDK_INT == 28) {
+                if (ART_SDK_INT == 28) {
                     offset = DEXFILE_LAYOUT.byteOffset(groupElement("is_platform_dex_"));
                 } else {
                     offset = DEXFILE_LAYOUT.byteOffset(groupElement("hiddenapi_domain_"));
                 }
             }
         }
-        if (CORRECT_SDK_INT == 28) {
+        if (ART_SDK_INT == 28) {
             AndroidUnsafe.putBooleanN(dexfile_struct + Holder.offset, true);
             return;
         }
         final int kCorePlatform = 0;
-        if (CORRECT_SDK_INT == 29) {
+        if (ART_SDK_INT == 29) {
             AndroidUnsafe.putIntN(dexfile_struct + Holder.offset, kCorePlatform);
             return;
         }
-        if (CORRECT_SDK_INT <= 35) {
+        if (ART_SDK_INT <= 35) {
             AndroidUnsafe.putByteN(dexfile_struct + Holder.offset, (byte) kCorePlatform);
             return;
         }
-        throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+        throw unsupportedSDK(ART_SDK_INT);
     }
 
     @ApiSensitive
     public static void setTrusted(DexFile dex) {
-        if (CORRECT_SDK_INT <= 27) {
+        if (ART_SDK_INT <= 27) {
             return;
         }
-        if (CORRECT_SDK_INT <= 35) {
+        if (ART_SDK_INT <= 35) {
             long[] cookie = getCookie(dex);
             final int start = 1;
             for (int i = start; i < cookie.length; i++) {
@@ -284,11 +285,11 @@ public class DexFileUtils {
             }
             return;
         }
-        throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+        throw unsupportedSDK(ART_SDK_INT);
     }
 
     public static void setTrusted(Class<?> clazz) {
-        if (CORRECT_SDK_INT <= 27) {
+        if (ART_SDK_INT <= 27) {
             return;
         }
         setTrusted(getDexFileStruct(clazz));

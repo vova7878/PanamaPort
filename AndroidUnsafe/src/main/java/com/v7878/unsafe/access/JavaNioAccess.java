@@ -6,7 +6,6 @@ import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.SUPER;
 import static com.v7878.dex.bytecode.CodeBuilder.Op.PUT_OBJECT;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_DOUBLE_BASE_OFFSET;
@@ -23,6 +22,7 @@ import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublicApi;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicApi;
 import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.ClassUtils.makeClassInheritable;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -267,7 +267,7 @@ public class JavaNioAccess {
         mem_def.setAccessFlags(ACC_PUBLIC);
 
         FieldId obo = new FieldId(mem_ref_id, TypeId.of(Object.class), "originalBufferObject");
-        if (CORRECT_SDK_INT == 26) {
+        if (ART_SDK_INT == 26) {
             // public final Object originalBufferObject;
             mem_def.getClassData().getInstanceFields().add(new EncodedField(obo,
                     ACC_PUBLIC | ACC_FINAL, null));
@@ -280,8 +280,8 @@ public class JavaNioAccess {
         mem_def.getClassData().getDirectMethods().add(new EncodedMethod(
                 MethodId.constructor(mem_ref_id, TypeId.J, TypeId.of(Object.class)),
                 ACC_PUBLIC | ACC_CONSTRUCTOR
-        ).withCode(CORRECT_SDK_INT == 26 ? 0 : 1, b -> b
-                .if_(CORRECT_SDK_INT == 26,
+        ).withCode(ART_SDK_INT == 26 ? 0 : 1, b -> b
+                .if_(ART_SDK_INT == 26,
                         unused -> b
                                 .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id, TypeId.J),
                                         b.this_(), b.p(0), b.p(1))
@@ -450,7 +450,7 @@ public class JavaNioAccess {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFER_VIEWS.stream()
                     .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
-                            CORRECT_SDK_INT >= 35 ? "byteOffset" : "offset")))
+                            ART_SDK_INT >= 35 ? "byteOffset" : "offset")))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
         return getIntO(buffer, Holder.OFFSET);

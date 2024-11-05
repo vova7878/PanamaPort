@@ -4,11 +4,12 @@ import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BOOLEAN;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.instanceFieldOffset;
+import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -48,70 +49,66 @@ public class JniLibraries {
     private static final map LIBS_MAP = new map(string.LAYOUT, ADDRESS);
 
     @ApiSensitive
-    @RawOffset
-    private static final long libraries_offset;
+    @RawOffset // TODO
+    private static final long libraries_offset = switch (ART_SDK_INT) {
+        case 35 /*android 15*/, 34 /*android 14*/ -> {
+            long tmp = ADDRESS_SIZE * 4L;
+            tmp += 3;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp += ADDRESS_SIZE * 3L;
 
-    static {
-        libraries_offset = switch (CORRECT_SDK_INT) {
-            case 35 /*android 15*/, 34 /*android 14*/ -> {
-                long tmp = ADDRESS_SIZE * 4L;
-                tmp += 3;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-                tmp += ADDRESS_SIZE * 3L;
+            //mem_map
+            tmp += ADDRESS_SIZE * 7L;
+            tmp += 6;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp += ADDRESS_SIZE;
 
-                //mem_map
-                tmp += ADDRESS_SIZE * 7L;
-                tmp += 6;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-                tmp += ADDRESS_SIZE;
+            tmp += ADDRESS_SIZE;
+            tmp += 4;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp += ADDRESS_SIZE * 3L;
+            yield tmp;
+        }
+        case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
+             30 /*android 11*/, 29 /*android 10*/ -> {
+            long tmp = ADDRESS_SIZE * 4L;
+            tmp += 3;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp += ADDRESS_SIZE * 3L;
 
-                tmp += ADDRESS_SIZE;
-                tmp += 4;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-                tmp += ADDRESS_SIZE * 3L;
-                yield tmp;
-            }
-            case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
-                 30 /*android 11*/, 29 /*android 10*/ -> {
-                long tmp = ADDRESS_SIZE * 4L;
-                tmp += 3;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-                tmp += ADDRESS_SIZE * 3L;
+            tmp += 4;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
 
-                tmp += 4;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            //mem_map
+            tmp += ADDRESS_SIZE * 7L;
+            tmp += 6;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp += ADDRESS_SIZE;
 
-                //mem_map
-                tmp += ADDRESS_SIZE * 7L;
-                tmp += 6;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-                tmp += ADDRESS_SIZE;
+            tmp += ADDRESS_SIZE;
+            tmp += 4;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp += ADDRESS_SIZE * 2L;
+            tmp += 8;
+            yield tmp;
+        }
+        case 28 /*android 9*/, 27 /*android 8.1*/, 26 /*android 8*/ -> {
+            long tmp = ADDRESS_SIZE * 4L;
+            tmp += 3;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp += ADDRESS_SIZE * 3L;
 
-                tmp += ADDRESS_SIZE;
-                tmp += 4;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-                tmp += ADDRESS_SIZE * 2L;
-                tmp += 8;
-                yield tmp;
-            }
-            case 28 /*android 9*/, 27 /*android 8.1*/, 26 /*android 8*/ -> {
-                long tmp = ADDRESS_SIZE * 4L;
-                tmp += 3;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-                tmp += ADDRESS_SIZE * 3L;
-
-                tmp += 4;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-                tmp += ADDRESS_SIZE * 2L;
-                tmp += 4;
-                tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
-                tmp += ADDRESS_SIZE * 2L;
-                tmp += 8;
-                yield tmp;
-            }
-            default -> throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
-        };
-    }
+            tmp += 4;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp += ADDRESS_SIZE * 2L;
+            tmp += 4;
+            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp += ADDRESS_SIZE * 2L;
+            tmp += 8;
+            yield tmp;
+        }
+        default -> throw unsupportedSDK(ART_SDK_INT);
+    };
 
     private static MemorySegment getLibraries() {
         class Holder {

@@ -19,6 +19,7 @@ import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -510,6 +511,9 @@ public class BulkLinker {
         @ApiSensitive
         int[] api() default {26, 27, 28, 29, 30, 31, 32, 33, 34, 35};
 
+        @ApiSensitive
+        int[] art_api() default {26, 27, 28, 29, 30, 31 /*, 32*/, 33, 34, 35};
+
         Tristate poisoning() default Tristate.NO_MATTER;
     }
 
@@ -623,6 +627,7 @@ public class BulkLinker {
     private static boolean checkConditions(Conditions cond) {
         return contains(cond.arch(), CURRENT_INSTRUCTION_SET) &&
                 contains(cond.api(), CORRECT_SDK_INT) &&
+                contains(cond.art_api(), ART_SDK_INT) &&
                 checkPoisoning(cond.poisoning());
     }
 

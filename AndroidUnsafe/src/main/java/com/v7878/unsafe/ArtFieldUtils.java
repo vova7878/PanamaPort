@@ -3,11 +3,12 @@ package com.v7878.unsafe;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.getArtField;
+import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
 import com.v7878.foreign.GroupLayout;
@@ -30,10 +31,10 @@ public class ArtFieldUtils {
     public static final GroupLayout ARTFIELD_LAYOUT;
 
     static {
-        if (CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 35) {
+        if (ART_SDK_INT >= 26 && ART_SDK_INT <= 35) {
             ARTFIELD_LAYOUT = art_field_layout;
         } else {
-            throw new IllegalStateException("unsupported sdk: " + CORRECT_SDK_INT);
+            throw unsupportedSDK(ART_SDK_INT);
         }
     }
 

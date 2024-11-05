@@ -379,6 +379,10 @@ public class Utils {
         throw new ClassCastException("Cannot cast from " + from + " to " + to);
     }
 
+    public static RuntimeException unsupportedSDK(int sdk) {
+        throw new IllegalStateException("Unsupported sdk: " + sdk);
+    }
+
     @SuppressWarnings("finally")
     public static void handleUncaughtException(Throwable th) {
         if (th != null) {
