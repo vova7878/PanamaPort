@@ -20,12 +20,14 @@ public class ArtVersion {
     private static boolean atLeast35() {
         Class<?> buf = nothrows_run(() -> Class.forName(
                 "java.nio.ByteBufferAsIntBuffer"));
-        Field offset = searchField(getDeclaredFields(buf), "byteOffset");
+        Field offset = searchField(getDeclaredFields(buf),
+                "byteOffset", false);
         return offset != null;
     }
 
     private static boolean atLeast34() {
-        Method sealed = searchMethod(getDeclaredMethods(Class.class), "isSealed");
+        Method sealed = searchMethod(getDeclaredMethods(Class.class),
+                "isSealed", false);
         return sealed != null;
     }
 
@@ -33,7 +35,7 @@ public class ArtVersion {
         Class<?> esf = nothrows_run(() -> Class.forName(
                 "dalvik.system.EmulatedStackFrame"));
         Method invoke = searchMethod(getDeclaredMethods(MethodHandle.class),
-                "invokeExactWithFrame", esf);
+                "invokeExactWithFrame", false, esf);
         return invoke != null;
     }
 
