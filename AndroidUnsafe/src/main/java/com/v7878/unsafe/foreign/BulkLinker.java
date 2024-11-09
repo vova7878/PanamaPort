@@ -72,7 +72,8 @@ import com.v7878.foreign.SymbolLookup;
 import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
-import com.v7878.r8.annotations.DoNotShrinkFull;
+import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
@@ -504,7 +505,8 @@ public class BulkLinker {
         TRUE, FALSE, NO_MATTER
     }
 
-    @DoNotShrinkFull
+    @DoNotShrink
+    @DoNotShrinkType
     public @interface Conditions {
         InstructionSet[] arch() default {ARM, ARM64, X86, X86_64, RISCV64};
 
@@ -520,7 +522,8 @@ public class BulkLinker {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
     @Repeatable(ASMs.class)
-    @DoNotShrinkFull
+    @DoNotShrink
+    @DoNotShrinkType
     public @interface ASM {
         Conditions conditions() default @Conditions();
 
@@ -529,14 +532,16 @@ public class BulkLinker {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
-    @DoNotShrinkFull
+    @DoNotShrink
+    @DoNotShrinkType
     public @interface ASMs {
         ASM[] value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
-    @DoNotShrinkFull
+    @DoNotShrink
+    @DoNotShrinkType
     public @interface ASMGenerator {
         Class<?> clazz() default /*search in current class*/ void.class;
 
@@ -546,7 +551,8 @@ public class BulkLinker {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
     @Repeatable(LibrarySymbols.class)
-    @DoNotShrinkFull
+    @DoNotShrink
+    @DoNotShrinkType
     public @interface LibrarySymbol {
         Conditions conditions() default @Conditions();
 
@@ -555,14 +561,16 @@ public class BulkLinker {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
-    @DoNotShrinkFull
+    @DoNotShrink
+    @DoNotShrinkType
     public @interface LibrarySymbols {
         LibrarySymbol[] value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
-    @DoNotShrinkFull
+    @DoNotShrink
+    @DoNotShrinkType
     public @interface SymbolGenerator {
         Class<?> clazz() default /*search in current class*/ void.class;
 
@@ -571,7 +579,8 @@ public class BulkLinker {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
-    @DoNotShrinkFull
+    @DoNotShrink
+    @DoNotShrinkType
     //TODO: add conditions
     public @interface CallSignature {
         CallType type();
