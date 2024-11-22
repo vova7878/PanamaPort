@@ -16,10 +16,10 @@ Before you add the library to your project, make sure it supports the dependenci
 Add it in your root settings.gradle at the end of repositories:
 ```
 dependencyResolutionManagement {
-	repositories {
-		<...>
-		maven { url 'https://jitpack.io' }
-	}
+    repositories {
+        <...>
+        maven { url 'https://jitpack.io' }
+    }
 }
 ```
 
@@ -32,7 +32,7 @@ dependencies {
 For example:
 ```
 dependencies {
-    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.5-preview'
+    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.6-preview'
 }
 ```
 
@@ -55,12 +55,5 @@ Important differences:
 ### Interaction with jextract
 I have not tested this tool in practice, but all classes it generates should work after manually replacing java.lang.foreign with com.v7878.foreign and java.lang.invoke.VarHandle with com.v7878.invoke.VarHandle
 
-### Examples
-Examples are available in [this](https://github.com/vova7878/PanamaExamples) repository
-
-### Testing
-Unfortunately, porting tests from the hotspot implementation is a separate large project that I am not ready to do alone
-
-Tests from the OpenJ9 implementation were run and helped to find several weaknesses and errors in my code, but there are too few of them to confidently speak about the stability and correctness of my implementation
-
-Any contribution and help would be helpful
+### Examples and tests
+Examples are available in [this](https://github.com/vova7878/PanamaExamples) repository. The same repository is where tests are ported from the OpenJ9 and Hotspot implementations
