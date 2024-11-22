@@ -45,6 +45,7 @@ sealed class _ImplicitSession extends _SharedSession {
 
     public _ImplicitSession() {
         super();
+        this.state = NONCLOSEABLE;
         // Port-changed: Use sun.misc.Cleaner
         //cleaner.register(this, resourceList);
         //TODO?: it`s not normal
@@ -59,11 +60,6 @@ sealed class _ImplicitSession extends _SharedSession {
     @Override
     public void acquire0() {
         // do nothing
-    }
-
-    @Override
-    public boolean isCloseable() {
-        return false;
     }
 
     @Override

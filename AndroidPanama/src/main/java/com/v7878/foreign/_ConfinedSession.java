@@ -56,16 +56,16 @@ final class _ConfinedSession extends _MemorySessionImpl {
     @Override
     public void acquire0() {
         checkValidState();
-        if (state == MAX_FORKS) {
+        if (acquireCount == MAX_FORKS) {
             throw tooManyAcquires();
         }
-        state++;
+        acquireCount++;
     }
 
     @Override
     public void release0() {
         if (Thread.currentThread() == owner) {
-            state--;
+            acquireCount--;
         } else {
             // It is possible to end up here in two cases: this session was kept alive by some other confined session
             // which is implicitly released (in which case the release call comes from the cleaner thread). Or,
@@ -78,11 +78,11 @@ final class _ConfinedSession extends _MemorySessionImpl {
     void justClose() {
         checkValidState();
         int asyncCount = AndroidUnsafe.getIntVolatileO(this, ASYNC_RELEASE_COUNT_OFFSET);
-        if ((state == 0 && asyncCount == 0)
-                || ((state - asyncCount) == 0)) {
+        int acquire = acquireCount - asyncCount;
+        if (acquire == 0) {
             state = CLOSED;
         } else {
-            throw alreadyAcquired(state - asyncCount);
+            throw alreadyAcquired(acquire);
         }
     }
 

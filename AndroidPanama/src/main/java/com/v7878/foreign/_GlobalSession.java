@@ -43,16 +43,12 @@ sealed class _GlobalSession extends _MemorySessionImpl {
 
     public _GlobalSession() {
         super(null, null);
+        this.state = NONCLOSEABLE;
     }
 
     @Override
     public void release0() {
         // do nothing
-    }
-
-    @Override
-    public boolean isCloseable() {
-        return false;
     }
 
     @Override

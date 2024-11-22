@@ -41,8 +41,15 @@ import java.util.Objects;
 
 abstract sealed class _MemorySessionImpl implements Scope
         permits _ConfinedSession, _GlobalSession, _SharedSession {
+    /**
+     * The value of the {@code state} of a {@code MemorySessionImpl}. The only possible transition
+     * is OPEN -> CLOSED. As a result, the states CLOSED and NONCLOSEABLE are stable. This allows
+     * us to annotate {@code state} with {@link Stable} and elide liveness check on non-closeable
+     * constant scopes, such as {@code GLOBAL_SESSION}.
+     */
     static final int OPEN = 0;
     static final int CLOSED = -1;
+    static final int NONCLOSEABLE = 1;
 
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
@@ -53,9 +60,14 @@ abstract sealed class _MemorySessionImpl implements Scope
 
     final ResourceList resourceList;
     final Thread owner;
+
     @DoNotShrink
     @DoNotObfuscate
-    int state = OPEN;
+    //@Stable
+    int state;
+    @DoNotShrink
+    @DoNotObfuscate
+    int acquireCount;
 
     public Arena asArena() {
         return new _ArenaImpl(this);
@@ -188,8 +200,8 @@ abstract sealed class _MemorySessionImpl implements Scope
         throw new CloneNotSupportedException();
     }
 
-    public boolean isCloseable() {
-        return true;
+    public final boolean isCloseable() {
+        return state <= OPEN;
     }
 
     /**
