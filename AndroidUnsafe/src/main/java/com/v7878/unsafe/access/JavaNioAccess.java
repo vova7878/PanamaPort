@@ -456,6 +456,20 @@ public class JavaNioAccess {
         return getIntO(buffer, Holder.OFFSET);
     }
 
+    public static int scaleShifts(Buffer buffer) {
+        Objects.requireNonNull(buffer);
+        if (buffer instanceof ByteBuffer) {
+            return 0;
+        } else if (buffer instanceof CharBuffer || buffer instanceof ShortBuffer) {
+            return 1;
+        } else if (buffer instanceof IntBuffer || buffer instanceof FloatBuffer) {
+            return 2;
+        } else if (buffer instanceof LongBuffer || buffer instanceof DoubleBuffer) {
+            return 3;
+        }
+        throw shouldNotReachHere();
+    }
+
     private static int getArrayBase(Buffer buffer) {
         if (buffer instanceof ByteBuffer) {
             return ARRAY_BYTE_BASE_OFFSET;

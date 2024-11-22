@@ -31,20 +31,14 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import android.annotation.SuppressLint;
 
+import com.v7878.unsafe.ExtraMemoryAccess;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.access.JavaNioAccess;
-import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
 import java.lang.reflect.Array;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.CharBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -361,7 +355,7 @@ abstract sealed class _AbstractMemorySegmentImpl
             throw new IllegalStateException(String.format("Segment size is not a multiple of %d. Size: %d", elemSize, length));
         }
         long arraySize = length / elemSize;
-        if (arraySize > (Integer.MAX_VALUE - 8)) { //conservative check
+        if (arraySize > ExtraMemoryAccess.SOFT_MAX_ARRAY_LENGTH) { //conservative check
             throw new IllegalStateException(String.format("Segment is too large to wrap as %s. Size: %d", typeName, length));
         }
         return (int) arraySize;
@@ -503,53 +497,66 @@ abstract sealed class _AbstractMemorySegmentImpl
                 unsafeGetBase());
     }
 
-    public static _AbstractMemorySegmentImpl ofBuffer(Buffer bb) {
+    public static _AbstractMemorySegmentImpl ofBuffer(Buffer b) {
+        // Implicit null check via NIO_ACCESS.scaleShifts(b)
+        final int scaleShifts = JavaNioAccess.scaleShifts(b);
+        return ofBuffer(b, offset(b, scaleShifts), length(b, scaleShifts));
+    }
+
+    private static _AbstractMemorySegmentImpl ofBuffer(Buffer b, long offset, long length) {
+        final Object base = JavaNioAccess.getBufferUnsafeBase(b);
+        return (base == null) ? nativeSegment(b, offset, length)
+                : heapSegment(b, base, offset, length, b.isReadOnly());
+    }
+
+    private static long offset(Buffer b, int scaleShifts) {
+        final long bbAddress = JavaNioAccess.getBufferUnsafeOffset(b);
+        return bbAddress + (((long) b.position()) << scaleShifts);
+    }
+
+    private static long length(Buffer b, int scaleShifts) {
+        return ((long) b.limit() - b.position()) << scaleShifts;
+    }
+
+    private static _AbstractMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
         //TODO: check buffer.isAccessible or isFreed in segments?
-        Objects.requireNonNull(bb);
-        Object base = JavaNioAccess.getBufferUnsafeBase(bb);
-        if (!bb.isDirect() && base == null) {
+        if (!b.isDirect()) {
             throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
         }
-        long bbAddress = JavaNioAccess.getBufferUnsafeOffset(bb);
-        UnmapperProxy unmapper = JavaNioAccess.unmapper(bb);
+        final var unmapper = JavaNioAccess.unmapper(b);
+        return unmapper == null
+                ? new _NativeMemorySegmentImpl(offset, length, b.isReadOnly(), bufferScope(b))
+                : new _MappedMemorySegmentImpl(offset, unmapper, length, b.isReadOnly(), bufferScope(b));
+    }
 
-        int pos = bb.position();
-        int limit = bb.limit();
-        int size = limit - pos;
+    // Port-added
+    private static _AbstractMemorySegmentImpl heapSegment(Buffer b,
+                                                          Object base,
+                                                          long offset,
+                                                          long length,
+                                                          boolean readOnly) {
+        assert !b.isDirect();
+        if (base instanceof byte[]) {
+            return _SegmentFactories.arrayOfByteSegment(base, offset, length, readOnly, bufferScope(b));
+        } else if (base instanceof short[]) {
+            return _SegmentFactories.arrayOfShortSegment(base, offset, length, readOnly, bufferScope(b));
+        } else if (base instanceof char[]) {
+            return _SegmentFactories.arrayOfCharSegment(base, offset, length, readOnly, bufferScope(b));
+        } else if (base instanceof int[]) {
+            return _SegmentFactories.arrayOfIntSegment(base, offset, length, readOnly, bufferScope(b));
+        } else if (base instanceof float[]) {
+            return _SegmentFactories.arrayOfFloatSegment(base, offset, length, readOnly, bufferScope(b));
+        } else if (base instanceof long[]) {
+            return _SegmentFactories.arrayOfLongSegment(base, offset, length, readOnly, bufferScope(b));
+        } else if (base instanceof double[]) {
+            return _SegmentFactories.arrayOfDoubleSegment(base, offset, length, readOnly, bufferScope(b));
+        }
+        throw shouldNotReachHere();
+    }
 
-        boolean readOnly = bb.isReadOnly();
-        int scaleFactor = getScaleFactor(bb);
-        _MemorySessionImpl bufferScope = (_MemorySessionImpl) JavaNioAccess.getBufferScope(bb);
-        if (bufferScope == null) {
-            bufferScope = _MemorySessionImpl.createGlobalHolder(bufferRef(bb));
-        }
-        long off = bbAddress + ((long) pos << scaleFactor);
-        long len = (long) size << scaleFactor;
-
-        if (base != null) {
-            assert !bb.isDirect();
-            if (base instanceof byte[]) {
-                return new _HeapMemorySegmentImpl.OfByte(off, base, len, readOnly, bufferScope);
-            } else if (base instanceof short[]) {
-                return new _HeapMemorySegmentImpl.OfShort(off, base, len, readOnly, bufferScope);
-            } else if (base instanceof char[]) {
-                return new _HeapMemorySegmentImpl.OfChar(off, base, len, readOnly, bufferScope);
-            } else if (base instanceof int[]) {
-                return new _HeapMemorySegmentImpl.OfInt(off, base, len, readOnly, bufferScope);
-            } else if (base instanceof float[]) {
-                return new _HeapMemorySegmentImpl.OfFloat(off, base, len, readOnly, bufferScope);
-            } else if (base instanceof long[]) {
-                return new _HeapMemorySegmentImpl.OfLong(off, base, len, readOnly, bufferScope);
-            } else if (base instanceof double[]) {
-                return new _HeapMemorySegmentImpl.OfDouble(off, base, len, readOnly, bufferScope);
-            }
-            throw shouldNotReachHere();
-        }
-        if (unmapper == null) {
-            return new _NativeMemorySegmentImpl(off, len, readOnly, bufferScope);
-        } else {
-            return new _MappedMemorySegmentImpl(off, unmapper, len, readOnly, bufferScope);
-        }
+    private static _MemorySessionImpl bufferScope(Buffer b) {
+        _MemorySessionImpl bufferScope = (_MemorySessionImpl) JavaNioAccess.getBufferScope(b);
+        return bufferScope == null ? _MemorySessionImpl.createGlobalHolder(bufferRef(b)) : bufferScope;
     }
 
     private static Object bufferRef(Buffer buffer) {
@@ -559,20 +566,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         } else {
             // heap buffer, return the underlying array
             return JavaNioAccess.getBufferUnsafeBase(buffer);
-        }
-    }
-
-    private static int getScaleFactor(Buffer buffer) {
-        if (buffer instanceof ByteBuffer) {
-            return 0;
-        } else if (buffer instanceof CharBuffer || buffer instanceof ShortBuffer) {
-            return 1;
-        } else if (buffer instanceof IntBuffer || buffer instanceof FloatBuffer) {
-            return 2;
-        } else if (buffer instanceof LongBuffer || buffer instanceof DoubleBuffer) {
-            return 3;
-        } else {
-            throw shouldNotReachHere();
         }
     }
 

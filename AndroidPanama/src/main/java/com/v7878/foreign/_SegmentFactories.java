@@ -151,6 +151,63 @@ class _SegmentFactories {
                 _MemorySessionImpl.createGlobalHolder(arr));
     }
 
+    // Buffer conversion factories
+    public static _AbstractMemorySegmentImpl arrayOfByteSegment(Object base,
+                                                                long offset,
+                                                                long length,
+                                                                boolean readOnly,
+                                                                _MemorySessionImpl bufferScope) {
+        return new OfByte(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static _AbstractMemorySegmentImpl arrayOfShortSegment(Object base,
+                                                                 long offset,
+                                                                 long length,
+                                                                 boolean readOnly,
+                                                                 _MemorySessionImpl bufferScope) {
+        return new OfShort(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static _AbstractMemorySegmentImpl arrayOfCharSegment(Object base,
+                                                                long offset,
+                                                                long length,
+                                                                boolean readOnly,
+                                                                _MemorySessionImpl bufferScope) {
+        return new OfChar(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static _AbstractMemorySegmentImpl arrayOfIntSegment(Object base,
+                                                               long offset,
+                                                               long length,
+                                                               boolean readOnly,
+                                                               _MemorySessionImpl bufferScope) {
+        return new OfInt(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static _AbstractMemorySegmentImpl arrayOfFloatSegment(Object base,
+                                                                 long offset,
+                                                                 long length,
+                                                                 boolean readOnly,
+                                                                 _MemorySessionImpl bufferScope) {
+        return new OfFloat(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static _AbstractMemorySegmentImpl arrayOfLongSegment(Object base,
+                                                                long offset,
+                                                                long length,
+                                                                boolean readOnly,
+                                                                _MemorySessionImpl bufferScope) {
+        return new OfLong(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static _AbstractMemorySegmentImpl arrayOfDoubleSegment(Object base,
+                                                                  long offset,
+                                                                  long length,
+                                                                  boolean readOnly,
+                                                                  _MemorySessionImpl bufferScope) {
+        return new OfDouble(offset, base, length, readOnly, bufferScope);
+    }
+
     public static MemorySegment allocateSegment(long byteSize, long byteAlignment,
                                                 _MemorySessionImpl sessionImpl, boolean use_new) {
         ensureInitialized();
