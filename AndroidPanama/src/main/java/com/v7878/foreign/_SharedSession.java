@@ -36,6 +36,8 @@ import static com.v7878.unsafe.AndroidUnsafe.getObjectVolatile;
 import static com.v7878.unsafe.AndroidUnsafe.putIntVolatileO;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 
+import android.os.Build;
+
 import com.v7878.unsafe.AndroidUnsafe;
 
 /**
@@ -99,7 +101,10 @@ sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession 
         // To avoid the situation where a scope fails to be acquired or closed but still reports as
         // alive afterward, we wait for the state to change before throwing the exception
         while (getIntVolatileO(this, STATE_OFFSET) == OPEN) {
-            Thread.onSpinWait();
+            // TODO: Is there any way to improve this code?
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Thread.onSpinWait();
+            }
         }
         return alreadyClosed();
     }
