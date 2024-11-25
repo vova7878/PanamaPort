@@ -28,7 +28,6 @@ import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
-import com.v7878.unsafe.RawOffset;
 import com.v7878.unsafe.cpp_std.map;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
@@ -48,8 +47,8 @@ public class JniLibraries {
 
     private static final map LIBS_MAP = new map(string.LAYOUT, ADDRESS);
 
+    // TODO: there must be a better way to do this
     @ApiSensitive
-    @RawOffset // TODO
     private static final long libraries_offset = switch (ART_SDK_INT) {
         case 35 /*android 15*/, 34 /*android 14*/ -> {
             long tmp = ADDRESS_SIZE * 4L;
@@ -122,7 +121,6 @@ public class JniLibraries {
         return Holder.libraries;
     }
 
-    // TODO: should this be used in "native" state?
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class Native {
