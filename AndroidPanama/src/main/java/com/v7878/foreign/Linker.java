@@ -912,5 +912,15 @@ public sealed interface Linker permits _AbstractAndroidLinker {
                     ? _LinkerOptions.Critical.ALLOW_HEAP
                     : _LinkerOptions.Critical.DONT_ALLOW_HEAP;
         }
+
+        @PortApi
+        static Option allowExceptions() {
+            return _LinkerOptions.AllowExceptions.INSTANCE;
+        }
+
+        @PortApi
+        static Option JNIEnvArg(int index) {
+            return new _LinkerOptions.JNIEnvArg(index);
+        }
     }
 }

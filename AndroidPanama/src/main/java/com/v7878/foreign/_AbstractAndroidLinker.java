@@ -32,7 +32,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         MemorySegment makeStub(MethodHandle target, Arena arena);
     }
 
-    private record LinkRequest(FunctionDescriptor descriptor, _LinkerOptions options) {
+    private record LinkRequest(_FunctionDescriptorImpl descriptor, _LinkerOptions options) {
     }
 
     private final SoftReferenceCache<LinkRequest, MethodHandle> DOWNCALL_CACHE = new SoftReferenceCache<>();
@@ -54,15 +54,15 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         _LinkerOptions optionSet = _LinkerOptions.forDowncall(function, options);
         validateVariadicLayouts(function, optionSet);
 
-        return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), request -> {
-            FunctionDescriptor fd = request.descriptor();
-            MethodHandle handle = arrangeDowncall(fd, request.options());
+        return DOWNCALL_CACHE.get(new LinkRequest(
+                (_FunctionDescriptorImpl) function, optionSet), request -> {
+            MethodHandle handle = arrangeDowncall(request.descriptor(), request.options());
             handle = _Utils.maybeCheckCaptureSegment(handle, request.options());
             return handle;
         });
     }
 
-    protected abstract MethodHandle arrangeDowncall(FunctionDescriptor function, _LinkerOptions options);
+    protected abstract MethodHandle arrangeDowncall(_FunctionDescriptorImpl function, _LinkerOptions options);
 
     @Override
     public final MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Option... options) {
@@ -70,21 +70,25 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
         checkLayouts(function);
-        checkExceptions(target);
-        function = stripNames(function, false);
         _LinkerOptions optionSet = _LinkerOptions.forUpcall(function, options);
+        if (!optionSet.allowExceptions()) {
+            checkExceptions(target);
+        }
+        function = stripNames(function, false);
 
         MethodType type = function.toMethodType();
         if (!type.equals(target.type())) {
             throw new IllegalArgumentException("Wrong method handle type: " + target.type());
         }
 
-        UpcallStubFactory factory = UPCALL_CACHE.get(new LinkRequest(function, optionSet), request ->
-                arrangeUpcall(type, request.descriptor(), request.options()));
+        UpcallStubFactory factory = UPCALL_CACHE.get(
+                new LinkRequest((_FunctionDescriptorImpl) function, optionSet), request ->
+                        arrangeUpcall(type, request.descriptor(), request.options()));
         return factory.makeStub(target, arena);
     }
 
-    protected abstract UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, _LinkerOptions options);
+    protected abstract UpcallStubFactory arrangeUpcall(
+            MethodType targetType, _FunctionDescriptorImpl function, _LinkerOptions options);
 
     // C spec mandates that variadic arguments smaller than int are promoted to int,
     // and float is promoted to double

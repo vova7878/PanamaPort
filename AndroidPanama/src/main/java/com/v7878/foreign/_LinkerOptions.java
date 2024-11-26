@@ -39,7 +39,6 @@ import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 class _LinkerOptions {
-
     private static final _LinkerOptions EMPTY = new _LinkerOptions(Map.of());
     private final Map<Class<?>, LinkerOptionImpl> optionsMap;
 
@@ -87,11 +86,6 @@ class _LinkerOptions {
         return type.cast(optionsMap.get(type));
     }
 
-    public boolean isVarargsIndex(int argIndex) {
-        FirstVariadicArg fva = getOption(FirstVariadicArg.class);
-        return fva != null && argIndex >= fva.index();
-    }
-
     public boolean isReturnInMemory() {
         return getOption(ReturnInMemory.class) != null;
     }
@@ -101,28 +95,39 @@ class _LinkerOptions {
     }
 
     public Stream<_CapturableState> capturedCallState() {
-        CaptureCallState stl = getOption(CaptureCallState.class);
+        var stl = getOption(CaptureCallState.class);
         return stl == null ? Stream.empty() : stl.saved().stream();
     }
 
     public boolean isVariadicFunction() {
-        FirstVariadicArg fva = getOption(FirstVariadicArg.class);
-        return fva != null;
+        return getOption(FirstVariadicArg.class) != null;
     }
 
     public int firstVariadicArgIndex() {
-        FirstVariadicArg option = getOption(FirstVariadicArg.class);
+        var option = getOption(FirstVariadicArg.class);
         return option == null ? -1 : option.index();
     }
 
     public boolean isCritical() {
-        Critical c = getOption(Critical.class);
-        return c != null;
+        return getOption(Critical.class) != null;
     }
 
     public boolean allowsHeapAccess() {
-        Critical c = getOption(Critical.class);
+        var c = getOption(Critical.class);
         return c != null && c.allowHeapAccess();
+    }
+
+    public boolean allowExceptions() {
+        return getOption(AllowExceptions.class) != null;
+    }
+
+    public boolean hasJNIEnvArg() {
+        return getOption(JNIEnvArg.class) != null;
+    }
+
+    public int getJNIEnvArgIndex() {
+        var option = getOption(JNIEnvArg.class);
+        return option == null ? -1 : option.index();
     }
 
     @Override
@@ -137,8 +142,8 @@ class _LinkerOptions {
         return Objects.hash(optionsMap);
     }
 
-    public sealed interface LinkerOptionImpl extends Option
-            permits CaptureCallState, Critical, FirstVariadicArg, ReturnInMemory {
+    public sealed interface LinkerOptionImpl extends Option permits AllowExceptions,
+            CaptureCallState, Critical, FirstVariadicArg, JNIEnvArg, ReturnInMemory {
         default void validateForDowncall(FunctionDescriptor descriptor) {
             throw new IllegalArgumentException("Not supported for downcall: " + this);
         }
@@ -149,11 +154,11 @@ class _LinkerOptions {
     }
 
     public record FirstVariadicArg(int index) implements LinkerOptionImpl {
-
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             if (index < 0 || index > descriptor.argumentLayouts().size()) {
-                throw new IllegalArgumentException("Index '" + index + "' not in bounds for descriptor: " + descriptor);
+                throw new IllegalArgumentException(
+                        "Index '" + index + "' not in bounds for descriptor: " + descriptor);
             }
         }
     }
@@ -167,8 +172,28 @@ class _LinkerOptions {
         }
     }
 
-    public record CaptureCallState(Set<_CapturableState> saved) implements LinkerOptionImpl {
+    public record AllowExceptions() implements LinkerOptionImpl {
+        public static final AllowExceptions INSTANCE = new AllowExceptions();
 
+        @Override
+        public void validateForUpcall(FunctionDescriptor descriptor) {
+            // always allowed
+        }
+    }
+
+    public record JNIEnvArg(int index) implements LinkerOptionImpl {
+        // TODO: public void validateForDowncall(FunctionDescriptor descriptor) { }
+
+        @Override
+        public void validateForUpcall(FunctionDescriptor descriptor) {
+            if (index < 0 || index > descriptor.argumentLayouts().size()) {
+                throw new IllegalArgumentException(
+                        "Index '" + index + "' not in bounds for descriptor: " + descriptor);
+            }
+        }
+    }
+
+    public record CaptureCallState(Set<_CapturableState> saved) implements LinkerOptionImpl {
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // done during construction

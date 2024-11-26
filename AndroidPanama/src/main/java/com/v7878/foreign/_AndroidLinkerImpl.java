@@ -129,7 +129,7 @@ import dalvik.system.DexFile;
 
 final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
-    public static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
+    private static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
 
     private static MemorySegment nextSegment(RelativeStackFrameAccessor reader, MemoryLayout layout) {
         long size = layout == null ? 0 : layout.byteSize();
@@ -402,8 +402,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return function_t(returnType, argTypes.toArray(new LLVMTypeRef[0]));
     }
 
-    private static LLVMTypeRef sdToLLVMType(LLVMContextRef context, _LLVMStorageDescriptor descriptor,
-                                            int firstVariadicArgIndex) {
+    private static LLVMTypeRef sdToLLVMType(
+            LLVMContextRef context, _LLVMStorageDescriptor descriptor, int firstVariadicArgIndex) {
         LLVMStorage retStorage = descriptor.returnStorage();
         LLVMStorage[] argStorages = descriptor.argumentStorages();
         if (firstVariadicArgIndex >= 0) {
@@ -599,11 +599,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     @Override
-    protected MethodHandle arrangeDowncall(FunctionDescriptor descriptor, _LinkerOptions options) {
-        _FunctionDescriptorImpl descriptor_impl = (_FunctionDescriptorImpl) descriptor;
-        _LLVMStorageDescriptor target_descriptor = _LLVMCallingConvention.computeStorages(descriptor_impl);
+    protected MethodHandle arrangeDowncall(_FunctionDescriptorImpl descriptor, _LinkerOptions options) {
+        _LLVMStorageDescriptor target_descriptor = _LLVMCallingConvention.computeStorages(descriptor);
         MemoryLayout ret = null;
-        _FunctionDescriptorImpl stub_descriptor = descriptor_impl;
+        _FunctionDescriptorImpl stub_descriptor = descriptor;
         if (options.isReturnInMemory()) {
             ret = stub_descriptor.returnLayoutPlain();
             stub_descriptor = stub_descriptor.dropReturnLayout()
@@ -631,7 +630,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
         MethodHandle handle = Transformers.makeTransformer(handleType, arranger);
         if (options.isReturnInMemory()) {
-            //TODO: optimize if return layout if empty
+            //TODO: optimize if return layout is empty
             int ret_index = options.hasCapturedCallState() ? 2 : 1;
             MethodType type = handleType.changeParameterType(ret_index, SegmentAllocator.class);
             ReturnWrapper wrapper = new ReturnWrapper(handle, ret, ret_index);
@@ -677,7 +676,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     private static MemorySegment generateNativeUpcallStub(
-            Arena scope, _LLVMStorageDescriptor stub_descriptor,
+            Arena scope, _LLVMStorageDescriptor stub_descriptor, _LinkerOptions options,
             long arranger_id, long class_id, long function_id) {
         class Holder {
             @DoNotShrink
@@ -706,30 +705,36 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         final String function_name = "stub";
         return generateFunctionCodeSegment((context, module, builder) -> {
+            int env_index = options.getJNIEnvArgIndex();
+            if (env_index >= 0) {
+                final int tmp = env_index;
+                for (int i = 0; i < tmp; i++) {
+                    if (stub_descriptor.argumentStorage(i) instanceof NoStorage) env_index--;
+                }
+            }
+
             var sret_attr = LLVMCreateEnumAttribute(context, "sret", 0);
             var byval_attr = LLVMCreateEnumAttribute(context, "byval", 0);
 
             var stub_type = sdToLLVMType(context, stub_descriptor, -1);
             var stub = LLVMAddFunction(module, function_name, stub_type);
 
-            var init = LLVMAppendBasicBlock(stub, "");
             var body = LLVMAppendBasicBlock(stub, "");
-            var uncaught_exception = LLVMAppendBasicBlock(stub, "");
             var normal_exit = LLVMAppendBasicBlock(stub, "");
-
-            LLVMPositionBuilderAtEnd(builder, init);
-            var env_ptr = build_call(builder, Holder.INIT.apply(builder));
-            var env_iface = build_load_ptr(builder, intptr_t(context), env_ptr);
-            LLVMBuildBr(builder, body);
 
             // TODO?: check thread state (must be native)
 
             LLVMPositionBuilderAtEnd(builder, body);
+            var stub_args = LLVMGetParams(stub);
+            var target_args = new LLVMValueRef[stub_args.length + 5];
+
+            var env_ptr = env_index >= 0 ? stub_args[env_index] :
+                    build_call(builder, Holder.INIT.apply(builder));
+            var env_iface = build_load_ptr(builder, intptr_t(context), env_ptr);
+
             int count = 0; // current index in target_args[] and their count
             int index = 0; // current index in stub_args[]
-            var stub_args = LLVMGetParams(stub);
             var target = Holder.CALL.apply(builder, env_iface);
-            var target_args = new LLVMValueRef[stub_args.length + 5];
             target_args[count++] = env_ptr;
             target_args[count++] = const_intptr(context, class_id);
             target_args[count++] = const_intptr(context, function_id);
@@ -769,6 +774,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                     assert ns.layout != null;
                     var type = layoutToLLVMType(context, ns.layout);
                     target_args[count++] = LLVMBuildAlloca(builder, type, "");
+                } else if (index == env_index) {
+                    // just skip
+                    index++;
                 } else if (storage instanceof RawStorage rs) {
                     var arg = stub_args[index++];
                     // varargs rules
@@ -802,14 +810,19 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             }
 
             build_call(builder, target, Arrays.copyOf(target_args, count));
-            var test_exceptions = build_call(builder,
-                    Holder.EXCEPTION_CHECK.apply(builder, env_iface), env_ptr);
-            LLVMBuildCondBr(builder, test_exceptions, uncaught_exception, normal_exit);
+            if (options.allowExceptions()) {
+                LLVMBuildBr(builder, normal_exit);
+            } else {
+                var uncaught_exception = LLVMAppendBasicBlock(stub, "");
+                var test_exceptions = build_call(builder,
+                        Holder.EXCEPTION_CHECK.apply(builder, env_iface), env_ptr);
+                LLVMBuildCondBr(builder, test_exceptions, uncaught_exception, normal_exit);
 
-            LLVMPositionBuilderAtEnd(builder, uncaught_exception);
-            build_call(builder, Holder.FATAL_ERROR.apply(builder, env_iface),
-                    env_ptr, Holder.UNCAUGHT_EXCEPTION_MSG.apply(context));
-            LLVMBuildUnreachable(builder);
+                LLVMPositionBuilderAtEnd(builder, uncaught_exception);
+                build_call(builder, Holder.FATAL_ERROR.apply(builder, env_iface),
+                        env_ptr, Holder.UNCAUGHT_EXCEPTION_MSG.apply(context));
+                LLVMBuildUnreachable(builder);
+            }
 
             LLVMPositionBuilderAtEnd(builder, normal_exit);
             if (ret == null) {
@@ -826,11 +839,13 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         private final MethodHandle stub;
         private final MemoryLayout[] args;
         private final MemoryLayout ret;
+        private final boolean allowExceptions;
 
-        public UpcallArranger(MethodHandle stub, _FunctionDescriptorImpl descriptor) {
+        public UpcallArranger(MethodHandle stub, _FunctionDescriptorImpl descriptor, boolean allowExceptions) {
             this.stub = stub;
             this.args = descriptor.argumentLayouts().toArray(new MemoryLayout[0]);
             this.ret = descriptor.returnLayoutPlain();
+            this.allowExceptions = allowExceptions;
         }
 
         private static void copyArg(RelativeStackFrameAccessor reader,
@@ -852,7 +867,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             }
         }
 
-        private static void copyRet(RelativeStackFrameAccessor reader, MemorySegment ret, MemoryLayout layout) {
+        private static void copyRet(RelativeStackFrameAccessor reader,
+                                    MemorySegment ret, MemoryLayout layout) {
             if (layout instanceof OfByte bl) {
                 ret.set(bl, 0, reader.nextByte());
             } else if (layout instanceof OfBoolean bl) {
@@ -872,7 +888,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             } else if (layout instanceof AddressLayout al) {
                 ret.set(al, 0, reader.nextReference());
             } else if (layout instanceof GroupLayout gl) {
-                //TODO: optimize if return layout if empty
+                //TODO: optimize if return layout is empty
                 MemorySegment arg = reader.nextReference();
                 MemorySegment.copy(arg, 0, ret, 0, gl.byteSize());
             } else {
@@ -881,7 +897,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
 
         @Override
-        public void transform(MethodHandle ignored, EmulatedStackFrame stack) {
+        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
             var thiz_acc = stack.relativeAccessor();
             EmulatedStackFrame stub_frame = EmulatedStackFrame.create(stub.type());
             var stub_acc = stub_frame.relativeAccessor();
@@ -893,7 +909,11 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 try {
                     invokeExactWithFrameNoChecks(stub, stub_frame);
                 } catch (Throwable th) {
-                    handleUncaughtException(th);
+                    if (allowExceptions) {
+                        throw th;
+                    } else {
+                        handleUncaughtException(th);
+                    }
                 }
                 if (ret != null) {
                     stub_acc.moveToReturn();
@@ -905,24 +925,26 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
     @Override
     protected UpcallStubFactory arrangeUpcall(
-            MethodType target_type, FunctionDescriptor descriptor, _LinkerOptions unused) {
-        _FunctionDescriptorImpl descriptor_impl = (_FunctionDescriptorImpl) descriptor;
-        _LLVMStorageDescriptor stub_descriptor = _LLVMCallingConvention.computeStorages(descriptor_impl);
-        MemoryLayout ret = descriptor_impl.returnLayoutPlain();
-        _FunctionDescriptorImpl arranger_descriptor = ret == null ? descriptor_impl :
-                descriptor_impl.dropReturnLayout().insertArgumentLayouts(0, ADDRESS);
+            MethodType target_type, _FunctionDescriptorImpl descriptor, _LinkerOptions options) {
+        var native_descriptor = !options.hasJNIEnvArg() ? descriptor :
+                descriptor.insertArgumentLayouts(options.getJNIEnvArgIndex(), ADDRESS);
+        _LLVMStorageDescriptor stub_descriptor = _LLVMCallingConvention.computeStorages(native_descriptor);
+        MemoryLayout ret = descriptor.returnLayoutPlain();
+        _FunctionDescriptorImpl arranger_descriptor = ret == null ? descriptor :
+                descriptor.dropReturnLayout().insertArgumentLayouts(0, ADDRESS);
         MethodType arranger_type = fdToRawMethodType(arranger_descriptor, false);
         Method stub = generateJavaUpcallStub(arranger_type);
 
         return (target, arena) -> {
             MethodHandle arranger = Transformers.makeTransformer(arranger_type,
-                    new UpcallArranger(target, descriptor_impl));
+                    new UpcallArranger(target, descriptor, options.allowExceptions()));
 
             long arranger_id = JNIUtils.NewGlobalRef(arranger, arena);
             long class_id = JNIUtils.NewGlobalRef(stub.getDeclaringClass(), arena);
             long function_id = JNIUtils.FromReflectedMethod(stub);
 
-            return generateNativeUpcallStub(arena, stub_descriptor, arranger_id, class_id, function_id);
+            return generateNativeUpcallStub(arena, stub_descriptor, options,
+                    arranger_id, class_id, function_id);
         };
     }
 }
