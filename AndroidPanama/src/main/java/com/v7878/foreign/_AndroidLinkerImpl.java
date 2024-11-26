@@ -675,6 +675,17 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return getDeclaredMethod(stub_class, method_name, stub_type.parameterArray());
     }
 
+    private static int computeEnvIndex(_LLVMStorageDescriptor stub_descriptor, _LinkerOptions options) {
+        int env_index = options.getJNIEnvArgIndex();
+        if (env_index >= 0) {
+            final int tmp = env_index;
+            for (int i = 0; i < tmp; i++) {
+                if (stub_descriptor.argumentStorage(i) instanceof NoStorage) env_index--;
+            }
+        }
+        return env_index;
+    }
+
     private static MemorySegment generateNativeUpcallStub(
             Arena scope, _LLVMStorageDescriptor stub_descriptor, _LinkerOptions options,
             long arranger_id, long class_id, long function_id) {
@@ -705,14 +716,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         final String function_name = "stub";
         return generateFunctionCodeSegment((context, module, builder) -> {
-            int env_index = options.getJNIEnvArgIndex();
-            if (env_index >= 0) {
-                final int tmp = env_index;
-                for (int i = 0; i < tmp; i++) {
-                    if (stub_descriptor.argumentStorage(i) instanceof NoStorage) env_index--;
-                }
-            }
-
             var sret_attr = LLVMCreateEnumAttribute(context, "sret", 0);
             var byval_attr = LLVMCreateEnumAttribute(context, "byval", 0);
 
@@ -728,6 +731,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             var stub_args = LLVMGetParams(stub);
             var target_args = new LLVMValueRef[stub_args.length + 5];
 
+            int env_index = computeEnvIndex(stub_descriptor, options);
             var env_ptr = env_index >= 0 ? stub_args[env_index] :
                     build_call(builder, Holder.INIT.apply(builder));
             var env_iface = build_load_ptr(builder, intptr_t(context), env_ptr);

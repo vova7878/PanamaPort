@@ -70,11 +70,11 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
         checkLayouts(function);
+        function = stripNames(function, false);
         _LinkerOptions optionSet = _LinkerOptions.forUpcall(function, options);
         if (!optionSet.allowExceptions()) {
             checkExceptions(target);
         }
-        function = stripNames(function, false);
 
         MethodType type = function.toMethodType();
         if (!type.equals(target.type())) {
