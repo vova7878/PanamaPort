@@ -141,13 +141,12 @@ abstract sealed class _AbstractMemorySegmentImpl
         return reinterpretInternal(byteSize(), _MemorySessionImpl.toMemorySession(arena), cleanup);
     }
 
-    public MemorySegment reinterpretInternal(long newSize, Scope scope, Consumer<MemorySegment> cleanup) {
+    private _NativeMemorySegmentImpl reinterpretInternal(long newSize, _MemorySessionImpl scope, Consumer<MemorySegment> cleanup) {
         _Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
         Runnable action = cleanup == null ? null : () -> cleanup.accept(
                 _SegmentFactories.makeNativeSegmentUnchecked(address(), newSize));
-        return _SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
-                (_MemorySessionImpl) scope, readOnly, action);
+        return _SegmentFactories.makeNativeSegmentUnchecked(address(), newSize, scope, readOnly, action);
     }
 
     private _AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
@@ -320,10 +319,6 @@ abstract sealed class _AbstractMemorySegmentImpl
         checkBounds(offset, length);
     }
 
-    public void checkValidState() {
-        sessionImpl().checkValidState();
-    }
-
     public final void checkEnclosingLayout(long offset, MemoryLayout enclosing, boolean readOnly) {
         checkAccess(offset, enclosing.byteSize(), readOnly);
         if (!isAlignedForElement(offset, enclosing)) {
@@ -378,7 +373,7 @@ abstract sealed class _AbstractMemorySegmentImpl
     }
 
     @Override
-    public Scope scope() {
+    public _MemorySessionImpl scope() {
         return scope;
     }
 
@@ -518,7 +513,7 @@ abstract sealed class _AbstractMemorySegmentImpl
         return ((long) b.limit() - b.position()) << scaleShifts;
     }
 
-    private static _AbstractMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
+    private static _NativeMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
         //TODO: check buffer.isAccessible or isFreed in segments?
         if (!b.isDirect()) {
             throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
@@ -530,11 +525,11 @@ abstract sealed class _AbstractMemorySegmentImpl
     }
 
     // Port-added
-    private static _AbstractMemorySegmentImpl heapSegment(Buffer b,
-                                                          Object base,
-                                                          long offset,
-                                                          long length,
-                                                          boolean readOnly) {
+    private static _HeapMemorySegmentImpl heapSegment(Buffer b,
+                                                      Object base,
+                                                      long offset,
+                                                      long length,
+                                                      boolean readOnly) {
         assert !b.isDirect();
         if (base instanceof byte[]) {
             return _SegmentFactories.arrayOfByteSegment(base, offset, length, readOnly, bufferScope(b));

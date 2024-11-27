@@ -69,7 +69,7 @@ abstract sealed class _MemorySessionImpl implements Scope
     @DoNotObfuscate
     int acquireCount;
 
-    public Arena asArena() {
+    public _ArenaImpl asArena() {
         return new _ArenaImpl(this);
     }
 

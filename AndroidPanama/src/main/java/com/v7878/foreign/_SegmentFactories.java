@@ -61,7 +61,7 @@ class _SegmentFactories {
     // Unsafe native segment factories. These are used by the implementation code, to skip the sanity checks
     // associated with MemorySegment::ofAddress.
 
-    public static MemorySegment makeNativeSegmentUnchecked(
+    public static _NativeMemorySegmentImpl makeNativeSegmentUnchecked(
             long min, long byteSize, _MemorySessionImpl sessionImpl,
             boolean readOnly, Runnable action) {
         ensureInitialized();
@@ -73,29 +73,29 @@ class _SegmentFactories {
         return new _NativeMemorySegmentImpl(min, byteSize, readOnly, sessionImpl);
     }
 
-    public static MemorySegment makeNativeSegmentUnchecked(
+    public static _NativeMemorySegmentImpl makeNativeSegmentUnchecked(
             long min, long byteSize, _MemorySessionImpl sessionImpl, Runnable action) {
         return makeNativeSegmentUnchecked(min, byteSize, sessionImpl, false, action);
     }
 
-    public static MemorySegment makeNativeSegmentUnchecked(
+    public static _NativeMemorySegmentImpl makeNativeSegmentUnchecked(
             long min, long byteSize, _MemorySessionImpl sessionImpl) {
         return makeNativeSegmentUnchecked(min, byteSize, sessionImpl, null);
     }
 
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize) {
+    public static _NativeMemorySegmentImpl makeNativeSegmentUnchecked(long min, long byteSize) {
         return makeNativeSegmentUnchecked(min, byteSize, _GlobalSession.INSTANCE);
     }
 
     // Port-added
-    public static MemorySegment fromObject(Object obj) {
+    public static OfObject fromObject(Object obj) {
         ensureInitialized();
         Objects.requireNonNull(obj);
         return new OfObject(0, obj, VM.alignedSizeOf(obj), false,
                 _MemorySessionImpl.createGlobalHolder(obj));
     }
 
-    public static MemorySegment fromArray(byte[] arr) {
+    public static OfByte fromArray(byte[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.BYTE.scale();
@@ -103,7 +103,7 @@ class _SegmentFactories {
                 _MemorySessionImpl.createGlobalHolder(arr));
     }
 
-    public static MemorySegment fromArray(short[] arr) {
+    public static OfShort fromArray(short[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.SHORT.scale();
@@ -111,7 +111,7 @@ class _SegmentFactories {
                 _MemorySessionImpl.createGlobalHolder(arr));
     }
 
-    public static MemorySegment fromArray(int[] arr) {
+    public static OfInt fromArray(int[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.INT.scale();
@@ -119,7 +119,7 @@ class _SegmentFactories {
                 _MemorySessionImpl.createGlobalHolder(arr));
     }
 
-    public static MemorySegment fromArray(char[] arr) {
+    public static OfChar fromArray(char[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.CHAR.scale();
@@ -127,7 +127,7 @@ class _SegmentFactories {
                 _MemorySessionImpl.createGlobalHolder(arr));
     }
 
-    public static MemorySegment fromArray(float[] arr) {
+    public static OfFloat fromArray(float[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.FLOAT.scale();
@@ -135,7 +135,7 @@ class _SegmentFactories {
                 _MemorySessionImpl.createGlobalHolder(arr));
     }
 
-    public static MemorySegment fromArray(double[] arr) {
+    public static OfDouble fromArray(double[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.DOUBLE.scale();
@@ -143,7 +143,7 @@ class _SegmentFactories {
                 _MemorySessionImpl.createGlobalHolder(arr));
     }
 
-    public static MemorySegment fromArray(long[] arr) {
+    public static OfLong fromArray(long[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
         long byteSize = (long) arr.length * _Utils.BaseAndScale.LONG.scale();
@@ -152,64 +152,43 @@ class _SegmentFactories {
     }
 
     // Buffer conversion factories
-    public static _AbstractMemorySegmentImpl arrayOfByteSegment(Object base,
-                                                                long offset,
-                                                                long length,
-                                                                boolean readOnly,
-                                                                _MemorySessionImpl bufferScope) {
+    public static OfByte arrayOfByteSegment(Object base, long offset, long length,
+                                            boolean readOnly, _MemorySessionImpl bufferScope) {
         return new OfByte(offset, base, length, readOnly, bufferScope);
     }
 
-    public static _AbstractMemorySegmentImpl arrayOfShortSegment(Object base,
-                                                                 long offset,
-                                                                 long length,
-                                                                 boolean readOnly,
-                                                                 _MemorySessionImpl bufferScope) {
+    public static OfShort arrayOfShortSegment(Object base, long offset, long length,
+                                              boolean readOnly, _MemorySessionImpl bufferScope) {
         return new OfShort(offset, base, length, readOnly, bufferScope);
     }
 
-    public static _AbstractMemorySegmentImpl arrayOfCharSegment(Object base,
-                                                                long offset,
-                                                                long length,
-                                                                boolean readOnly,
-                                                                _MemorySessionImpl bufferScope) {
+    public static OfChar arrayOfCharSegment(Object base, long offset, long length,
+                                            boolean readOnly, _MemorySessionImpl bufferScope) {
         return new OfChar(offset, base, length, readOnly, bufferScope);
     }
 
-    public static _AbstractMemorySegmentImpl arrayOfIntSegment(Object base,
-                                                               long offset,
-                                                               long length,
-                                                               boolean readOnly,
-                                                               _MemorySessionImpl bufferScope) {
+    public static OfInt arrayOfIntSegment(Object base, long offset, long length,
+                                          boolean readOnly, _MemorySessionImpl bufferScope) {
         return new OfInt(offset, base, length, readOnly, bufferScope);
     }
 
-    public static _AbstractMemorySegmentImpl arrayOfFloatSegment(Object base,
-                                                                 long offset,
-                                                                 long length,
-                                                                 boolean readOnly,
-                                                                 _MemorySessionImpl bufferScope) {
+    public static OfFloat arrayOfFloatSegment(Object base, long offset, long length,
+                                              boolean readOnly, _MemorySessionImpl bufferScope) {
         return new OfFloat(offset, base, length, readOnly, bufferScope);
     }
 
-    public static _AbstractMemorySegmentImpl arrayOfLongSegment(Object base,
-                                                                long offset,
-                                                                long length,
-                                                                boolean readOnly,
-                                                                _MemorySessionImpl bufferScope) {
+    public static OfLong arrayOfLongSegment(Object base, long offset, long length,
+                                            boolean readOnly, _MemorySessionImpl bufferScope) {
         return new OfLong(offset, base, length, readOnly, bufferScope);
     }
 
-    public static _AbstractMemorySegmentImpl arrayOfDoubleSegment(Object base,
-                                                                  long offset,
-                                                                  long length,
-                                                                  boolean readOnly,
-                                                                  _MemorySessionImpl bufferScope) {
+    public static OfDouble arrayOfDoubleSegment(Object base, long offset, long length,
+                                                boolean readOnly, _MemorySessionImpl bufferScope) {
         return new OfDouble(offset, base, length, readOnly, bufferScope);
     }
 
-    public static MemorySegment allocateSegment(long byteSize, long byteAlignment,
-                                                _MemorySessionImpl sessionImpl, boolean use_new) {
+    public static _NativeMemorySegmentImpl allocateSegment(long byteSize, long byteAlignment,
+                                                           _MemorySessionImpl sessionImpl, boolean use_new) {
         ensureInitialized();
         sessionImpl.checkValidState();
         //TODO
@@ -222,7 +201,7 @@ class _SegmentFactories {
             if (!_Utils.isAligned(buf, byteAlignment)) {
                 throw shouldNotReachHere();
             }
-            _AbstractMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
+            _NativeMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
                     buf, byteSize, false, sessionImpl);
             sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
                 @Override
@@ -237,7 +216,7 @@ class _SegmentFactories {
 
             long buf = allocateMemoryWrapperMalloc(alignedSize);
             long alignedBuf = _Utils.alignUp(buf, byteAlignment);
-            _AbstractMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
+            _NativeMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
                     buf, alignedSize, false, sessionImpl);
             sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
                 @Override
@@ -247,7 +226,7 @@ class _SegmentFactories {
             });
             if (alignedSize != byteSize) {
                 long delta = alignedBuf - buf;
-                segment = segment.asSlice(delta, byteSize);
+                segment = (_NativeMemorySegmentImpl) segment.asSlice(delta, byteSize);
             }
             return segment;
         }
@@ -267,14 +246,14 @@ class _SegmentFactories {
         return MemoryOperators.new_(size, alignment);
     }
 
-    public static MemorySegment mapSegment(UnmapperProxy unmapper, long size,
-                                           boolean readOnly, _MemorySessionImpl sessionImpl) {
+    public static _MappedMemorySegmentImpl mapSegment(UnmapperProxy unmapper, long size,
+                                                      boolean readOnly, _MemorySessionImpl sessionImpl) {
         ensureInitialized();
         if (unmapper == null) {
             return new _MappedMemorySegmentImpl(0, UnmapperProxy.DUMMY, 0, readOnly, sessionImpl);
         }
         sessionImpl.checkValidState();
-        _AbstractMemorySegmentImpl segment = new _MappedMemorySegmentImpl(
+        _MappedMemorySegmentImpl segment = new _MappedMemorySegmentImpl(
                 unmapper.address(), unmapper, size, readOnly, sessionImpl);
         sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
             @Override
@@ -290,6 +269,7 @@ class _SegmentFactories {
     // where one thread attempts to initialize e.g. MemorySegment (and then NativeMemorySegmentImpl, via
     // the MemorySegment.NULL field) while another thread is attempting to initialize
     // NativeMemorySegmentImpl (and then MemorySegment, the super-interface).
+    @SuppressWarnings("unused")
     @DoNotOptimize
     private static void ensureInitialized() {
         MemorySegment segment = MemorySegment.NULL;
