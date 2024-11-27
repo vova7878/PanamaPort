@@ -7,7 +7,6 @@ import static com.v7878.foreign.ValueLayout.JAVA_CHAR;
 import static com.v7878.foreign.ValueLayout.JAVA_FLOAT;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
-import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.access.InvokeAccess;
@@ -140,6 +139,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
             checkHasNaturalAlignment(layout);
             long offset = 0;
             long lastUnpaddedOffset = 0;
+            PaddingLayout preceedingPadding = null;
             for (MemoryLayout member : sl.memberLayouts()) {
                 // check element offset before recursing so that an error points at the
                 // outermost layout first
@@ -147,35 +147,65 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
                 checkLayoutRecursive(member);
 
                 offset += member.byteSize();
-                if (!(member instanceof PaddingLayout)) {
+                if (member instanceof PaddingLayout pl) {
+                    if (preceedingPadding != null) {
+                        throw new IllegalArgumentException("The padding layout " + pl +
+                                " was preceded by another padding layout " + preceedingPadding +
+                                " in " + sl);
+                    }
+                    preceedingPadding = pl;
+                } else {
                     lastUnpaddedOffset = offset;
+                    if (preceedingPadding != null) {
+                        preceedingPadding = null;
+                    }
                 }
             }
-            checkGroupSize(sl, lastUnpaddedOffset);
+            checkNotAllPadding(sl);
+            checkGroup(sl, lastUnpaddedOffset);
         } else if (layout instanceof UnionLayout ul) {
             checkHasNaturalAlignment(layout);
-            long maxUnpaddedLayout = 0;
+            // We need to know this up front
+            long maxUnpaddedLayout = ul.memberLayouts().stream()
+                    .filter(l -> !(l instanceof PaddingLayout))
+                    .mapToLong(MemoryLayout::byteSize)
+                    .max()
+                    .orElse(0);
+
+            boolean hasPadding = false;
+
             for (MemoryLayout member : ul.memberLayouts()) {
                 checkLayoutRecursive(member);
-                if (!(member instanceof PaddingLayout)) {
-                    maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
+                if (member instanceof PaddingLayout pl) {
+                    if (hasPadding) {
+                        throw new IllegalArgumentException("More than one padding in " + ul);
+                    }
+                    hasPadding = true;
+                    if (pl.byteSize() <= maxUnpaddedLayout) {
+                        throw new IllegalArgumentException("Superfluous padding " + pl + " in " + ul);
+                    }
                 }
             }
-            checkGroupSize(ul, maxUnpaddedLayout);
+            checkGroup(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
             checkHasNaturalAlignment(layout);
+            if (sl.elementLayout() instanceof PaddingLayout pl) {
+                throw memberException(sl, pl,
+                        "not supported because a sequence of a padding layout is not allowed");
+            }
             checkLayoutRecursive(sl.elementLayout());
-            //TODO: what if elementLayout is PaddingLayout?
-            // Hotspot allows this, but it's clearly wrong
-        } else if (layout instanceof PaddingLayout) {
-            // skip
-        } else {
-            throw shouldNotReachHere();
         }
     }
 
-    // check for trailing padding
-    private void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
+    // check elements are not all padding layouts
+    private static void checkNotAllPadding(StructLayout sl) {
+        if (!sl.memberLayouts().isEmpty() && sl.memberLayouts().stream().allMatch(e -> e instanceof PaddingLayout)) {
+            throw new IllegalArgumentException("Layout '" + sl + "' is non-empty and only has padding layouts");
+        }
+    }
+
+    // check trailing padding
+    private static void checkGroup(GroupLayout gl, long maxUnpaddedOffset) {
         long expectedSize = _Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
         if (gl.byteSize() != expectedSize) {
             throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
@@ -185,13 +215,19 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
 
     // checks both that there is no excess padding between 'memberLayout' and
     // the previous layout
-    private void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
-                                   long lastUnpaddedOffset, long offset) {
+    private static void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
+                                          long lastUnpaddedOffset, long offset) {
         long expectedOffset = _Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
         if (expectedOffset != offset) {
-            throw new IllegalArgumentException("Member layout '" + memberLayout + "', of '" + parent + "'" +
-                    " found at unexpected offset: " + offset + " != " + expectedOffset);
+            throw memberException(parent, memberLayout,
+                    "found at unexpected offset: " + offset + " != " + expectedOffset);
         }
+    }
+
+    private static IllegalArgumentException memberException(
+            MemoryLayout parent, MemoryLayout member, String info) {
+        return new IllegalArgumentException(
+                "Member layout '" + member + "', of '" + parent + "' " + info);
     }
 
     private void checkSupported(ValueLayout valueLayout) {
