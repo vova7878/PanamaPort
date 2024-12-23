@@ -29,9 +29,11 @@ package com.v7878.foreign;
 
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT_UNALIGNED;
-import static com.v7878.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
+import static com.v7878.unsafe.AndroidUnsafe.IS_BIG_ENDIAN;
 import static com.v7878.unsafe.ExtraMemoryAccess.SOFT_MAX_ARRAY_LENGTH;
+import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
+import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -52,7 +54,9 @@ final class _StringSupport {
     private _StringSupport() {
     }
 
-    public static String read(MemorySegment segment, long offset, Charset charset) {
+    private static final long LONG_MASK = ~7L; // The last three bits are zero
+
+    public static String read(_AbstractMemorySegmentImpl segment, long offset, Charset charset) {
         return switch (CharsetKind.of(charset)) {
             case SINGLE_BYTE -> readByte(segment, offset, charset);
             case DOUBLE_BYTE -> readShort(segment, offset, charset);
@@ -62,7 +66,7 @@ final class _StringSupport {
         };
     }
 
-    public static void write(MemorySegment segment, long offset, Charset charset, String string) {
+    public static void write(_AbstractMemorySegmentImpl segment, long offset, Charset charset, String string) {
         switch (CharsetKind.of(charset)) {
             case SINGLE_BYTE -> writeByte(segment, offset, charset, string);
             case DOUBLE_BYTE -> writeShort(segment, offset, charset, string);
@@ -71,213 +75,215 @@ final class _StringSupport {
         }
     }
 
-    private static String readByte(MemorySegment segment, long offset, Charset charset) {
-        long len = chunkedStrlenByte(segment, offset);
-        byte[] bytes = new byte[(int) len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, (int) len);
+    private static String readByte(_AbstractMemorySegmentImpl segment, long offset, Charset charset) {
+        final int len = strlenByte(segment, offset, segment.byteSize());
+        final byte[] bytes = new byte[len];
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
         return new String(bytes, charset);
     }
 
-    private static void writeByte(MemorySegment segment, long offset, Charset charset, String string) {
+    private static void writeByte(_AbstractMemorySegmentImpl segment, long offset, Charset charset, String string) {
         int bytes = copyBytes(string, segment, charset, offset);
         segment.set(JAVA_BYTE, offset + bytes, (byte) 0);
     }
 
-    private static String readShort(MemorySegment segment, long offset, Charset charset) {
-        long len = chunkedStrlenShort(segment, offset);
-        byte[] bytes = new byte[(int) len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, (int) len);
+    private static String readShort(_AbstractMemorySegmentImpl segment, long offset, Charset charset) {
+        int len = strlenShort(segment, offset, segment.byteSize());
+        byte[] bytes = new byte[len];
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
         return new String(bytes, charset);
     }
 
-    private static void writeShort(MemorySegment segment, long offset, Charset charset, String string) {
+    private static void writeShort(_AbstractMemorySegmentImpl segment, long offset, Charset charset, String string) {
         int bytes = copyBytes(string, segment, charset, offset);
         segment.set(JAVA_SHORT_UNALIGNED, offset + bytes, (short) 0);
     }
 
-    private static String readInt(MemorySegment segment, long offset, Charset charset) {
-        long len = strlenInt(segment, offset);
-        byte[] bytes = new byte[(int) len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, (int) len);
+    private static String readInt(_AbstractMemorySegmentImpl segment, long offset, Charset charset) {
+        int len = strlenInt(segment, offset, segment.byteSize());
+        byte[] bytes = new byte[len];
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
         return new String(bytes, charset);
     }
 
-    private static void writeInt(MemorySegment segment, long offset, Charset charset, String string) {
+    private static void writeInt(_AbstractMemorySegmentImpl segment, long offset, Charset charset, String string) {
         int bytes = copyBytes(string, segment, charset, offset);
         segment.set(JAVA_INT_UNALIGNED, offset + bytes, 0);
     }
 
     /**
-     * {@return the shortest distance beginning at the provided {@code start}
-     * to the encountering of a zero byte in the provided {@code segment}}
+     * {@return the index of the first zero byte beginning at the provided
+     * {@code fromOffset} to the encountering of a zero byte in the provided
+     * {@code segment} checking bytes before the {@code toOffset}}
      * <p>
-     * The method divides the region of interest into three distinct regions:
-     * <ul>
-     *     <li>head (access made on a byte-by-byte basis) (if any)</li>
-     *     <li>body (access made with eight bytes at a time at physically 64-bit-aligned memory) (if any)</li>
-     *     <li>tail (access made on a byte-by-byte basis) (if any)</li>
-     * </ul>
-     * <p>
-     * The body is using a heuristic method to determine if a long word
-     * contains a zero byte. The method might have false positives but
-     * never false negatives.
+     * The method is using a heuristic method to determine if a long word contains a
+     * zero byte. The method might have false positives but never false negatives.
      * <p>
      * This method is inspired by the `glibc/string/strlen.c` implementation
      *
-     * @param segment to examine
-     * @param start   from where examination shall begin
+     * @param segment    to examine
+     * @param fromOffset from where examination shall begin (inclusive)
+     * @param toOffset   to where examination shall end (exclusive)
      * @throws IllegalArgumentException if the examined region contains no zero bytes
      *                                  within a length that can be accepted by a String
      */
-    public static int chunkedStrlenByte(MemorySegment segment, long start) {
-
-        // Handle the first unaligned "head" bytes separately
-        int headCount = (int) _Utils.remainsToAlignment(segment.address() + start, Long.BYTES);
-
-        int offset = 0;
-        for (; offset < headCount; offset++) {
-            byte curr = segment.get(JAVA_BYTE, start + offset);
-            if (curr == 0) {
-                return offset;
-            }
+    public static int strlenByte(_AbstractMemorySegmentImpl segment,
+                                 long fromOffset, long toOffset) {
+        final long length = toOffset - fromOffset;
+        segment.checkBounds(fromOffset, length);
+        if (length < Byte.BYTES) {
+            // There can be no null terminator present
+            segment.scope.checkValidState();
+            throw nullNotFound(segment, fromOffset, toOffset);
         }
-
-        // We are now on a long-aligned boundary so this is the "body"
-        int bodyCount = bodyCount(segment.byteSize() - start - headCount);
-
-        for (; offset < bodyCount; offset += Long.BYTES) {
-            // We know we are `long` aligned so, we can save on alignment checking here
-            long curr = segment.get(JAVA_LONG_UNALIGNED, start + offset);
-            // Is this a candidate?
-            if (mightContainZeroByte(curr)) {
-                for (int j = 0; j < 8; j++) {
-                    if (segment.get(JAVA_BYTE, start + offset + j) == 0) {
-                        return offset + j;
+        final long longBytes = length & LONG_MASK;
+        final long longLimit = fromOffset + longBytes;
+        long offset = fromOffset;
+        for (; offset < longLimit; offset += Long.BYTES) {
+            long val = _ScopedMemoryAccess.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
+            if (mightContainZeroByte(val)) {
+                for (int j = 0; j < Long.BYTES; j++) {
+                    if (_ScopedMemoryAccess.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j) == 0) {
+                        return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
                     }
                 }
             }
         }
-
-        // Handle the "tail"
-        return requireWithinArraySize((long) offset + strlenByte(segment, start + offset));
+        // Handle the tail
+        for (; offset < toOffset; offset++) {
+            byte val = _ScopedMemoryAccess.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset);
+            if (val == 0) {
+                return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
+            }
+        }
+        throw nullNotFound(segment, fromOffset, toOffset);
     }
 
-    /* Bits 63 and N * 8 (N = 1..7) of this number are zero.  Call these bits
-       the "holes".  Note that there is a hole just to the left of
-       each byte, with an extra at the end:
+    public static int strlenShort(_AbstractMemorySegmentImpl segment,
+                                  long fromOffset, long toOffset) {
+        final long length = toOffset - fromOffset;
+        segment.checkBounds(fromOffset, length);
+        if (length < Short.BYTES) {
+            // There can be no null terminator present
+            segment.scope.checkValidState();
+            throw nullNotFound(segment, fromOffset, toOffset);
+        }
+        final long longBytes = length & LONG_MASK;
+        final long longLimit = fromOffset + longBytes;
+        long offset = fromOffset;
+        for (; offset < longLimit; offset += Long.BYTES) {
+            long val = _ScopedMemoryAccess.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
+            if (mightContainZeroShort(val)) {
+                for (int j = 0; j < Long.BYTES; j += Short.BYTES) {
+                    if (_ScopedMemoryAccess.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, IS_BIG_ENDIAN) == 0) {
+                        return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                    }
+                }
+            }
+        }
+        // Handle the tail
+        // Prevent over scanning as we step by 2
+        final long endScan = toOffset & ~1; // The last bit is zero
+        for (; offset < endScan; offset += Short.BYTES) {
+            short val = _ScopedMemoryAccess.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
+            if (val == 0) {
+                return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
+            }
+        }
+        throw nullNotFound(segment, fromOffset, toOffset);
+    }
 
-       bits:  01111110 11111110 11111110 11111110 11111110 11111110 11111110 11111111
-       bytes: AAAAAAAA BBBBBBBB CCCCCCCC DDDDDDDD EEEEEEEE FFFFFFFF GGGGGGGG HHHHHHHH
+    public static int strlenInt(_AbstractMemorySegmentImpl segment,
+                                long fromOffset, long toOffset) {
+        final long length = toOffset - fromOffset;
+        segment.checkBounds(fromOffset, length);
+        if (length < Integer.BYTES) {
+            // There can be no null terminator present
+            segment.scope.checkValidState();
+            throw nullNotFound(segment, fromOffset, toOffset);
+        }
+        long offset = fromOffset;
+        // TODO: Is this really true for android?
+        // For quad byte strings, it does not pay off to use long scanning on x64
+        if (CURRENT_INSTRUCTION_SET != X86_64) {
+            final long longBytes = length & LONG_MASK;
+            final long longLimit = fromOffset + longBytes;
+            for (; offset < longLimit; offset += Long.BYTES) {
+                long val = _ScopedMemoryAccess.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
+                if (mightContainZeroInt(val)) {
+                    for (int j = 0; j < Long.BYTES; j += Integer.BYTES) {
+                        if (_ScopedMemoryAccess.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, IS_BIG_ENDIAN) == 0) {
+                            return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                        }
+                    }
+                }
+            }
+        }
+        // Handle the tail
+        // Prevent over scanning as we step by 4
+        final long endScan = toOffset & ~3; // The last two bit are zero
+        for (; offset < endScan; offset += Integer.BYTES) {
+            int val = _ScopedMemoryAccess.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
+            if (val == 0) {
+                return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
+            }
+        }
+        throw nullNotFound(segment, fromOffset, toOffset);
+    }
 
-       The 1-bits make sure that carries propagate to the next 0-bit.
-       The 0-bits provide holes for carries to fall into.
+    /*
+    Bits 63 and N * 8 (N = 1..7) of this number are zero.  Call these bits
+    the "holes".  Note that there is a hole just to the left of
+    each byte, with an extra at the end:
+
+    bits:  01111110 11111110 11111110 11111110 11111110 11111110 11111110 11111111
+    bytes: AAAAAAAA BBBBBBBB CCCCCCCC DDDDDDDD EEEEEEEE FFFFFFFF GGGGGGGG HHHHHHHH
+
+    The 1-bits make sure that carries propagate to the next 0-bit.
+    The 0-bits provide holes for carries to fall into.
     */
     private static final long HIMAGIC_FOR_BYTES = 0x8080_8080_8080_8080L;
     private static final long LOMAGIC_FOR_BYTES = 0x0101_0101_0101_0101L;
 
-    static boolean mightContainZeroByte(long l) {
+    private static boolean mightContainZeroByte(long l) {
         return ((l - LOMAGIC_FOR_BYTES) & (~l) & HIMAGIC_FOR_BYTES) != 0;
     }
 
     private static final long HIMAGIC_FOR_SHORTS = 0x8000_8000_8000_8000L;
     private static final long LOMAGIC_FOR_SHORTS = 0x0001_0001_0001_0001L;
 
-    static boolean mightContainZeroShort(long l) {
+    private static boolean mightContainZeroShort(long l) {
         return ((l - LOMAGIC_FOR_SHORTS) & (~l) & HIMAGIC_FOR_SHORTS) != 0;
     }
 
-    static int requireWithinArraySize(long size) {
+    private static final long HIMAGIC_FOR_INTS = 0x8000_0000_8000_0000L;
+    private static final long LOMAGIC_FOR_INTS = 0x0000_0001_0000_0001L;
+
+    private static boolean mightContainZeroInt(long l) {
+        return ((l - LOMAGIC_FOR_INTS) & (~l) & HIMAGIC_FOR_INTS) != 0;
+    }
+
+    private static int requireWithinStringSize(long size, _AbstractMemorySegmentImpl segment,
+                                               long fromOffset, long toOffset) {
         if (size > SOFT_MAX_ARRAY_LENGTH) {
-            throw newIaeStringTooLarge();
+            throw stringTooLarge(segment, fromOffset, toOffset);
         }
         return (int) size;
     }
 
-    static int bodyCount(long remaining) {
-        return (int) Math.min(
-                // Make sure we do not wrap around
-                Integer.MAX_VALUE - Long.BYTES,
-                // Remaining bytes to consider
-                remaining)
-                & -Long.BYTES; // Mask 0xFFFFFFF8
+    private static IllegalArgumentException stringTooLarge(_AbstractMemorySegmentImpl segment,
+                                                           long fromOffset, long toOffset) {
+        return new IllegalArgumentException("String too large: " + exceptionInfo(segment, fromOffset, toOffset));
     }
 
-    private static int strlenByte(MemorySegment segment, long start) {
-        for (int offset = 0; offset < SOFT_MAX_ARRAY_LENGTH; offset += 1) {
-            byte curr = segment.get(JAVA_BYTE, start + offset);
-            if (curr == 0) {
-                return offset;
-            }
-        }
-        throw newIaeStringTooLarge();
+    private static IndexOutOfBoundsException nullNotFound(_AbstractMemorySegmentImpl segment,
+                                                          long fromOffset, long toOffset) {
+        return new IndexOutOfBoundsException("No null terminator found: " + exceptionInfo(segment, fromOffset, toOffset));
     }
 
-    /**
-     * {@return the shortest distance beginning at the provided {@code start}
-     * to the encountering of a zero short in the provided {@code segment}}
-     * <p>
-     * Note: The inspected region must be short aligned.
-     *
-     * @param segment to examine
-     * @param start   from where examination shall begin
-     * @throws IllegalArgumentException if the examined region contains no zero shorts
-     *                                  within a length that can be accepted by a String
-     * @see #chunkedStrlenByte(MemorySegment, long) for more information
-     */
-    public static int chunkedStrlenShort(MemorySegment segment, long start) {
-
-        // Handle the first unaligned "head" bytes separately
-        int headCount = (int) _Utils.remainsToAlignment(segment.address() + start, Long.BYTES);
-
-        int offset = 0;
-        for (; offset < headCount; offset += Short.BYTES) {
-            short curr = segment.get(JAVA_SHORT_UNALIGNED, start + offset);
-            if (curr == 0) {
-                return offset;
-            }
-        }
-
-        // We are now on a long-aligned boundary so this is the "body"
-        int bodyCount = bodyCount(segment.byteSize() - start - headCount);
-
-        for (; offset < bodyCount; offset += Long.BYTES) {
-            // We know we are `long` aligned so, we can save on alignment checking here
-            long curr = segment.get(JAVA_LONG_UNALIGNED, start + offset);
-            // Is this a candidate?
-            if (mightContainZeroShort(curr)) {
-                for (int j = 0; j < Long.BYTES; j += Short.BYTES) {
-                    if (segment.get(JAVA_SHORT_UNALIGNED, start + offset + j) == 0) {
-                        return offset + j;
-                    }
-                }
-            }
-        }
-
-        // Handle the "tail"
-        return requireWithinArraySize((long) offset + strlenShort(segment, start + offset));
-    }
-
-    private static int strlenShort(MemorySegment segment, long start) {
-        for (int offset = 0; offset < SOFT_MAX_ARRAY_LENGTH; offset += Short.BYTES) {
-            short curr = segment.get(JAVA_SHORT_UNALIGNED, start + offset);
-            if (curr == (short) 0) {
-                return offset;
-            }
-        }
-        throw newIaeStringTooLarge();
-    }
-
-    // The gain of using `long` wide operations for `int` is lower than for the two other `byte` and `short` variants
-    // so, there is only one method for ints.
-    public static int strlenInt(MemorySegment segment, long start) {
-        for (int offset = 0; offset < SOFT_MAX_ARRAY_LENGTH; offset += Integer.BYTES) {
-            // We are guaranteed to be aligned here so, we can use unaligned access.
-            int curr = segment.get(JAVA_INT_UNALIGNED, start + offset);
-            if (curr == 0) {
-                return offset;
-            }
-        }
-        throw newIaeStringTooLarge();
+    private static String exceptionInfo(_AbstractMemorySegmentImpl segment,
+                                        long fromOffset, long toOffset) {
+        return segment + " using region [" + fromOffset + ", " + toOffset + ")";
     }
 
     public enum CharsetKind {
@@ -350,9 +356,4 @@ final class _StringSupport {
         MemorySegment.copy(_SegmentFactories.fromObject(string), VM.STRING_HEADER_SIZE,
                 segment, offset, VM.stringDataSize(string));
     }
-
-    private static IllegalArgumentException newIaeStringTooLarge() {
-        return new IllegalArgumentException("String too large");
-    }
-
 }

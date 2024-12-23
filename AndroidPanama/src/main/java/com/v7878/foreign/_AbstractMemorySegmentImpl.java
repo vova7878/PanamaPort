@@ -31,6 +31,7 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import android.annotation.SuppressLint;
 
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.unsafe.ExtraMemoryAccess;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.access.JavaNioAccess;
@@ -848,23 +849,27 @@ abstract sealed class _AbstractMemorySegmentImpl
         layout.varHandle().set(this, index * layout.byteSize(), value);
     }
 
+    @AlwaysInline
     @Override
     public String getString(long offset) {
         return getString(offset, StandardCharsets.UTF_8);
     }
 
+    @AlwaysInline
     @Override
     public String getString(long offset, Charset charset) {
         Objects.requireNonNull(charset);
         return _StringSupport.read(this, offset, charset);
     }
 
+    @AlwaysInline
     @Override
     public void setString(long offset, String str) {
         Objects.requireNonNull(str);
         setString(offset, str, StandardCharsets.UTF_8);
     }
 
+    @AlwaysInline
     @Override
     public void setString(long offset, String str, Charset charset) {
         Objects.requireNonNull(charset);

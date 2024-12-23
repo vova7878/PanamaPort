@@ -514,7 +514,7 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     private static int pickPos(int top, int pos) {
-        return isBigEndian() ? top - pos : pos;
+        return IS_BIG_ENDIAN ? top - pos : pos;
     }
 
     @AlwaysInline
@@ -668,17 +668,17 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     private static byte pick(byte le, byte be) {
-        return isBigEndian() ? be : le;
+        return IS_BIG_ENDIAN ? be : le;
     }
 
     @AlwaysInline
     private static short pick(short le, short be) {
-        return isBigEndian() ? be : le;
+        return IS_BIG_ENDIAN ? be : le;
     }
 
     @AlwaysInline
     private static int pick(int le, int be) {
-        return isBigEndian() ? be : le;
+        return IS_BIG_ENDIAN ? be : le;
     }
 
     @AlwaysInline
