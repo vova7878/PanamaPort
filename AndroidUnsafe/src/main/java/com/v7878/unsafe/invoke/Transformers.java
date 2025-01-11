@@ -389,9 +389,9 @@ public class Transformers {
     private static MethodHandle makeTransformer(
             MethodType fixed, TransformerImpl impl, boolean variadic) {
         final int INVOKE_CALLSITE_TRANSFORM_26_32 = 6;
-        final int INVOKE_TRANSFORM_26_35 = 5;
+        final int INVOKE_TRANSFORM_26_36 = 5;
         int kind = variadic && ART_SDK_INT < 33 ?
-                INVOKE_CALLSITE_TRANSFORM_26_32 : INVOKE_TRANSFORM_26_35;
+                INVOKE_CALLSITE_TRANSFORM_26_32 : INVOKE_TRANSFORM_26_36;
         return nothrows_run(() -> (MethodHandle) new_transformer.invoke(fixed, kind, impl));
     }
 

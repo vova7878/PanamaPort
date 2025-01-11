@@ -35,7 +35,7 @@ import java.util.Objects;
 public class Reflection {
     static {
         // SDK version checks
-        check(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 35, AssertionError::new);
+        check(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 36, AssertionError::new);
     }
 
     @DoNotShrink

@@ -31,7 +31,7 @@ public class ArtFieldUtils {
     public static final GroupLayout ARTFIELD_LAYOUT;
 
     static {
-        if (ART_SDK_INT >= 26 && ART_SDK_INT <= 35) {
+        if (ART_SDK_INT >= 26 && ART_SDK_INT <= 36) {
             ARTFIELD_LAYOUT = art_field_layout;
         } else {
             throw unsupportedSDK(ART_SDK_INT);

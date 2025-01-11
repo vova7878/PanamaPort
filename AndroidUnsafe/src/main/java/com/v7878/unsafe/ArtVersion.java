@@ -17,6 +17,10 @@ public class ArtVersion {
     @ApiSensitive
     public static final int ART_SDK_INT = computeSDKInt();
 
+    private static boolean atLeast36() {
+        return false; //FIXME!
+    }
+
     private static boolean atLeast35() {
         Class<?> buf = nothrows_run(() -> Class.forName(
                 "java.nio.ByteBufferAsIntBuffer"));
@@ -44,14 +48,18 @@ public class ArtVersion {
 
         // Android 12 introduces mainline project
         if (tmp <= 30) return tmp;
-        if (tmp > 35) throw unsupportedSDK(tmp);
+        if (tmp > 36) throw unsupportedSDK(tmp);
 
         // Art module version 32 does not exist
         // (After version 31 comes version 33)
         if (tmp == 32) tmp = 31;
 
-        // At the moment, there is nothing above 35
-        if (tmp == 35) return tmp;
+        // At the moment, there is nothing above 36
+        if (tmp == 36) return tmp;
+
+        if (atLeast36()) return 36;
+        // Not 36, but at least 35 -> 35
+        if (tmp == 35) return 35;
 
         if (atLeast35()) return 35;
         // Not 35, but at least 34 -> 34

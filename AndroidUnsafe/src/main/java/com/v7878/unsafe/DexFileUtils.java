@@ -32,10 +32,10 @@ public class DexFileUtils {
             ADDRESS.withName("array_"),
             WORD.withName("size_")
     );
-    private static final GroupLayout dex_file_14_15_layout = paddedStructLayout(
+    private static final GroupLayout dex_file_14_16_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
-            WORD.withName("size_"), // unused_size_ for android 15
+            WORD.withName("size_"), // unused_size_ for android 15, 16
             array_ref_layout.withName("data_"),
             string.LAYOUT.withName("location_"),
             JAVA_INT.withName("location_checksum_"),
@@ -153,7 +153,8 @@ public class DexFileUtils {
 
     @ApiSensitive
     public static final GroupLayout DEXFILE_LAYOUT = switch (ART_SDK_INT) {
-        case 35 /*android 15*/, 34 /*android 14*/ -> dex_file_14_15_layout;
+        case 36 /*android 16*/, 35 /*android 15*/,
+             34 /*android 14*/ -> dex_file_14_16_layout;
         case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
              30 /*android 11*/ -> dex_file_13_11_layout;
         case 29 /*android 10*/ -> dex_file_10_layout;
@@ -188,7 +189,7 @@ public class DexFileUtils {
     public static DexFile openDexFile(ByteBuffer data) {
         if (ART_SDK_INT >= 26 && ART_SDK_INT <= 28) {
             return DexFileAccess.openDexFile(data);
-        } else if (ART_SDK_INT >= 29 && ART_SDK_INT <= 35) {
+        } else if (ART_SDK_INT >= 29 && ART_SDK_INT <= 36) {
             return DexFileAccess.openDexFile(new ByteBuffer[]{data}, null);
         } else {
             throw unsupportedSDK(ART_SDK_INT);
@@ -203,7 +204,7 @@ public class DexFileUtils {
     public static long[] openCookie(ByteBuffer data) {
         if (ART_SDK_INT >= 26 && ART_SDK_INT <= 28) {
             return (long[]) DexFileAccess.openCookie(data);
-        } else if (ART_SDK_INT >= 29 && ART_SDK_INT <= 35) {
+        } else if (ART_SDK_INT >= 29 && ART_SDK_INT <= 36) {
             return (long[]) DexFileAccess.openCookie(new ByteBuffer[]{data}, null);
         } else {
             throw unsupportedSDK(ART_SDK_INT);
@@ -265,7 +266,7 @@ public class DexFileUtils {
             AndroidUnsafe.putIntN(dexfile_struct + Holder.offset, kCorePlatform);
             return;
         }
-        if (ART_SDK_INT <= 35) {
+        if (ART_SDK_INT <= 36) {
             AndroidUnsafe.putByteN(dexfile_struct + Holder.offset, (byte) kCorePlatform);
             return;
         }
@@ -277,7 +278,7 @@ public class DexFileUtils {
         if (ART_SDK_INT <= 27) {
             return;
         }
-        if (ART_SDK_INT <= 35) {
+        if (ART_SDK_INT <= 36) {
             long[] cookie = getCookie(dex);
             final int start = 1;
             for (int i = start; i < cookie.length; i++) {

@@ -50,7 +50,7 @@ public class JniLibraries {
     // TODO: there must be a better way to do this
     @ApiSensitive
     private static final long libraries_offset = switch (ART_SDK_INT) {
-        case 35 /*android 15*/, 34 /*android 14*/ -> {
+        case 36 /*android 16*/, 35 /*android 15*/, 34 /*android 14*/ -> {
             long tmp = ADDRESS_SIZE * 4L;
             tmp += 3;
             tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
