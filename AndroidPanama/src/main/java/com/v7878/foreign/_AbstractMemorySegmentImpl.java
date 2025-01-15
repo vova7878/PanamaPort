@@ -145,9 +145,14 @@ abstract sealed class _AbstractMemorySegmentImpl
     private _NativeMemorySegmentImpl reinterpretInternal(long newSize, _MemorySessionImpl scope, Consumer<MemorySegment> cleanup) {
         _Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
-        Runnable action = cleanup == null ? null : () -> cleanup.accept(
-                _SegmentFactories.makeNativeSegmentUnchecked(address(), newSize));
+        Runnable action = cleanupAction(address(), newSize, cleanup);
         return _SegmentFactories.makeNativeSegmentUnchecked(address(), newSize, scope, readOnly, action);
+    }
+
+    // Using a static helper method ensures there is no unintended lambda capturing of `this`
+    private static Runnable cleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) {
+        return cleanup == null ? null : () -> cleanup.accept(
+                _SegmentFactories.makeNativeSegmentUnchecked(address, newSize));
     }
 
     private _AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
@@ -472,9 +477,18 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     @Override
     public String toString() {
-        return "MemorySegment{ " +
-                heapBase().map(hb -> "heapBase: " + hb + ", ").orElse("") +
-                "address: " + Utils.toHexString(address()) +
+        final String kind;
+        if (this instanceof _HeapMemorySegmentImpl) {
+            kind = "heap";
+        } else if (this instanceof _MappedMemorySegmentImpl) {
+            kind = "mapped";
+        } else {
+            kind = "native";
+        }
+        return "MemorySegment{ kind: " +
+                kind +
+                heapBase().map(hb -> ", heapBase: " + hb).orElse("") +
+                ", address: " + Utils.toHexString(address()) +
                 ", byteSize: " + length +
                 " }";
     }
