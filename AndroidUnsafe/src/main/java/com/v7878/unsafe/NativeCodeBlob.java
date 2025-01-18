@@ -1,6 +1,7 @@
 package com.v7878.unsafe;
 
 import static com.v7878.misc.Math.roundUpL;
+import static com.v7878.unsafe.AndroidUnsafe.PAGE_SIZE;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.io.IOUtils.MAP_ANONYMOUS;
@@ -18,7 +19,8 @@ import java.util.Objects;
 
 public class NativeCodeBlob {
 
-    private static final int CODE_PROT = OsConstants.PROT_READ | OsConstants.PROT_WRITE | OsConstants.PROT_EXEC;
+    private static final int PROT_RW = OsConstants.PROT_READ | OsConstants.PROT_WRITE;
+    private static final int PROT_RX = OsConstants.PROT_READ | OsConstants.PROT_EXEC;
     private static final int CODE_FLAGS = OsConstants.MAP_PRIVATE | MAP_ANONYMOUS;
     private static final int CODE_ALIGNMENT = CURRENT_INSTRUCTION_SET.codeAlignment();
 
@@ -31,13 +33,15 @@ public class NativeCodeBlob {
             offsets[i] = size;
             size += code[i].byteSize();
         }
+        roundUpL(size, PAGE_SIZE);
 
         MemorySegment data;
         try {
-            data = IOUtils.mmap(0, null, 0, size, CODE_PROT, CODE_FLAGS, arena);
+            data = IOUtils.mmap(0, null, 0, size, PROT_RW, CODE_FLAGS, arena);
         } catch (ErrnoException e) {
             throw shouldNotHappen(e);
         }
+        long data_address = data.nativeAddress();
 
         MemorySegment[] out = new MemorySegment[count];
         if (ExtraMemoryAccess.isEarlyNativeInitialized()) {
@@ -47,15 +51,18 @@ public class NativeCodeBlob {
                 out[i] = tmp;
             }
         } else {
-            Object data_base = JavaForeignAccess.unsafeGetBase(data);
-            long data_offset = JavaForeignAccess.unsafeGetOffset(data);
             for (int i = 0; i < count; i++) {
                 Object code_base = JavaForeignAccess.unsafeGetBase(code[i]);
                 long code_offset = JavaForeignAccess.unsafeGetOffset(code[i]);
-                AndroidUnsafe.copyMemory(code_base, code_offset, data_base,
-                        data_offset + offsets[i], code[i].byteSize());
+                AndroidUnsafe.copyMemory(code_base, code_offset, null,
+                        data_address + offsets[i], code[i].byteSize());
                 out[i] = data.asSlice(offsets[i], code[i].byteSize());
             }
+        }
+        try {
+            IOUtils.mprotect(data_address, size, PROT_RX);
+        } catch (ErrnoException e) {
+            throw shouldNotHappen(e);
         }
         return out;
     }
