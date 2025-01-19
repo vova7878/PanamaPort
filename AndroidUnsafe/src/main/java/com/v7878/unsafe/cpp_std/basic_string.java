@@ -87,7 +87,7 @@ public final class basic_string {
                 (dst = str).set(JAVA_BYTE, 0, (byte) (length << 1));
                 offset = ELEMENT.byteSize();
             } else {
-                dst = JavaForeignAccess.allocateSegment(bytes + ELEMENT.byteSize(),
+                dst = JavaForeignAccess.allocateNoInit(bytes + ELEMENT.byteSize(),
                         ELEMENT.byteAlignment(), Arena.global(), true);
                 offset = 0;
             }

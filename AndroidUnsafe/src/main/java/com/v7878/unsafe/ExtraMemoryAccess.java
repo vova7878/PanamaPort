@@ -135,7 +135,8 @@ public class ExtraMemoryAccess {
                 BulkLinker.processSymbols(SCOPE, EarlyNative.class, name -> Optional.empty()));
     }
 
-    static boolean isEarlyNativeInitialized() {
+    // TODO: should be package-private
+    public static boolean isEarlyNativeInitialized() {
         return EarlyNative.INSTANCE != null;
     }
 

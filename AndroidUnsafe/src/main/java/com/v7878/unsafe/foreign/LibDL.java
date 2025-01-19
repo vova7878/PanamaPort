@@ -3,6 +3,7 @@ package com.v7878.unsafe.foreign;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
@@ -17,11 +18,16 @@ import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.ExtraMemoryAccess;
+import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
 import com.v7878.unsafe.foreign.ELF.SymTab;
 import com.v7878.unsafe.foreign.MMap.MMapEntry;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -180,10 +186,44 @@ public class LibDL {
                 BulkLinker.processSymbols(SCOPE, Native.class, unused -> Optional.empty()));
     }
 
+    // TODO: refactor?
+    private static MemorySegment allocString(Arena arena, String value) {
+        if (ExtraMemoryAccess.isEarlyNativeInitialized()) {
+            return arena.allocateFrom(value);
+        }
+
+        byte[] data = value.getBytes(StandardCharsets.UTF_8);
+        data = Arrays.copyOf(data, data.length + 1);
+        MemorySegment out = JavaForeignAccess.allocateNoInit(data.length, 1, arena);
+        AndroidUnsafe.copyMemory(data, ARRAY_BYTE_BASE_OFFSET,
+                null, out.nativeAddress(), data.length);
+        return out;
+    }
+
+    // TODO: refactor?
+    private static String segmentToString(MemorySegment segment) {
+        if (MemorySegment.NULL.equals(segment)) return null;
+        if (ExtraMemoryAccess.isEarlyNativeInitialized()) {
+            return segment.reinterpret(Long.MAX_VALUE).getString(0);
+        }
+
+        ByteArrayOutputStream data = new ByteArrayOutputStream();
+        var base = JavaForeignAccess.unsafeGetBase(segment);
+        var offset = JavaForeignAccess.unsafeGetOffset(segment);
+
+        for (int i = 0; ; i++) {
+            byte value = AndroidUnsafe.getByte(base, offset + i);
+            if (value == 0) break;
+            data.write(value);
+        }
+
+        return data.toString();
+    }
+
     public static long dlopen(String filename, int flags) {
         Objects.requireNonNull(filename);
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment c_filename = arena.allocateFrom(filename);
+            MemorySegment c_filename = allocString(arena, filename);
             return Native.INSTANCE.dlopen(c_filename.nativeAddress(), flags);
         }
     }
@@ -196,12 +236,12 @@ public class LibDL {
     public static String dlerror() {
         long msg = Native.INSTANCE.dlerror();
         if (msg == 0) return null;
-        return MemorySegment.ofAddress(msg).reinterpret(Long.MAX_VALUE).getString(0);
+        return segmentToString(MemorySegment.ofAddress(msg));
     }
 
     static long dlsym_nochecks(long handle, String symbol) {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment c_symbol = arena.allocateFrom(symbol);
+            MemorySegment c_symbol = allocString(arena, symbol);
             return Native.INSTANCE.dlsym(handle, c_symbol.nativeAddress());
         }
     }
@@ -215,8 +255,8 @@ public class LibDL {
         Objects.requireNonNull(symbol);
         Objects.requireNonNull(version);
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment c_symbol = arena.allocateFrom(symbol);
-            MemorySegment c_version = arena.allocateFrom(version);
+            MemorySegment c_symbol = allocString(arena, symbol);
+            MemorySegment c_version = allocString(arena, version);
             return Native.INSTANCE.dlvsym(handle, c_symbol.nativeAddress(), c_version.nativeAddress());
         }
     }
@@ -225,11 +265,6 @@ public class LibDL {
     private static final VarHandle fbase_handle = dlinfo_layout.varHandle(groupElement("fbase"));
     private static final VarHandle sname_handle = dlinfo_layout.varHandle(groupElement("sname"));
     private static final VarHandle saddr_handle = dlinfo_layout.varHandle(groupElement("saddr"));
-
-    private static String segmentToString(MemorySegment segment) {
-        if (MemorySegment.NULL.equals(segment)) return null;
-        return segment.reinterpret(Long.MAX_VALUE).getString(0);
-    }
 
     public static DLInfo dladdr(long addr) {
         try (Arena arena = Arena.ofConfined()) {

@@ -2792,7 +2792,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             }
 
             @Override
-            protected MemorySegment _allocateSegment(
+            protected MemorySegment _allocateNoInit(
                     long byteSize, long byteAlignment, Arena scope,
                     boolean use_operator_new_instead_of_malloc) {
                 Objects.requireNonNull(scope);

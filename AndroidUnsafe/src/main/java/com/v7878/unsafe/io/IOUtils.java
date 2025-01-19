@@ -85,14 +85,6 @@ public class IOUtils {
         @CallSignature(type = CRITICAL, ret = INT, args = {INT})
         abstract int ashmem_get_size_region(int fd);
 
-        @LibrarySymbol(name = "mprotect")
-        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract int mprotect(long addr, long len, int prot);
-
-        @LibrarySymbol(name = "madvise")
-        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract int madvise(long address, long length, int advice);
-
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class, CUTILS));
     }
@@ -147,8 +139,26 @@ public class IOUtils {
         return value;
     }
 
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class EarlyNative {
+        @DoNotShrink
+        private static final Arena SCOPE = Arena.ofAuto();
+
+        @LibrarySymbol(name = "mprotect")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
+        abstract int mprotect(long addr, long len, int prot);
+
+        @LibrarySymbol(name = "madvise")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
+        abstract int madvise(long address, long length, int advice);
+
+        static final EarlyNative INSTANCE = AndroidUnsafe.allocateInstance(
+                BulkLinker.processSymbols(SCOPE, EarlyNative.class));
+    }
+
     public static void mprotect(long address, long length, int prot) throws ErrnoException {
-        int value = Native.INSTANCE.mprotect(address, length, prot);
+        int value = EarlyNative.INSTANCE.mprotect(address, length, prot);
         if (value < 0) {
             throw new ErrnoException("mprotect", Errno.errno());
         }
@@ -161,7 +171,7 @@ public class IOUtils {
     public static final int MADV_DONTNEED = 4;
 
     public static void madvise(long address, long length, int advice) throws ErrnoException {
-        int value = Native.INSTANCE.madvise(address, length, advice);
+        int value = EarlyNative.INSTANCE.madvise(address, length, advice);
         if (value < 0) {
             throw new ErrnoException("madvise", Errno.errno());
         }
