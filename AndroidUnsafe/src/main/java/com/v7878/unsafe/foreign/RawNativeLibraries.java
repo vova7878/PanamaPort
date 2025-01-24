@@ -9,7 +9,10 @@ import static com.v7878.unsafe.foreign.LibDL.dlsym;
 import static com.v7878.unsafe.foreign.LibDL.dlsym_nochecks;
 import static com.v7878.unsafe.foreign.LibDLExt.dlopen_ext;
 
+import com.v7878.foreign.Arena;
+import com.v7878.foreign.SymbolLookup;
 import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.LibDLExt.Namespace;
 
 import java.nio.file.Path;
@@ -17,6 +20,8 @@ import java.util.Objects;
 
 public class RawNativeLibraries {
     public static final NativeLibrary DEFAULT = load("libc.so");
+    public static final SymbolLookup DEFAULT_LOOKUP = JavaForeignAccess
+            .libraryLookup(RawNativeLibraries.DEFAULT, Arena.global());
 
     public static long findNative(ClassLoader loader, String name) {
         Objects.requireNonNull(name);

@@ -66,7 +66,6 @@ import com.v7878.dex.MethodId;
 import com.v7878.dex.ProtoId;
 import com.v7878.dex.TypeId;
 import com.v7878.foreign.Arena;
-import com.v7878.foreign.Linker;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
 import com.v7878.llvm.Types.LLVMContextRef;
@@ -732,7 +731,7 @@ public class BulkLinker {
     }
 
     public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz) {
-        return processSymbols(arena, clazz, Linker.nativeLinker().defaultLookup());
+        return processSymbols(arena, clazz, RawNativeLibraries.DEFAULT_LOOKUP);
     }
 
     public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz, SymbolLookup lookup) {

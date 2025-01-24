@@ -10,7 +10,6 @@ import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 
 import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.access.InvokeAccess;
-import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.cpp_std.CLayouts;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
@@ -326,11 +325,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
 
     @Override
     public SymbolLookup defaultLookup() {
-        class Holder {
-            static final SymbolLookup LOOKUP = JavaForeignAccess
-                    .libraryLookup(RawNativeLibraries.DEFAULT, Arena.global());
-        }
-        return Holder.LOOKUP;
+        return RawNativeLibraries.DEFAULT_LOOKUP;
     }
 
     @Override
