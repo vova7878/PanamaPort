@@ -7,6 +7,7 @@ import static com.v7878.llvm._Utils.allocArray;
 import static com.v7878.llvm._Utils.allocString;
 import static com.v7878.llvm._Utils.arrayLength;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.NATIVE_STATIC_OMIT_ENV;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL_AS_INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.DOUBLE;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
@@ -171,11 +172,11 @@ public final class ExecutionEngine {
 
         /*@LibrarySymbol(name = "LLVMInitializeMCJITCompilerOptions")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract void LLVMInitializeMCJITCompilerOptions(long, long);
+        abstract void LLVMInitializeMCJITCompilerOptions(long Options, long SizeOfOptions);
 
         @LibrarySymbol(name = "LLVMCreateMCJITCompilerForModule")
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract boolean LLVMCreateMCJITCompilerForModule(long, long, long, long, long);*/
+        abstract boolean LLVMCreateMCJITCompilerForModule(long OutJIT, long M, long Options, long SizeOfOptions, long OutError);*/
 
         @LibrarySymbol(name = "LLVMDisposeExecutionEngine")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
@@ -190,11 +191,11 @@ public final class ExecutionEngine {
         abstract void LLVMRunStaticDestructors(long EE);
 
         /*@LibrarySymbol(name = "LLVMRunFunctionAsMain")
-        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract int LLVMRunFunctionAsMain(long, long, int, long, long);*/
+        @CallSignature(type = NATIVE_STATIC_OMIT_ENV, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract int LLVMRunFunctionAsMain(long EE, long F, int ArgC, long ArgV, long EnvP);*/
 
         @LibrarySymbol(name = "LLVMRunFunction")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
+        @CallSignature(type = NATIVE_STATIC_OMIT_ENV, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long LLVMRunFunction(long EE, long F, int NumArgs, long Args);
 
         @LibrarySymbol(name = "LLVMFreeMachineCodeForFunction")
@@ -243,7 +244,7 @@ public final class ExecutionEngine {
 
         /*@LibrarySymbol(name = "LLVMCreateSimpleMCJITMemoryManager")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long LLVMCreateSimpleMCJITMemoryManager(long, long, long, long, long);*/
+        abstract long LLVMCreateSimpleMCJITMemoryManager(long Opaque, long AllocateCodeSection, long AllocateDataSection, long FinalizeMemory, long Destroy);*/
 
         @LibrarySymbol(name = "LLVMDisposeMCJITMemoryManager")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
