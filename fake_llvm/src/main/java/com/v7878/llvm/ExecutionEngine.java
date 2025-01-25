@@ -147,6 +147,10 @@ public final class ExecutionEngine {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public static int LLVMRunFunctionAsMain(LLVMExecutionEngineRef EE, LLVMValueRef F, String[] ArgV, String[] EnvP) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public static void LLVMRunStaticConstructors(LLVMExecutionEngineRef EE) {
         throw new UnsupportedOperationException("Stub!");
     }

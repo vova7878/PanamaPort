@@ -5,6 +5,7 @@ import static com.v7878.llvm._LibLLVM.LLVM;
 import static com.v7878.llvm._Utils.addressToLLVMString;
 import static com.v7878.llvm._Utils.allocArray;
 import static com.v7878.llvm._Utils.allocString;
+import static com.v7878.llvm._Utils.allocStringArray;
 import static com.v7878.llvm._Utils.arrayLength;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.NATIVE_STATIC_OMIT_ENV;
@@ -36,6 +37,7 @@ import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 /*===-- llvm-c/ExecutionEngine.h - ExecutionEngine Lib C Iface --*- C++ -*-===*\
@@ -190,9 +192,9 @@ public final class ExecutionEngine {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
         abstract void LLVMRunStaticDestructors(long EE);
 
-        /*@LibrarySymbol(name = "LLVMRunFunctionAsMain")
+        @LibrarySymbol(name = "LLVMRunFunctionAsMain")
         @CallSignature(type = NATIVE_STATIC_OMIT_ENV, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract int LLVMRunFunctionAsMain(long EE, long F, int ArgC, long ArgV, long EnvP);*/
+        abstract int LLVMRunFunctionAsMain(long EE, long F, int ArgC, long ArgV, long EnvP);
 
         @LibrarySymbol(name = "LLVMRunFunction")
         @CallSignature(type = NATIVE_STATIC_OMIT_ENV, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT, LONG_AS_WORD})
@@ -422,10 +424,16 @@ public final class ExecutionEngine {
         Native.INSTANCE.LLVMRunStaticDestructors(EE.value());
     }
 
-    //TODO
-    //int LLVMRunFunctionAsMain(LLVMExecutionEngineRef EE, LLVMValueRef F, unsigned ArgC, const char * const *ArgV, const char * const *EnvP) {
-    //    return Native.INSTANCE.LLVMRunFunctionAsMain();
-    //}
+    public static int LLVMRunFunctionAsMain(LLVMExecutionEngineRef EE, LLVMValueRef F, String[] ArgV, String[] EnvP) {
+        if (EnvP == null) EnvP = new String[0];
+        EnvP = Arrays.copyOf(EnvP, EnvP.length + 1);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_ArgV = allocStringArray(arena, ArgV);
+            int /* unsigned */ ArgC = arrayLength(ArgV);
+            MemorySegment c_EnvP = allocStringArray(arena, EnvP);
+            return Native.INSTANCE.LLVMRunFunctionAsMain(EE.value(), F.value(), ArgC, c_ArgV.nativeAddress(), c_EnvP.nativeAddress());
+        }
+    }
 
     public static LLVMGenericValueRef LLVMRunFunction(LLVMExecutionEngineRef EE, LLVMValueRef F, LLVMGenericValueRef[] Args) {
         try (Arena arena = Arena.ofConfined()) {

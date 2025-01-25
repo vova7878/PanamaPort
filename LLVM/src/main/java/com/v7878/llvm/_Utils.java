@@ -15,6 +15,7 @@ import com.v7878.r8.annotations.DoNotShrink;
 
 import java.lang.reflect.Array;
 import java.util.function.LongFunction;
+import java.util.function.ToLongFunction;
 
 final class _Utils {
     private _Utils() {
@@ -57,26 +58,36 @@ final class _Utils {
         return MemorySegment.NULL.equals(string) ? 0 : string.byteSize() - 1;
     }
 
-    public static MemorySegment allocArray(Arena scope, AddressValue... values) {
+    @SafeVarargs
+    public static <T> MemorySegment allocTArray(ToLongFunction<T> getter, Arena scope, T... values) {
         if (values == null || values.length == 0) {
             return MemorySegment.NULL;
         }
         if (IS64BIT) {
             long[] tmp = new long[values.length];
             for (int i = 0; i < values.length; i++) {
-                tmp[i] = values[i].value();
+                tmp[i] = getter.applyAsLong(values[i]);
             }
             return scope.allocateFrom(JAVA_LONG, tmp);
         } else {
             int[] tmp = new int[values.length];
             for (int i = 0; i < values.length; i++) {
-                tmp[i] = (int) values[i].value();
+                tmp[i] = (int) getter.applyAsLong(values[i]);
             }
             return scope.allocateFrom(JAVA_INT, tmp);
         }
     }
 
-    public static int arrayLength(AddressValue... values) {
+    public static MemorySegment allocStringArray(Arena scope, String... values) {
+        return allocTArray(value -> allocString(scope, value).nativeAddress(), scope, values);
+    }
+
+    public static MemorySegment allocArray(Arena scope, AddressValue... values) {
+        return allocTArray(AddressValue::value, scope, values);
+    }
+
+    @SafeVarargs
+    public static <T> int arrayLength(T... values) {
         return values == null ? 0 : values.length;
     }
 
