@@ -137,7 +137,7 @@ public class ExtraMemoryAccess {
 
     // TODO: should be package-private
     public static boolean isEarlyNativeInitialized() {
-        return EarlyNative.INSTANCE != null;
+        return ClassUtils.isClassInitialized(EarlyNative.class);
     }
 
     @DoNotShrinkType
