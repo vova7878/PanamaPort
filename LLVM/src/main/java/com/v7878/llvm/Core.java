@@ -596,30 +596,6 @@ public final class Core {
         }
     }
 
-    public enum LLVMLandingPadClauseTy {
-        /**
-         * < A catch clause
-         */
-        LLVMLandingPadCatch,
-        /**
-         * < A filter clause
-         */
-        LLVMLandingPadFilter;
-
-        int value() {
-            return ordinal();
-        }
-
-        static LLVMLandingPadClauseTy of(int value) {
-            for (var e : values()) {
-                if (e.value() == value) {
-                    return e;
-                }
-            }
-            throw new IllegalArgumentException("value: " + value + " is not found");
-        }
-    }
-
     public enum LLVMThreadLocalMode {
         LLVMNotThreadLocal,
         LLVMGeneralDynamicTLSModel,
@@ -764,15 +740,6 @@ public final class Core {
 
         int value() {
             return ordinal();
-        }
-
-        static LLVMAtomicRMWBinOp of(int value) {
-            for (var e : values()) {
-                if (e.value() == value) {
-                    return e;
-                }
-            }
-            throw new IllegalArgumentException("value: " + value + " is not found");
         }
     }
 
