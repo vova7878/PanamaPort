@@ -2,8 +2,8 @@ package com.v7878.foreign;
 
 import static com.v7878.foreign._VarHandleSegmentView.checkSegment;
 import static com.v7878.foreign._VarHandleSegmentView.getOffset;
-import static com.v7878.misc.Math.f2i;
-import static com.v7878.misc.Math.i2f;
+import static com.v7878.unsafe.misc.Math.f2i;
+import static com.v7878.unsafe.misc.Math.i2f;
 
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotObfuscate;

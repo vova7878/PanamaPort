@@ -28,7 +28,7 @@
 
 package com.v7878.foreign;
 
-import static com.v7878.misc.Math.ceilDiv;
+import static com.v7878.unsafe.misc.Math.ceilDiv;
 import static java.util.stream.Collectors.joining;
 
 import com.v7878.invoke.VarHandle;

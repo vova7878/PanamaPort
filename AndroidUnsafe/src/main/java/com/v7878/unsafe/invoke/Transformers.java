@@ -4,13 +4,13 @@ import static com.v7878.dex.DexConstants.ACC_CONSTRUCTOR;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.SUPER;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.VIRTUAL;
-import static com.v7878.dex.bytecode.CodeBuilder.Op.GET_OBJECT;
-import static com.v7878.dex.bytecode.CodeBuilder.Op.PUT_OBJECT;
-import static com.v7878.dex.bytecode.CodeBuilder.Test.EQ;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.DIRECT;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.STATIC;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.SUPER;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.VIRTUAL;
+import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
+import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
+import static com.v7878.dex.builder.CodeBuilder.Test.EQ;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
@@ -29,15 +29,15 @@ import static com.v7878.unsafe.Utils.DEBUG_BUILD;
 import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
-import com.v7878.dex.ClassDef;
-import com.v7878.dex.Dex;
-import com.v7878.dex.EncodedField;
-import com.v7878.dex.EncodedMethod;
-import com.v7878.dex.FieldId;
-import com.v7878.dex.MethodId;
-import com.v7878.dex.ProtoId;
-import com.v7878.dex.TypeId;
-import com.v7878.dex.bytecode.CodeBuilder;
+import com.v7878.dex.DexIO;
+import com.v7878.dex.builder.ClassBuilder;
+import com.v7878.dex.builder.CodeBuilder;
+import com.v7878.dex.immutable.ClassDef;
+import com.v7878.dex.immutable.Dex;
+import com.v7878.dex.immutable.FieldId;
+import com.v7878.dex.immutable.MethodId;
+import com.v7878.dex.immutable.ProtoId;
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.ApiSensitive;
@@ -73,303 +73,341 @@ public class Transformers {
         TypeId mh = TypeId.of(MethodHandle.class);
         TypeId mt = TypeId.of(MethodType.class);
 
-        TypeId esf = TypeId.of("dalvik.system.EmulatedStackFrame");
+        TypeId esf = TypeId.ofName("dalvik.system.EmulatedStackFrame");
         TypeId mesf = TypeId.of(EmulatedStackFrame.class);
 
-        //public final class Transformer extends MethodHandle implements Cloneable {
-        //    TransformerImpl impl;
-        //    <...>
-        //}
         String transformer_name = Transformers.class.getName() + "$Transformer";
-        TypeId transformer_id = TypeId.of(transformer_name);
+        TypeId transformer_id = TypeId.ofName(transformer_name);
 
-        ClassDef transformer_def = new ClassDef(transformer_id);
-        transformer_def.setSuperClass(TypeId.of(invoke_transformer));
-        transformer_def.getInterfaces().add(TypeId.of(Cloneable.class));
-        transformer_def.setAccessFlags(ACC_PUBLIC | ACC_FINAL);
+        TypeId transformer_impl_id = TypeId.of(TransformerImpl.class);
 
-        FieldId impl_field = new FieldId(transformer_id,
-                TypeId.of(TransformerImpl.class), "impl");
-        transformer_def.getClassData().getInstanceFields().add(
-                new EncodedField(impl_field, ACC_PRIVATE, null)
-        );
-
-        //public Transformer(MethodType type, int invokeKind, TransformerImpl impl) {
-        //    super(type, invokeKind);
-        //    this.impl = impl;
-        //}
-        transformer_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                MethodId.constructor(transformer_id, mt, TypeId.I, TypeId.of(TransformerImpl.class)),
-                ACC_PUBLIC | ACC_CONSTRUCTOR).withCode(0, b -> b
-                .invoke(DIRECT, MethodId.constructor(invoke_transformer_id, mt, TypeId.I),
-                        b.this_(), b.p(0), b.p(1))
-                .iop(PUT_OBJECT, b.p(2), b.this_(), impl_field)
-                .return_void()
-        ));
-
-        //public void transform(dalvik.system.EmulatedStackFrame stack) {
-        //    impl.transform(com.v7878.unsafe.methodhandle.EmulatedStackFrame.wrap(stack));
-        //}
-        transformer_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(transformer_id, new ProtoId(TypeId.V, esf), "transform"),
-                ACC_PUBLIC).withCode(2, b -> b
-                .iop(GET_OBJECT, b.l(0), b.this_(), impl_field)
-                .invoke(STATIC, new MethodId(mesf, new ProtoId(mesf,
-                        TypeId.of(Object.class)), "wrap"), b.p(0))
-                .move_result_object(b.l(1))
-                .invoke(VIRTUAL, new MethodId(TypeId.of(TransformerImpl.class),
-                                new ProtoId(TypeId.V, mh, mesf), "transform"),
-                        b.l(0), b.this_(), b.l(1))
-                .return_void()
-        ));
-
-        //public boolean isVarargsCollector() {
-        //    return impl.isVarargsCollector(this);
-        //}
-        transformer_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(transformer_id, new ProtoId(TypeId.Z), "isVarargsCollector"),
-                ACC_PUBLIC).withCode(1, b -> b
-                .iop(GET_OBJECT, b.l(0), b.this_(), impl_field)
-                .invoke(VIRTUAL, new MethodId(TypeId.of(TransformerImpl.class),
-                                new ProtoId(TypeId.Z, mh), "isVarargsCollector"),
-                        b.l(0), b.this_())
-                .move_result(b.l(0))
-                .return_(b.l(0))
-        ));
-
-        //public MethodHandle asVarargsCollector(Class<?> arrayType) {
-        //    return impl.asVarargsCollector(this, arrayType);
-        //}
-        transformer_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(transformer_id, new ProtoId(mh, TypeId.of(Class.class)),
-                        "asVarargsCollector"), ACC_PUBLIC).withCode(1, b -> b
-                .iop(GET_OBJECT, b.l(0), b.this_(), impl_field)
-                .invoke(VIRTUAL, new MethodId(TypeId.of(TransformerImpl.class), new ProtoId(mh,
-                                mh, TypeId.of(Class.class)), "asVarargsCollector"),
-                        b.l(0), b.this_(), b.p(0))
-                .move_result_object(b.l(0))
-                .return_object(b.l(0))
-        ));
-
-        //public MethodHandle asFixedArity() {
-        //    return impl.asFixedArity(this);
-        //}
-        transformer_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(transformer_id, new ProtoId(mh), "asFixedArity"),
-                ACC_PUBLIC).withCode(1, b -> b
-                .iop(GET_OBJECT, b.l(0), b.this_(), impl_field)
-                .invoke(VIRTUAL, new MethodId(TypeId.of(TransformerImpl.class),
-                        new ProtoId(mh, mh), "asFixedArity"), b.l(0), b.this_())
-                .move_result_object(b.l(0))
-                .return_object(b.l(0))
-        ));
-
-        //public MethodHandle bindTo(Object value) {
-        //    return impl.bindTo(this, value);
-        //}
-        transformer_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(transformer_id, new ProtoId(mh, TypeId.of(Object.class)), "bindTo"),
-                ACC_PUBLIC).withCode(1, b -> b
-                .iop(GET_OBJECT, b.l(0), b.this_(), impl_field)
-                .invoke(VIRTUAL, new MethodId(TypeId.of(TransformerImpl.class),
-                                new ProtoId(mh, mh, TypeId.of(Object.class)), "bindTo"),
-                        b.l(0), b.this_(), b.p(0))
-                .move_result_object(b.l(0))
-                .return_object(b.l(0))
-        ));
-
-        //public String toString() {
-        //    return impl.toString(this);
-        //}
-        transformer_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(transformer_id, new ProtoId(TypeId.of(String.class)), "toString"),
-                ACC_PUBLIC).withCode(1, b -> b
-                .iop(GET_OBJECT, b.l(0), b.this_(), impl_field)
-                .invoke(VIRTUAL, new MethodId(TypeId.of(TransformerImpl.class),
-                                new ProtoId(TypeId.of(String.class), mh), "toString"),
-                        b.l(0), b.this_())
-                .move_result_object(b.l(0))
-                .return_object(b.l(0))
-        ));
+        FieldId impl_field = FieldId.of(transformer_id,
+                "impl", transformer_impl_id);
 
         FieldId asTypeCache;
         if (ART_SDK_INT < 33) {
-            asTypeCache = new FieldId(transformer_id, mh, "asTypeCache");
-            transformer_def.getClassData().getInstanceFields().add(
-                    new EncodedField(asTypeCache, ACC_PRIVATE, null)
-            );
+            asTypeCache = FieldId.of(transformer_id, "asTypeCache", mh);
         } else {
-            Field tmp = getDeclaredField(MethodHandle.class, "asTypeCache");
-            makeFieldPublic(tmp);
-            asTypeCache = FieldId.of(tmp);
+            Field cache = getDeclaredField(MethodHandle.class, "asTypeCache");
+            makeFieldPublic(cache);
+            asTypeCache = FieldId.of(cache);
         }
 
-        MethodId asTypeUncached = new MethodId(transformer_id, new ProtoId(mh, mt), "asTypeUncached");
-        Consumer<CodeBuilder> fallbackAsType;
-        if (ART_SDK_INT < 33) {
-            if (ART_SDK_INT < 30) {
-                //return asTypeCache = super.asType(type);
-                fallbackAsType = b -> b
-                        .invoke(SUPER, new MethodId(mh, new ProtoId(mh, mt),
-                                "asType"), b.this_(), b.p(0))
-                        .move_result_object(b.l(0))
-                        .iop(PUT_OBJECT, b.l(0), b.this_(), asTypeCache)
-                        .return_object(b.l(0));
-            } else {
-                Method tmp = getDeclaredMethod(MethodHandle.class,
-                        "asTypeUncached", MethodType.class);
-                makeMethodInheritable(tmp);
+        // public final class Transformer extends MethodHandle implements Cloneable {
+        //     <...>
+        // }
+        ClassDef transformer_def = ClassBuilder.build(transformer_id, cb -> cb
+                .withSuperClass(invoke_transformer_id)
+                .withInterfaces(TypeId.of(Cloneable.class))
+                .withFlags(ACC_PUBLIC | ACC_FINAL)
+                // private final TransformerImpl impl;
+                .withField(fb -> fb
+                        .of(impl_field)
+                        .withFlags(ACC_PRIVATE | ACC_FINAL)
+                )
+                // public Transformer(MethodType type, int invokeKind, TransformerImpl impl) {
+                //     super(type, invokeKind);
+                //     this.impl = impl;
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_CONSTRUCTOR)
+                        .withConstructorSignature()
+                        .withParameterTypes(mt, TypeId.I, transformer_impl_id)
+                        .withCode(0, ib -> ib
+                                .invoke(DIRECT, MethodId.constructor(invoke_transformer_id, mt, TypeId.I),
+                                        ib.this_(), ib.p(0), ib.p(1))
+                                .iop(PUT_OBJECT, ib.p(2), ib.this_(), impl_field)
+                                .return_void()
+                        )
+                )
+                // public void transform(dalvik.system.EmulatedStackFrame frame) {
+                //     impl.transform(com.v7878.unsafe.invoke.EmulatedStackFrame.wrap(frame));
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("transform")
+                        .withReturnType(TypeId.V)
+                        .withParameterTypes(esf)
+                        .withCode(1, ib -> ib
+                                .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
+                                .invoke(STATIC, MethodId.of(mesf, "wrap",
+                                        ProtoId.of(mesf, TypeId.OBJECT)), ib.p(0))
+                                .move_result_object(ib.p(0))
+                                .invoke(VIRTUAL, MethodId.of(transformer_impl_id,
+                                                "transform", ProtoId.of(TypeId.V, mh, mesf)),
+                                        ib.l(0), ib.this_(), ib.p(0))
+                                .return_void()
+                        )
+                )
+                // public boolean isVarargsCollector() {
+                //     return impl.isVarargsCollector(this);
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("isVarargsCollector")
+                        .withReturnType(TypeId.Z)
+                        .withParameters()
+                        .withCode(1, ib -> ib
+                                .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
+                                .invoke(VIRTUAL, MethodId.of(transformer_impl_id,
+                                                "isVarargsCollector", ProtoId.of(TypeId.Z, mh)),
+                                        ib.l(0), ib.this_())
+                                .move_result(ib.l(0))
+                                .return_(ib.l(0))
+                        )
+                )
+                // public MethodHandle asVarargsCollector(Class<?> arrayType) {
+                //     return impl.asVarargsCollector(this, arrayType);
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("asVarargsCollector")
+                        .withReturnType(mh)
+                        .withParameterTypes(TypeId.of(Class.class))
+                        .withCode(1, ib -> ib
+                                .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
+                                .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "asVarargsCollector",
+                                                ProtoId.of(mh, mh, TypeId.of(Class.class))),
+                                        ib.l(0), ib.this_(), ib.p(0))
+                                .move_result_object(ib.l(0))
+                                .return_object(ib.l(0))
+                        )
+                )
+                // public MethodHandle asFixedArity() {
+                //     return impl.asFixedArity(this);
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("asFixedArity")
+                        .withReturnType(mh)
+                        .withParameters()
+                        .withCode(1, ib -> ib
+                                .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
+                                .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "asFixedArity",
+                                        ProtoId.of(mh, mh)), ib.l(0), ib.this_())
+                                .move_result_object(ib.l(0))
+                                .return_object(ib.l(0))
+                        )
+                )
+                // public MethodHandle bindTo(Object value) {
+                //     return impl.bindTo(this, value);
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("bindTo")
+                        .withReturnType(mh)
+                        .withParameterTypes(TypeId.OBJECT)
+                        .withCode(1, ib -> ib
+                                .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
+                                .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "bindTo",
+                                                ProtoId.of(mh, mh, TypeId.OBJECT)),
+                                        ib.l(0), ib.this_(), ib.p(0))
+                                .move_result_object(ib.l(0))
+                                .return_object(ib.l(0))
+                        )
+                )
+                // public String toString() {
+                //     return impl.toString(this);
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("toString")
+                        .withReturnType(TypeId.of(String.class))
+                        .withParameters()
+                        .withCode(1, ib -> ib
+                                .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
+                                .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "toString",
+                                        ProtoId.of(TypeId.of(String.class), mh)), ib.l(0), ib.this_())
+                                .move_result_object(ib.l(0))
+                                .return_object(ib.l(0))
+                        )
+                )
+                .if_(ART_SDK_INT < 33, cb2 -> cb2
+                        .withField(fb -> fb
+                                .of(asTypeCache)
+                                .withFlags(ACC_PRIVATE)
+                        )
+                )
+                .commit(cb2 -> {
+                    MethodId asTypeUncached = MethodId.of(transformer_id,
+                            "asTypeUncached", ProtoId.of(mh, mt));
+                    Consumer<CodeBuilder> fallbackAsType;
+                    if (ART_SDK_INT < 33) {
+                        if (ART_SDK_INT < 30) {
+                            // return asTypeCache = super.asType(type);
+                            fallbackAsType = ib -> ib
+                                    .invoke(SUPER, MethodId.of(mh, "asType",
+                                            ProtoId.of(mh, mt)), ib.this_(), ib.p(0))
+                                    .move_result_object(ib.l(0))
+                                    .iop(PUT_OBJECT, ib.l(0), ib.this_(), asTypeCache)
+                                    .return_object(ib.l(0));
+                        } else {
+                            Method tmp = getDeclaredMethod(MethodHandle.class,
+                                    "asTypeUncached", MethodType.class);
+                            makeMethodInheritable(tmp);
 
-                //return asTypeCache = super.asTypeUncached(type);
-                fallbackAsType = b -> b
-                        .invoke(SUPER, MethodId.of(tmp), b.this_(), b.p(0))
-                        .move_result_object(b.l(0))
-                        .iop(PUT_OBJECT, b.l(0), b.this_(), asTypeCache)
-                        .return_object(b.l(0));
-            }
+                            // return asTypeCache = super.asTypeUncached(type);
+                            fallbackAsType = ib -> ib
+                                    .invoke(SUPER, MethodId.of(tmp), ib.this_(), ib.p(0))
+                                    .move_result_object(ib.l(0))
+                                    .iop(PUT_OBJECT, ib.l(0), ib.this_(), asTypeCache)
+                                    .return_object(ib.l(0));
+                        }
 
+                        MethodId equals = MethodId.of(mt, "equals",
+                                ProtoId.of(TypeId.Z, TypeId.OBJECT));
+                        MethodId type = MethodId.of(mh, "type", ProtoId.of(mt));
 
-            MethodId equals = new MethodId(mt, new ProtoId(TypeId.Z,
-                    TypeId.of(Object.class)), "equals");
-            MethodId type = new MethodId(mh, new ProtoId(mt), "type");
+                        // public MethodHandle asType(MethodType type) {
+                        //     if (type.equals(this.type())) {
+                        //         return this;
+                        //     }
+                        //     MethodHandle tmp = asTypeCache;
+                        //     if (tmp != null && type.equals(tmp.type())) {
+                        //         return tmp;
+                        //     }
+                        //     return asTypeUncached(type);
+                        // }
+                        cb2.withMethod(mb -> mb
+                                .withFlags(ACC_PUBLIC)
+                                .withName("asType")
+                                .withReturnType(mh)
+                                .withParameterTypes(mt)
+                                .withCode(2, ib -> ib
+                                        .invoke(VIRTUAL, type, ib.this_())
+                                        .move_result_object(ib.l(0))
+                                        .invoke(VIRTUAL, equals, ib.p(0), ib.l(0))
+                                        .move_result(ib.l(0))
+                                        .if_testz(EQ, ib.l(0), ":long_path")
+                                        .return_object(ib.this_())
 
-            //public MethodHandle asType(MethodType type) {
-            //    if (type.equals(this.type())) {
-            //        return this;
-            //    }
-            //    MethodHandle tmp = asTypeCache;
-            //    if (tmp != null && type.equals(tmp.type())) {
-            //        return tmp;
-            //    }
-            //    return asTypeUncached(type);
-            //}
-            transformer_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                    new MethodId(transformer_id, new ProtoId(mh, mt), "asType"),
-                    ACC_PUBLIC).withCode(2, b -> b
+                                        .label(":long_path")
+                                        .iop(GET_OBJECT, ib.l(0), ib.this_(), asTypeCache)
+                                        .if_testz(EQ, ib.l(0), ":return_uncached")
+                                        .invoke(VIRTUAL, type, ib.l(0))
+                                        .move_result_object(ib.l(1))
+                                        .invoke(VIRTUAL, equals, ib.p(0), ib.l(1))
+                                        .move_result(ib.l(1))
+                                        .if_testz(EQ, ib.l(1), ":return_uncached")
+                                        .return_object(ib.l(0))
 
-                    .invoke(VIRTUAL, type, b.this_())
-                    .move_result_object(b.l(0))
-                    .invoke(VIRTUAL, equals, b.p(0), b.l(0))
-                    .move_result(b.l(0))
-                    .if_testz(EQ, b.l(0), ":long_path")
-                    .return_object(b.this_())
-
-                    .label(":long_path")
-                    .iop(GET_OBJECT, b.l(0), b.this_(), asTypeCache)
-                    .if_testz(EQ, b.l(0), ":return_uncached")
-                    .invoke(VIRTUAL, type, b.l(0))
-                    .move_result_object(b.l(1))
-                    .invoke(VIRTUAL, equals, b.p(0), b.l(1))
-                    .move_result(b.l(1))
-                    .if_testz(EQ, b.l(1), ":return_uncached")
-                    .return_object(b.l(0))
-
-                    .label(":return_uncached")
-                    .invoke(VIRTUAL, asTypeUncached, b.this_(), b.p(0))
-                    .move_result_object(b.l(0))
-                    .return_object(b.l(0))
-            ));
-        } else {
-            Method tmp = getDeclaredMethod(MethodHandle.class,
-                    "asTypeUncached", MethodType.class);
-            makeMethodInheritable(tmp);
-
-            //return super.asTypeUncached(type);
-            fallbackAsType = b -> b
-                    .invoke(SUPER, MethodId.of(tmp), b.this_(), b.p(0))
-                    .move_result_object(b.l(0))
-                    .return_object(b.l(0));
-        }
-
-        //public MethodHandle asTypeUncached(MethodType type) {
-        //    MethodHandle tmp = impl.asType(this, type);
-        //    if (tmp == null) {
-        //        <fallback code>
-        //    }
-        //    return asTypeCache = tmp;
-        //}
-        transformer_def.getClassData().getVirtualMethods().add(new EncodedMethod(asTypeUncached,
-                ACC_PUBLIC).withCode(1, b -> b
-                .iop(GET_OBJECT, b.l(0), b.this_(), impl_field)
-                .invoke(VIRTUAL, new MethodId(TypeId.of(TransformerImpl.class),
-                                new ProtoId(mh, mh, mt), "asTypeUncached"),
-                        b.l(0), b.this_(), b.p(0))
-                .move_result_object(b.l(0))
-                .if_testz(EQ, b.l(0), ":null")
-                .iop(PUT_OBJECT, b.l(0), b.this_(), asTypeCache)
-                .return_object(b.l(0))
-                .label(":null")
-                .commit(fallbackAsType)
-        ));
-
-        //public final class Invoker extends InvokerI {
-        //    <...>
-        //}
-        String invoker_name = Transformers.class.getName() + "$Invoker";
-        TypeId invoker_id = TypeId.of(invoker_name);
-
-        ClassDef invoker_def = new ClassDef(invoker_id);
-        invoker_def.setSuperClass(TypeId.of(InvokerI.class));
-        invoker_def.setAccessFlags(ACC_PUBLIC | ACC_FINAL);
-
-
-        //public void invokeExactWithFrame(MethodHandle handle, Object stack) {
-        //    <...>
-        //}
-        invoker_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(invoker_id, new ProtoId(TypeId.V, mh, TypeId.of(Object.class)),
-                        "invokeExactWithFrame"), ACC_PUBLIC).withCode(0, b -> {
-            if (!SKIP_CHECK_CAST) {
-                b.check_cast(b.p(1), esf);
-            }
-            if (ART_SDK_INT <= 32) {
-                //handle.invoke((dalvik.system.EmulatedStackFrame) stack);
-                b.invoke_polymorphic(new MethodId(mh, new ProtoId(TypeId.of(Object.class),
-                                TypeId.of(Object[].class)), "invoke"),
-                        new ProtoId(TypeId.V, esf), b.p(0), b.p(1));
-            } else {
-                Method tmp = getDeclaredMethod(MethodHandle.class,
-                        "invokeExactWithFrame", EmulatedStackFrame.esf_class);
-                makeExecutablePublic(tmp);
-
-                //handle.invokeExactWithFrame((dalvik.system.EmulatedStackFrame) stack);
-                b.invoke(VIRTUAL, MethodId.of(tmp), b.p(0), b.p(1));
-            }
-            b.return_void();
-        }));
-
-        Method tmp = getDeclaredMethod(MethodHandle.class,
-                "transform", EmulatedStackFrame.esf_class);
-        makeMethodInheritable(tmp);
-
-        //public void transform(MethodHandle handle, Object stack) {
-        //    handle.transform((dalvik.system.EmulatedStackFrame) stack);
-        //}
-        invoker_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(invoker_id, new ProtoId(TypeId.V, TypeId.of(MethodHandle.class),
-                        TypeId.of(Object.class)), "transform"),
-                ACC_PUBLIC).withCode(0, b -> {
-                    if (!SKIP_CHECK_CAST) {
-                        b.check_cast(b.p(1), esf);
+                                        .label(":return_uncached")
+                                        .invoke(VIRTUAL, asTypeUncached, ib.this_(), ib.p(0))
+                                        .move_result_object(ib.l(0))
+                                        .return_object(ib.l(0))
+                                )
+                        );
+                    } else {
+                        Method uncached = getDeclaredMethod(MethodHandle.class,
+                                "asTypeUncached", MethodType.class);
+                        makeMethodInheritable(uncached);
+                        // return super.asTypeUncached(type);
+                        fallbackAsType = ib -> ib
+                                .invoke(SUPER, MethodId.of(uncached), ib.this_(), ib.p(0))
+                                .move_result_object(ib.l(0))
+                                .return_object(ib.l(0));
                     }
-                    b.invoke(VIRTUAL, MethodId.of(tmp), b.p(0), b.p(1));
-                    b.return_void();
-                }
-        ));
+                    // public MethodHandle asTypeUncached(MethodType type) {
+                    //     MethodHandle tmp = impl.asType(this, type);
+                    //     if (tmp == null) {
+                    //         <fallback code>
+                    //     }
+                    //     return asTypeCache = tmp;
+                    // }
+                    cb2.withMethod(mb -> mb
+                            .of(asTypeUncached)
+                            .withFlags(ACC_PUBLIC)
+                            .withCode(1, ib -> ib
+                                    .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
+                                    .invoke(VIRTUAL, MethodId.of(TypeId.of(TransformerImpl.class),
+                                                    "asTypeUncached", ProtoId.of(mh, mh, mt)),
+                                            ib.l(0), ib.this_(), ib.p(0))
+                                    .move_result_object(ib.l(0))
+                                    .if_testz(EQ, ib.l(0), ":null")
+                                    .iop(PUT_OBJECT, ib.l(0), ib.this_(), asTypeCache)
+                                    .return_object(ib.l(0))
+                                    .label(":null")
+                                    .commit(fallbackAsType)
+                            )
+                    );
+                })
+        );
 
-        //public boolean isTransformer(MethodHandle handle) {
-        //    return handle instanceof Transformer;
-        //}
-        invoker_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(invoker_id, new ProtoId(TypeId.Z,
-                        TypeId.of(MethodHandle.class)), "isTransformer"),
-                ACC_PUBLIC).withCode(0, b -> {
-                    b.instance_of(b.p(0), b.p(0), invoke_transformer_id);
-                    b.return_(b.p(0));
-                }
-        ));
+        String invoker_name = Transformers.class.getName() + "$Invoker";
+        TypeId invoker_id = TypeId.ofName(invoker_name);
 
-        DexFile dex = openDexFile(new Dex(transformer_def, invoker_def).compile());
+        // public final class Invoker extends InvokerI {
+        //     <...>
+        // }
+        ClassDef invoker_def = ClassBuilder.build(invoker_id, cb -> cb
+                .withSuperClass(TypeId.of(InvokerI.class))
+                .withFlags(ACC_PUBLIC | ACC_FINAL)
+                // public boolean isTransformer(MethodHandle handle) {
+                //     return handle instanceof Transformer;
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("isTransformer")
+                        .withReturnType(TypeId.Z)
+                        .withParameterTypes(mh)
+                        .withCode(0, ib -> ib
+                                .instance_of(ib.p(0), ib.p(0), invoke_transformer_id)
+                                .return_(ib.p(0))
+                        )
+                )
+                .commit(cb2 -> {
+                    Method transform = getDeclaredMethod(MethodHandle.class,
+                            "transform", EmulatedStackFrame.esf_class);
+                    makeMethodInheritable(transform);
+                    // public void transform(MethodHandle handle, Object stack) {
+                    //     handle.transform((dalvik.system.EmulatedStackFrame) stack);
+                    // }
+                    cb2.withMethod(mb -> mb
+                            .withFlags(ACC_PUBLIC)
+                            .withName("transform")
+                            .withReturnType(TypeId.V)
+                            .withParameterTypes(mh, TypeId.OBJECT)
+                            .withCode(0, ib -> ib
+                                    .if_(!SKIP_CHECK_CAST, ib2 -> ib2
+                                            .check_cast(ib.p(1), esf)
+                                    )
+                                    .invoke(VIRTUAL, MethodId.of(transform), ib.p(0), ib.p(1))
+                                    .return_void()
+                            )
+                    );
+                })
+                // public void invokeExactWithFrame(MethodHandle handle, Object stack) {
+                //     if (ART_SDK_INT <= 32) {
+                //         handle.invoke((dalvik.system.EmulatedStackFrame) stack);
+                //     } else {
+                //         handle.invokeExactWithFrame((dalvik.system.EmulatedStackFrame) stack);
+                //     }
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("invokeExactWithFrame")
+                        .withReturnType(TypeId.V)
+                        .withParameterTypes(mh, TypeId.OBJECT)
+                        .withCode(0, b -> {
+                            if (!SKIP_CHECK_CAST) {
+                                b.check_cast(b.p(1), esf);
+                            }
+                            if (ART_SDK_INT <= 32) {
+                                b.invoke_polymorphic(MethodId.of(mh, "invoke",
+                                                ProtoId.of(TypeId.OBJECT, TypeId.of(Object[].class))),
+                                        ProtoId.of(TypeId.V, esf), b.p(0), b.p(1));
+                            } else {
+                                Method invokeWF = getDeclaredMethod(MethodHandle.class,
+                                        "invokeExactWithFrame", EmulatedStackFrame.esf_class);
+                                makeExecutablePublic(invokeWF);
+                                b.invoke(VIRTUAL, MethodId.of(invokeWF), b.p(0), b.p(1));
+                            }
+                            b.return_void();
+                        })
+                )
+        );
+
+        DexFile dex = openDexFile(DexIO.write(Dex.of(transformer_def, invoker_def)));
         setTrusted(dex);
 
         ClassLoader loader = Transformers.class.getClassLoader();

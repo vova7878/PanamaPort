@@ -1,10 +1,10 @@
 package com.v7878.unsafe;
 
-import static com.v7878.misc.Math.roundUpL;
 import static com.v7878.unsafe.AndroidUnsafe.PAGE_SIZE;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.io.IOUtils.MAP_ANONYMOUS;
+import static com.v7878.unsafe.misc.Math.roundUpL;
 
 import android.system.ErrnoException;
 import android.system.OsConstants;

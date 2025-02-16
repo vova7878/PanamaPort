@@ -8,9 +8,9 @@ import static com.v7878.foreign.ValueLayout.JAVA_FLOAT;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
-import static com.v7878.misc.Math.roundUp;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.misc.Math.roundUp;
 
 import android.util.Pair;
 

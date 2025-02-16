@@ -3,7 +3,7 @@ package com.v7878.unsafe.invoke;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.bytecode.CodeBuilder.Op.GET_OBJECT;
+import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
@@ -16,14 +16,12 @@ import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.getSize;
 
-import com.v7878.dex.ClassDef;
-import com.v7878.dex.Dex;
-import com.v7878.dex.EncodedField;
-import com.v7878.dex.EncodedMethod;
-import com.v7878.dex.FieldId;
-import com.v7878.dex.MethodId;
-import com.v7878.dex.ProtoId;
-import com.v7878.dex.TypeId;
+import com.v7878.dex.DexIO;
+import com.v7878.dex.builder.ClassBuilder;
+import com.v7878.dex.immutable.ClassDef;
+import com.v7878.dex.immutable.Dex;
+import com.v7878.dex.immutable.FieldId;
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils;
@@ -48,38 +46,46 @@ public class MethodTypeHacks {
         TypeId i_arr = TypeId.of(int[].class);
 
         String form_name = MethodTypeForm.class.getName() + "$MethodTypeFormImpl";
-        TypeId form_id = TypeId.of(form_name);
+        TypeId form_id = TypeId.ofName(form_name);
 
-        ClassDef form_def = new ClassDef(form_id);
-        form_def.setSuperClass(TypeId.of(INVOKE_FORM));
-        form_def.getInterfaces().add(mtf);
-        form_def.setAccessFlags(ACC_PUBLIC | ACC_FINAL);
+        FieldId fo_field = FieldId.of(form_id, "frameOffsets", i_arr);
+        FieldId ro_field = FieldId.of(form_id, "referencesOffsets", i_arr);
 
-        FieldId fo_field = new FieldId(form_id, i_arr, "frameOffsets");
-        form_def.getClassData().getInstanceFields().add(
-                new EncodedField(fo_field, ACC_PRIVATE | ACC_FINAL, null)
+        ClassDef form_def = ClassBuilder.build(form_id, cb -> cb
+                .withSuperClass(TypeId.of(INVOKE_FORM))
+                .withInterfaces(mtf)
+                .withFlags(ACC_PUBLIC | ACC_FINAL)
+                .withField(fb -> fb
+                        .of(fo_field)
+                        .withFlags(ACC_PRIVATE | ACC_FINAL)
+                )
+                .withField(fb -> fb
+                        .of(ro_field)
+                        .withFlags(ACC_PRIVATE | ACC_FINAL)
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("frameOffsets")
+                        .withReturnType(i_arr)
+                        .withParameters()
+                        .withCode(1, ib -> ib
+                                .iop(GET_OBJECT, ib.l(0), ib.this_(), fo_field)
+                                .return_object(ib.l(0))
+                        )
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("referencesOffsets")
+                        .withReturnType(i_arr)
+                        .withParameters()
+                        .withCode(1, ib -> ib
+                                .iop(GET_OBJECT, ib.l(0), ib.this_(), ro_field)
+                                .return_object(ib.l(0))
+                        )
+                )
         );
 
-        FieldId ro_field = new FieldId(form_id, i_arr, "referencesOffsets");
-        form_def.getClassData().getInstanceFields().add(
-                new EncodedField(ro_field, ACC_PRIVATE | ACC_FINAL, null)
-        );
-
-        form_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(form_id, new ProtoId(i_arr), "frameOffsets"),
-                ACC_PUBLIC).withCode(1, b -> b
-                .iop(GET_OBJECT, b.l(0), b.this_(), fo_field)
-                .return_object(b.l(0))
-        ));
-
-        form_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(form_id, new ProtoId(i_arr), "referencesOffsets"),
-                ACC_PUBLIC).withCode(1, b -> b
-                .iop(GET_OBJECT, b.l(0), b.this_(), ro_field)
-                .return_object(b.l(0))
-        ));
-
-        DexFile dex = openDexFile(new Dex(form_def).compile());
+        DexFile dex = openDexFile(DexIO.write(Dex.of(form_def)));
 
         ClassLoader loader = MethodTypeForm.class.getClassLoader();
 

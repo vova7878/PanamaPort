@@ -3,9 +3,9 @@ package com.v7878.unsafe.access;
 import static com.v7878.dex.DexConstants.ACC_CONSTRUCTOR;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.SUPER;
-import static com.v7878.dex.bytecode.CodeBuilder.Op.PUT_OBJECT;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.DIRECT;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.SUPER;
+import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_DOUBLE_BASE_OFFSET;
@@ -38,14 +38,13 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
-import com.v7878.dex.ClassDef;
-import com.v7878.dex.Dex;
-import com.v7878.dex.EncodedField;
-import com.v7878.dex.EncodedMethod;
-import com.v7878.dex.FieldId;
-import com.v7878.dex.MethodId;
-import com.v7878.dex.ProtoId;
-import com.v7878.dex.TypeId;
+import com.v7878.dex.DexIO;
+import com.v7878.dex.builder.ClassBuilder;
+import com.v7878.dex.immutable.ClassDef;
+import com.v7878.dex.immutable.Dex;
+import com.v7878.dex.immutable.FieldId;
+import com.v7878.dex.immutable.MethodId;
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.ApiSensitive;
@@ -143,11 +142,11 @@ public class JavaNioAccess {
         Method m_attachment;
 
         String nio_direct_buf_name = "java.nio.DirectByteBuffer";
-        TypeId nio_direct_buf_id = TypeId.of(nio_direct_buf_name);
+        TypeId nio_direct_buf_id = TypeId.ofName(nio_direct_buf_name);
         String nio_mem_ref_name = "java.nio.DirectByteBuffer$MemoryRef";
-        TypeId nio_mem_ref_id = TypeId.of(nio_mem_ref_name);
+        TypeId nio_mem_ref_id = TypeId.ofName(nio_mem_ref_name);
         String nio_heap_buf_name = "java.nio.HeapByteBuffer";
-        TypeId nio_heap_buf_id = TypeId.of(nio_heap_buf_name);
+        TypeId nio_heap_buf_id = TypeId.ofName(nio_heap_buf_name);
 
         Class<?> nio_mem_ref_class = nothrows_run(() -> Class.forName(nio_mem_ref_name));
         {
@@ -256,91 +255,103 @@ public class JavaNioAccess {
         }
 
         String direct_buf_name = "com.v7878.unsafe.DirectByteBuffer";
-        TypeId direct_buf_id = TypeId.of(direct_buf_name);
+        TypeId direct_buf_id = TypeId.ofName(direct_buf_name);
         String mem_ref_name = "com.v7878.unsafe.DirectByteBuffer$MemoryRef";
-        TypeId mem_ref_id = TypeId.of(mem_ref_name);
+        TypeId mem_ref_id = TypeId.ofName(mem_ref_name);
         String heap_buf_name = "com.v7878.unsafe.HeapByteBuffer";
-        TypeId heap_buf_id = TypeId.of(heap_buf_name);
+        TypeId heap_buf_id = TypeId.ofName(heap_buf_name);
 
-        ClassDef mem_def = new ClassDef(mem_ref_id);
-        mem_def.setSuperClass(nio_mem_ref_id);
-        mem_def.setAccessFlags(ACC_PUBLIC);
+        FieldId obo = FieldId.of(mem_ref_id, "originalBufferObject", TypeId.OBJECT);
 
-        FieldId obo = new FieldId(mem_ref_id, TypeId.of(Object.class), "originalBufferObject");
-        if (ART_SDK_INT == 26) {
-            // public final Object originalBufferObject;
-            mem_def.getClassData().getInstanceFields().add(new EncodedField(obo,
-                    ACC_PUBLIC | ACC_FINAL, null));
-        }
+        ClassDef mem_def = ClassBuilder.build(mem_ref_id, cb -> cb
+                .withSuperClass(nio_mem_ref_id)
+                .withFlags(ACC_PUBLIC)
+                .if_(ART_SDK_INT == 26, cb2 -> cb2
+                        // public final Object originalBufferObject;
+                        .withField(fb -> fb
+                                .of(obo)
+                                .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        )
+                )
+                // public MemoryRef($args$) {
+                //     super($args$);
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_CONSTRUCTOR)
+                        .withConstructorSignature()
+                        .withParameterTypes(TypeId.J, TypeId.OBJECT)
+                        .withCode(0, ib -> ib
+                                .if_(ART_SDK_INT == 26,
+                                        ib2 -> ib2
+                                                .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id, TypeId.J),
+                                                        ib.this_(), ib.p(0), ib.p(1))
+                                                .iop(PUT_OBJECT, ib.p(2), ib.this_(), obo),
+                                        ib2 -> ib2
+                                                .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id,
+                                                                TypeId.J, TypeId.OBJECT),
+                                                        ib.this_(), ib.p(0), ib.p(1), ib.p(2))
+                                )
+                                .return_void()
+                        )
+                )
+        );
 
+        ClassDef direct_buf_def = ClassBuilder.build(direct_buf_id, cb -> cb
+                .withSuperClass(nio_direct_buf_id)
+                .withFlags(ACC_PUBLIC)
+                // public DirectByteBuffer($args$) {
+                //     super($args$);
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_CONSTRUCTOR)
+                        .withConstructorSignature()
+                        .withParameterTypes(mem_ref_id, TypeId.I, TypeId.I,
+                                TypeId.I, TypeId.I, TypeId.I, TypeId.Z)
+                        .withCode(0, ib -> ib
+                                .invoke_range(DIRECT, MethodId.constructor(nio_direct_buf_id, nio_mem_ref_id,
+                                                TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
+                                        8, ib.this_())
+                                .return_void()
+                        )
+                )
+                // public MemoryRef attachment() {
+                //     return (MemoryRef) super.attachment();
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("attachment")
+                        .withReturnType(mem_ref_id)
+                        .withParameters()
+                        .withCode(1, ib -> ib
+                                .invoke(SUPER, MethodId.of(m_attachment), ib.this_())
+                                .move_result_object(ib.l(0))
+                                .check_cast(ib.l(0), mem_ref_id)
+                                .return_object(ib.l(0))
+                        )
+                )
+        );
 
-        //public MemoryRef($args$) {
-        //    super($args$);
-        //}
-        mem_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                MethodId.constructor(mem_ref_id, TypeId.J, TypeId.of(Object.class)),
-                ACC_PUBLIC | ACC_CONSTRUCTOR
-        ).withCode(ART_SDK_INT == 26 ? 0 : 1, b -> b
-                .if_(ART_SDK_INT == 26,
-                        unused -> b
-                                .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id, TypeId.J),
-                                        b.this_(), b.p(0), b.p(1))
-                                .iop(PUT_OBJECT, b.p(2), b.this_(), obo),
-                        unused -> b
-                                .const_4(b.l(0), 0)
-                                .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id,
-                                                TypeId.J, TypeId.of(Object.class)),
-                                        b.this_(), b.p(0), b.p(1), b.p(2)))
-                .return_void()
-        ));
+        ClassDef heap_buf_def = ClassBuilder.build(heap_buf_id, cb -> cb
+                .withSuperClass(nio_heap_buf_id)
+                .withFlags(ACC_PUBLIC)
+                // public HeapByteBuffer($args$) {
+                //     super($args$);
+                // }
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_CONSTRUCTOR)
+                        .withConstructorSignature()
+                        .withParameterTypes(TypeId.of(byte[].class), TypeId.I,
+                                TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z)
+                        .withCode(0, ib -> ib
+                                .invoke_range(DIRECT, MethodId.constructor(nio_heap_buf_id, TypeId.of(byte[].class),
+                                                TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
+                                        8, ib.this_())
+                                .return_void()
+                        )
+                )
+        );
 
-        ClassDef direct_buf_def = new ClassDef(direct_buf_id);
-        direct_buf_def.setSuperClass(nio_direct_buf_id);
-        direct_buf_def.setAccessFlags(ACC_PUBLIC);
-
-        //public DirectByteBuffer($args$) {
-        //    super($args$);
-        //}
-        direct_buf_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                MethodId.constructor(direct_buf_id, mem_ref_id,
-                        TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
-                ACC_PUBLIC | ACC_CONSTRUCTOR).withCode(0, b -> b
-                .invoke_range(DIRECT, MethodId.constructor(nio_direct_buf_id, nio_mem_ref_id,
-                                TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
-                        8, b.this_())
-                .return_void()
-        ));
-
-        //public MemoryRef attachment() {
-        //    return (MemoryRef) super.attachment();
-        //}
-        direct_buf_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                new MethodId(direct_buf_id, new ProtoId(mem_ref_id), "attachment"),
-                ACC_PUBLIC).withCode(1, b -> b
-                .invoke(SUPER, MethodId.of(m_attachment), b.this_())
-                .move_result_object(b.l(0))
-                .check_cast(b.l(0), mem_ref_id)
-                .return_object(b.l(0))
-        ));
-
-        ClassDef heap_buf_def = new ClassDef(heap_buf_id);
-        heap_buf_def.setSuperClass(nio_heap_buf_id);
-        heap_buf_def.setAccessFlags(ACC_PUBLIC);
-
-        //public HeapByteBuffer($args$) {
-        //    super($args$);
-        //}
-        heap_buf_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                MethodId.constructor(heap_buf_id, TypeId.of(byte[].class),
-                        TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
-                ACC_PUBLIC | ACC_CONSTRUCTOR).withCode(0, b -> b
-                .invoke_range(DIRECT, MethodId.constructor(nio_heap_buf_id, TypeId.of(byte[].class),
-                                TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
-                        8, b.this_())
-                .return_void()
-        ));
-
-        DexFile dex = openDexFile(new Dex(mem_def, direct_buf_def, heap_buf_def).compile());
+        DexFile dex = openDexFile(DexIO.write(Dex.of(mem_def, direct_buf_def, heap_buf_def)));
         setTrusted(dex);
 
         ClassLoader loader = JavaNioAccess.class.getClassLoader();

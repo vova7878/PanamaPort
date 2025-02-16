@@ -1,7 +1,5 @@
 package com.v7878.unsafe;
 
-import static com.v7878.misc.Math.isSigned32Bit;
-import static com.v7878.misc.Math.roundUp;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
@@ -23,6 +21,8 @@ import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.misc.Math.isSigned32Bit;
+import static com.v7878.unsafe.misc.Math.roundUp;
 
 import android.annotation.TargetApi;
 import android.os.Build;

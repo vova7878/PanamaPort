@@ -4,11 +4,11 @@ import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
-import static com.v7878.dex.bytecode.CodeBuilder.BinOp.AND_LONG;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
-import static com.v7878.dex.bytecode.CodeBuilder.UnOp.INT_TO_LONG;
-import static com.v7878.dex.bytecode.CodeBuilder.UnOp.LONG_TO_INT;
+import static com.v7878.dex.builder.CodeBuilder.BinOp.AND_LONG;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.DIRECT;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.STATIC;
+import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_LONG;
+import static com.v7878.dex.builder.CodeBuilder.UnOp.LONG_TO_INT;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
@@ -57,14 +57,14 @@ import static java.lang.annotation.ElementType.METHOD;
 
 import android.util.Log;
 
-import com.v7878.dex.AnnotationItem;
-import com.v7878.dex.AnnotationSet;
-import com.v7878.dex.ClassDef;
-import com.v7878.dex.Dex;
-import com.v7878.dex.EncodedMethod;
-import com.v7878.dex.MethodId;
-import com.v7878.dex.ProtoId;
-import com.v7878.dex.TypeId;
+import com.v7878.dex.DexIO;
+import com.v7878.dex.builder.ClassBuilder;
+import com.v7878.dex.immutable.Annotation;
+import com.v7878.dex.immutable.ClassDef;
+import com.v7878.dex.immutable.Dex;
+import com.v7878.dex.immutable.MethodId;
+import com.v7878.dex.immutable.ProtoId;
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
@@ -94,6 +94,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import dalvik.system.DexFile;
@@ -116,6 +117,7 @@ public class BulkLinker {
         // extra types
         LONG_AS_WORD(false, IS64BIT ? long.class : int.class, long.class),
         BOOL_AS_INT(false, int.class, boolean.class),
+
         @DangerLevel(DangerLevel.VERY_CAREFUL)
         OBJECT_AS_RAW_INT(false, int.class, Object.class),
         @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -176,27 +178,27 @@ public class BulkLinker {
         NATIVE_STATIC_OMIT_ENV(true, EnvType.OMIT_ENV, false, true, ACC_NATIVE | ACC_STATIC),
         NATIVE_VIRTUAL(false, EnvType.FULL_ENV, false, false, ACC_NATIVE),
         NATIVE_VIRTUAL_REPLACE_THIS(false, EnvType.FULL_ENV, true, false, ACC_NATIVE),
-        FAST_STATIC(false, EnvType.FULL_ENV, false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.FastNative()),
-        FAST_STATIC_OMIT_ENV(true, EnvType.OMIT_ENV, false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.FastNative()),
-        FAST_VIRTUAL(false, EnvType.FULL_ENV, false, false, ACC_NATIVE, AnnotationItem.FastNative()),
-        FAST_VIRTUAL_REPLACE_THIS(false, EnvType.FULL_ENV, true, false, ACC_NATIVE, AnnotationItem.FastNative()),
-        CRITICAL(false, EnvType.NO_ENV, false, true, ACC_NATIVE | ACC_STATIC, AnnotationItem.CriticalNative());
+        FAST_STATIC(false, EnvType.FULL_ENV, false, true, ACC_NATIVE | ACC_STATIC, Annotation.FastNative()),
+        FAST_STATIC_OMIT_ENV(true, EnvType.OMIT_ENV, false, true, ACC_NATIVE | ACC_STATIC, Annotation.FastNative()),
+        FAST_VIRTUAL(false, EnvType.FULL_ENV, false, false, ACC_NATIVE, Annotation.FastNative()),
+        FAST_VIRTUAL_REPLACE_THIS(false, EnvType.FULL_ENV, true, false, ACC_NATIVE, Annotation.FastNative()),
+        CRITICAL(false, EnvType.NO_ENV, false, true, ACC_NATIVE | ACC_STATIC, Annotation.CriticalNative());
 
         final boolean requireNativeStub;
         final EnvType envType;
         final boolean replaceThis;
         final boolean isStatic;
         final int flags;
-        final AnnotationSet annotations;
+        final Set<Annotation> annotations;
 
         CallType(boolean requireNativeStub, EnvType envType, boolean replaceThis,
-                 boolean isStatic, int flags, AnnotationItem... annotations) {
+                 boolean isStatic, int flags, Annotation... annotations) {
             this.requireNativeStub = requireNativeStub;
             this.envType = envType;
             this.replaceThis = replaceThis;
             this.isStatic = isStatic;
             this.flags = flags | ACC_PRIVATE;
-            this.annotations = new AnnotationSet(annotations);
+            this.annotations = Set.of(annotations);
         }
     }
 
@@ -221,13 +223,13 @@ public class BulkLinker {
         }
 
         ProtoId stubProto() {
-            return new ProtoId(TypeId.of(ret.forStub),
+            return ProtoId.of(TypeId.of(ret.forStub),
                     Arrays.stream(args, call_type.replaceThis ? 1 : 0, args.length)
                             .map(lt -> TypeId.of(lt.forStub)).toArray(TypeId[]::new));
         }
 
         ProtoId implProto() {
-            return new ProtoId(TypeId.of(ret.forImpl), Arrays.stream(args)
+            return ProtoId.of(TypeId.of(ret.forImpl), Arrays.stream(args)
                     .map(lt -> TypeId.of(lt.forImpl)).toArray(TypeId[]::new));
         }
 
@@ -253,104 +255,101 @@ public class BulkLinker {
     private static final String prefix = "raw_";
 
     private static byte[] generateJavaStub(Class<?> parent, SymbolInfo[] infos) {
-        if (parent == null) {
-            parent = Object.class;
-        }
         String impl_name = parent.getName() + "$Impl";
-        TypeId impl_id = TypeId.of(impl_name);
-        ClassDef impl_def = new ClassDef(impl_id);
-        if (parent.isInterface()) {
-            impl_def.setSuperClass(TypeId.of(Object.class));
-            impl_def.getInterfaces().add(TypeId.of(parent));
-        } else {
-            impl_def.setSuperClass(TypeId.of(parent));
-        }
+        TypeId impl_id = TypeId.ofName(impl_name);
+        ClassDef impl_def = ClassBuilder.build(impl_id, cb -> cb
+                .withSuperClass(TypeId.of(parent))
+                .withFlags(ACC_PUBLIC)
+                .commit(cb2 -> {
+                    for (SymbolInfo info : infos) {
+                        ProtoId raw_proto = info.stubProto();
+                        var raw_id = MethodId.of(impl_id, prefix + info.name, raw_proto);
+                        cb.withMethod(mb -> mb
+                                .of(raw_id)
+                                .withFlags(info.call_type.flags)
+                                .withAnnotations(info.call_type.annotations)
+                        );
 
-        for (SymbolInfo info : infos) {
-            ProtoId raw_proto = info.stubProto();
-            MethodId raw_method_id = new MethodId(impl_id, raw_proto, prefix + info.name);
-            EncodedMethod raw_em = new EncodedMethod(raw_method_id, info.call_type.flags,
-                    info.call_type.annotations, null, null);
-            impl_def.getClassData().getDirectMethods().add(raw_em);
+                        ProtoId proto = info.implProto();
+                        var id = MethodId.of(impl_id, info.name, proto);
+                        final int reserved = 4;
+                        int locals = reserved + raw_proto.getInputRegisterCount() +
+                                /* this */ (info.call_type.isStatic ? 0 : 1);
+                        int[] regs = {/* call args */ reserved, /* stub args */ 0};
 
-            ProtoId proto = info.implProto();
-            MethodId method_id = new MethodId(impl_id, proto, info.name);
-            final int reserved = 4;
-            int locals = reserved + raw_proto.getInputRegistersCount() +
-                    /* this */ (info.call_type.isStatic ? 0 : 1);
-            int[] regs = {/* call args */ reserved, /* stub args */ 0};
-            EncodedMethod em = new EncodedMethod(method_id, ACC_PUBLIC).withCode(locals, b -> {
-                if (!info.call_type.isStatic && !info.call_type.replaceThis) {
-                    b.move_object_auto(b.l(regs[0]++), b.this_());
-                }
-                for (MapType type : info.args) {
-                    switch (type) {
-                        case BYTE, BOOL, SHORT, CHAR, INT, FLOAT, BOOL_AS_INT ->
-                                b.move_auto(b.l(regs[0]++), b.p(regs[1]++));
-                        case LONG, DOUBLE -> {
-                            b.move_wide_auto(b.l(regs[0]), b.p(regs[1]));
-                            regs[0] += 2;
-                            regs[1] += 2;
-                        }
-                        case LONG_AS_WORD -> {
-                            if (IS64BIT) {
-                                b.move_wide_auto(b.l(regs[0]), b.p(regs[1]));
-                                regs[0] += 2;
-                            } else {
-                                b.move_wide_auto(b.l(0), b.p(regs[1]));
-                                b.unop(LONG_TO_INT, b.l(0), b.l(0));
-                                b.move_auto(b.l(regs[0]), b.l(0));
-                                regs[0] += 1;
-                            }
-                            regs[1] += 2;
-                        }
-                        case OBJECT, OBJECT_AS_RAW_INT, OBJECT_AS_ADDRESS ->
-                                b.move_object_auto(b.l(regs[0]++), b.p(regs[1]++));
-                        default -> throw shouldNotReachHere();
-                    }
-                }
+                        cb.withMethod(mb -> mb
+                                .of(id)
+                                .withFlags(ACC_PUBLIC)
+                                .withCode(locals, ib -> {
+                                    if (!info.call_type.isStatic && !info.call_type.replaceThis) {
+                                        ib.move_object(ib.l(regs[0]++), ib.this_());
+                                    }
+                                    for (MapType type : info.args) {
+                                        switch (type) {
+                                            case BYTE, BOOL, SHORT, CHAR, INT, FLOAT, BOOL_AS_INT ->
+                                                    ib.move(ib.l(regs[0]++), ib.p(regs[1]++));
+                                            case LONG, DOUBLE -> {
+                                                ib.move_wide(ib.l(regs[0]), ib.p(regs[1]));
+                                                regs[0] += 2;
+                                                regs[1] += 2;
+                                            }
+                                            case LONG_AS_WORD -> {
+                                                if (IS64BIT) {
+                                                    ib.move_wide(ib.l(regs[0]), ib.p(regs[1]));
+                                                    regs[0] += 2;
+                                                } else {
+                                                    ib.move_wide(ib.l(0), ib.p(regs[1]));
+                                                    ib.unop(LONG_TO_INT, ib.l(0), ib.l(0));
+                                                    ib.move(ib.l(regs[0]), ib.l(0));
+                                                    regs[0] += 1;
+                                                }
+                                                regs[1] += 2;
+                                            }
+                                            case OBJECT, OBJECT_AS_RAW_INT, OBJECT_AS_ADDRESS ->
+                                                    ib.move_object(ib.l(regs[0]++), ib.p(regs[1]++));
+                                            default -> throw shouldNotReachHere();
+                                        }
+                                    }
 
-                int call_regs = regs[0] - reserved;
-                var kind = info.call_type.isStatic ? STATIC : DIRECT;
-                if (call_regs == 0) {
-                    b.invoke(kind, raw_method_id);
-                } else {
-                    b.invoke_range(kind, raw_method_id, call_regs, b.l(reserved));
-                }
+                                    int call_regs = regs[0] - reserved;
+                                    var kind = info.call_type.isStatic ? STATIC : DIRECT;
+                                    ib.invoke_range(kind, raw_id, call_regs, call_regs == 0 ? 0 : ib.l(reserved));
 
-                switch (info.ret) {
-                    case VOID -> b.return_void();
-                    case BYTE, BOOL, SHORT, CHAR, INT, FLOAT, BOOL_AS_INT -> {
-                        b.move_result(b.l(0));
-                        b.return_(b.l(0));
+                                    switch (info.ret) {
+                                        case VOID -> ib.return_void();
+                                        case BYTE, BOOL, SHORT, CHAR, INT, FLOAT, BOOL_AS_INT -> {
+                                            ib.move_result(ib.l(0));
+                                            ib.return_(ib.l(0));
+                                        }
+                                        case LONG, DOUBLE -> {
+                                            ib.move_result_wide(ib.l(0));
+                                            ib.return_wide(ib.l(0));
+                                        }
+                                        case LONG_AS_WORD -> {
+                                            if (IS64BIT) {
+                                                ib.move_result_wide(ib.l(0));
+                                                ib.return_wide(ib.l(0));
+                                            } else {
+                                                ib.move_result(ib.l(0));
+                                                ib.unop(INT_TO_LONG, ib.l(0), ib.l(0));
+                                                ib.const_wide(ib.l(2), 0xffffffffL);
+                                                ib.binop_2addr(AND_LONG, ib.l(0), ib.l(2));
+                                                ib.return_wide(ib.l(0));
+                                            }
+                                        }
+                                        case OBJECT, OBJECT_AS_RAW_INT, OBJECT_AS_ADDRESS -> {
+                                            ib.move_result_object(ib.l(0));
+                                            ib.return_object(ib.l(0));
+                                        }
+                                        default -> throw shouldNotReachHere();
+                                    }
+                                })
+                        );
                     }
-                    case LONG, DOUBLE -> {
-                        b.move_result_wide(b.l(0));
-                        b.return_wide(b.l(0));
-                    }
-                    case LONG_AS_WORD -> {
-                        if (IS64BIT) {
-                            b.move_result_wide(b.l(0));
-                            b.return_wide(b.l(0));
-                        } else {
-                            b.move_result(b.l(0));
-                            b.unop(INT_TO_LONG, b.l(0), b.l(0));
-                            b.const_wide_auto(b.l(2), 0xffffffffL);
-                            b.binop_2addr(AND_LONG, b.l(0), b.l(2));
-                            b.return_wide(b.l(0));
-                        }
-                    }
-                    case OBJECT, OBJECT_AS_RAW_INT, OBJECT_AS_ADDRESS -> {
-                        b.move_result_object(b.l(0));
-                        b.return_object(b.l(0));
-                    }
-                    default -> throw shouldNotReachHere();
-                }
-            });
-            impl_def.getClassData().getVirtualMethods().add(em);
-        }
+                })
+        );
 
-        return new Dex(impl_def).compile();
+        return DexIO.write(Dex.of(impl_def));
     }
 
     private static LLVMTypeRef toLLVMType(LLVMContextRef context, MapType type, boolean stub) {
@@ -580,7 +579,7 @@ public class BulkLinker {
     @Target(METHOD)
     @DoNotShrink
     @DoNotShrinkType
-    //TODO: add conditions
+    //TODO: make repeatable with conditions
     public @interface CallSignature {
         CallType type();
 
@@ -742,6 +741,7 @@ public class BulkLinker {
     public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz, ClassLoader loader, SymbolLookup lookup) {
         Objects.requireNonNull(arena);
         Objects.requireNonNull(clazz);
+        // TODO: clazz shouldn`t be interface or final class
         Objects.requireNonNull(loader);
         Objects.requireNonNull(lookup);
 

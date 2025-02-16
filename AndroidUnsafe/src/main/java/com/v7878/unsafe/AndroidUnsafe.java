@@ -1,10 +1,10 @@
 package com.v7878.unsafe;
 
-import static com.v7878.misc.Math.convEndian;
-import static com.v7878.misc.Math.toUnsignedInt;
-import static com.v7878.misc.Math.toUnsignedLong;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.misc.Math.convEndian;
+import static com.v7878.unsafe.misc.Math.toUnsignedInt;
+import static com.v7878.unsafe.misc.Math.toUnsignedLong;
 
 import com.v7878.r8.annotations.AlwaysInline;
 

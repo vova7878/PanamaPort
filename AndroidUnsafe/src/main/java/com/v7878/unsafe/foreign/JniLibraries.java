@@ -21,7 +21,6 @@ import com.v7878.foreign.AddressLayout;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.misc.Math;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
@@ -31,6 +30,7 @@ import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.cpp_std.map;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
+import com.v7878.unsafe.misc.Math;
 
 import java.util.Objects;
 import java.util.function.Function;

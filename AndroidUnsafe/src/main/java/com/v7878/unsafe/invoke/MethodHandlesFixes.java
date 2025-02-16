@@ -1,10 +1,10 @@
 package com.v7878.unsafe.invoke;
 
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.DIRECT;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.INTERFACE;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.STATIC;
-import static com.v7878.dex.bytecode.CodeBuilder.InvokeKind.VIRTUAL;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.DIRECT;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.INTERFACE;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.STATIC;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.VIRTUAL;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
 import static com.v7878.unsafe.ClassUtils.makeClassPublic;
 import static com.v7878.unsafe.ClassUtils.setClassStatus;
@@ -21,16 +21,19 @@ import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.util.ArraySet;
 import android.util.SparseArray;
 
-import com.v7878.dex.ClassDef;
-import com.v7878.dex.Dex;
-import com.v7878.dex.EncodedMethod;
-import com.v7878.dex.MethodId;
-import com.v7878.dex.ProtoId;
-import com.v7878.dex.TypeId;
-import com.v7878.dex.bytecode.CodeBuilder.InvokeKind;
+import com.v7878.dex.DexIO;
+import com.v7878.dex.builder.ClassBuilder;
+import com.v7878.dex.builder.CodeBuilder.InvokeKind;
+import com.v7878.dex.immutable.ClassDef;
+import com.v7878.dex.immutable.Dex;
+import com.v7878.dex.immutable.MethodId;
+import com.v7878.dex.immutable.ProtoId;
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.AndroidUnsafe;
@@ -214,6 +217,7 @@ public class MethodHandlesFixes {
         public abstract void invoke(RelativeStackFrameAccessor accessor) throws Throwable;
     }
 
+    // TODO: use StackFrameAccessor instead of RelativeStackFrameAccessor
     private static EmulatedInvoker emulatedInvoker(Method target, InvokeKind kind, MethodType type) {
         makeClassPublic(target.getDeclaringClass());
         makeExecutablePublic(target);
@@ -222,98 +226,101 @@ public class MethodHandlesFixes {
         TypeId obj_id = TypeId.OBJECT;
 
         SparseArray<MethodId> next_ids = new SparseArray<>(9);
-        next_ids.append('Z', new MethodId(sfa_id, new ProtoId(TypeId.Z), "nextBoolean"));
-        next_ids.append('B', new MethodId(sfa_id, new ProtoId(TypeId.B), "nextByte"));
-        next_ids.append('C', new MethodId(sfa_id, new ProtoId(TypeId.C), "nextChar"));
-        next_ids.append('S', new MethodId(sfa_id, new ProtoId(TypeId.S), "nextShort"));
-        next_ids.append('I', new MethodId(sfa_id, new ProtoId(TypeId.I), "nextInt"));
-        next_ids.append('F', new MethodId(sfa_id, new ProtoId(TypeId.F), "nextFloat"));
-        next_ids.append('J', new MethodId(sfa_id, new ProtoId(TypeId.J), "nextLong"));
-        next_ids.append('D', new MethodId(sfa_id, new ProtoId(TypeId.D), "nextDouble"));
-        next_ids.append('L', new MethodId(sfa_id, new ProtoId(obj_id), "nextReference"));
+        next_ids.append('Z', MethodId.of(sfa_id, "nextBoolean", ProtoId.of(TypeId.Z)));
+        next_ids.append('B', MethodId.of(sfa_id, "nextByte", ProtoId.of(TypeId.B)));
+        next_ids.append('C', MethodId.of(sfa_id, "nextChar", ProtoId.of(TypeId.C)));
+        next_ids.append('S', MethodId.of(sfa_id, "nextShort", ProtoId.of(TypeId.S)));
+        next_ids.append('I', MethodId.of(sfa_id, "nextInt", ProtoId.of(TypeId.I)));
+        next_ids.append('F', MethodId.of(sfa_id, "nextFloat", ProtoId.of(TypeId.F)));
+        next_ids.append('J', MethodId.of(sfa_id, "nextLong", ProtoId.of(TypeId.J)));
+        next_ids.append('D', MethodId.of(sfa_id, "nextDouble", ProtoId.of(TypeId.D)));
+        next_ids.append('L', MethodId.of(sfa_id, "nextReference", ProtoId.of(obj_id)));
 
         SparseArray<MethodId> put_next_ids = new SparseArray<>(9);
-        put_next_ids.append('Z', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.Z), "putNextBoolean"));
-        put_next_ids.append('B', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.B), "putNextByte"));
-        put_next_ids.append('C', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.C), "putNextChar"));
-        put_next_ids.append('S', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.S), "putNextShort"));
-        put_next_ids.append('I', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.I), "putNextInt"));
-        put_next_ids.append('F', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.F), "putNextFloat"));
-        put_next_ids.append('J', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.J), "putNextLong"));
-        put_next_ids.append('D', new MethodId(sfa_id, new ProtoId(TypeId.V, TypeId.D), "putNextDouble"));
-        put_next_ids.append('L', new MethodId(sfa_id, new ProtoId(TypeId.V, obj_id), "putNextReference"));
+        put_next_ids.append('Z', MethodId.of(sfa_id, "putNextBoolean", ProtoId.of(TypeId.V, TypeId.Z)));
+        put_next_ids.append('B', MethodId.of(sfa_id, "putNextByte", ProtoId.of(TypeId.V, TypeId.B)));
+        put_next_ids.append('C', MethodId.of(sfa_id, "putNextChar", ProtoId.of(TypeId.V, TypeId.C)));
+        put_next_ids.append('S', MethodId.of(sfa_id, "putNextShort", ProtoId.of(TypeId.V, TypeId.S)));
+        put_next_ids.append('I', MethodId.of(sfa_id, "putNextInt", ProtoId.of(TypeId.V, TypeId.I)));
+        put_next_ids.append('F', MethodId.of(sfa_id, "putNextFloat", ProtoId.of(TypeId.V, TypeId.F)));
+        put_next_ids.append('J', MethodId.of(sfa_id, "putNextLong", ProtoId.of(TypeId.V, TypeId.J)));
+        put_next_ids.append('D', MethodId.of(sfa_id, "putNextDouble", ProtoId.of(TypeId.V, TypeId.D)));
+        put_next_ids.append('L', MethodId.of(sfa_id, "putNextReference", ProtoId.of(TypeId.V, obj_id)));
 
-        var move_to_ret = new MethodId(sfa_id, new ProtoId(sfa_id), "moveToReturn");
+        var move_to_ret = MethodId.of(sfa_id, "moveToReturn", ProtoId.of(sfa_id));
 
         ProtoId proto = ProtoId.of(type);
-
-        String invoker_name = getInvokerName(proto);
-        TypeId invoker_id = TypeId.of(invoker_name);
-        ClassDef invoker_def = new ClassDef(invoker_id);
-        invoker_def.setSuperClass(TypeId.of(EmulatedInvoker.class));
-
         MethodId target_id = MethodId.of(target);
 
         final int reserved_regs = 3; // locals for result
-        final int proto_regs = proto.getInputRegistersCount();
+        final int proto_regs = proto.getInputRegisterCount();
 
-        MethodId iid = new MethodId(invoker_id, new ProtoId(TypeId.V, sfa_id), "invoke");
-        invoker_def.getClassData().getVirtualMethods().add(new EncodedMethod(
-                iid, ACC_PUBLIC).withCode(reserved_regs + proto_regs, b -> {
-                    b.move_object_auto(b.l(2), b.p(0));
-                    int reg = reserved_regs;
-                    for (var arg_id : proto.getParameters()) {
-                        char shorty = arg_id.getShorty();
-                        switch (shorty) {
-                            case 'Z', 'B', 'C', 'S', 'I', 'F' -> {
-                                b.invoke(VIRTUAL, next_ids.get(shorty), b.l(2));
-                                b.move_result(b.l(0));
-                                b.move_auto(b.l(reg), b.l(0));
-                                reg++;
+        String invoker_name = getInvokerName(proto);
+        TypeId invoker_id = TypeId.ofName(invoker_name);
+        ClassDef invoker_def = ClassBuilder.build(invoker_id, cb -> cb
+                .withSuperClass(TypeId.of(EmulatedInvoker.class))
+                .withFlags(ACC_PUBLIC)
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC)
+                        .withName("invoke")
+                        .withReturnType(TypeId.V)
+                        .withParameterTypes(sfa_id)
+                        .withCode(reserved_regs + proto_regs, ib -> {
+                            ib.move_object(ib.l(2), ib.p(0));
+                            int reg = reserved_regs;
+                            for (var arg_id : proto.getParameterTypes()) {
+                                char shorty = arg_id.getShorty();
+                                switch (shorty) {
+                                    case 'Z', 'B', 'C', 'S', 'I', 'F' -> {
+                                        ib.invoke(VIRTUAL, next_ids.get(shorty), ib.l(2));
+                                        ib.move_result(ib.l(0));
+                                        ib.move(ib.l(reg), ib.l(0));
+                                        reg++;
+                                    }
+                                    case 'J', 'D' -> {
+                                        ib.invoke(VIRTUAL, next_ids.get(shorty), ib.l(2));
+                                        ib.move_result_wide(ib.l(0));
+                                        ib.move_wide(ib.l(reg), ib.l(0));
+                                        reg += 2;
+                                    }
+                                    case 'L' -> {
+                                        ib.invoke(VIRTUAL, next_ids.get(shorty), ib.l(2));
+                                        ib.move_result_object(ib.l(0));
+                                        ib.check_cast(ib.l(0), arg_id);
+                                        ib.move_object(ib.l(reg), ib.l(0));
+                                        reg++;
+                                    }
+                                    default -> throw shouldNotReachHere();
+                                }
                             }
-                            case 'J', 'D' -> {
-                                b.invoke(VIRTUAL, next_ids.get(shorty), b.l(2));
-                                b.move_result_wide(b.l(0));
-                                b.move_wide_auto(b.l(reg), b.l(0));
-                                reg += 2;
+                            ib.invoke_range(kind, target_id, proto_regs, proto_regs == 0 ? 0 : reserved_regs);
+                            var ret_id = proto.getReturnType();
+                            var ret_shorty = ret_id.getShorty();
+                            switch (ret_shorty) {
+                                case 'V' -> { /* nop */ }
+                                case 'Z', 'B', 'C', 'S', 'I', 'F' -> {
+                                    ib.move_result(ib.l(0));
+                                    ib.invoke(VIRTUAL, move_to_ret, ib.l(2));
+                                    ib.invoke(VIRTUAL, put_next_ids.get(ret_shorty), ib.l(2), ib.l(0));
+                                }
+                                case 'J', 'D' -> {
+                                    ib.move_result_wide(ib.l(0));
+                                    ib.invoke(VIRTUAL, move_to_ret, ib.l(2));
+                                    ib.invoke(VIRTUAL, put_next_ids.get(ret_shorty), ib.l(2), ib.l(0), ib.l(1));
+                                }
+                                case 'L' -> {
+                                    ib.move_result_object(ib.l(0));
+                                    ib.invoke(VIRTUAL, move_to_ret, ib.l(2));
+                                    ib.invoke(VIRTUAL, put_next_ids.get(ret_shorty), ib.l(2), ib.l(0));
+                                }
+                                default -> throw shouldNotReachHere();
                             }
-                            case 'L' -> {
-                                b.invoke(VIRTUAL, next_ids.get(shorty), b.l(2));
-                                b.move_result_object(b.l(0));
-                                b.check_cast(b.l(0), arg_id);
-                                b.move_object_auto(b.l(reg), b.l(0));
-                                reg++;
-                            }
-                            default -> throw shouldNotReachHere();
-                        }
-                    }
-                    b.invoke_range(kind, target_id, proto_regs, reserved_regs);
-                    var ret_id = proto.getReturnType();
-                    var ret_shorty = ret_id.getShorty();
-                    switch (ret_shorty) {
-                        case 'V' -> { /* nop */ }
-                        case 'Z', 'B', 'C', 'S', 'I', 'F' -> {
-                            b.move_result(b.l(0));
-                            b.invoke(VIRTUAL, move_to_ret, b.l(2));
-                            b.invoke(VIRTUAL, put_next_ids.get(ret_shorty), b.l(2), b.l(0));
-                        }
-                        case 'J', 'D' -> {
-                            b.move_result_wide(b.l(0));
-                            b.invoke(VIRTUAL, move_to_ret, b.l(2));
-                            b.invoke(VIRTUAL, put_next_ids.get(ret_shorty), b.l(2), b.l(0), b.l(1));
-                        }
-                        case 'L' -> {
-                            b.move_result_object(b.l(0));
-                            b.invoke(VIRTUAL, move_to_ret, b.l(2));
-                            b.invoke(VIRTUAL, put_next_ids.get(ret_shorty), b.l(2), b.l(0));
-                        }
-                        default -> throw shouldNotReachHere();
-                    }
-                    b.return_void();
-                }
-        ));
+                            ib.return_void();
+                        })
+                )
+        );
 
-        DexFile dex = openDexFile(new Dex(invoker_def).compile());
+        DexFile dex = openDexFile(DexIO.write(Dex.of(invoker_def)));
         setTrusted(dex);
 
         Class<?> invoker = loadClass(dex, invoker_name, getInvokerClassLoader(target, type));
@@ -1119,6 +1126,7 @@ public class MethodHandlesFixes {
         return target.asCollector(arrayType, arrayLength);
     }
 
+    @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asCollector(MethodHandle target, int collectArgPos, Class<?> arrayType, int arrayLength) {
         return target.asCollector(collectArgPos, arrayType, arrayLength);
     }
@@ -1127,6 +1135,7 @@ public class MethodHandlesFixes {
         return target.asSpreader(arrayType, arrayLength);
     }
 
+    @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asSpreader(MethodHandle target, int spreadArgPos, Class<?> arrayType, int arrayLength) {
         return target.asSpreader(spreadArgPos, arrayType, arrayLength);
     }

@@ -78,16 +78,15 @@ import static com.v7878.unsafe.llvm.LLVMTypes.void_ptr_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeSegment;
 
-import com.v7878.dex.AnnotationItem;
-import com.v7878.dex.AnnotationSet;
-import com.v7878.dex.ClassDef;
-import com.v7878.dex.Dex;
-import com.v7878.dex.EncodedField;
-import com.v7878.dex.EncodedMethod;
-import com.v7878.dex.FieldId;
-import com.v7878.dex.MethodId;
-import com.v7878.dex.ProtoId;
-import com.v7878.dex.TypeId;
+import com.v7878.dex.DexIO;
+import com.v7878.dex.builder.ClassBuilder;
+import com.v7878.dex.immutable.Annotation;
+import com.v7878.dex.immutable.ClassDef;
+import com.v7878.dex.immutable.Dex;
+import com.v7878.dex.immutable.FieldId;
+import com.v7878.dex.immutable.MethodId;
+import com.v7878.dex.immutable.ProtoId;
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.foreign.ValueLayout.OfBoolean;
 import com.v7878.foreign.ValueLayout.OfByte;
 import com.v7878.foreign.ValueLayout.OfShort;
@@ -309,23 +308,29 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         MethodType primitive_type = fixObjectParameters(stubType);
         ProtoId stub_proto = ProtoId.of(primitive_type);
+
         String stub_name = getStubName(stub_proto, true);
-        TypeId stub_id = TypeId.of(stub_name);
-        ClassDef stub_def = new ClassDef(stub_id);
-        stub_def.setSuperClass(TypeId.of(Object.class));
+        TypeId stub_id = TypeId.ofName(stub_name);
 
-        FieldId scope_id = new FieldId(stub_id, TypeId.of(Arena.class), field_name);
-        stub_def.getClassData().getStaticFields().add(new EncodedField(
-                scope_id, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, null));
+        FieldId scope_id = FieldId.of(stub_id, field_name, TypeId.of(Arena.class));
 
-        MethodId fid = new MethodId(stub_id, stub_proto, method_name);
-        stub_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                fid, ACC_NATIVE | ACC_STATIC,
-                options.isCritical() ? new AnnotationSet(AnnotationItem.CriticalNative()) : null,
-                null, null
-        ));
+        ClassDef stub_def = ClassBuilder.build(stub_id, cb -> cb
+                .withSuperClass(TypeId.OBJECT)
+                .withField(fb -> fb
+                        .of(scope_id)
+                        .withFlags(ACC_PRIVATE | ACC_STATIC | ACC_FINAL)
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_NATIVE | ACC_STATIC)
+                        .withName(method_name)
+                        .withProto(stub_proto)
+                        .if_(options.isCritical(), mb2 -> mb2
+                                .withAnnotations(Annotation.CriticalNative())
+                        )
+                )
+        );
 
-        DexFile dex = openDexFile(new Dex(stub_def).compile());
+        DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
         Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
 
         Field field = getDeclaredField(stub_class, field_name);
@@ -653,23 +658,27 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         ProtoId stub_proto = ProtoId.of(stub_type);
 
         String stub_name = getStubName(target_proto, false);
-        TypeId stub_id = TypeId.of(stub_name);
-        ClassDef stub_def = new ClassDef(stub_id);
-        stub_def.setSuperClass(TypeId.of(Object.class));
+        TypeId stub_id = TypeId.ofName(stub_name);
 
-        MethodId mh_invoke_id = new MethodId(mh, new ProtoId(TypeId.of(Object.class),
-                TypeId.of(Object[].class)), "invokeExact");
+        MethodId mh_invoke_id = MethodId.of(mh, "invokeExact",
+                ProtoId.of(TypeId.OBJECT, TypeId.of(Object[].class)));
 
-        int regs = stub_proto.getInputRegistersCount();
+        int regs = stub_proto.getInputRegisterCount();
 
-        MethodId fid = new MethodId(stub_id, stub_proto, method_name);
-        stub_def.getClassData().getDirectMethods().add(new EncodedMethod(
-                fid, ACC_PRIVATE | ACC_STATIC).withCode(0, b -> b
-                .invoke_polymorphic_range(mh_invoke_id, target_proto, regs, b.p(0))
-                .return_void()
-        ));
+        ClassDef stub_def = ClassBuilder.build(stub_id, cb -> cb
+                .withSuperClass(TypeId.OBJECT)
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PRIVATE | ACC_STATIC)
+                        .withName(method_name)
+                        .withProto(stub_proto)
+                        .withCode(0, ib -> ib
+                                .invoke_polymorphic_range(mh_invoke_id, target_proto, regs, ib.p(0))
+                                .return_void()
+                        )
+                )
+        );
 
-        DexFile dex = openDexFile(new Dex(stub_def).compile());
+        DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
         Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
 
         return getDeclaredMethod(stub_class, method_name, stub_type.parameterArray());
