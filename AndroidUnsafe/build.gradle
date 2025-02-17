@@ -27,8 +27,6 @@ android {
 }
 
 dependencies {
-    compileOnly libs.optimization.annotations
-
     compileOnly project(':fake_buffers')
     compileOnly project(':fake_panama')
     compileOnly project(':fake_llvm')

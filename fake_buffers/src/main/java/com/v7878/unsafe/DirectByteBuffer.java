@@ -2,8 +2,6 @@ package com.v7878.unsafe;
 
 import java.io.FileDescriptor;
 
-import sun.misc.Cleaner;
-
 // Compile-time stub, real DirectByteBuffer will be generated at runtime
 public abstract class DirectByteBuffer extends MappedByteBufferBase {
     public static class MemoryRef {
@@ -31,8 +29,6 @@ public abstract class DirectByteBuffer extends MappedByteBufferBase {
     // from java.nio.MappedByteBuffer
     public final FileDescriptor fd;
 
-    public final Cleaner cleaner;
-
     public DirectByteBuffer(MemoryRef memoryRef,
                             int mark, int pos, int lim, int cap,
                             int off, boolean isReadOnly) {
@@ -40,10 +36,6 @@ public abstract class DirectByteBuffer extends MappedByteBufferBase {
     }
 
     public MemoryRef attachment() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public Cleaner cleaner() {
         throw new UnsupportedOperationException("Stub!");
     }
 

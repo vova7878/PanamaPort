@@ -28,6 +28,7 @@
 package com.v7878.foreign;
 
 import com.v7878.foreign.MemorySegment.Scope;
+import com.v7878.sun.cleaner.SunCleaner;
 
 import java.util.function.Consumer;
 
@@ -222,7 +223,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @return a new arena that is managed, automatically, by the garbage collector
      */
     static Arena ofAuto() {
-        return _MemorySessionImpl.createImplicit().asArena();
+        return _MemorySessionImpl.createImplicit(SunCleaner.systemCleaner()).asArena();
     }
 
     /**

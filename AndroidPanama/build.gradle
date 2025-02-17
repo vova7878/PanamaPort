@@ -23,15 +23,13 @@ android {
 }
 
 dependencies {
-    compileOnly libs.optimization.annotations
-    compileOnly libs.sun.cleanerstub
-
     compileOnly project(':fake_llvm')
 
     api project(':VarHandleApi')
 
     implementation project(':AndroidUnsafe')
 
+    implementation libs.sun.cleanerstub
     implementation libs.r8.annotations
     implementation libs.androidmisc
     implementation libs.dexfile

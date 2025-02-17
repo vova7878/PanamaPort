@@ -29,6 +29,7 @@ package com.v7878.foreign;
 
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.KeepCodeAttribute;
+import com.v7878.sun.cleaner.SunCleaner;
 import com.v7878.unsafe.Utils;
 
 import java.util.Objects;
@@ -43,13 +44,10 @@ import java.util.Objects;
  */
 sealed class _ImplicitSession extends _SharedSession {
 
-    public _ImplicitSession() {
+    public _ImplicitSession(SunCleaner cleaner) {
         super();
         this.state = NONCLOSEABLE;
-        // Port-changed: Use sun.misc.Cleaner
-        //cleaner.register(this, resourceList);
-        //TODO?: it`s not normal
-        sun.misc.Cleaner.create(this, resourceList);
+        cleaner.register(this, resourceList);
     }
 
     @Override
@@ -77,7 +75,8 @@ sealed class _ImplicitSession extends _SharedSession {
 
         @DoNotShrink
         @KeepCodeAttribute
-        public ImplicitHolderSession(Object ref) {
+        public ImplicitHolderSession(SunCleaner cleaner, Object ref) {
+            super(cleaner);
             this.ref = Objects.requireNonNull(ref);
         }
     }

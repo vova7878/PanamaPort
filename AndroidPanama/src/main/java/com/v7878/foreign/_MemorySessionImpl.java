@@ -36,6 +36,7 @@ import com.v7878.foreign._ImplicitSession.ImplicitHolderSession;
 import com.v7878.foreign._ScopedMemoryAccess.ScopedAccessError;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.sun.cleaner.SunCleaner;
 
 import java.util.Objects;
 
@@ -130,8 +131,8 @@ abstract sealed class _MemorySessionImpl implements Scope
         return new _SharedSession();
     }
 
-    public static _MemorySessionImpl createImplicit() {
-        return new _ImplicitSession();
+    public static _MemorySessionImpl createImplicit(SunCleaner cleaner) {
+        return new _ImplicitSession(cleaner);
     }
 
     public static _MemorySessionImpl createGlobalHolder(Object ref) {
@@ -139,7 +140,7 @@ abstract sealed class _MemorySessionImpl implements Scope
     }
 
     public static _MemorySessionImpl createImplicitHolder(Object ref) {
-        return new ImplicitHolderSession(ref);
+        return new ImplicitHolderSession(SunCleaner.systemCleaner(), ref);
     }
 
     public abstract void release0();

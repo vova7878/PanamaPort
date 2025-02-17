@@ -7,6 +7,7 @@ import static com.v7878.unsafe.misc.Math.toUnsignedInt;
 import static com.v7878.unsafe.misc.Math.toUnsignedLong;
 
 import com.v7878.r8.annotations.AlwaysInline;
+import com.v7878.sun.unsafe.SunUnsafe;
 
 import java.lang.reflect.Field;
 import java.nio.ByteOrder;
