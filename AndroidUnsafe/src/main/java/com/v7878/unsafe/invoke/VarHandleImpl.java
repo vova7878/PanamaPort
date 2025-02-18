@@ -448,7 +448,7 @@ public class VarHandleImpl extends VarHandle {
     private static int checkAccessModes(int accessModesBitMask) {
         if ((accessModesBitMask & ~ALL_MODES_BIT_MASK) != 0) {
             throw new IllegalArgumentException(
-                    "illegal accessModesBitMask: " + accessModesBitMask);
+                    "Illegal accessModesBitMask: " + accessModesBitMask);
         }
         return accessModesBitMask;
     }
@@ -456,7 +456,7 @@ public class VarHandleImpl extends VarHandle {
     @AlwaysInline
     private static Class<?> requireNonVoid(Class<?> clazz) {
         if (clazz == void.class) {
-            throw new IllegalArgumentException("parameter type cannot be void");
+            throw new IllegalArgumentException("Parameter type cannot be void");
         }
         return clazz;
     }

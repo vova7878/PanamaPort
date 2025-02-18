@@ -4,7 +4,7 @@ import static com.v7878.unsafe.AndroidUnsafe.PAGE_SIZE;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.io.IOUtils.MAP_ANONYMOUS;
-import static com.v7878.unsafe.misc.Math.roundUpL;
+import static com.v7878.unsafe.misc.Math.roundUpUL;
 
 import android.system.ErrnoException;
 import android.system.OsConstants;
@@ -29,11 +29,11 @@ public class NativeCodeBlob {
         long size = 0;
         long[] offsets = new long[count];
         for (int i = 0; i < count; i++) {
-            size = roundUpL(size, CODE_ALIGNMENT);
+            size = roundUpUL(size, CODE_ALIGNMENT);
             offsets[i] = size;
             size += code[i].byteSize();
         }
-        roundUpL(size, PAGE_SIZE);
+        roundUpUL(size, PAGE_SIZE);
 
         MemorySegment data;
         try {

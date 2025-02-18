@@ -22,7 +22,8 @@ import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.misc.Math.isSigned32Bit;
-import static com.v7878.unsafe.misc.Math.roundUp;
+import static com.v7878.unsafe.misc.Math.roundUpU;
+import static com.v7878.unsafe.misc.Math.roundUpUL;
 
 import android.annotation.TargetApi;
 import android.os.Build;
@@ -225,7 +226,7 @@ public class VM {
         return getIntO(clazz, emptyClassSize());
     }
 
-    private static final long VTABLE_OFFSET = roundUp(emptyClassSize() + 4, ADDRESS_SIZE) + ADDRESS_SIZE;
+    private static final long VTABLE_OFFSET = roundUpUL(emptyClassSize() + 4, ADDRESS_SIZE) + ADDRESS_SIZE;
 
     public static long getEmbeddedVTableEntry(Class<?> clazz, int index) {
         Objects.checkIndex(index, getEmbeddedVTableLength(clazz));
@@ -250,7 +251,7 @@ public class VM {
     public static int sizeOf(Object obj) {
         Objects.requireNonNull(obj);
         if (obj instanceof String sobj) {
-            return roundUp(STRING_HEADER_SIZE + stringDataSize(sobj), OBJECT_ALIGNMENT);
+            return roundUpU(STRING_HEADER_SIZE + stringDataSize(sobj), OBJECT_ALIGNMENT);
         }
         if (obj instanceof Class<?> cobj) {
             return classSizeField(cobj);
@@ -263,7 +264,7 @@ public class VM {
     }
 
     public static int alignedSizeOf(Object obj) {
-        return roundUp(sizeOf(obj), OBJECT_ALIGNMENT);
+        return roundUpU(sizeOf(obj), OBJECT_ALIGNMENT);
     }
 
     @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)

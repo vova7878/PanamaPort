@@ -690,7 +690,8 @@ public final class EmulatedStackFrame {
 
     @Override
     public String toString() {
-        return "EmulatedStackFrame{type=" + type() + ", primitives=[" + Arrays.toString(primitives())
-                + "], references=" + Arrays.toString(references()) + "}";
+        return "EmulatedStackFrame{type=" + type() +
+                ", primitives=" + Arrays.toString(primitives()) +
+                ", references=" + Arrays.toString(references()) + "}";
     }
 }

@@ -53,18 +53,18 @@ public class JniLibraries {
         case 36 /*android 16*/, 35 /*android 15*/, 34 /*android 14*/ -> {
             long tmp = ADDRESS_SIZE * 4L;
             tmp += 3;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
             tmp += ADDRESS_SIZE * 3L;
 
             //mem_map
             tmp += ADDRESS_SIZE * 7L;
             tmp += 6;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
             tmp += ADDRESS_SIZE;
 
             tmp += ADDRESS_SIZE;
             tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
             tmp += ADDRESS_SIZE * 3L;
             yield tmp;
         }
@@ -72,21 +72,21 @@ public class JniLibraries {
              30 /*android 11*/, 29 /*android 10*/ -> {
             long tmp = ADDRESS_SIZE * 4L;
             tmp += 3;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
             tmp += ADDRESS_SIZE * 3L;
 
             tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
 
             //mem_map
             tmp += ADDRESS_SIZE * 7L;
             tmp += 6;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
             tmp += ADDRESS_SIZE;
 
             tmp += ADDRESS_SIZE;
             tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
             tmp += ADDRESS_SIZE * 2L;
             tmp += 8;
             yield tmp;
@@ -94,14 +94,14 @@ public class JniLibraries {
         case 28 /*android 9*/, 27 /*android 8.1*/, 26 /*android 8*/ -> {
             long tmp = ADDRESS_SIZE * 4L;
             tmp += 3;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
             tmp += ADDRESS_SIZE * 3L;
 
             tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
             tmp += ADDRESS_SIZE * 2L;
             tmp += 4;
-            tmp = Math.roundUpL(tmp, ADDRESS_SIZE);
+            tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
             tmp += ADDRESS_SIZE * 2L;
             tmp += 8;
             yield tmp;

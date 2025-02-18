@@ -254,8 +254,7 @@ public class BulkLinker {
 
     private static final String prefix = "raw_";
 
-    private static byte[] generateJavaStub(Class<?> parent, SymbolInfo[] infos) {
-        String impl_name = parent.getName() + "$Impl";
+    private static byte[] generateJavaStub(Class<?> parent, String impl_name, SymbolInfo[] infos) {
         TypeId impl_id = TypeId.ofName(impl_name);
         ClassDef impl_def = ClassBuilder.build(impl_id, cb -> cb
                 .withSuperClass(TypeId.of(parent))
@@ -483,10 +482,10 @@ public class BulkLinker {
         }
         Class<T> impl;
         {
-            String name = parent.getName() + "$Impl";
-            DexFile dex = openDexFile(generateJavaStub(parent, infos));
+            String impl_name = parent.getName() + "$Impl";
+            DexFile dex = openDexFile(generateJavaStub(parent, impl_name, infos));
             //noinspection unchecked
-            impl = (Class<T>) loadClass(dex, name, loader);
+            impl = (Class<T>) loadClass(dex, impl_name, loader);
             setClassStatus(impl, ClassStatus.Verified);
 
             Method[] methods = getDeclaredMethods(impl);
@@ -512,7 +511,7 @@ public class BulkLinker {
         int[] api() default {26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36};
 
         @ApiSensitive
-        int[] art_api() default {26, 27, 28, 29, 30, 31 /*, 32*/, 33, 34, 35, 36};
+        int[] art_api() default {26, 27, 28, 29, 30, 31 /*, 32 - doesn`t exist */, 33, 34, 35, 36};
 
         Tristate poisoning() default Tristate.NO_MATTER;
     }

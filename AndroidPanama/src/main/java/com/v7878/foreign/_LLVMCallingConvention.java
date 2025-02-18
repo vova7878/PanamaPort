@@ -10,7 +10,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
-import static com.v7878.unsafe.misc.Math.roundUp;
+import static com.v7878.unsafe.misc.Math.roundUpU;
 
 import android.util.Pair;
 
@@ -277,7 +277,7 @@ final class _LLVMCallingConvention {
                 return null;
             }
             int element_size = common == WrapperType.FLOAT ? 4 : 8;
-            int element_count = roundUp(count, element_size) / (element_size);
+            int element_count = roundUpU(count, element_size) / (element_size);
             return switch (common) {
                 case INT -> new Pair<>(JAVA_LONG, element_count);
                 case DOUBLE -> new Pair<>(JAVA_DOUBLE, element_count);
