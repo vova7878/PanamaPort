@@ -1128,6 +1128,7 @@ public class MethodHandlesFixes {
 
     @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asCollector(MethodHandle target, int collectArgPos, Class<?> arrayType, int arrayLength) {
+        // TODO: backport
         return target.asCollector(collectArgPos, arrayType, arrayLength);
     }
 
@@ -1137,6 +1138,7 @@ public class MethodHandlesFixes {
 
     @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asSpreader(MethodHandle target, int spreadArgPos, Class<?> arrayType, int arrayLength) {
+        // TODO: backport
         return target.asSpreader(spreadArgPos, arrayType, arrayLength);
     }
 

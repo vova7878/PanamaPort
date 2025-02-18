@@ -277,6 +277,10 @@ final class _Utils {
         return (offset & (align - 1)) == 0;
     }
 
+    public static boolean isPowerOfTwo(long value) {
+        return (value & (value - 1)) == 0L;
+    }
+
     public static boolean isElementAligned(ValueLayout layout) {
         // Fast-path: if both size and alignment are powers of two, we can just
         // check if one is greater than the other.
@@ -316,8 +320,7 @@ final class _Utils {
 
     public static void checkAlign(long byteAlignment) {
         // alignment should be > 0, and power of two
-        if (byteAlignment <= 0 ||
-                ((byteAlignment & (byteAlignment - 1)) != 0L)) {
+        if (byteAlignment <= 0 || !isPowerOfTwo(byteAlignment)) {
             throw new IllegalArgumentException("Invalid alignment constraint: " + byteAlignment);
         }
     }
@@ -373,10 +376,6 @@ final class _Utils {
 
     public static int byteWidthOfPrimitive(Class<?> primitive) {
         return Wrapper.forPrimitiveType(primitive).byteWidth();
-    }
-
-    public static boolean isPowerOfTwo(long value) {
-        return (value & (value - 1)) == 0L;
     }
 
     public static <L extends MemoryLayout> L wrapOverflow(Supplier<L> layoutSupplier) {
