@@ -93,7 +93,7 @@ public class Transformers {
             asTypeCache = FieldId.of(cache);
         }
 
-        // public final class Transformer extends MethodHandle implements Cloneable {
+        // public final class Transformer extends j.l.i.Transformer implements Cloneable {
         //     <...>
         // }
         ClassDef transformer_def = ClassBuilder.build(transformer_id, cb -> cb
@@ -124,7 +124,7 @@ public class Transformers {
                 //     impl.transform(com.v7878.unsafe.invoke.EmulatedStackFrame.wrap(frame));
                 // }
                 .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC)
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("transform")
                         .withReturnType(TypeId.V)
                         .withParameterTypes(esf)
@@ -143,7 +143,7 @@ public class Transformers {
                 //     return impl.isVarargsCollector(this);
                 // }
                 .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC)
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("isVarargsCollector")
                         .withReturnType(TypeId.Z)
                         .withParameters()
@@ -160,7 +160,7 @@ public class Transformers {
                 //     return impl.asVarargsCollector(this, arrayType);
                 // }
                 .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC)
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("asVarargsCollector")
                         .withReturnType(mh)
                         .withParameterTypes(TypeId.of(Class.class))
@@ -177,7 +177,7 @@ public class Transformers {
                 //     return impl.asFixedArity(this);
                 // }
                 .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC)
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("asFixedArity")
                         .withReturnType(mh)
                         .withParameters()
@@ -193,7 +193,7 @@ public class Transformers {
                 //     return impl.bindTo(this, value);
                 // }
                 .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC)
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("bindTo")
                         .withReturnType(mh)
                         .withParameterTypes(TypeId.OBJECT)
@@ -210,7 +210,7 @@ public class Transformers {
                 //     return impl.toString(this);
                 // }
                 .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC)
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("toString")
                         .withReturnType(TypeId.of(String.class))
                         .withParameters()
@@ -269,7 +269,7 @@ public class Transformers {
                         //     return asTypeUncached(type);
                         // }
                         cb2.withMethod(mb -> mb
-                                .withFlags(ACC_PUBLIC)
+                                .withFlags(ACC_PUBLIC | ACC_FINAL)
                                 .withName("asType")
                                 .withReturnType(mh)
                                 .withParameterTypes(mt)
@@ -316,7 +316,7 @@ public class Transformers {
                     // }
                     cb2.withMethod(mb -> mb
                             .of(asTypeUncached)
-                            .withFlags(ACC_PUBLIC)
+                            .withFlags(ACC_PUBLIC | ACC_FINAL)
                             .withCode(1, ib -> ib
                                     .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                     .invoke(VIRTUAL, MethodId.of(TypeId.of(TransformerImpl.class),
@@ -346,7 +346,7 @@ public class Transformers {
                 //     return handle instanceof Transformer;
                 // }
                 .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC)
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("isTransformer")
                         .withReturnType(TypeId.Z)
                         .withParameterTypes(mh)
@@ -363,7 +363,7 @@ public class Transformers {
                     //     handle.transform((dalvik.system.EmulatedStackFrame) stack);
                     // }
                     cb2.withMethod(mb -> mb
-                            .withFlags(ACC_PUBLIC)
+                            .withFlags(ACC_PUBLIC | ACC_FINAL)
                             .withName("transform")
                             .withReturnType(TypeId.V)
                             .withParameterTypes(mh, TypeId.OBJECT)
@@ -384,25 +384,25 @@ public class Transformers {
                 //     }
                 // }
                 .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC)
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("invokeExactWithFrame")
                         .withReturnType(TypeId.V)
                         .withParameterTypes(mh, TypeId.OBJECT)
-                        .withCode(0, b -> {
+                        .withCode(0, ib -> {
                             if (!SKIP_CHECK_CAST) {
-                                b.check_cast(b.p(1), esf);
+                                ib.check_cast(ib.p(1), esf);
                             }
                             if (ART_SDK_INT <= 32) {
-                                b.invoke_polymorphic(MethodId.of(mh, "invoke",
+                                ib.invoke_polymorphic(MethodId.of(mh, "invoke",
                                                 ProtoId.of(TypeId.OBJECT, TypeId.of(Object[].class))),
-                                        ProtoId.of(TypeId.V, esf), b.p(0), b.p(1));
+                                        ProtoId.of(TypeId.V, esf), ib.p(0), ib.p(1));
                             } else {
                                 Method invokeWF = getDeclaredMethod(MethodHandle.class,
                                         "invokeExactWithFrame", EmulatedStackFrame.esf_class);
                                 makeExecutablePublic(invokeWF);
-                                b.invoke(VIRTUAL, MethodId.of(invokeWF), b.p(0), b.p(1));
+                                ib.invoke(VIRTUAL, MethodId.of(invokeWF), ib.p(0), ib.p(1));
                             }
-                            b.return_void();
+                            ib.return_void();
                         })
                 )
         );
@@ -563,12 +563,23 @@ public class Transformers {
     @ApiSensitive
     public static void invokeExactWithFrameNoChecks(
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
+        // TODO: move checks to invoker class
+        // FIXME: android 8-12L convert nominalType to type (PLATFORM-BUG!)
         if (invoker.isTransformer(target)) {
-            // FIXME: android 8-12L convert nominalType to type (PLATFORM-BUG!)
             invoker.transform(target, stackFrame.esf);
         } else {
             invoker.invokeExactWithFrame(target, stackFrame.esf);
         }
+    }
+
+    public static void invokePlainNoChecks(
+            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
+        invoker.invokeExactWithFrame(target, stackFrame.esf);
+    }
+
+    public static void invokeTransformNoChecks(
+            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
+        invoker.transform(target, stackFrame.esf);
     }
 
     public static void invokeExactWithFrame(

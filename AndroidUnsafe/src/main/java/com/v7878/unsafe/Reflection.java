@@ -438,15 +438,18 @@ public class Reflection {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     @AlwaysInline
+    // TODO: move to InvokeAccess
     public static void setMethodType(MethodHandle handle, MethodType type) {
         Objects.requireNonNull(handle);
         Objects.requireNonNull(type);
+        // TODO: android 8-12L nominalType
         MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, handle);
         mirror[0].type = type;
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     @AlwaysInline
+    // TODO: move to InvokeAccess
     public static void setMethodHandleKind(MethodHandle handle, int kind) {
         Objects.requireNonNull(handle);
         MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, handle);
