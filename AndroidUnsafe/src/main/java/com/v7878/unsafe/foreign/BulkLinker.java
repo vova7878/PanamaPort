@@ -272,7 +272,7 @@ public class BulkLinker {
                         ProtoId proto = info.implProto();
                         var id = MethodId.of(impl_id, info.name, proto);
                         final int reserved = 4;
-                        int locals = reserved + raw_proto.getInputRegisterCount() +
+                        int locals = reserved + raw_proto.countInputRegisters() +
                                 /* this */ (info.call_type.isStatic ? 0 : 1);
                         int[] regs = {/* call args */ reserved, /* stub args */ 0};
 

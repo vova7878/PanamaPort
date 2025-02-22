@@ -198,7 +198,7 @@ public class MethodHandlesFixes {
     }
 
     private static String getInvokerName(ProtoId proto) {
-        return MethodHandlesFixes.class.getName() + "$$$Invoker_" + proto.getShorty();
+        return MethodHandlesFixes.class.getName() + "$$$Invoker_" + proto.computeShorty();
     }
 
     private static ClassLoader getInvokerClassLoader(Method target, MethodType type) {
@@ -254,7 +254,7 @@ public class MethodHandlesFixes {
         MethodId target_id = MethodId.of(target);
 
         final int reserved_regs = 3; // locals for result
-        final int proto_regs = proto.getInputRegisterCount();
+        final int proto_regs = proto.countInputRegisters();
 
         String invoker_name = getInvokerName(proto);
         TypeId invoker_id = TypeId.ofName(invoker_name);

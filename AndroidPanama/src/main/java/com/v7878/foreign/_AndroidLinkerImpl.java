@@ -298,7 +298,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
     private static String getStubName(ProtoId proto, boolean downcall) {
         return _AndroidLinkerImpl.class.getName() + "$" +
-                (downcall ? "Downcall" : "Upcall") + "Stub_" + proto.getShorty();
+                (downcall ? "Downcall" : "Upcall") + "Stub_" + proto.computeShorty();
     }
 
     private static MethodHandle generateJavaDowncallStub(
@@ -663,7 +663,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         MethodId mh_invoke_id = MethodId.of(mh, "invokeExact",
                 ProtoId.of(TypeId.OBJECT, TypeId.of(Object[].class)));
 
-        int regs = stub_proto.getInputRegisterCount();
+        int regs = stub_proto.countInputRegisters();
 
         ClassDef stub_def = ClassBuilder.build(stub_id, cb -> cb
                 .withSuperClass(TypeId.OBJECT)
