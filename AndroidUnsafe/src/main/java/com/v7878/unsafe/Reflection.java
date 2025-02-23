@@ -21,7 +21,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -71,22 +70,26 @@ public class Reflection {
         }
 
         public static long getMethods(Class<?> clazz) {
-            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
             return mirror[0].methods;
         }
 
         public static int getCopiedMethodsOffset(Class<?> clazz) {
-            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
             return mirror[0].copiedMethodsOffset & 0xffff;
         }
 
         public static int getVirtualMethodsOffset(Class<?> clazz) {
-            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
             return mirror[0].virtualMethodsOffset & 0xffff;
         }
 
         public static long getFields(Class<?> clazz) {
-            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
             return mirror[0].fields;
         }
     }
@@ -126,27 +129,32 @@ public class Reflection {
         }
 
         public static long getMethods(Class<?> clazz) {
-            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
             return mirror[0].methods;
         }
 
         public static int getCopiedMethodsOffset(Class<?> clazz) {
-            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
             return mirror[0].copiedMethodsOffset & 0xffff;
         }
 
         public static int getVirtualMethodsOffset(Class<?> clazz) {
-            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
             return mirror[0].virtualMethodsOffset & 0xffff;
         }
 
         public static long getStaticFields(Class<?> clazz) {
-            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
             return mirror[0].sFields;
         }
 
         public static long getInstanceFields(Class<?> clazz) {
-            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
             return mirror[0].iFields;
         }
     }
@@ -271,28 +279,28 @@ public class Reflection {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     @AlwaysInline
-    public static <T> T[] arrayCast(Class<T> clazz, Object... data) {
-        assert !clazz.isPrimitive();
-        //noinspection unchecked
-        T[] out = (T[]) Array.newInstance(clazz, data.length);
+    public static void fillArray(Object[] array, Object... data) {
+        assert array != null;
+        assert array.length >= data.length;
         for (int i = 0; i < data.length; i++) {
-            putObject(out, ARRAY_OBJECT_BASE_OFFSET +
+            putObject(array, ARRAY_OBJECT_BASE_OFFSET +
                     (long) i * ARRAY_OBJECT_INDEX_SCALE, data[i]);
         }
-        return out;
     }
 
     @AlwaysInline
     public static void setAccessible(AccessibleObject ao, boolean value) {
         if (ao.isAccessible()) return;
-        AccessibleObjectMirror[] aob = arrayCast(AccessibleObjectMirror.class, ao);
+        var aob = new AccessibleObjectMirror[1];
+        fillArray(aob, ao);
         aob[0].override = value;
     }
 
     @AlwaysInline
     public static int fieldOffset(Field f) {
-        FieldMirror[] fh = arrayCast(FieldMirror.class, f);
-        return fh[0].offset;
+        var mirror = new FieldMirror[1];
+        fillArray(mirror, f);
+        return mirror[0].offset;
     }
 
     @AlwaysInline
@@ -315,8 +323,9 @@ public class Reflection {
 
     @AlwaysInline
     public static long getArtMethod(Executable ex) {
-        ExecutableMirror[] eh = arrayCast(ExecutableMirror.class, ex);
-        return eh[0].artMethod;
+        var mirror = new ExecutableMirror[1];
+        fillArray(mirror, ex);
+        return mirror[0].artMethod;
     }
 
     @AlwaysInline
@@ -325,20 +334,22 @@ public class Reflection {
     }
 
     public static Executable toExecutable(long art_method) {
-        MethodHandle mh = allocateInstance(MethodHandleImplClass);
-        MethodHandleImplMirror[] mhh = arrayCast(MethodHandleImplMirror.class, mh);
-        mhh[0].artFieldOrMethod = art_method;
-        Executable tmp = MethodHandles.reflectAs(Executable.class, mh);
+        MethodHandle impl = allocateInstance(MethodHandleImplClass);
+        var mirror = new MethodHandleImplMirror[1];
+        fillArray(mirror, impl);
+        mirror[0].artFieldOrMethod = art_method;
+        Executable tmp = MethodHandles.reflectAs(Executable.class, impl);
         setAccessible(tmp, true);
         return tmp;
     }
 
     public static Field toField(long art_field) {
-        MethodHandle mh = allocateInstance(MethodHandleImplClass);
-        MethodHandleImplMirror[] mhh = arrayCast(MethodHandleImplMirror.class, mh);
-        mhh[0].artFieldOrMethod = art_field;
-        mhh[0].handleKind = Integer.MAX_VALUE;
-        Field tmp = MethodHandles.reflectAs(Field.class, mh);
+        MethodHandle impl = allocateInstance(MethodHandleImplClass);
+        var mirror = new MethodHandleImplMirror[1];
+        fillArray(mirror, impl);
+        mirror[0].artFieldOrMethod = art_field;
+        mirror[0].handleKind = Integer.MAX_VALUE;
+        Field tmp = MethodHandles.reflectAs(Field.class, impl);
         setAccessible(tmp, true);
         return tmp;
     }
@@ -349,14 +360,15 @@ public class Reflection {
         if (out.length == 0) {
             return out;
         }
-        MethodHandle mh = allocateInstance(MethodHandleImplClass);
-        MethodHandleImplMirror[] mhh = arrayCast(MethodHandleImplMirror.class, mh);
+        MethodHandle impl = allocateInstance(MethodHandleImplClass);
+        var mirror = new MethodHandleImplMirror[1];
+        fillArray(mirror, impl);
         for (int i = 0; i < count; i++) {
             int index = begin + i;
-            mhh[0].artFieldOrMethod = fields + ART_FIELD_PADDING + ART_FIELD_SIZE * index;
-            mhh[0].info = null;
-            mhh[0].handleKind = Integer.MAX_VALUE;
-            Field tmp = MethodHandles.reflectAs(Field.class, mh);
+            mirror[0].artFieldOrMethod = fields + ART_FIELD_PADDING + ART_FIELD_SIZE * index;
+            mirror[0].info = null;
+            mirror[0].handleKind = Integer.MAX_VALUE;
+            Field tmp = MethodHandles.reflectAs(Field.class, impl);
             setAccessible(tmp, true);
             out[i] = tmp;
         }
@@ -432,13 +444,14 @@ public class Reflection {
         if (out.length == 0) {
             return;
         }
-        MethodHandle mh = allocateInstance(MethodHandleImplClass);
-        MethodHandleImplMirror[] mhh = arrayCast(MethodHandleImplMirror.class, mh);
+        MethodHandle impl = allocateInstance(MethodHandleImplClass);
+        var mirror = new MethodHandleImplMirror[1];
+        fillArray(mirror, impl);
         for (int i = 0; i < out.length; i++) {
             int index = begin + i;
-            mhh[0].artFieldOrMethod = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * index;
-            mhh[0].info = null;
-            Executable tmp = MethodHandles.reflectAs(Executable.class, mh);
+            mirror[0].artFieldOrMethod = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * index;
+            mirror[0].info = null;
+            Executable tmp = MethodHandles.reflectAs(Executable.class, impl);
             setAccessible(tmp, true);
             out[i] = tmp;
         }
@@ -515,21 +528,22 @@ public class Reflection {
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static Method constructorToMethod(Constructor<?> ct) {
-        Method out = allocateInstance(Method.class);
-        ExecutableMirror[] eb = arrayCast(ExecutableMirror.class, ct, out);
+    public static Method constructorToMethod(Constructor<?> constructor) {
+        Method method = allocateInstance(Method.class);
+        var mirror = new ExecutableMirror[2];
+        fillArray(mirror, constructor, method);
 
-        eb[1].override = eb[0].override;
+        mirror[1].override = mirror[0].override;
 
-        eb[1].hasRealParameterData = eb[0].hasRealParameterData;
-        eb[1].parameters = eb[0].parameters;
-        eb[1].accessFlags = eb[0].accessFlags;
-        eb[1].artMethod = eb[0].artMethod;
-        eb[1].declaringClass = eb[0].declaringClass;
-        eb[1].declaringClassOfOverriddenMethod = eb[0].declaringClassOfOverriddenMethod;
-        eb[1].dexMethodIndex = eb[0].dexMethodIndex;
+        mirror[1].hasRealParameterData = mirror[0].hasRealParameterData;
+        mirror[1].parameters = mirror[0].parameters;
+        mirror[1].accessFlags = mirror[0].accessFlags;
+        mirror[1].artMethod = mirror[0].artMethod;
+        mirror[1].declaringClass = mirror[0].declaringClass;
+        mirror[1].declaringClassOfOverriddenMethod = mirror[0].declaringClassOfOverriddenMethod;
+        mirror[1].dexMethodIndex = mirror[0].dexMethodIndex;
 
-        return out;
+        return method;
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -573,7 +587,8 @@ public class Reflection {
     // TODO: move to InvokeAccess
     public static void setMethodType(MethodHandle handle, MethodType type) {
         // TODO: android 8-12L nominalType
-        MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, handle);
+        var mirror = new MethodHandleMirror[1];
+        fillArray(mirror, handle);
         mirror[0].type = type;
     }
 
@@ -581,7 +596,8 @@ public class Reflection {
     @AlwaysInline
     // TODO: move to InvokeAccess
     public static void setMethodHandleKind(MethodHandle handle, int kind) {
-        MethodHandleMirror[] mirror = arrayCast(MethodHandleMirror.class, handle);
+        var mirror = new MethodHandleMirror[1];
+        fillArray(mirror, handle);
         mirror[0].handleKind = kind;
     }
 }

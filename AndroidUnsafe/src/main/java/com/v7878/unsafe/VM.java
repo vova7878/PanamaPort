@@ -13,8 +13,8 @@ import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
-import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.fieldOffset;
+import static com.v7878.unsafe.Reflection.fillArray;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
@@ -50,11 +50,13 @@ public class VM {
         public static final boolean COMPACT_STRINGS;
 
         static {
-            int test = arrayCast(StringMirror.class, "\uffff")[0].count;
+            var mirror = new StringMirror[1];
+            fillArray(mirror, "\uffff");
+            int test = mirror[0].count;
             COMPACT_STRINGS = switch (test) {
                 case 3 -> true;
                 case 1 -> false;
-                default -> throw new IllegalStateException("unknown test value: " + test);
+                default -> throw new IllegalStateException("Illegal test value: " + test);
             };
         }
 
@@ -177,16 +179,18 @@ public class VM {
 
     public static int getArrayLength(Object arr) {
         check(arr.getClass().isArray(), IllegalArgumentException::new);
-        ArrayMirror[] clh = arrayCast(ArrayMirror.class, arr);
-        return clh[0].length;
+        var mirror = new ArrayMirror[1];
+        fillArray(mirror, arr);
+        return mirror[0].length;
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setArrayLength(Object arr, int length) {
         check(arr.getClass().isArray(), IllegalArgumentException::new);
         check(length >= 0, IllegalArgumentException::new);
-        ArrayMirror[] clh = arrayCast(ArrayMirror.class, arr);
-        clh[0].length = length;
+        var mirror = new ArrayMirror[1];
+        fillArray(mirror, arr);
+        mirror[0].length = length;
     }
 
     public static int getDexClassDefIndex(Class<?> clazz) {
@@ -243,8 +247,9 @@ public class VM {
     }
 
     public static boolean isCompressedString(String s) {
-        StringMirror[] sm = arrayCast(StringMirror.class, s);
-        return StringMirror.COMPACT_STRINGS && ((sm[0].count & 1) == 0);
+        var mirror = new StringMirror[1];
+        fillArray(mirror, s);
+        return StringMirror.COMPACT_STRINGS && ((mirror[0].count & 1) == 0);
     }
 
     public static int stringDataSize(String s) {
