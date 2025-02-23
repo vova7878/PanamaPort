@@ -77,12 +77,12 @@ public class Reflection {
 
         public static int getCopiedMethodsOffset(Class<?> clazz) {
             ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
-            return mirror[0].copiedMethodsOffset;
+            return mirror[0].copiedMethodsOffset & 0xffff;
         }
 
         public static int getVirtualMethodsOffset(Class<?> clazz) {
             ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
-            return mirror[0].virtualMethodsOffset;
+            return mirror[0].virtualMethodsOffset & 0xffff;
         }
 
         public static long getFields(Class<?> clazz) {
@@ -131,13 +131,13 @@ public class Reflection {
         }
 
         public static int getCopiedMethodsOffset(Class<?> clazz) {
-            Utils_16.ClassMirror[] mirror = arrayCast(Utils_16.ClassMirror.class, clazz);
-            return mirror[0].copiedMethodsOffset;
+            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            return mirror[0].copiedMethodsOffset & 0xffff;
         }
 
         public static int getVirtualMethodsOffset(Class<?> clazz) {
-            Utils_16.ClassMirror[] mirror = arrayCast(Utils_16.ClassMirror.class, clazz);
-            return mirror[0].virtualMethodsOffset;
+            ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
+            return mirror[0].virtualMethodsOffset & 0xffff;
         }
 
         public static long getStaticFields(Class<?> clazz) {
