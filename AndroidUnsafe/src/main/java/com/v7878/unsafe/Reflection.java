@@ -159,6 +159,24 @@ public class Reflection {
         }
     }
 
+    @AlwaysInline
+    private static long getMethodsPtr(Class<?> clazz) {
+        return ART_SDK_INT >= 36 ? Utils_16.getMethods(clazz)
+                : Utils_8_15.getMethods(clazz);
+    }
+
+    @AlwaysInline
+    private static int getCopiedMethodsOffset(Class<?> clazz) {
+        return ART_SDK_INT >= 36 ? Utils_16.getCopiedMethodsOffset(clazz)
+                : Utils_8_15.getCopiedMethodsOffset(clazz);
+    }
+
+    @AlwaysInline
+    private static int getVirtualMethodsOffset(Class<?> clazz) {
+        return ART_SDK_INT >= 36 ? Utils_16.getVirtualMethodsOffset(clazz)
+                : Utils_8_15.getVirtualMethodsOffset(clazz);
+    }
+
     @DoNotShrink
     @DoNotObfuscate
     @ApiSensitive
@@ -261,8 +279,7 @@ public class Reflection {
         long am = getArtMethod(Test.am);
         long bm = getArtMethod(Test.bm);
         ART_METHOD_SIZE = Math.abs(bm - am);
-        long methods = ART_SDK_INT >= 36 ? Utils_16.getMethods(Test.class)
-                : Utils_8_15.getMethods(Test.class);
+        long methods = getMethodsPtr(Test.class);
         ART_METHOD_PADDING = (am - methods - length_field_size)
                 % ART_METHOD_SIZE + length_field_size;
 
@@ -458,26 +475,22 @@ public class Reflection {
     }
 
     public static Executable[] getDeclaredExecutables(Class<?> clazz) {
-        long methods = ART_SDK_INT >= 36 ? Utils_16.getMethods(clazz)
-                : Utils_8_15.getMethods(clazz);
+        long methods = getMethodsPtr(clazz);
         if (methods == 0) {
             return new Executable[0];
         }
-        int count = ART_SDK_INT >= 36 ? Utils_16.getCopiedMethodsOffset(clazz)
-                : Utils_8_15.getCopiedMethodsOffset(clazz);
+        int count = getCopiedMethodsOffset(clazz);
         var out = new Executable[count];
         fillExecutables0(methods, 0, out);
         return out;
     }
 
     public static Executable[] getDeclaredDirectExecutables(Class<?> clazz) {
-        long methods = ART_SDK_INT >= 36 ? Utils_16.getMethods(clazz)
-                : Utils_8_15.getMethods(clazz);
+        long methods = getMethodsPtr(clazz);
         if (methods == 0) {
             return new Executable[0];
         }
-        int count = ART_SDK_INT >= 36 ? Utils_16.getVirtualMethodsOffset(clazz)
-                : Utils_8_15.getVirtualMethodsOffset(clazz);
+        int count = getVirtualMethodsOffset(clazz);
         var out = new Executable[count];
         fillExecutables0(methods, 0, out);
         return out;
@@ -485,15 +498,12 @@ public class Reflection {
 
     // Note: only methods can be virtual
     public static Method[] getDeclaredVirtualMethods(Class<?> clazz) {
-        long methods = ART_SDK_INT >= 36 ? Utils_16.getMethods(clazz)
-                : Utils_8_15.getMethods(clazz);
+        long methods = getMethodsPtr(clazz);
         if (methods == 0) {
             return new Method[0];
         }
-        int begin = ART_SDK_INT >= 36 ? Utils_16.getVirtualMethodsOffset(clazz)
-                : Utils_8_15.getVirtualMethodsOffset(clazz);
-        int end = ART_SDK_INT >= 36 ? Utils_16.getCopiedMethodsOffset(clazz)
-                : Utils_8_15.getCopiedMethodsOffset(clazz);
+        int begin = getVirtualMethodsOffset(clazz);
+        int end = getCopiedMethodsOffset(clazz);
         var out = new Method[end - begin];
         fillExecutables0(methods, begin, out);
         return out;
