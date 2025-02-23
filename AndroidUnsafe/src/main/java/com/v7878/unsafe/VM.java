@@ -13,7 +13,6 @@ import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
-import static com.v7878.unsafe.Reflection.ClassMirror;
 import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
@@ -191,20 +190,24 @@ public class VM {
     }
 
     public static int getDexClassDefIndex(Class<?> clazz) {
-        ClassMirror[] clh = arrayCast(ClassMirror.class, clazz);
-        return clh[0].dexClassDefIndex;
+        class Holder {
+            static final long DEX_CLASS_DEF_INDEX = fieldOffset(getDeclaredField(Class.class, "dexClassDefIndex"));
+        }
+        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.DEX_CLASS_DEF_INDEX);
     }
 
     public static int objectSizeField(Class<?> clazz) {
-        ClassMirror[] clh = arrayCast(ClassMirror.class, clazz);
-        int out = clh[0].objectSize;
-        check(out != 0, IllegalArgumentException::new);
-        return out;
+        class Holder {
+            static final long OBJECT_SIZE = fieldOffset(getDeclaredField(Class.class, "objectSize"));
+        }
+        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.OBJECT_SIZE);
     }
 
     public static int classSizeField(Class<?> clazz) {
-        ClassMirror[] clh = arrayCast(ClassMirror.class, clazz);
-        return clh[0].classSize;
+        class Holder {
+            static final long CLASS_SIZE = fieldOffset(getDeclaredField(Class.class, "classSize"));
+        }
+        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.CLASS_SIZE);
     }
 
     public static int emptyClassSize() {

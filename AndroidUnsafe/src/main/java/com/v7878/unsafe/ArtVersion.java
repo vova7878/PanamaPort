@@ -1,16 +1,12 @@
 package com.v7878.unsafe;
 
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
-import static com.v7878.unsafe.Reflection.getDeclaredFields;
-import static com.v7878.unsafe.Reflection.getDeclaredMethods;
-import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.time.Duration;
 
 // TODO: maybe we can read manifest-art.json?
 public class ArtVersion {
@@ -18,33 +14,27 @@ public class ArtVersion {
     public static final int ART_SDK_INT = computeSDKInt();
 
     private static boolean is36() {
-        Class<?> vmdebug = nothrows_run(() -> Class.forName(
-                "dalvik.system.VMDebug"));
-        Method offsets = searchMethod(getDeclaredMethods(vmdebug),
-                "getExecutableMethodFileOffsets", false, Method.class);
-        return offsets != null;
+        Method method = searchMethod(Duration.class.getDeclaredMethods(),
+                "isPositive", false);
+        return method != null;
     }
 
     private static boolean is35() {
-        Class<?> buf = nothrows_run(() -> Class.forName(
-                "java.nio.ByteBufferAsIntBuffer"));
-        Field offset = searchField(getDeclaredFields(buf),
-                "byteOffset", false);
-        return offset != null;
+        Method method = searchMethod(ByteBuffer.class.getDeclaredMethods(),
+                "get", false, int.class, byte[].class);
+        return method != null;
     }
 
     private static boolean is34() {
-        Method sealed = searchMethod(getDeclaredMethods(Class.class),
+        Method method = searchMethod(Class.class.getDeclaredMethods(),
                 "isSealed", false);
-        return sealed != null;
+        return method != null;
     }
 
     private static boolean is33() {
-        Class<?> esf = nothrows_run(() -> Class.forName(
-                "dalvik.system.EmulatedStackFrame"));
-        Method invoke = searchMethod(getDeclaredMethods(MethodHandle.class),
-                "invokeExactWithFrame", false, esf);
-        return invoke != null;
+        Method method = searchMethod(String.class.getDeclaredMethods(),
+                "isBlank", false);
+        return method != null;
     }
 
     private static int computeSDKInt() {

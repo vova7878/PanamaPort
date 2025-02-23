@@ -2,12 +2,12 @@ package com.v7878.unsafe;
 
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.Reflection.arrayCast;
+import static com.v7878.unsafe.Reflection.fieldOffset;
+import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 
-import com.v7878.unsafe.Reflection.ClassMirror;
-
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
 public class ClassUtils {
@@ -131,10 +131,15 @@ public class ClassUtils {
         }
     }
 
+    private static final long CLASS_STATUS_OFFSET = fieldOffset(
+            getDeclaredField(Class.class, "status"));
+    private static final long CLASS_FLAGS_OFFSET = fieldOffset(
+            getDeclaredField(Class.class, "accessFlags"));
+
     @ApiSensitive
     public static int getRawClassStatus(Class<?> clazz) {
-        ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
-        return ART_SDK_INT <= 27 ? mirror[0].status : (mirror[0].status >>> 32 - 4);
+        int value = AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), CLASS_STATUS_OFFSET);
+        return ART_SDK_INT <= 27 ? value : (value >>> 32 - 4);
     }
 
     public static ClassStatus getClassStatus(Class<?> clazz) {
@@ -144,12 +149,13 @@ public class ClassUtils {
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     @ApiSensitive
     public static void setRawClassStatus(Class<?> clazz, int status) {
-        ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
-        if (ART_SDK_INT <= 27) {
-            mirror[0].status = status;
-        } else {
-            mirror[0].status = (mirror[0].status & ~0 >>> 4) | (status << 32 - 4);
+        Objects.requireNonNull(clazz);
+        if (ART_SDK_INT > 27) {
+            int value = AndroidUnsafe.getIntO(clazz, CLASS_STATUS_OFFSET);
+            status = (value & ~0 >>> 4) | (status << 32 - 4);
         }
+        AndroidUnsafe.putIntO(clazz, CLASS_STATUS_OFFSET, status);
+        fullFence();
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -158,28 +164,30 @@ public class ClassUtils {
     }
 
     public static int getClassFlags(Class<?> clazz) {
-        ClassMirror[] mirror = arrayCast(ClassMirror.class);
-        return mirror[0].accessFlags;
+        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), CLASS_FLAGS_OFFSET);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setClassFlags(Class<?> clazz, int flags) {
-        ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
-        mirror[0].accessFlags = flags;
+        AndroidUnsafe.putIntO(Objects.requireNonNull(clazz), CLASS_FLAGS_OFFSET, flags);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeClassFlags(Class<?> clazz, int remove_flags, int add_flags) {
-        ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
-        mirror[0].accessFlags &= ~remove_flags;
-        mirror[0].accessFlags |= add_flags;
+        Objects.requireNonNull(clazz);
+        int flags = AndroidUnsafe.getIntO(clazz, CLASS_FLAGS_OFFSET);
+        flags &= ~remove_flags;
+        flags |= add_flags;
+        AndroidUnsafe.putIntO(clazz, CLASS_FLAGS_OFFSET, flags);
         fullFence();
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeClassFlags(Class<?> clazz, IntUnaryOperator filter) {
-        ClassMirror[] mirror = arrayCast(ClassMirror.class, clazz);
-        mirror[0].accessFlags = filter.applyAsInt(mirror[0].accessFlags);
+        Objects.requireNonNull(clazz);
+        int flags = AndroidUnsafe.getIntO(clazz, CLASS_FLAGS_OFFSET);
+        flags = filter.applyAsInt(flags);
+        AndroidUnsafe.putIntO(clazz, CLASS_FLAGS_OFFSET, flags);
         fullFence();
     }
 

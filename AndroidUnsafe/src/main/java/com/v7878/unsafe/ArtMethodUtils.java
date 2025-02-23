@@ -16,7 +16,9 @@ import static com.v7878.unsafe.ArtModifiers.kAccCompileDontBother;
 import static com.v7878.unsafe.ArtModifiers.kAccIntrinsic;
 import static com.v7878.unsafe.ArtModifiers.kAccPreCompiled;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.Reflection.ART_METHOD_SIZE;
 import static com.v7878.unsafe.Reflection.getArtMethod;
+import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
@@ -99,6 +101,10 @@ public class ArtMethodUtils {
         case 27 /*android 8.1*/, 26 /*android 8*/ -> art_method_8xx_layout;
         default -> throw unsupportedSDK(ART_SDK_INT);
     };
+
+    static {
+        check(ARTMETHOD_LAYOUT.byteSize() == ART_METHOD_SIZE, AssertionError::new);
+    }
 
     public static MemorySegment getArtMethodSegment(Executable ex) {
         return MemorySegment.ofAddress(getArtMethod(ex)).reinterpret(ARTMETHOD_LAYOUT.byteSize());

@@ -30,9 +30,9 @@ import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructors;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
-import static com.v7878.unsafe.Reflection.getDeclaredFields0;
+import static com.v7878.unsafe.Reflection.getDeclaredInstanceFields;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
-import static com.v7878.unsafe.Reflection.getMethods;
+import static com.v7878.unsafe.Reflection.getDeclaredVirtualMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
@@ -167,7 +167,7 @@ public class JavaNioAccess {
                 makeExecutablePublicApi(constructor);
             }
 
-            Field[] fields = getDeclaredFields0(nio_mem_ref_class, false);
+            Field[] fields = getDeclaredInstanceFields(nio_mem_ref_class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);
@@ -194,7 +194,7 @@ public class JavaNioAccess {
                 makeExecutablePublicApi(constructor);
             }
 
-            Field[] fields = getDeclaredFields0(nio_direct_buf_class, false);
+            Field[] fields = getDeclaredInstanceFields(nio_direct_buf_class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);
@@ -222,16 +222,23 @@ public class JavaNioAccess {
         }
 
         {
-            Method[] methods = getMethods(MappedByteBuffer.class);
-            for (Method method : methods) {
-                int flags = method.getModifiers();
-                if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
-                    makeMethodInheritable(method);
+            // All virtual methods (including those from superclasses)
+            {
+                Class<?> clazz = MappedByteBuffer.class;
+                while (clazz != null && clazz != Object.class) {
+                    var methods = getDeclaredVirtualMethods(clazz);
+                    for (Method method : methods) {
+                        int flags = method.getModifiers();
+                        if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
+                            makeMethodInheritable(method);
+                        }
+                        makeExecutablePublicApi(method);
+                    }
+                    clazz = clazz.getSuperclass();
                 }
-                makeExecutablePublicApi(method);
             }
 
-            Field[] fields = getDeclaredFields0(MappedByteBuffer.class, false);
+            Field[] fields = getDeclaredInstanceFields(MappedByteBuffer.class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);
@@ -239,7 +246,7 @@ public class JavaNioAccess {
         }
 
         {
-            Field[] fields = getDeclaredFields0(ByteBuffer.class, false);
+            Field[] fields = getDeclaredInstanceFields(ByteBuffer.class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);
@@ -247,7 +254,7 @@ public class JavaNioAccess {
         }
 
         {
-            Field[] fields = getDeclaredFields0(Buffer.class, false);
+            Field[] fields = getDeclaredInstanceFields(Buffer.class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);

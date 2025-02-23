@@ -7,7 +7,6 @@ import static com.v7878.foreign.ValueLayout.JAVA_BOOLEAN;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.Reflection.arrayCast;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -17,7 +16,6 @@ import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
 import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.unsafe.Reflection.ClassMirror;
 import com.v7878.unsafe.access.DexFileAccess;
 import com.v7878.unsafe.cpp_std.shared_ptr;
 import com.v7878.unsafe.cpp_std.unique_ptr;
@@ -167,8 +165,10 @@ public class DexFileUtils {
             getDeclaredField(Class.forName("java.lang.DexCache"), "dexFile")));
 
     public static Object getDexCache(Class<?> clazz) {
-        ClassMirror[] m = arrayCast(ClassMirror.class, clazz);
-        return m[0].dexCache;
+        class Holder {
+            static final long DEX_CACHE_OFFSET = fieldOffset(getDeclaredField(Class.class, "dexCache"));
+        }
+        return AndroidUnsafe.getObject(Objects.requireNonNull(clazz), Holder.DEX_CACHE_OFFSET);
     }
 
     public static long getDexFileStruct(Class<?> clazz) {
