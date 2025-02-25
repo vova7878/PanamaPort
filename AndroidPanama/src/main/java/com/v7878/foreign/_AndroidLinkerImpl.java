@@ -1057,10 +1057,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         ib2.move_result(ib2.l(target_ret_arg));
                                     }
                                 })
-                                .label("try_2_end")
 
-                                .label("try_3_start")
-                                .if_(has_arena, close_arena)
                                 .if_(ret != null, ib2 -> {
                                     if (IS64BIT) {
                                         ib2.move_wide(ib2.l(0), ib2.p(stub_ret_arg[0]));
@@ -1103,6 +1100,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         throw shouldNotReachHere();
                                     }
                                 })
+                                .label("try_2_end")
+
+                                .label("try_3_start")
+                                .if_(has_arena, close_arena)
                                 .return_void()
                                 .label("try_3_end")
 
