@@ -138,9 +138,6 @@ import java.util.stream.Stream;
 import dalvik.system.DexFile;
 
 final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
-    static {
-        ClassUtils.makeClassPublic(_AndroidLinkerImpl.class);
-    }
 
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
     private static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
@@ -830,87 +827,60 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     @DoNotObfuscate
     @DoNotShrink
     @SuppressWarnings("unused")
-    public static Arena upcallCreateArena() {
-        return Arena.ofConfined();
-    }
+    static class UpcallHelper {
+        static {
+            ClassUtils.makeClassPublic(UpcallHelper.class);
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallCloseArena(Arena arena) {
-        arena.close();
-    }
+        public static Arena createArena() {
+            return Arena.ofConfined();
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallHandleException(Throwable th) {
-        handleUncaughtException(th);
-    }
+        public static void closeArena(Arena arena) {
+            arena.close();
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static MemorySegment upcallMakeSegment(long addr, long size, long align, Arena arena) {
-        return _Utils.longToAddress(addr, size, align, (_MemorySessionImpl) arena.scope());
-    }
+        public static void handleException(Throwable th) {
+            handleUncaughtException(th);
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallPutByte(long address, byte data) {
-        AndroidUnsafe.putByteN(address, data);
-    }
+        public static MemorySegment makeSegment(long addr, long size, long align, Arena arena) {
+            return _Utils.longToAddress(addr, size, align, (_MemorySessionImpl) arena.scope());
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallPutShort(long address, short data) {
-        AndroidUnsafe.putShortN(address, data);
-    }
+        public static void putByte(long address, byte data) {
+            AndroidUnsafe.putByteN(address, data);
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallPutInt(long address, int data) {
-        AndroidUnsafe.putIntN(address, data);
-    }
+        public static void putShort(long address, short data) {
+            AndroidUnsafe.putShortN(address, data);
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallPutFloat(long address, float data) {
-        AndroidUnsafe.putFloatN(address, data);
-    }
+        public static void putInt(long address, int data) {
+            AndroidUnsafe.putIntN(address, data);
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallPutLong(long address, long data) {
-        AndroidUnsafe.putLongN(address, data);
-    }
+        public static void putFloat(long address, float data) {
+            AndroidUnsafe.putFloatN(address, data);
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallPutDouble(long address, double data) {
-        AndroidUnsafe.putDoubleN(address, data);
-    }
+        public static void putLong(long address, long data) {
+            AndroidUnsafe.putLongN(address, data);
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallPutAddress(long address, MemorySegment data) {
-        AndroidUnsafe.putWordN(address, _Utils.unboxSegment(data));
-    }
+        public static void putDouble(long address, double data) {
+            AndroidUnsafe.putDoubleN(address, data);
+        }
 
-    @DoNotObfuscate
-    @DoNotShrink
-    @SuppressWarnings("unused")
-    public static void upcallPutSegment(long address, MemorySegment data, long size) {
-        // TODO: maybe faster inmplementation?
-        MemorySegment out = MemorySegment.ofAddress(address).reinterpret(size);
-        MemorySegment.copy(data, 0, out, 0, size);
+        public static void putAddress(long address, MemorySegment data) {
+            AndroidUnsafe.putWordN(address, _Utils.unboxSegment(data));
+        }
+
+        public static void putSegment(long address, MemorySegment data, long size) {
+            // TODO: maybe faster implementation?
+            MemorySegment out = MemorySegment.ofAddress(address).reinterpret(size);
+            MemorySegment.copy(data, 0, out, 0, size);
+        }
     }
 
     private static Method generateJavaUpcallStub(_FunctionDescriptorImpl descriptor, boolean allowExceptions) {
@@ -936,26 +906,26 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         String stub_name = getStubName(target_proto, false);
         TypeId stub_id = TypeId.ofName(stub_name);
 
-        var linker_id = TypeId.of(_AndroidLinkerImpl.class);
+        var helper_id = TypeId.of(UpcallHelper.class);
         var arena_id = TypeId.of(Arena.class);
 
         MethodId mh_invoke_id = MethodId.of(mh, "invokeExact",
                 ProtoId.of(TypeId.OBJECT, TypeId.OBJECT.array()));
-        MethodId create_arena_id = MethodId.of(linker_id, "upcallCreateArena", arena_id);
-        MethodId close_arena_id = MethodId.of(linker_id, "upcallCloseArena", TypeId.V, arena_id);
-        MethodId handle_exception_id = MethodId.of(linker_id,
-                "upcallHandleException", TypeId.V, TypeId.of(Throwable.class));
-        MethodId make_segment_id = MethodId.of(linker_id, "upcallMakeSegment",
+        MethodId create_arena_id = MethodId.of(helper_id, "createArena", arena_id);
+        MethodId close_arena_id = MethodId.of(helper_id, "closeArena", TypeId.V, arena_id);
+        MethodId handle_exception_id = MethodId.of(helper_id,
+                "handleException", TypeId.V, TypeId.of(Throwable.class));
+        MethodId make_segment_id = MethodId.of(helper_id, "makeSegment",
                 ms, TypeId.J, TypeId.J, TypeId.J, arena_id);
 
-        MethodId put_byte_id = MethodId.of(linker_id, "upcallPutByte", TypeId.V, TypeId.J, TypeId.B);
-        MethodId put_short_id = MethodId.of(linker_id, "upcallPutShort", TypeId.V, TypeId.J, TypeId.S);
-        MethodId put_int_id = MethodId.of(linker_id, "upcallPutInt", TypeId.V, TypeId.J, TypeId.I);
-        MethodId put_float_id = MethodId.of(linker_id, "upcallPutFloat", TypeId.V, TypeId.J, TypeId.F);
-        MethodId put_long_id = MethodId.of(linker_id, "upcallPutLong", TypeId.V, TypeId.J, TypeId.J);
-        MethodId put_double_id = MethodId.of(linker_id, "upcallPutDouble", TypeId.V, TypeId.J, TypeId.D);
-        MethodId put_address_id = MethodId.of(linker_id, "upcallPutAddress", TypeId.V, TypeId.J, ms);
-        MethodId put_segment_id = MethodId.of(linker_id, "upcallPutSegment", TypeId.V, TypeId.J, ms, TypeId.J);
+        MethodId put_byte_id = MethodId.of(helper_id, "putByte", TypeId.V, TypeId.J, TypeId.B);
+        MethodId put_short_id = MethodId.of(helper_id, "putShort", TypeId.V, TypeId.J, TypeId.S);
+        MethodId put_int_id = MethodId.of(helper_id, "putInt", TypeId.V, TypeId.J, TypeId.I);
+        MethodId put_float_id = MethodId.of(helper_id, "putFloat", TypeId.V, TypeId.J, TypeId.F);
+        MethodId put_long_id = MethodId.of(helper_id, "putLong", TypeId.V, TypeId.J, TypeId.J);
+        MethodId put_double_id = MethodId.of(helper_id, "putDouble", TypeId.V, TypeId.J, TypeId.D);
+        MethodId put_address_id = MethodId.of(helper_id, "putAddress", TypeId.V, TypeId.J, ms);
+        MethodId put_segment_id = MethodId.of(helper_id, "putSegment", TypeId.V, TypeId.J, ms, TypeId.J);
 
         int target_ins = target_proto.countInputRegisters();
 
