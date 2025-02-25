@@ -910,7 +910,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     public static void upcallPutSegment(long address, MemorySegment data, long size) {
         // TODO: maybe faster inmplementation?
         MemorySegment out = MemorySegment.ofAddress(address).reinterpret(size);
-        MemorySegment.copy(out, 0, data, 0, size);
+        MemorySegment.copy(data, 0, out, 0, size);
     }
 
     private static Method generateJavaUpcallStub(_FunctionDescriptorImpl descriptor, boolean allowExceptions) {
