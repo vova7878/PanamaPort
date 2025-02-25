@@ -111,6 +111,7 @@ import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.foreign.ENVGetter;
 import com.v7878.unsafe.foreign.Errno;
@@ -136,7 +137,11 @@ import java.util.stream.Stream;
 
 import dalvik.system.DexFile;
 
-public final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
+final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
+    static {
+        ClassUtils.makeClassPublic(_AndroidLinkerImpl.class);
+    }
+
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
     private static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
 
