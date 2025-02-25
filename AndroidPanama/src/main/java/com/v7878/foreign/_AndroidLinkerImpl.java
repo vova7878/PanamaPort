@@ -4,6 +4,11 @@ import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
+import static com.v7878.dex.builder.CodeBuilder.BinOp.AND_LONG;
+import static com.v7878.dex.builder.CodeBuilder.InvokeKind.STATIC;
+import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_BYTE;
+import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_LONG;
+import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_SHORT;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.OfChar;
@@ -80,6 +85,7 @@ import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeSegment;
 
 import com.v7878.dex.DexIO;
 import com.v7878.dex.builder.ClassBuilder;
+import com.v7878.dex.builder.CodeBuilder;
 import com.v7878.dex.immutable.Annotation;
 import com.v7878.dex.immutable.ClassDef;
 import com.v7878.dex.immutable.Dex;
@@ -102,7 +108,9 @@ import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
+import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.foreign.ENVGetter;
 import com.v7878.unsafe.foreign.Errno;
@@ -122,11 +130,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import dalvik.system.DexFile;
 
-final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
+public final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
     private static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
 
@@ -648,42 +658,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         return handle;
     }
 
-    private static Method generateJavaUpcallStub(MethodType target_type) {
-        final String method_name = "function";
-        final TypeId mh = TypeId.of(MethodHandle.class);
-
-        MethodType stub_type = target_type.insertParameterTypes(0, MethodHandle.class);
-
-        ProtoId target_proto = ProtoId.of(target_type);
-        ProtoId stub_proto = ProtoId.of(stub_type);
-
-        String stub_name = getStubName(target_proto, false);
-        TypeId stub_id = TypeId.ofName(stub_name);
-
-        MethodId mh_invoke_id = MethodId.of(mh, "invokeExact",
-                ProtoId.of(TypeId.OBJECT, TypeId.of(Object[].class)));
-
-        int regs = stub_proto.countInputRegisters();
-
-        ClassDef stub_def = ClassBuilder.build(stub_id, cb -> cb
-                .withSuperClass(TypeId.OBJECT)
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PRIVATE | ACC_STATIC)
-                        .withName(method_name)
-                        .withProto(stub_proto)
-                        .withCode(0, ib -> ib
-                                .invoke_polymorphic_range(mh_invoke_id, target_proto, regs, ib.p(0))
-                                .return_void()
-                        )
-                )
-        );
-
-        DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
-        Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
-
-        return getDeclaredMethod(stub_class, method_name, stub_type.parameterArray());
-    }
-
     private static int computeEnvIndex(_LLVMStorageDescriptor stub_descriptor, _LinkerOptions options) {
         int env_index = options.getJNIEnvArgIndex();
         if (env_index >= 0) {
@@ -697,7 +671,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
     private static MemorySegment generateNativeUpcallStub(
             Arena scope, _LLVMStorageDescriptor stub_descriptor, _LinkerOptions options,
-            long arranger_id, long class_id, long function_id) {
+            long target_id, long class_id, long function_id) {
         class Holder {
             @DoNotShrink
             private static final Arena SCOPE = Arena.ofAuto();
@@ -751,7 +725,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             target_args[count++] = env_ptr;
             target_args[count++] = const_intptr(context, class_id);
             target_args[count++] = const_intptr(context, function_id);
-            target_args[count++] = const_intptr(context, arranger_id);
+            target_args[count++] = const_intptr(context, target_id);
             LLVMValueRef ret = null;
             MemoryLayout retLoad = null;
             {
@@ -848,92 +822,313 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }, function_name, scope);
     }
 
-    private static class UpcallArranger extends AbstractTransformer {
-        private final MethodHandle stub;
-        private final MemoryLayout[] args;
-        private final MemoryLayout ret;
-        private final boolean allowExceptions;
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static Arena upcallCreateArena() {
+        return Arena.ofConfined();
+    }
 
-        public UpcallArranger(MethodHandle stub, _FunctionDescriptorImpl descriptor, boolean allowExceptions) {
-            this.stub = stub;
-            this.args = descriptor.argumentLayouts().toArray(new MemoryLayout[0]);
-            this.ret = descriptor.returnLayoutPlain();
-            this.allowExceptions = allowExceptions;
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallCloseArena(Arena arena) {
+        arena.close();
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallHandleException(Throwable th) {
+        handleUncaughtException(th);
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static MemorySegment upcallMakeSegment(long addr, long size, long align, Arena arena) {
+        return _Utils.longToAddress(addr, size, align, (_MemorySessionImpl) arena.scope());
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallPutByte(long address, byte data) {
+        AndroidUnsafe.putByteN(address, data);
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallPutShort(long address, short data) {
+        AndroidUnsafe.putShortN(address, data);
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallPutInt(long address, int data) {
+        AndroidUnsafe.putIntN(address, data);
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallPutFloat(long address, float data) {
+        AndroidUnsafe.putFloatN(address, data);
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallPutLong(long address, long data) {
+        AndroidUnsafe.putLongN(address, data);
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallPutDouble(long address, double data) {
+        AndroidUnsafe.putDoubleN(address, data);
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallPutAddress(long address, MemorySegment data) {
+        AndroidUnsafe.putWordN(address, _Utils.unboxSegment(data));
+    }
+
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    public static void upcallPutSegment(long address, MemorySegment data, long size) {
+        // TODO: maybe faster inmplementation?
+        MemorySegment out = MemorySegment.ofAddress(address).reinterpret(size);
+        MemorySegment.copy(out, 0, data, 0, size);
+    }
+
+    private static Method generateJavaUpcallStub(_FunctionDescriptorImpl descriptor, boolean allowExceptions) {
+        final String method_name = "function";
+        final TypeId mh = TypeId.of(MethodHandle.class);
+        final TypeId ms = TypeId.of(MemorySegment.class);
+
+        MemoryLayout[] args = descriptor.argumentLayouts().toArray(new MemoryLayout[0]);
+        MemoryLayout ret = descriptor.returnLayoutPlain();
+
+        MethodType target_type = fdToHandleMethodType(descriptor);
+        MethodType stub_type;
+        {
+            _FunctionDescriptorImpl stub_descriptor = ret == null ? descriptor :
+                    descriptor.dropReturnLayout().insertArgumentLayouts(0, ADDRESS);
+            stub_type = fdToRawMethodType(stub_descriptor, false)
+                    .insertParameterTypes(0, MethodHandle.class);
         }
 
-        private static void copyArg(RelativeStackFrameAccessor reader,
-                                    RelativeStackFrameAccessor writer,
-                                    MemoryLayout layout, Arena arena) {
-            if (layout instanceof AddressLayout al) {
-                MemoryLayout target = al.targetLayout().orElse(null);
-                MemorySegment segment = nextSegment(reader, target);
-                segment = segment.reinterpret(arena, null);
-                writer.putNextReference(segment);
-            } else if (layout instanceof ValueLayout vl) {
-                EmulatedStackFrame.copyNextValue(reader, writer, vl.carrier());
-            } else if (layout instanceof GroupLayout gl) {
-                MemorySegment segment = nextSegment(reader, gl);
-                segment = segment.reinterpret(arena, null);
-                writer.putNextReference(segment);
-            } else {
-                throw shouldNotReachHere();
-            }
-        }
+        ProtoId target_proto = ProtoId.of(target_type);
+        ProtoId stub_proto = ProtoId.of(stub_type);
 
-        private static void copyRet(RelativeStackFrameAccessor reader,
-                                    MemorySegment ret, MemoryLayout layout) {
-            if (layout instanceof OfByte bl) {
-                ret.set(bl, 0, reader.nextByte());
-            } else if (layout instanceof OfBoolean bl) {
-                ret.set(bl, 0, reader.nextBoolean());
-            } else if (layout instanceof OfShort sl) {
-                ret.set(sl, 0, reader.nextShort());
-            } else if (layout instanceof OfChar cl) {
-                ret.set(cl, 0, reader.nextChar());
-            } else if (layout instanceof OfInt il) {
-                ret.set(il, 0, reader.nextInt());
-            } else if (layout instanceof OfFloat fl) {
-                ret.set(fl, 0, reader.nextFloat());
-            } else if (layout instanceof OfLong ll) {
-                ret.set(ll, 0, reader.nextLong());
-            } else if (layout instanceof OfDouble dl) {
-                ret.set(dl, 0, reader.nextDouble());
-            } else if (layout instanceof AddressLayout al) {
-                ret.set(al, 0, reader.nextReference());
-            } else if (layout instanceof GroupLayout gl) {
-                //TODO: optimize if return layout is empty
-                MemorySegment arg = reader.nextReference();
-                MemorySegment.copy(arg, 0, ret, 0, gl.byteSize());
-            } else {
-                throw shouldNotReachHere();
-            }
-        }
+        String stub_name = getStubName(target_proto, false);
+        TypeId stub_id = TypeId.ofName(stub_name);
 
-        @Override
-        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-            var thiz_acc = stack.relativeAccessor();
-            EmulatedStackFrame stub_frame = EmulatedStackFrame.create(stub.type());
-            var stub_acc = stub_frame.relativeAccessor();
-            MemorySegment retSeg = ret == null ? null : nextSegment(thiz_acc, ret);
-            try (Arena arena = Arena.ofConfined()) {
-                for (MemoryLayout arg : args) {
-                    copyArg(thiz_acc, stub_acc, arg, arena);
-                }
-                try {
-                    invokeExactWithFrameNoChecks(stub, stub_frame);
-                } catch (Throwable th) {
-                    if (allowExceptions) {
-                        throw th;
-                    } else {
-                        handleUncaughtException(th);
-                    }
-                }
-                if (ret != null) {
-                    stub_acc.moveToReturn();
-                    copyRet(stub_acc, retSeg, ret);
-                }
-            }
-        }
+        var linker_id = TypeId.of(_AndroidLinkerImpl.class);
+        var arena_id = TypeId.of(Arena.class);
+
+        MethodId mh_invoke_id = MethodId.of(mh, "invokeExact",
+                ProtoId.of(TypeId.OBJECT, TypeId.OBJECT.array()));
+        MethodId create_arena_id = MethodId.of(linker_id, "upcallCreateArena", arena_id);
+        MethodId close_arena_id = MethodId.of(linker_id, "upcallCloseArena", TypeId.V, arena_id);
+        MethodId handle_exception_id = MethodId.of(linker_id,
+                "upcallHandleException", TypeId.V, TypeId.of(Throwable.class));
+        MethodId make_segment_id = MethodId.of(linker_id, "upcallMakeSegment",
+                ms, TypeId.J, TypeId.J, TypeId.J, arena_id);
+
+        MethodId put_byte_id = MethodId.of(linker_id, "upcallPutByte", TypeId.V, TypeId.J, TypeId.B);
+        MethodId put_short_id = MethodId.of(linker_id, "upcallPutShort", TypeId.V, TypeId.J, TypeId.S);
+        MethodId put_int_id = MethodId.of(linker_id, "upcallPutInt", TypeId.V, TypeId.J, TypeId.I);
+        MethodId put_float_id = MethodId.of(linker_id, "upcallPutFloat", TypeId.V, TypeId.J, TypeId.F);
+        MethodId put_long_id = MethodId.of(linker_id, "upcallPutLong", TypeId.V, TypeId.J, TypeId.J);
+        MethodId put_double_id = MethodId.of(linker_id, "upcallPutDouble", TypeId.V, TypeId.J, TypeId.D);
+        MethodId put_address_id = MethodId.of(linker_id, "upcallPutAddress", TypeId.V, TypeId.J, ms);
+        MethodId put_segment_id = MethodId.of(linker_id, "upcallPutSegment", TypeId.V, TypeId.J, ms, TypeId.J);
+
+        int target_ins = target_proto.countInputRegisters();
+
+        var check_exceptions = !allowExceptions;
+        var has_arena = Stream.of(args).anyMatch(layout ->
+                layout instanceof AddressLayout || layout instanceof GroupLayout);
+
+        int[] reserved = {7};
+        int arena_reg = has_arena ? reserved[0]++ : -1;
+        int exception_reg = (check_exceptions || has_arena) ? reserved[0]++ : -1;
+
+        int[] stub_ret_arg = {-1};
+        int target_ret_arg = ret == null ? -1 : reserved[0];
+        reserved[0] += ret == null ? 0 : (ret instanceof OfLong || ret instanceof OfDouble ? 2 : 1);
+
+        int[] regs = {/* target args start */ reserved[0], /* stub args start */ 0};
+        int locals = reserved[0] + target_ins + /* handle */ 1;
+
+        Consumer<CodeBuilder> create_arena = ib -> ib
+                .invoke(STATIC, create_arena_id)
+                .move_result_object(ib.l(arena_reg));
+
+        Consumer<CodeBuilder> close_arena = ib -> ib
+                .invoke(STATIC, close_arena_id, ib.l(arena_reg));
+
+        Consumer<CodeBuilder> handle_exception = ib -> ib
+                .invoke(STATIC, handle_exception_id, ib.l(exception_reg))
+                // Unreachable, but you need to explicitly
+                //  tell the verifier that execution ends here
+                .throw_(ib.l(exception_reg));
+
+        ClassDef stub_def = ClassBuilder.build(stub_id, cb -> cb
+                .withSuperClass(TypeId.OBJECT)
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PRIVATE | ACC_STATIC)
+                        .withName(method_name)
+                        .withProto(stub_proto)
+                        .withCode(locals, ib -> ib
+                                .label("try_1_start")
+                                .if_(has_arena, create_arena)
+                                .label("try_1_end")
+
+                                .label("try_2_start")
+                                // target handle
+                                .move_object(ib.l(regs[0]++), ib.p(regs[1]++))
+                                .commit(ib2 -> {
+                                    if (ret != null) {
+                                        stub_ret_arg[0] = regs[1];
+                                        regs[1] += IS64BIT ? 2 : 1;
+                                    }
+                                    for (var arg : args) {
+                                        if (arg instanceof OfByte || arg instanceof OfBoolean
+                                                || arg instanceof OfShort | arg instanceof OfChar
+                                                || arg instanceof OfInt || arg instanceof OfFloat) {
+                                            ib2.move(ib2.l(regs[0]++), ib2.p(regs[1]++));
+                                        } else if (arg instanceof OfLong || arg instanceof OfDouble) {
+                                            ib2.move_wide(ib2.l(regs[0]), ib2.p(regs[1]));
+                                            regs[0] += 2;
+                                            regs[1] += 2;
+                                        } else if (arg instanceof AddressLayout || arg instanceof GroupLayout) {
+                                            if (IS64BIT) {
+                                                ib2.move_wide(ib2.l(0), ib2.p(regs[1]));
+                                                regs[1] += 2;
+                                            } else {
+                                                ib2.move(ib2.l(0), ib2.p(regs[1]++));
+                                                ib2.unop(INT_TO_LONG, ib2.l(0), ib2.l(0));
+                                                ib2.const_wide(ib2.l(2), 0xffffffffL);
+                                                ib2.binop_2addr(AND_LONG, ib2.l(0), ib2.l(2));
+                                            }
+                                            long size, align;
+                                            if (arg instanceof AddressLayout al) {
+                                                MemoryLayout target = al.targetLayout().orElse(null);
+                                                size = target == null ? 0 : target.byteSize();
+                                                align = target == null ? 1 : target.byteAlignment();
+                                            } else {
+                                                size = arg.byteSize();
+                                                align = arg.byteAlignment();
+                                            }
+                                            ib2.const_wide(ib2.l(2), size);
+                                            ib2.const_wide(ib2.l(4), align);
+                                            ib2.move_object(ib2.l(6), arena_reg);
+                                            ib2.invoke_range(STATIC, make_segment_id, 7, ib2.l(0));
+                                            ib2.move_result_object(ib2.l(0));
+                                            ib2.move_object(ib2.l(regs[0]++), ib2.l(0));
+                                        } else {
+                                            throw shouldNotReachHere();
+                                        }
+                                    }
+                                })
+
+                                .invoke_polymorphic_range(mh_invoke_id, target_proto,
+                                        target_ins + /* handle */ 1, ib.l(reserved[0]))
+                                .if_(ret != null, ib2 -> {
+                                    if (ret instanceof AddressLayout || ret instanceof GroupLayout) {
+                                        ib2.move_result_object(ib2.l(target_ret_arg));
+                                    } else if (ret instanceof OfLong || ret instanceof OfDouble) {
+                                        ib2.move_result_wide(ib2.l(target_ret_arg));
+                                    } else {
+                                        ib2.move_result(ib2.l(target_ret_arg));
+                                    }
+                                })
+                                .label("try_2_end")
+
+                                .label("try_3_start")
+                                .if_(has_arena, close_arena)
+                                .if_(ret != null, ib2 -> {
+                                    if (IS64BIT) {
+                                        ib2.move_wide(ib2.l(0), ib2.p(stub_ret_arg[0]));
+                                    } else {
+                                        ib2.move(ib2.l(0), ib2.p(stub_ret_arg[0]));
+                                        ib2.unop(INT_TO_LONG, ib2.l(0), ib2.l(0));
+                                        ib2.const_wide(ib2.l(2), 0xffffffffL);
+                                        ib2.binop_2addr(AND_LONG, ib2.l(0), ib2.l(2));
+                                    }
+
+                                    if (ret instanceof AddressLayout || ret instanceof GroupLayout) {
+                                        ib2.move_object(ib2.l(2), ib2.l(target_ret_arg));
+                                    } else if (ret instanceof OfLong || ret instanceof OfDouble) {
+                                        ib2.move_wide(ib2.l(2), ib2.l(target_ret_arg));
+                                    } else {
+                                        ib2.move(ib2.l(2), ib2.l(target_ret_arg));
+                                    }
+
+                                    if (ret instanceof OfByte || ret instanceof OfBoolean) {
+                                        ib2.unop(INT_TO_BYTE, ib2.l(2), ib2.l(2));
+                                        ib2.invoke_range(STATIC, put_byte_id, 3, ib2.l(0));
+                                    } else if (ret instanceof OfShort | ret instanceof OfChar) {
+                                        ib2.unop(INT_TO_SHORT, ib2.l(2), ib2.l(2));
+                                        ib2.invoke_range(STATIC, put_short_id, 3, ib2.l(0));
+                                    } else if (ret instanceof OfInt) {
+                                        ib2.invoke_range(STATIC, put_int_id, 3, ib2.l(0));
+                                    } else if (ret instanceof OfFloat) {
+                                        ib2.invoke_range(STATIC, put_float_id, 3, ib2.l(0));
+                                    } else if (ret instanceof OfLong) {
+                                        ib2.invoke_range(STATIC, put_long_id, 4, ib2.l(0));
+                                    } else if (ret instanceof OfDouble) {
+                                        ib2.invoke_range(STATIC, put_double_id, 4, ib2.l(0));
+                                    } else if (ret instanceof AddressLayout) {
+                                        ib2.invoke_range(STATIC, put_address_id, 3, ib2.l(0));
+                                    } else if (ret instanceof GroupLayout gl) {
+                                        // TODO: optimize if return layout is empty
+                                        ib2.const_wide(ib2.l(3), gl.byteSize());
+                                        ib2.invoke_range(STATIC, put_segment_id, 5, ib2.l(0));
+                                    } else {
+                                        throw shouldNotReachHere();
+                                    }
+                                })
+                                .return_void()
+                                .label("try_3_end")
+
+                                .if_(has_arena, ib2 -> ib2
+                                        .try_catch_all("try_2_start", "try_2_end")
+                                        .label("try_4_start")
+                                        .move_exception(ib2.l(exception_reg))
+                                        .commit(close_arena)
+                                        .throw_(ib2.l(exception_reg))
+                                        .label("try_4_end")
+                                )
+                                .if_(check_exceptions, ib2 -> ib2
+                                        .try_catch_all("try_1_start", "try_1_end")
+                                        .if_(!has_arena, ib3 -> ib3
+                                                .try_catch_all("try_2_start", "try_2_end")
+                                        )
+                                        .try_catch_all("try_3_start", "try_3_end")
+                                        .if_(has_arena, ib3 -> ib3
+                                                .try_catch_all("try_4_start", "try_4_end")
+                                        )
+                                        .move_exception(ib2.l(exception_reg))
+                                        .commit(handle_exception)
+                                )
+                        )
+                )
+        );
+
+        DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
+        Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
+
+        return getDeclaredMethod(stub_class, method_name, stub_type.parameterArray());
     }
 
     @Override
@@ -942,22 +1137,15 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         var native_descriptor = !options.hasJNIEnvArg() ? descriptor :
                 descriptor.insertArgumentLayouts(options.getJNIEnvArgIndex(), ADDRESS);
         _LLVMStorageDescriptor stub_descriptor = _LLVMCallingConvention.computeStorages(native_descriptor);
-        MemoryLayout ret = descriptor.returnLayoutPlain();
-        _FunctionDescriptorImpl arranger_descriptor = ret == null ? descriptor :
-                descriptor.dropReturnLayout().insertArgumentLayouts(0, ADDRESS);
-        MethodType arranger_type = fdToRawMethodType(arranger_descriptor, false);
-        Method stub = generateJavaUpcallStub(arranger_type);
+        Method stub = generateJavaUpcallStub(descriptor, options.allowExceptions());
 
         return (target, arena) -> {
-            MethodHandle arranger = Transformers.makeTransformer(arranger_type,
-                    new UpcallArranger(target, descriptor, options.allowExceptions()));
-
-            long arranger_id = JNIUtils.NewGlobalRef(arranger, arena);
+            long target_id = JNIUtils.NewGlobalRef(target, arena);
             long class_id = JNIUtils.NewGlobalRef(stub.getDeclaringClass(), arena);
             long function_id = JNIUtils.FromReflectedMethod(stub);
 
             return generateNativeUpcallStub(arena, stub_descriptor, options,
-                    arranger_id, class_id, function_id);
+                    target_id, class_id, function_id);
         };
     }
 }
