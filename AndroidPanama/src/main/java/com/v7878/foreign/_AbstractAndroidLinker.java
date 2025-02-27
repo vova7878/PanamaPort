@@ -52,12 +52,8 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
         _LinkerOptions optionSet = _LinkerOptions.forDowncall(function, options);
         validateVariadicLayouts(function, optionSet);
 
-        return DOWNCALL_CACHE.get(new LinkRequest(
-                (_FunctionDescriptorImpl) function, optionSet), request -> {
-            MethodHandle handle = arrangeDowncall(request.descriptor(), request.options());
-            handle = _Utils.maybeCheckCaptureSegment(handle, request.options());
-            return handle;
-        });
+        return DOWNCALL_CACHE.get(new LinkRequest((_FunctionDescriptorImpl) function, optionSet),
+                request -> arrangeDowncall(request.descriptor(), request.options()));
     }
 
     protected abstract MethodHandle arrangeDowncall(_FunctionDescriptorImpl function, _LinkerOptions options);

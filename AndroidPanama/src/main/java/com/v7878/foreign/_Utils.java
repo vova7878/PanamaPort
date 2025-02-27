@@ -64,7 +64,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
 /**
  * This class contains misc helper functions to support creation of memory segments.
@@ -80,7 +79,6 @@ final class _Utils {
     private static final MethodHandle ADDRESS_TO_LONG;
     private static final MethodHandle LONG_TO_ADDRESS_TARGET;
     private static final MethodHandle LONG_TO_ADDRESS_NO_TARGET;
-    private static final MethodHandle CHECK_CAPTURE_SEGMENT;
 
     static {
         try {
@@ -95,8 +93,6 @@ final class _Utils {
                     MethodType.methodType(MemorySegment.class, long.class, AddressLayout.class));
             LONG_TO_ADDRESS_NO_TARGET = lookup.findStatic(_Utils.class, "longToAddress",
                     MethodType.methodType(MemorySegment.class, long.class));
-            CHECK_CAPTURE_SEGMENT = lookup.findStatic(_Utils.class, "checkCaptureSegment",
-                    MethodType.methodType(MemorySegment.class, MemorySegment.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -111,10 +107,6 @@ final class _Utils {
 
     public static long alignUp(long n, long alignment) {
         return (n + alignment - 1) & -alignment;
-    }
-
-    public static long remainsToAlignment(long addr, long alignment) {
-        return alignUp(addr, alignment) - addr;
     }
 
     // Port-added: specific implementation
@@ -201,15 +193,6 @@ final class _Utils {
         return captureSegment.asSlice(0, _CapturableState.LAYOUT);
     }
 
-    public static MethodHandle maybeCheckCaptureSegment(MethodHandle handle, _LinkerOptions options) {
-        if (options.hasCapturedCallState()) {
-            int index = options.isReturnInMemory() ? 2 : 1;
-            // (<target address>, ?<allocator>, <capture segment>, ...) -> ...
-            handle = MethodHandlesFixes.filterArguments(handle, index, CHECK_CAPTURE_SEGMENT);
-        }
-        return handle;
-    }
-
     public static boolean overlaps(Object srcBase, long srcOffset, long srcSize,
                                    Object destBase, long destOffset, long destSize) {
         if (srcBase == destBase) {  // both either native or the same heap segment
@@ -219,22 +202,6 @@ final class _Utils {
             return (srcOffset < destEnd && srcEnd > destOffset); //overlap occurs?
         }
         return false;
-    }
-
-    private static int distance(int a, int b) {
-        return a < b ? b - a : a - b;
-    }
-
-    public static MethodHandle moveArgument(MethodHandle mh, int fromIndex, int toIndex) {
-        int[] perms = IntStream.range(0, mh.type().parameterCount()).toArray();
-        int length = distance(toIndex, fromIndex);
-        if (fromIndex < toIndex) {
-            System.arraycopy(perms, fromIndex, perms, fromIndex + 1, length);
-        } else {
-            System.arraycopy(perms, toIndex + 1, perms, toIndex, length);
-        }
-        perms[fromIndex] = toIndex;
-        return MethodHandlesFixes.reorderArguments(mh, perms);
     }
 
     public static void checkNative(MemorySegment segment) {

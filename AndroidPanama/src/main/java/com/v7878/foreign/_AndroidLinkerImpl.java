@@ -9,6 +9,7 @@ import static com.v7878.dex.builder.CodeBuilder.InvokeKind.STATIC;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_BYTE;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_LONG;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_SHORT;
+import static com.v7878.dex.builder.CodeBuilder.UnOp.LONG_TO_INT;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.OfChar;
@@ -17,7 +18,6 @@ import static com.v7878.foreign.ValueLayout.OfFloat;
 import static com.v7878.foreign.ValueLayout.OfInt;
 import static com.v7878.foreign.ValueLayout.OfLong;
 import static com.v7878.foreign._CapturableState.ERRNO;
-import static com.v7878.foreign._Utils.moveArgument;
 import static com.v7878.llvm.Core.LLVMAddAttributeAtIndex;
 import static com.v7878.llvm.Core.LLVMAddCallSiteAttribute;
 import static com.v7878.llvm.Core.LLVMAddFunction;
@@ -46,7 +46,6 @@ import static com.v7878.llvm.Core.LLVMSetAlignment;
 import static com.v7878.llvm.Core.LLVMSetInstrParamAlignment;
 import static com.v7878.llvm.Core.LLVMStructTypeInContext;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
-import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -54,12 +53,11 @@ import static com.v7878.unsafe.JNIUtils.getJNINativeInterfaceOffset;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.handleUncaughtException;
 import static com.v7878.unsafe.Utils.newEmptyClassLoader;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
-import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
-import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToAddress;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_load_ptr;
@@ -101,7 +99,6 @@ import com.v7878.foreign._LLVMStorageDescriptor.MemoryStorage;
 import com.v7878.foreign._LLVMStorageDescriptor.NoStorage;
 import com.v7878.foreign._LLVMStorageDescriptor.RawStorage;
 import com.v7878.foreign._LLVMStorageDescriptor.WrapperStorage;
-import com.v7878.foreign._ValueLayouts.JavaValueLayout;
 import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.Types.LLVMAttributeRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
@@ -115,12 +112,6 @@ import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.foreign.ENVGetter;
 import com.v7878.unsafe.foreign.Errno;
-import com.v7878.unsafe.invoke.EmulatedStackFrame;
-import com.v7878.unsafe.invoke.EmulatedStackFrame.RelativeStackFrameAccessor;
-import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
-import com.v7878.unsafe.invoke.MethodHandlesFixes;
-import com.v7878.unsafe.invoke.Transformers;
-import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -138,126 +129,14 @@ import java.util.stream.Stream;
 import dalvik.system.DexFile;
 
 final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
+    static {
+        ClassUtils.makeClassPublic(DowncallHelper.class);
+        ClassUtils.makeClassPublic(UpcallHelper.class);
+    }
+
 
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
     private static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
-
-    private static MemorySegment nextSegment(RelativeStackFrameAccessor reader, MemoryLayout layout) {
-        long size = layout == null ? 0 : layout.byteSize();
-        long alignment = layout == null ? 1 : layout.byteAlignment();
-        long value = IS64BIT ? reader.nextLong() : reader.nextInt() & 0xffffffffL;
-        return _Utils.longToAddress(value, size, alignment);
-    }
-
-    private static class DowncallArranger extends AbstractTransformer {
-        private final MethodHandle stub;
-        private final MemoryLayout[] args;
-        private final ValueLayout ret;
-        private final boolean allowsHeapAccess;
-        private final int capturedStateMask;
-        private final int segment_params_count;
-
-        public DowncallArranger(MethodHandle stub, List<MemoryLayout> argsList, ValueLayout ret,
-                                boolean allowsHeapAccess, int capturedStateMask) {
-            this.stub = stub;
-            this.args = argsList.toArray(new MemoryLayout[0]);
-            this.ret = ret;
-            this.allowsHeapAccess = allowsHeapAccess;
-            this.capturedStateMask = capturedStateMask;
-            this.segment_params_count = argsList.stream()
-                    .mapToInt(t -> t instanceof AddressLayout ? 1 : 0)
-                    .reduce(Integer::sum).orElse(0)
-                    + (capturedStateMask < 0 ? 1 : 0);
-        }
-
-        private void copyArg(RelativeStackFrameAccessor reader,
-                             RelativeStackFrameAccessor writer,
-                             MemoryLayout layout, Arena arena,
-                             List<_MemorySessionImpl> acquiredSessions) {
-            if (layout instanceof JavaValueLayout<?> valueLayout) {
-                Class<?> carrier = valueLayout.carrier();
-                EmulatedStackFrame.copyNextValue(reader, writer, carrier);
-                return;
-            }
-            _AbstractMemorySegmentImpl segment = reader.nextReference();
-            if (layout instanceof AddressLayout) {
-                segment.scope.acquire0();
-                acquiredSessions.add(segment.scope);
-            } else {
-                if (layout.byteSize() == 0) {
-                    segment = (_AbstractMemorySegmentImpl) MemorySegment.NULL;
-                } else {
-                    // TODO: improve performance
-                    MemorySegment tmp = arena.allocate(layout);
-                    // by-value struct
-                    MemorySegment.copy(segment, 0, tmp, 0, layout.byteSize());
-                    segment = (_AbstractMemorySegmentImpl) tmp;
-                }
-            }
-            long value;
-            if (allowsHeapAccess) {
-                Object base = segment.unsafeGetBase();
-                writer.putNextReference(base);
-                value = segment.unsafeGetOffset();
-            } else {
-                value = _Utils.unboxSegment(segment);
-            }
-            if (IS64BIT) {
-                writer.putNextLong(value);
-            } else {
-                writer.putNextInt((int) value);
-            }
-        }
-
-        private void copyRet(RelativeStackFrameAccessor reader,
-                             RelativeStackFrameAccessor writer,
-                             ValueLayout layout) {
-            Class<?> type = layout.carrier();
-            if (type == MemorySegment.class) {
-                MemoryLayout target = ((AddressLayout) layout).targetLayout().orElse(null);
-                writer.putNextReference(nextSegment(reader, target));
-                return;
-            }
-            EmulatedStackFrame.copyNextValue(reader, writer, type);
-        }
-
-        @Override
-        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-            var thiz_acc = stack.relativeAccessor();
-            EmulatedStackFrame stub_frame = EmulatedStackFrame.create(stub.type());
-            var stub_acc = stub_frame.relativeAccessor();
-
-            List<_MemorySessionImpl> acquiredSessions = new ArrayList<>(segment_params_count);
-            try (Arena arena = Arena.ofConfined()) {
-                _AbstractMemorySegmentImpl capturedState = null;
-                if (capturedStateMask < 0) {
-                    capturedState = thiz_acc.nextReference();
-                    capturedState.scope.acquire0();
-                    acquiredSessions.add(capturedState.scope);
-                }
-
-                for (MemoryLayout arg : args) {
-                    copyArg(thiz_acc, stub_acc, arg, arena, acquiredSessions);
-                }
-
-                invokeExactWithFrameNoChecks(stub, stub_frame);
-
-                if ((capturedStateMask & ERRNO.mask()) != 0) {
-                    VH_ERRNO.set(capturedState, 0, Errno.errno());
-                }
-
-                if (ret != null) {
-                    thiz_acc.moveToReturn();
-                    stub_acc.moveToReturn();
-                    copyRet(stub_acc, thiz_acc, ret);
-                }
-            } finally {
-                for (_MemorySessionImpl session : acquiredSessions) {
-                    session.release0();
-                }
-            }
-        }
-    }
 
     private static Class<?> carrierTypeFor(MemoryLayout layout) {
         if (layout instanceof ValueLayout valueLayout) {
@@ -301,57 +180,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             }
         }
         return MethodType.methodType(returnValue, argCarriers);
-    }
-
-    private static MethodType fixObjectParameters(MethodType stubType) {
-        return MethodType.methodType(stubType.returnType(), stubType.parameterList().stream()
-                .map(a -> a == Object.class ? int.class : a).toArray(Class[]::new));
-    }
-
-    private static String getStubName(ProtoId proto, boolean downcall) {
-        return _AndroidLinkerImpl.class.getName() + "$" +
-                (downcall ? "Downcall" : "Upcall") + "Stub_" + proto.computeShorty();
-    }
-
-    private static MethodHandle generateJavaDowncallStub(
-            Arena scope, MemorySegment nativeStub, MethodType stubType, _LinkerOptions options) {
-        final String method_name = "function";
-        final String field_name = "scope";
-
-        MethodType primitive_type = fixObjectParameters(stubType);
-        ProtoId stub_proto = ProtoId.of(primitive_type);
-
-        String stub_name = getStubName(stub_proto, true);
-        TypeId stub_id = TypeId.ofName(stub_name);
-
-        FieldId scope_id = FieldId.of(stub_id, field_name, TypeId.of(Arena.class));
-
-        ClassDef stub_def = ClassBuilder.build(stub_id, cb -> cb
-                .withSuperClass(TypeId.OBJECT)
-                .withField(fb -> fb
-                        .of(scope_id)
-                        .withFlags(ACC_PRIVATE | ACC_STATIC | ACC_FINAL)
-                )
-                .withMethod(mb -> mb
-                        .withFlags(ACC_NATIVE | ACC_STATIC)
-                        .withName(method_name)
-                        .withProto(stub_proto)
-                        .if_(options.isCritical(), mb2 -> mb2
-                                .withAnnotations(Annotation.CriticalNative())
-                        )
-                )
-        );
-
-        DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
-        Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
-
-        Field field = getDeclaredField(stub_class, field_name);
-        putObject(stub_class, fieldOffset(field), scope);
-
-        Method function = getDeclaredMethod(stub_class, method_name, primitive_type.parameterArray());
-        registerNativeMethod(function, nativeStub.nativeAddress());
-
-        return MethodHandlesFixes.unreflectWithTransform(function, stubType);
     }
 
     // Note: all layouts already has natural alignment
@@ -482,6 +310,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             LLVMValueRef[] stub_args;
             if (options.allowsHeapAccess()) {
+                assert options.isCritical();
                 List<LLVMValueRef> out = new ArrayList<>();
                 var tmp = LLVMGetParams(stub);
                 int t = 0;
@@ -589,75 +418,491 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }, function_name, scope);
     }
 
-    private static class ReturnWrapper extends AbstractTransformer {
-        //TODO: maybe use AbstractTransformer instead of MethodHandle?
-        private final MethodHandle handle;
-        private final MemoryLayout ret_layout;
-        private final int ret_index;
+    private static String getStubName(ProtoId proto, boolean downcall) {
+        // TODO: descriptor + options
+        return _AndroidLinkerImpl.class.getName() + "$" +
+                (downcall ? "Downcall" : "Upcall") + "Stub_" + proto.computeShorty();
+    }
 
-        public ReturnWrapper(MethodHandle handle, MemoryLayout ret_layout, int ret_index) {
-            this.handle = handle;
-            this.ret_layout = ret_layout;
-            this.ret_index = ret_index;
+    @DoNotObfuscate
+    @DoNotShrink
+    @SuppressWarnings("unused")
+    static class DowncallHelper {
+        public static Arena createArena() {
+            return Arena.ofConfined();
         }
 
-        @Override
-        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-            StackFrameAccessor thiz_acc = stack.accessor();
-            SegmentAllocator allocator = thiz_acc.getReference(ret_index);
-            MemorySegment ret = allocator.allocate(ret_layout);
-            MethodType cached_type = stack.type();
-            stack.setType(handle.type());
-            thiz_acc.setReference(ret_index, ret);
-            invokeExactWithFrameNoChecks(handle, stack);
-            stack.setType(cached_type);
-            thiz_acc.setReference(RETURN_VALUE_IDX, ret);
+        public static MemorySegment allocateSegment(SegmentAllocator allocator, long size, long align) {
+            return allocator.allocate(size, align);
         }
+
+        public static MemorySegment allocateCopy(MemorySegment segment, Arena arena, long size, long align) {
+            if (size == 0) {
+                return MemorySegment.NULL;
+            }
+            // TODO: improve performance
+            MemorySegment tmp = arena.allocate(size, align);
+            // by-value struct
+            MemorySegment.copy(segment, 0, tmp, 0, size);
+            return tmp;
+        }
+
+        public static void closeArena(Arena arena) {
+            arena.close();
+        }
+
+        public static MemorySegment checkCaptureSegment(MemorySegment segment) {
+            return _Utils.checkCaptureSegment(segment);
+        }
+
+        public static MemorySegment makeSegment(long addr, long size, long align) {
+            return _Utils.longToAddress(addr, size, align);
+        }
+
+        public static long unboxSymbolSegment(MemorySegment segment) {
+            _Utils.checkSymbol(segment);
+            return _Utils.unboxSegment(segment);
+        }
+
+        public static long unboxSegment(MemorySegment segment) {
+            return _Utils.unboxSegment(segment);
+        }
+
+        public static Object getBase(MemorySegment segment) {
+            return ((_AbstractMemorySegmentImpl) segment).unsafeGetBase();
+        }
+
+        public static long getOffset(MemorySegment segment) {
+            return ((_AbstractMemorySegmentImpl) segment).unsafeGetOffset();
+        }
+
+        public static void acquire(MemorySegment segment) {
+            ((_AbstractMemorySegmentImpl) segment).scope.acquire0();
+        }
+
+        public static void release(MemorySegment segment) {
+            ((_AbstractMemorySegmentImpl) segment).scope.release0();
+        }
+
+        public static void putErrno(MemorySegment capturedState) {
+            VH_ERRNO.set(capturedState, 0, Errno.errno());
+        }
+    }
+
+    // TODO: move to CodeBuilder
+    private static void move_result_shorty(CodeBuilder b, char shorty, int reg) {
+        switch (shorty) {
+            case 'V' -> { /* nop */ }
+            case 'Z', 'B', 'C', 'S', 'I', 'F' -> b.move_result(reg);
+            case 'J', 'D' -> b.move_result_wide(reg);
+            case 'L' -> b.move_result_object(reg);
+            default -> throw shouldNotReachHere();
+        }
+    }
+
+    // TODO: move to CodeBuilder
+    private static void return_shorty(CodeBuilder b, char shorty, int reg) {
+        switch (shorty) {
+            case 'V' -> b.return_void();
+            case 'Z', 'B', 'C', 'S', 'I', 'F' -> b.return_(reg);
+            case 'J', 'D' -> b.return_wide(reg);
+            case 'L' -> b.return_object(reg);
+            default -> throw shouldNotReachHere();
+        }
+    }
+
+    private static String label_for_reg(String prefix, int reg, boolean start) {
+        return prefix + "_" + reg + "_" + (start ? "start" : "end");
+    }
+
+    private static MethodHandle generateJavaDowncallStub(
+            MemorySegment native_stub, MethodType native_stub_type,
+            _FunctionDescriptorImpl descriptor, _LinkerOptions options) {
+        final String native_stub_name = "function_native";
+        final String java_stub_name = "function_java";
+        final String field_name = "scope";
+
+        final TypeId ms_id = TypeId.of(MemorySegment.class);
+        final TypeId helper_id = TypeId.of(DowncallHelper.class);
+        final TypeId sa_id = TypeId.of(SegmentAllocator.class);
+        final TypeId arena_id = TypeId.of(Arena.class);
+
+        boolean heap_access = options.allowsHeapAccess();
+
+        int capturedStateMask = options.capturedCallState()
+                .mapToInt(_CapturableState::mask)
+                .reduce(0, (a, b) -> a | b)
+                | (options.hasCapturedCallState() ? 1 << 31 : 0);
+
+        MemoryLayout[] args = descriptor.argumentLayouts().toArray(new MemoryLayout[0]);
+        MemoryLayout ret = descriptor.returnLayoutPlain();
+
+        MethodType java_stub_type = fdToHandleMethodType(descriptor);
+        if (options.isReturnInMemory()) {
+            java_stub_type = java_stub_type.insertParameterTypes(0, SegmentAllocator.class);
+        }
+        if (capturedStateMask < 0) {
+            java_stub_type = java_stub_type.insertParameterTypes(0, MemorySegment.class);
+        }
+        // leading function pointer
+        java_stub_type = java_stub_type.insertParameterTypes(0, MemorySegment.class);
+
+        ProtoId native_stub_proto = ProtoId.of(native_stub_type);
+        ProtoId java_stub_proto = ProtoId.of(java_stub_type);
+
+        String stub_name = getStubName(native_stub_proto, true);
+        TypeId stub_id = TypeId.ofName(stub_name);
+
+        FieldId scope_id = FieldId.of(stub_id, field_name, TypeId.OBJECT);
+        MethodId native_stub_id = MethodId.of(stub_id, native_stub_name, native_stub_proto);
+
+        MethodId create_arena_id = MethodId.of(helper_id, "createArena", arena_id);
+        MethodId allocate_segment_id = MethodId.of(helper_id,
+                "allocateSegment", ms_id, sa_id, TypeId.J, TypeId.J);
+        MethodId allocate_copy_id = MethodId.of(helper_id,
+                "allocateCopy", ms_id, ms_id, arena_id, TypeId.J, TypeId.J);
+        MethodId close_arena_id = MethodId.of(helper_id, "closeArena", TypeId.V, arena_id);
+        MethodId check_capture_segment_id = MethodId.of(helper_id, "checkCaptureSegment", ms_id, ms_id);
+        MethodId make_segment_id = MethodId.of(helper_id,
+                "makeSegment", ms_id, TypeId.J, TypeId.J, TypeId.J);
+        MethodId unbox_symbol_segment_id = MethodId.of(helper_id,
+                "unboxSymbolSegment", TypeId.J, ms_id);
+        MethodId unbox_segment_id = MethodId.of(helper_id, "unboxSegment", TypeId.J, ms_id);
+        MethodId get_base_id = MethodId.of(helper_id, "getBase", TypeId.OBJECT, ms_id);
+        MethodId get_offset_id = MethodId.of(helper_id, "getOffset", TypeId.J, ms_id);
+        MethodId acquire_id = MethodId.of(helper_id, "acquire", TypeId.V, ms_id);
+        MethodId release_id = MethodId.of(helper_id, "release", TypeId.V, ms_id);
+        MethodId put_errno_id = MethodId.of(helper_id, "putErrno", TypeId.V, ms_id);
+
+        var has_arena = Stream.of(args).anyMatch(layout -> layout instanceof GroupLayout);
+
+        int native_ins = native_stub_proto.countInputRegisters();
+
+        int[] state_arg = {-1};
+        int[] allocator_arg = {-1};
+
+        int[] reserved = {6};
+        int arena_reg = has_arena ? reserved[0]++ : -1;
+        int exception_reg = reserved[0]++;
+
+        // TODO: simplify with native_stub_proto.getReturnType().getShorty()?
+        int ret_reg; // temporary register for return value of native stub
+        if (ret == null || ret instanceof GroupLayout) {
+            ret_reg = -1;
+        } else {
+            ret_reg = reserved[0];
+            if (ret instanceof AddressLayout) {
+                reserved[0] += IS64BIT ? 2 : 1;
+            } else {
+                reserved[0] += ret instanceof OfLong || ret instanceof OfDouble ? 2 : 1;
+            }
+        }
+
+        int[] regs = {/* native args start */ reserved[0], /* java args start */ 0};
+        int locals = reserved[0] + native_ins;
+
+        // TODO: use a known number of segments?
+        List<Integer> acquired_segments = new ArrayList<>();
+
+        Consumer<CodeBuilder> create_arena = ib -> ib
+                .invoke(STATIC, create_arena_id)
+                .move_result_object(ib.l(arena_reg));
+
+        Consumer<CodeBuilder> close_arena = ib -> ib
+                .invoke(STATIC, close_arena_id, ib.l(arena_reg));
+
+        ClassDef stub_def = ClassBuilder.build(stub_id, cb -> cb
+                .withSuperClass(TypeId.OBJECT)
+                .withField(fb -> fb
+                        .of(scope_id)
+                        .withFlags(ACC_PRIVATE | ACC_STATIC | ACC_FINAL)
+                )
+                .withMethod(mb -> mb
+                        .of(native_stub_id)
+                        .withFlags(ACC_PRIVATE | ACC_STATIC | ACC_NATIVE)
+                        .if_(options.isCritical(), mb2 -> mb2
+                                .withAnnotations(Annotation.CriticalNative())
+                        )
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PRIVATE | ACC_STATIC)
+                        .withName(java_stub_name)
+                        .withProto(java_stub_proto)
+                        .withCode(locals, ib -> ib
+                                .if_(has_arena, create_arena)
+
+                                .label("try_arena_start")
+                                .commit(ib2 -> {
+                                    int symbol_arg = regs[1]++;
+
+                                    ib2.invoke_range(STATIC, acquire_id,
+                                            1, ib2.p(symbol_arg));
+                                    ib2.label(label_for_reg("try_segment", symbol_arg, true));
+                                    acquired_segments.add(symbol_arg);
+
+                                    if (heap_access) {
+                                        // leading null heap base
+                                        ib2.const_(ib2.l(0), 0);
+                                        ib2.move_object(ib2.l(regs[0]++), ib2.l(0));
+                                    }
+                                    ib2.invoke_range(STATIC, unbox_symbol_segment_id,
+                                            1, ib2.p(symbol_arg));
+                                    ib2.move_result_wide(ib2.l(0));
+                                    if (IS64BIT) {
+                                        ib2.move_wide(ib2.l(regs[0]), ib2.l(0));
+                                        regs[0] += 2;
+                                    } else {
+                                        ib2.unop(LONG_TO_INT, ib2.l(0), ib2.l(0));
+                                        ib2.move(ib2.l(regs[0]++), ib2.l(0));
+                                    }
+                                })
+                                .if_(capturedStateMask < 0, ib2 -> {
+                                    state_arg[0] = regs[1]++;
+
+                                    ib2.invoke_range(STATIC, check_capture_segment_id,
+                                            1, ib2.p(state_arg[0]));
+                                    ib2.move_result_object(ib2.l(0));
+                                    ib2.move_object(ib2.p(state_arg[0]), ib2.l(0));
+
+                                    ib2.invoke_range(STATIC, acquire_id,
+                                            1, ib2.p(state_arg[0]));
+                                    ib2.label(label_for_reg("try_segment", state_arg[0], true));
+                                    acquired_segments.add(state_arg[0]);
+                                })
+                                .if_(options.isReturnInMemory(), ib2 -> {
+                                    assert ret instanceof GroupLayout;
+
+                                    allocator_arg[0] = regs[1]++;
+
+                                    ib2.move_object(ib2.l(0), ib2.p(allocator_arg[0]));
+                                    ib2.const_wide(ib2.l(1), ret.byteSize());
+                                    ib2.const_wide(ib2.l(3), ret.byteAlignment());
+
+                                    ib2.invoke_range(STATIC, allocate_segment_id,
+                                            5, ib2.l(0));
+                                    ib2.move_result_object(ib2.l(0));
+                                    ib2.move_object(ib2.p(allocator_arg[0]), ib2.l(0));
+
+                                    if (heap_access) {
+                                        ib2.invoke_range(STATIC, get_base_id,
+                                                1, ib2.p(allocator_arg[0]));
+                                        ib2.move_result_object(ib2.l(0));
+                                        ib2.move_object(ib2.l(regs[0]++), ib2.l(0));
+                                    }
+                                    ib2.invoke_range(STATIC,
+                                            heap_access ? get_offset_id : unbox_segment_id,
+                                            1, ib2.p(allocator_arg[0]));
+                                    ib2.move_result_wide(ib2.l(0));
+                                    if (IS64BIT) {
+                                        ib2.move_wide(ib2.l(regs[0]), ib2.l(0));
+                                        regs[0] += 2;
+                                    } else {
+                                        ib2.unop(LONG_TO_INT, ib2.l(0), ib2.l(0));
+                                        ib2.move(ib2.l(regs[0]++), ib2.l(0));
+                                    }
+                                })
+                                .commit(ib2 -> {
+                                    for (var arg : args) {
+                                        if (arg instanceof OfByte || arg instanceof OfBoolean
+                                                || arg instanceof OfShort | arg instanceof OfChar
+                                                || arg instanceof OfInt || arg instanceof OfFloat) {
+                                            ib2.move(ib2.l(regs[0]++), ib2.p(regs[1]++));
+                                        } else if (arg instanceof OfLong || arg instanceof OfDouble) {
+                                            ib2.move_wide(ib2.l(regs[0]), ib2.p(regs[1]));
+                                            regs[0] += 2;
+                                            regs[1] += 2;
+                                        } else if (arg instanceof AddressLayout || arg instanceof GroupLayout) {
+                                            var segment_reg = regs[1]++;
+
+                                            if (arg instanceof GroupLayout gl) {
+                                                ib2.move_object(ib2.l(0), ib2.p(segment_reg));
+                                                ib2.move_object(ib2.l(1), ib2.l(arena_reg));
+                                                ib2.const_wide(ib2.l(2), gl.byteSize());
+                                                ib2.const_wide(ib2.l(4), gl.byteAlignment());
+
+                                                ib2.invoke_range(STATIC, allocate_copy_id,
+                                                        6, ib2.l(0));
+                                                ib2.move_result_object(ib2.l(0));
+                                                ib2.move_object(ib2.p(segment_reg), ib2.l(0));
+                                            } else {
+                                                ib2.invoke_range(STATIC, acquire_id,
+                                                        1, ib2.p(segment_reg));
+                                                ib2.label(label_for_reg("try_segment", segment_reg, true));
+                                                acquired_segments.add(segment_reg);
+                                            }
+
+                                            if (heap_access) {
+                                                ib2.invoke_range(STATIC, get_base_id,
+                                                        1, ib2.p(segment_reg));
+                                                ib2.move_result_object(ib2.l(0));
+                                                ib2.move_object(ib2.l(regs[0]++), ib2.l(0));
+                                            }
+                                            ib2.invoke_range(STATIC,
+                                                    heap_access ? get_offset_id : unbox_segment_id,
+                                                    1, ib2.p(segment_reg));
+                                            ib2.move_result_wide(ib2.l(0));
+                                            if (IS64BIT) {
+                                                ib2.move_wide(ib2.l(regs[0]), ib2.l(0));
+                                                regs[0] += 2;
+                                            } else {
+                                                ib2.unop(LONG_TO_INT, ib2.l(0), ib2.l(0));
+                                                ib2.move(ib2.l(regs[0]++), ib2.l(0));
+                                            }
+                                        } else {
+                                            throw shouldNotReachHere();
+                                        }
+                                    }
+                                })
+
+                                .invoke_range(STATIC, native_stub_id,
+                                        native_ins, ib.l(reserved[0]))
+                                .if_(ret_reg != -1, ib2 -> move_result_shorty(ib2, native_stub_proto
+                                        .getReturnType().getShorty(), ib2.l(ret_reg)))
+
+                                .if_((capturedStateMask & ERRNO.mask()) != 0, ib2 -> ib2
+                                        .invoke_range(STATIC, put_errno_id, 1, ib2.p(state_arg[0]))
+                                )
+
+                                .commit(ib2 -> {
+                                    for (int i = acquired_segments.size() - 1; i >= 0; i--) {
+                                        int segment_reg = acquired_segments.get(i);
+                                        ib2.label(label_for_reg("try_segment", segment_reg, false));
+
+                                        ib2.invoke_range(STATIC, release_id,
+                                                1, ib2.p(segment_reg));
+                                    }
+                                })
+                                .label("try_arena_end")
+
+                                .if_(has_arena, close_arena)
+
+                                .commit(ib2 -> {
+                                    if (ret == null) {
+                                        ib2.return_void();
+                                    } else if (ret instanceof AddressLayout al) {
+                                        if (IS64BIT) {
+                                            ib2.move_wide(ib2.l(0), ib2.p(ret_reg));
+                                        } else {
+                                            ib2.move(ib2.l(0), ib2.p(ret_reg));
+                                            ib2.unop(INT_TO_LONG, ib2.l(0), ib2.l(0));
+                                            ib2.const_wide(ib2.l(2), 0xffffffffL);
+                                            ib2.binop_2addr(AND_LONG, ib2.l(0), ib2.l(2));
+                                        }
+                                        MemoryLayout target = al.targetLayout().orElse(null);
+                                        long size = target == null ? 0 : target.byteSize();
+                                        long align = target == null ? 1 : target.byteAlignment();
+
+                                        ib2.const_wide(ib2.l(2), size);
+                                        ib2.const_wide(ib2.l(4), align);
+                                        ib2.invoke_range(STATIC, make_segment_id, 6, ib2.l(0));
+                                        ib2.move_result_object(ib2.l(0));
+                                        ib2.return_object(ib2.l(0));
+                                    } else if (ret instanceof GroupLayout) {
+                                        ib2.move_object(ib2.l(0), ib2.p(allocator_arg[0]));
+                                        ib2.return_object(ib2.l(0));
+                                    } else {
+                                        return_shorty(ib2, native_stub_proto
+                                                .getReturnType().getShorty(), ib2.l(ret_reg));
+                                    }
+                                })
+                                .commit(ib2 -> {
+                                    Integer previous_reg = null;
+                                    for (int i = acquired_segments.size() - 1; i >= 0; i--) {
+                                        int segment_reg = acquired_segments.get(i);
+
+                                        if (previous_reg == null) {
+                                            ib2.try_catch_all(
+                                                    label_for_reg("try_segment", segment_reg, true),
+                                                    label_for_reg("try_segment", segment_reg, false)
+                                            );
+                                        } else {
+                                            ib2.try_catch_all(
+                                                    label_for_reg("try_segment", segment_reg, true),
+                                                    label_for_reg("try_segment", previous_reg, true)
+                                            );
+                                            ib2.try_catch_all(
+                                                    label_for_reg("try_segment", previous_reg, false),
+                                                    label_for_reg("try_segment", segment_reg, false)
+                                            );
+                                            ib2.try_catch_all(
+                                                    label_for_reg("catch_segment", previous_reg, true),
+                                                    label_for_reg("catch_segment", previous_reg, false)
+                                            );
+                                        }
+
+                                        ib2.label(label_for_reg("catch_segment", segment_reg, true));
+
+                                        ib2.move_exception(ib2.l(exception_reg));
+                                        ib2.invoke_range(STATIC, release_id,
+                                                1, ib2.p(segment_reg));
+                                        ib2.throw_(ib2.l(exception_reg));
+
+                                        ib2.label(label_for_reg("catch_segment", segment_reg, false));
+
+                                        previous_reg = segment_reg;
+                                    }
+
+                                    // At least one element - symbol segment
+                                    assert previous_reg != null;
+
+                                    if (has_arena) {
+                                        ib2.try_catch_all(
+                                                "try_arena_start",
+                                                label_for_reg("try_segment", previous_reg, true)
+                                        );
+                                        ib2.try_catch_all(
+                                                label_for_reg("try_segment", previous_reg, false),
+                                                "try_arena_end"
+                                        );
+                                        ib2.try_catch_all(
+                                                label_for_reg("catch_segment", previous_reg, true),
+                                                label_for_reg("catch_segment", previous_reg, false)
+                                        );
+                                        ib2.move_exception(ib2.l(exception_reg));
+                                        ib2.commit(close_arena);
+                                        ib2.throw_(ib2.l(exception_reg));
+                                    }
+                                })
+                        )
+                )
+        );
+
+        DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
+        Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
+
+        Field field = getDeclaredField(stub_class, field_name);
+        AndroidUnsafe.putObject(stub_class, fieldOffset(field), native_stub.scope());
+
+        Method native_function = getDeclaredMethod(stub_class,
+                native_stub_name, native_stub_type.parameterArray());
+        registerNativeMethod(native_function, native_stub.nativeAddress());
+
+        Method java_function = getDeclaredMethod(stub_class,
+                java_stub_name, java_stub_type.parameterArray());
+        return unreflect(java_function);
+    }
+
+    private static MethodType fixObjectParameters(MethodType stubType) {
+        return MethodType.methodType(stubType.returnType(), stubType.parameterList().stream()
+                .map(a -> a == Object.class ? int.class : a).toArray(Class[]::new));
     }
 
     @Override
     protected MethodHandle arrangeDowncall(_FunctionDescriptorImpl descriptor, _LinkerOptions options) {
         _LLVMStorageDescriptor target_descriptor = _LLVMCallingConvention.computeStorages(descriptor);
-        MemoryLayout ret = null;
         _FunctionDescriptorImpl stub_descriptor = descriptor;
         if (options.isReturnInMemory()) {
-            ret = stub_descriptor.returnLayoutPlain();
             stub_descriptor = stub_descriptor.dropReturnLayout()
                     .insertArgumentLayouts(0, ADDRESS);
         }
+        // TODO: pass as plain word
         // leading function pointer
         stub_descriptor = stub_descriptor.insertArgumentLayouts(0, ADDRESS);
         MethodType stubType = fdToRawMethodType(stub_descriptor, options.allowsHeapAccess());
-        Arena scope = Arena.ofAuto();
-        MemorySegment nativeStub = generateNativeDowncallStub(scope, target_descriptor, stub_descriptor, options);
-        MethodHandle stub = generateJavaDowncallStub(scope, nativeStub, stubType, options);
-        int capturedStateMask = options.capturedCallState()
-                .mapToInt(_CapturableState::mask)
-                .reduce(0, (a, b) -> a | b);
-        capturedStateMask |= options.hasCapturedCallState() ? 1 << 31 : 0;
-        var arranger = new DowncallArranger(stub, stub_descriptor.argumentLayouts(),
-                (ValueLayout) stub_descriptor.returnLayoutPlain(),
-                options.allowsHeapAccess(), capturedStateMask);
-        MethodType handleType = fdToHandleMethodType(stub_descriptor);
-        if (options.hasCapturedCallState()) {
-            handleType = handleType.insertParameterTypes(0, MemorySegment.class);
-        }
-        if (options.isReturnInMemory()) {
-            handleType = handleType.changeReturnType(MemorySegment.class);
-        }
-        MethodHandle handle = Transformers.makeTransformer(handleType, arranger);
-        if (options.isReturnInMemory()) {
-            //TODO: optimize if return layout is empty
-            int ret_index = options.hasCapturedCallState() ? 2 : 1;
-            MethodType type = handleType.changeParameterType(ret_index, SegmentAllocator.class);
-            ReturnWrapper wrapper = new ReturnWrapper(handle, ret, ret_index);
-            handle = Transformers.makeTransformer(type, wrapper);
-        }
-        if (options.hasCapturedCallState()) {
-            int index = options.isReturnInMemory() ? 2 : 1;
-            handle = moveArgument(handle, 0, index);
-        }
-        return handle;
+
+        MemorySegment nativeStub = generateNativeDowncallStub(
+                Arena.ofAuto(), target_descriptor, stub_descriptor, options);
+        return generateJavaDowncallStub(nativeStub, fixObjectParameters(stubType), descriptor, options);
     }
 
     private static int computeEnvIndex(_LLVMStorageDescriptor stub_descriptor, _LinkerOptions options) {
@@ -828,10 +1073,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     @DoNotShrink
     @SuppressWarnings("unused")
     static class UpcallHelper {
-        static {
-            ClassUtils.makeClassPublic(UpcallHelper.class);
-        }
-
         public static Arena createArena() {
             return Arena.ofConfined();
         }
@@ -885,8 +1126,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
     private static Method generateJavaUpcallStub(_FunctionDescriptorImpl descriptor, boolean allowExceptions) {
         final String method_name = "function";
-        final TypeId mh = TypeId.of(MethodHandle.class);
-        final TypeId ms = TypeId.of(MemorySegment.class);
+        final TypeId mh_id = TypeId.of(MethodHandle.class);
+        final TypeId ms_id = TypeId.of(MemorySegment.class);
+        final TypeId helper_id = TypeId.of(UpcallHelper.class);
+        final TypeId arena_id = TypeId.of(Arena.class);
 
         MemoryLayout[] args = descriptor.argumentLayouts().toArray(new MemoryLayout[0]);
         MemoryLayout ret = descriptor.returnLayoutPlain();
@@ -906,17 +1149,14 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         String stub_name = getStubName(target_proto, false);
         TypeId stub_id = TypeId.ofName(stub_name);
 
-        var helper_id = TypeId.of(UpcallHelper.class);
-        var arena_id = TypeId.of(Arena.class);
-
-        MethodId mh_invoke_id = MethodId.of(mh, "invokeExact",
+        MethodId mh_invoke_id = MethodId.of(mh_id, "invokeExact",
                 ProtoId.of(TypeId.OBJECT, TypeId.OBJECT.array()));
         MethodId create_arena_id = MethodId.of(helper_id, "createArena", arena_id);
         MethodId close_arena_id = MethodId.of(helper_id, "closeArena", TypeId.V, arena_id);
         MethodId handle_exception_id = MethodId.of(helper_id,
                 "handleException", TypeId.V, TypeId.of(Throwable.class));
         MethodId make_segment_id = MethodId.of(helper_id, "makeSegment",
-                ms, TypeId.J, TypeId.J, TypeId.J, arena_id);
+                ms_id, TypeId.J, TypeId.J, TypeId.J, arena_id);
 
         MethodId put_byte_id = MethodId.of(helper_id, "putByte", TypeId.V, TypeId.J, TypeId.B);
         MethodId put_short_id = MethodId.of(helper_id, "putShort", TypeId.V, TypeId.J, TypeId.S);
@@ -924,8 +1164,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         MethodId put_float_id = MethodId.of(helper_id, "putFloat", TypeId.V, TypeId.J, TypeId.F);
         MethodId put_long_id = MethodId.of(helper_id, "putLong", TypeId.V, TypeId.J, TypeId.J);
         MethodId put_double_id = MethodId.of(helper_id, "putDouble", TypeId.V, TypeId.J, TypeId.D);
-        MethodId put_address_id = MethodId.of(helper_id, "putAddress", TypeId.V, TypeId.J, ms);
-        MethodId put_segment_id = MethodId.of(helper_id, "putSegment", TypeId.V, TypeId.J, ms, TypeId.J);
+        MethodId put_address_id = MethodId.of(helper_id, "putAddress", TypeId.V, TypeId.J, ms_id);
+        MethodId put_segment_id = MethodId.of(helper_id, "putSegment", TypeId.V, TypeId.J, ms_id, TypeId.J);
 
         int target_ins = target_proto.countInputRegisters();
 
