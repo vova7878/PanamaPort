@@ -419,10 +419,62 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }, function_name, scope);
     }
 
-    private static String getStubName(ProtoId proto, boolean downcall) {
-        // TODO: descriptor + options
-        return _AndroidLinkerImpl.class.getName() + "$" +
-                (downcall ? "Downcall" : "Upcall") + "Stub_" + proto.computeShorty();
+    private static String layoutName(MemoryLayout layout) {
+        if (layout == null) {
+            return "V";
+        }
+        if (layout instanceof AddressLayout al) {
+            return "A" + al.targetLayout().map(target ->
+                    "_size_" + target.byteSize() + "_align_" + target.byteAlignment()
+            ).orElse("");
+        }
+        if (layout instanceof GroupLayout gl) {
+            return (gl instanceof StructLayout ? "S" : "U") +
+                    "_size_" + gl.byteSize() + "_align_" + gl.byteAlignment();
+        }
+        if (layout instanceof ValueLayout vl) {
+            return Character.toString(TypeId.of(vl.carrier()).getShorty());
+        }
+        throw shouldNotReachHere();
+    }
+
+    private static String stubName(_FunctionDescriptorImpl descriptor,
+                                   _LinkerOptions options, boolean downcall) {
+        StringBuilder out = new StringBuilder();
+        out.append(_AndroidLinkerImpl.class.getName());
+        out.append('$');
+        out.append(downcall ? "Downcall" : "Upcall");
+        out.append("Stub_");
+        out.append(layoutName(descriptor.returnLayoutPlain()));
+        out.append("_");
+        for (var layout : descriptor.argumentLayouts()) {
+            out.append(layoutName(layout));
+        }
+        if (options.allowExceptions()) {
+            out.append("_E");
+        }
+        int env_index = options.getJNIEnvArgIndex();
+        if (env_index >= 0) {
+            out.append("_ENV_");
+            out.append(env_index);
+        }
+        int var_index = options.firstVariadicArgIndex();
+        if (var_index >= 0) {
+            out.append("_VAR_");
+            out.append(var_index);
+        }
+        if (options.hasCapturedCallState()) {
+            out.append("_state");
+            options.capturedCallState().forEach(state -> {
+                out.append("$");
+                out.append(state.stateName());
+            });
+        }
+        if (options.isCritical()) {
+            out.append("_critical");
+            out.append(options.allowsHeapAccess() ? "_heap" : "_noheap");
+        }
+        return out.toString();
     }
 
     @DoNotObfuscate
@@ -551,7 +603,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         ProtoId native_stub_proto = ProtoId.of(native_stub_type);
         ProtoId java_stub_proto = ProtoId.of(java_stub_type);
 
-        String stub_name = getStubName(native_stub_proto, true);
+        String stub_name = stubName(descriptor, options, true);
         TypeId stub_id = TypeId.ofName(stub_name);
 
         FieldId scope_id = FieldId.of(stub_id, field_name, TypeId.OBJECT);
@@ -586,18 +638,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         int arena_reg = has_arena ? reserved[0]++ : -1;
         int exception_reg = reserved[0]++;
 
-        // TODO: simplify with native_stub_proto.getReturnType().getShorty()?
-        int ret_reg; // temporary register for return value of native stub
-        if (ret == null || ret instanceof GroupLayout) {
-            ret_reg = -1;
-        } else {
-            ret_reg = reserved[0];
-            if (ret instanceof AddressLayout) {
-                reserved[0] += IS64BIT ? 2 : 1;
-            } else {
-                reserved[0] += ret instanceof OfLong || ret instanceof OfDouble ? 2 : 1;
-            }
-        }
+        var native_ret_type = native_stub_proto.getReturnType();
+        char native_ret_shorty = native_ret_type.getShorty();
+        int native_ret_reg = native_ret_shorty == 'V' ? -1 : reserved[0];
+        reserved[0] += native_ret_type.getRegisterCount();
 
         int[] regs = {/* native args start */ reserved[0], /* java args start */ 0};
         int locals = reserved[0] + native_ins;
@@ -641,11 +685,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                     ib2.label(label_for_reg("try_segment", symbol_arg, true));
                                     acquired_segments.add(symbol_arg);
 
-                                    if (heap_access) {
-                                        // leading null heap base
-                                        ib2.const_(ib2.l(0), 0);
-                                        ib2.move_object(ib2.l(regs[0]++), ib2.l(0));
-                                    }
                                     ib2.invoke_range(STATIC, unbox_symbol_segment_id,
                                             1, ib2.p(symbol_arg));
                                     ib2.move_result_wide(ib2.l(0));
@@ -757,8 +796,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
                                 .invoke_range(STATIC, native_stub_id,
                                         native_ins, ib.l(reserved[0]))
-                                .if_(ret_reg != -1, ib2 -> move_result_shorty(ib2, native_stub_proto
-                                        .getReturnType().getShorty(), ib2.l(ret_reg)))
+                                .if_(native_ret_reg != -1, ib2 -> move_result_shorty(
+                                        ib2, native_ret_shorty, ib2.l(native_ret_reg)))
 
                                 .if_((capturedStateMask & ERRNO.mask()) != 0, ib2 -> ib2
                                         .invoke_range(STATIC, put_errno_id, 1, ib2.p(state_arg[0]))
@@ -782,9 +821,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         ib2.return_void();
                                     } else if (ret instanceof AddressLayout al) {
                                         if (IS64BIT) {
-                                            ib2.move_wide(ib2.l(0), ib2.l(ret_reg));
+                                            ib2.move_wide(ib2.l(0), ib2.l(native_ret_reg));
                                         } else {
-                                            ib2.move(ib2.l(0), ib2.l(ret_reg));
+                                            ib2.move(ib2.l(0), ib2.l(native_ret_reg));
                                             ib2.unop(INT_TO_LONG, ib2.l(0), ib2.l(0));
                                             ib2.const_wide(ib2.l(2), 0xffffffffL);
                                             ib2.binop_2addr(AND_LONG, ib2.l(0), ib2.l(2));
@@ -802,8 +841,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         ib2.move_object(ib2.l(0), ib2.p(allocator_arg[0]));
                                         ib2.return_object(ib2.l(0));
                                     } else {
-                                        return_shorty(ib2, native_stub_proto
-                                                .getReturnType().getShorty(), ib2.l(ret_reg));
+                                        return_shorty(ib2, native_ret_shorty, ib2.l(native_ret_reg));
                                     }
                                 })
                                 .commit(ib2 -> {
@@ -901,9 +939,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             stub_descriptor = stub_descriptor.dropReturnLayout()
                     .insertArgumentLayouts(0, ADDRESS);
         }
-        // TODO: pass as plain word
         // leading function pointer
-        stub_descriptor = stub_descriptor.insertArgumentLayouts(0, ADDRESS);
+        stub_descriptor = stub_descriptor.insertArgumentLayouts(0, WORD);
         MethodType stubType = fdToRawMethodType(stub_descriptor, options.allowsHeapAccess());
 
         MemorySegment nativeStub = generateNativeDowncallStub(
@@ -1130,7 +1167,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
     }
 
-    private static Method generateJavaUpcallStub(_FunctionDescriptorImpl descriptor, boolean allowExceptions) {
+    private static Method generateJavaUpcallStub(_FunctionDescriptorImpl descriptor, _LinkerOptions options) {
         final String method_name = "function";
         final TypeId mh_id = TypeId.of(MethodHandle.class);
         final TypeId ms_id = TypeId.of(MemorySegment.class);
@@ -1152,7 +1189,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         ProtoId target_proto = ProtoId.of(target_type);
         ProtoId stub_proto = ProtoId.of(stub_type);
 
-        String stub_name = getStubName(target_proto, false);
+        String stub_name = stubName(descriptor, options, false);
         TypeId stub_id = TypeId.ofName(stub_name);
 
         MethodId mh_invoke_id = MethodId.of(mh_id, "invokeExact",
@@ -1175,7 +1212,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         int target_ins = target_proto.countInputRegisters();
 
-        var check_exceptions = !allowExceptions;
+        var check_exceptions = !options.allowExceptions();
         var has_arena = Stream.of(args).anyMatch(layout ->
                 layout instanceof AddressLayout || layout instanceof GroupLayout);
 
@@ -1359,7 +1396,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         var native_descriptor = !options.hasJNIEnvArg() ? descriptor :
                 descriptor.insertArgumentLayouts(options.getJNIEnvArgIndex(), ADDRESS);
         _LLVMStorageDescriptor stub_descriptor = _LLVMCallingConvention.computeStorages(native_descriptor);
-        Method stub = generateJavaUpcallStub(descriptor, options.allowExceptions());
+        Method stub = generateJavaUpcallStub(descriptor, options);
 
         return (target, arena) -> {
             long target_id = JNIUtils.NewGlobalRef(target, arena);
