@@ -1,11 +1,11 @@
 package com.v7878.foreign;
 
-import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_STATIC;
 import static com.v7878.dex.builder.CodeBuilder.BinOp.AND_LONG;
 import static com.v7878.dex.builder.CodeBuilder.InvokeKind.STATIC;
+import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_BYTE;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_LONG;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_SHORT;
@@ -50,12 +50,13 @@ import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.JNIUtils.getJNINativeInterfaceOffset;
-import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.handleUncaughtException;
 import static com.v7878.unsafe.Utils.newEmptyClassLoader;
+import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToAddress;
@@ -116,7 +117,6 @@ import com.v7878.unsafe.foreign.Errno;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -573,7 +573,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             _FunctionDescriptorImpl descriptor, _LinkerOptions options) {
         final String native_stub_name = "function_native";
         final String java_stub_name = "function_java";
-        final String field_name = "scope";
+        final String scope_field_name = "scope";
+        final String init_scope_name = "initScope";
 
         final TypeId ms_id = TypeId.of(MemorySegment.class);
         final TypeId helper_id = TypeId.of(DowncallHelper.class);
@@ -606,7 +607,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         String stub_name = stubName(descriptor, options, true);
         TypeId stub_id = TypeId.ofName(stub_name);
 
-        FieldId scope_id = FieldId.of(stub_id, field_name, TypeId.OBJECT);
+        FieldId scope_id = FieldId.of(stub_id, scope_field_name, TypeId.OBJECT);
         MethodId native_stub_id = MethodId.of(stub_id, native_stub_name, native_stub_proto);
 
         MethodId create_arena_id = MethodId.of(helper_id, "createArena", arena_id);
@@ -660,7 +661,17 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 .withSuperClass(TypeId.OBJECT)
                 .withField(fb -> fb
                         .of(scope_id)
-                        .withFlags(ACC_PRIVATE | ACC_STATIC | ACC_FINAL)
+                        .withFlags(ACC_PRIVATE | ACC_STATIC)
+                )
+                .withMethod(mb -> mb
+                        .withName(init_scope_name)
+                        .withReturnType(TypeId.V)
+                        .withParameterTypes(TypeId.OBJECT)
+                        .withFlags(ACC_PRIVATE | ACC_STATIC)
+                        .withCode(0, ib -> ib
+                                .sop(PUT_OBJECT, ib.p(0), scope_id)
+                                .return_void()
+                        )
                 )
                 .withMethod(mb -> mb
                         .of(native_stub_id)
@@ -914,14 +925,16 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             ClassUtils.setClassStatus(stub_class, ClassStatus.Verified);
         }
 
-        Field field = getDeclaredField(stub_class, field_name);
-        AndroidUnsafe.putObject(stub_class, fieldOffset(field), native_stub.scope());
+        var methods = getDeclaredMethods(stub_class);
 
-        Method native_function = getDeclaredMethod(stub_class,
+        Method init_scope = searchMethod(methods, init_scope_name, Object.class);
+        nothrows_run(() -> init_scope.invoke(null, native_stub.scope()));
+
+        Method native_function = searchMethod(methods,
                 native_stub_name, native_stub_type.parameterArray());
         registerNativeMethod(native_function, native_stub.nativeAddress());
 
-        Method java_function = getDeclaredMethod(stub_class,
+        Method java_function = searchMethod(methods,
                 java_stub_name, java_stub_type.parameterArray());
         return unreflect(java_function);
     }
