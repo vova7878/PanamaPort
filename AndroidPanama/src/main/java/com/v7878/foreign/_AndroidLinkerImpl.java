@@ -539,11 +539,11 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         MemoryLayout ret = descriptor.returnLayoutPlain();
 
         MethodType java_stub_type = fdToHandleMethodType(descriptor);
-        if (options.isReturnInMemory()) {
-            java_stub_type = java_stub_type.insertParameterTypes(0, SegmentAllocator.class);
-        }
         if (capturedStateMask < 0) {
             java_stub_type = java_stub_type.insertParameterTypes(0, MemorySegment.class);
+        }
+        if (options.isReturnInMemory()) {
+            java_stub_type = java_stub_type.insertParameterTypes(0, SegmentAllocator.class);
         }
         // leading function pointer
         java_stub_type = java_stub_type.insertParameterTypes(0, MemorySegment.class);
@@ -657,19 +657,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         ib2.move(ib2.l(regs[0]++), ib2.l(0));
                                     }
                                 })
-                                .if_(capturedStateMask < 0, ib2 -> {
-                                    state_arg[0] = regs[1]++;
-
-                                    ib2.invoke_range(STATIC, check_capture_segment_id,
-                                            1, ib2.p(state_arg[0]));
-                                    ib2.move_result_object(ib2.l(0));
-                                    ib2.move_object(ib2.p(state_arg[0]), ib2.l(0));
-
-                                    ib2.invoke_range(STATIC, acquire_id,
-                                            1, ib2.p(state_arg[0]));
-                                    ib2.label(label_for_reg("try_segment", state_arg[0], true));
-                                    acquired_segments.add(state_arg[0]);
-                                })
                                 .if_(options.isReturnInMemory(), ib2 -> {
                                     assert ret instanceof GroupLayout;
 
@@ -701,6 +688,19 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         ib2.unop(LONG_TO_INT, ib2.l(0), ib2.l(0));
                                         ib2.move(ib2.l(regs[0]++), ib2.l(0));
                                     }
+                                })
+                                .if_(capturedStateMask < 0, ib2 -> {
+                                    state_arg[0] = regs[1]++;
+
+                                    ib2.invoke_range(STATIC, check_capture_segment_id,
+                                            1, ib2.p(state_arg[0]));
+                                    ib2.move_result_object(ib2.l(0));
+                                    ib2.move_object(ib2.p(state_arg[0]), ib2.l(0));
+
+                                    ib2.invoke_range(STATIC, acquire_id,
+                                            1, ib2.p(state_arg[0]));
+                                    ib2.label(label_for_reg("try_segment", state_arg[0], true));
+                                    acquired_segments.add(state_arg[0]);
                                 })
                                 .commit(ib2 -> {
                                     for (var arg : args) {
