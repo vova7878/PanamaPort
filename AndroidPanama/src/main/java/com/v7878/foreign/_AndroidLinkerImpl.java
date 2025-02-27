@@ -51,7 +51,6 @@ import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.JNIUtils.getJNINativeInterfaceOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.handleUncaughtException;
 import static com.v7878.unsafe.Utils.newEmptyClassLoader;
@@ -925,7 +924,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             ClassUtils.setClassStatus(stub_class, ClassStatus.Verified);
         }
 
-        var methods = getDeclaredMethods(stub_class);
+        var methods = stub_class.getDeclaredMethods();//getDeclaredMethods(stub_class);
 
         Method init_scope = searchMethod(methods, init_scope_name, Object.class);
         nothrows_run(() -> init_scope.invoke(null, native_stub.scope()));
