@@ -469,6 +469,16 @@ public class Reflection {
             mirror[0].artFieldOrMethod = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * index;
             mirror[0].info = null;
             Executable tmp = MethodHandles.reflectAs(Executable.class, impl);
+            // Throw NoClassDefFoundError if types cannot be resolved.
+            {
+                if (tmp instanceof Method m) {
+                    m.getReturnType();
+                } else {
+                    assert tmp instanceof Constructor<?>;
+                    tmp.getDeclaringClass();
+                }
+                tmp.getParameterTypes();
+            }
             setAccessible(tmp, true);
             out[i] = tmp;
         }
