@@ -109,6 +109,7 @@ import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ClassUtils;
+import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.foreign.ENVGetter;
 import com.v7878.unsafe.foreign.Errno;
@@ -869,6 +870,11 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
         Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
+
+        if (options.allowsHeapAccess()) {
+            // reinterpret cast Object to int
+            ClassUtils.setClassStatus(stub_class, ClassStatus.Verified);
+        }
 
         Field field = getDeclaredField(stub_class, field_name);
         AndroidUnsafe.putObject(stub_class, fieldOffset(field), native_stub.scope());
