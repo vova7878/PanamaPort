@@ -911,7 +911,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      * {@return {@code true} if this segment is a mapped segment}
      * <p>
      * A mapped memory segment is created e.g. using the
-     * {@link FileChannel#map(FileChannel.MapMode, long, long, Arena)} factory, or by
+     * {@link FileChannel#map(MapMode, long, long, Arena)} factory, or by
      * {@linkplain #ofBuffer(Buffer) wrapping} a
      * {@linkplain java.nio.MappedByteBuffer mapped byte buffer}.
      */
@@ -1090,7 +1090,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      * a local device then no such guarantee is made.
      * <p>
      * If this segment was not mapped in read/write mode
-     * ({@link java.nio.channels.FileChannel.MapMode#READ_WRITE}) then invoking this
+     * ({@link MapMode#READ_WRITE}) then invoking this
      * method may have no effect. In particular, the method has no effect for segments
      * mapped in read-only or private mapping modes. This method may or may not have an
      * effect for implementation-specific mapping modes.

@@ -187,5 +187,5 @@ public class ENVGetter {
         }, name, SCOPE);
     }
 
-    public static MemorySegment INSTANCE = MemorySegment.ofAddress(GETTER.nativeAddress());
+    public static final MemorySegment INSTANCE = MemorySegment.ofAddress(GETTER.nativeAddress());
 }
