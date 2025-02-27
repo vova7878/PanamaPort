@@ -782,9 +782,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         ib2.return_void();
                                     } else if (ret instanceof AddressLayout al) {
                                         if (IS64BIT) {
-                                            ib2.move_wide(ib2.l(0), ib2.p(ret_reg));
+                                            ib2.move_wide(ib2.l(0), ib2.l(ret_reg));
                                         } else {
-                                            ib2.move(ib2.l(0), ib2.p(ret_reg));
+                                            ib2.move(ib2.l(0), ib2.l(ret_reg));
                                             ib2.unop(INT_TO_LONG, ib2.l(0), ib2.l(0));
                                             ib2.const_wide(ib2.l(2), 0xffffffffL);
                                             ib2.binop_2addr(AND_LONG, ib2.l(0), ib2.l(2));
