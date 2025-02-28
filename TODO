@@ -1,3 +1,0 @@
-1) Cache all BulkLinker usages as much as possible
-2) Fix Xlint:unchecked warnings
-3) Create private empty constructor in classes that should not be instantiated
