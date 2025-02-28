@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 public class Reflection {
     static {
@@ -548,7 +549,9 @@ public class Reflection {
 
     public static Method[] getDeclaredMethods(Class<?> clazz) {
         try {
-            return clazz.getDeclaredMethods();
+            var out = clazz.getDeclaredMethods();
+            Stream.of(out).forEach(value -> setAccessible(value, true));
+            return out;
         } catch (Throwable th) {
             return AndroidUnsafe.throwException(th);
         }
@@ -556,7 +559,19 @@ public class Reflection {
 
     public static Method getDeclaredMethod(Class<?> clazz, String name, Class<?>... params) {
         try {
-            return clazz.getDeclaredMethod(name, params);
+            var out = clazz.getDeclaredMethod(name, params);
+            setAccessible(out, true);
+            return out;
+        } catch (Throwable th) {
+            return AndroidUnsafe.throwException(th);
+        }
+    }
+
+    public static Constructor<?>[] getDeclaredConstructors(Class<?> clazz) {
+        try {
+            var out = clazz.getDeclaredConstructors();
+            Stream.of(out).forEach(value -> setAccessible(value, true));
+            return out;
         } catch (Throwable th) {
             return AndroidUnsafe.throwException(th);
         }
@@ -564,7 +579,19 @@ public class Reflection {
 
     public static <T> Constructor<T> getDeclaredConstructor(Class<T> clazz, Class<?>... params) {
         try {
-            return clazz.getDeclaredConstructor(params);
+            var out = clazz.getDeclaredConstructor(params);
+            setAccessible(out, true);
+            return out;
+        } catch (Throwable th) {
+            return AndroidUnsafe.throwException(th);
+        }
+    }
+
+    public static Field[] getDeclaredFields(Class<?> clazz) {
+        try {
+            var out = clazz.getDeclaredFields();
+            Stream.of(out).forEach(value -> setAccessible(value, true));
+            return out;
         } catch (Throwable th) {
             return AndroidUnsafe.throwException(th);
         }
@@ -572,7 +599,9 @@ public class Reflection {
 
     public static Field getDeclaredField(Class<?> clazz, String name) {
         try {
-            return clazz.getDeclaredField(name);
+            var out = clazz.getDeclaredField(name);
+            setAccessible(out, true);
+            return out;
         } catch (Throwable th) {
             return AndroidUnsafe.throwException(th);
         }

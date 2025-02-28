@@ -138,6 +138,7 @@ public class JavaNioAccess {
 
     private static final MethodHandle attachment;
 
+    // TODO: simpify
     static {
         Method m_attachment;
 

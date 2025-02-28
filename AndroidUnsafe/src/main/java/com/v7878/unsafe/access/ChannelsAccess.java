@@ -2,6 +2,7 @@ package com.v7878.unsafe.access;
 
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getHiddenField;
+import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -73,7 +74,7 @@ public class ChannelsAccess {
 
     public static boolean isReadable(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getHiddenField(
+            static final long OFFSET = fieldOffset(getHiddenInstanceField(
                     fileChannelClass(), "readable"));
         }
         Objects.requireNonNull(channel);
@@ -82,7 +83,7 @@ public class ChannelsAccess {
 
     public static boolean isWritable(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getHiddenField(
+            static final long OFFSET = fieldOffset(getHiddenInstanceField(
                     fileChannelClass(), "writable"));
         }
         Objects.requireNonNull(channel);
@@ -91,7 +92,7 @@ public class ChannelsAccess {
 
     public static Object positionLock(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getHiddenField(
+            static final long OFFSET = fieldOffset(getHiddenInstanceField(
                     fileChannelClass(), "positionLock"));
         }
         Objects.requireNonNull(channel);
@@ -100,7 +101,7 @@ public class ChannelsAccess {
 
     public static FileDescriptor getFD(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getHiddenField(
+            static final long OFFSET = fieldOffset(getHiddenInstanceField(
                     fileChannelClass(), "fd"));
         }
         Objects.requireNonNull(channel);
@@ -148,7 +149,7 @@ public class ChannelsAccess {
 
     public static NativeThreadSet getThreadSet(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getHiddenField(
+            static final long OFFSET = fieldOffset(getHiddenInstanceField(
                     fileChannelClass(), "threads"));
         }
         Objects.requireNonNull(channel);

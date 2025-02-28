@@ -15,7 +15,7 @@ import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.fillArray;
-import static com.v7878.unsafe.Reflection.getHiddenField;
+import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.check;
@@ -81,7 +81,7 @@ public class VM {
 
     public static Field getShadowKlassField() {
         class Holder {
-            static final Field shadow$_klass_ = getHiddenField(
+            static final Field shadow$_klass_ = getHiddenInstanceField(
                     Object.class, "shadow$_klass_");
         }
         return Holder.shadow$_klass_;
@@ -89,7 +89,7 @@ public class VM {
 
     public static Field getShadowMonitorField() {
         class Holder {
-            static final Field shadow$_monitor_ = getHiddenField(
+            static final Field shadow$_monitor_ = getHiddenInstanceField(
                     Object.class, "shadow$_monitor_");
         }
         return Holder.shadow$_monitor_;
@@ -187,7 +187,7 @@ public class VM {
     public static int getDexClassDefIndex(Class<?> clazz) {
         class Holder {
             static final long DEX_CLASS_DEF_INDEX = fieldOffset(
-                    getHiddenField(Class.class, "dexClassDefIndex"));
+                    getHiddenInstanceField(Class.class, "dexClassDefIndex"));
         }
         return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.DEX_CLASS_DEF_INDEX);
     }
@@ -195,7 +195,7 @@ public class VM {
     public static int objectSizeField(Class<?> clazz) {
         class Holder {
             static final long OBJECT_SIZE = fieldOffset(
-                    getHiddenField(Class.class, "objectSize"));
+                    getHiddenInstanceField(Class.class, "objectSize"));
         }
         return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.OBJECT_SIZE);
     }
@@ -203,7 +203,7 @@ public class VM {
     public static int classSizeField(Class<?> clazz) {
         class Holder {
             static final long CLASS_SIZE = fieldOffset(
-                    getHiddenField(Class.class, "classSize"));
+                    getHiddenInstanceField(Class.class, "classSize"));
         }
         return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.CLASS_SIZE);
     }
