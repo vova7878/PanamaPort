@@ -11,7 +11,7 @@ import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
-import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.NATIVE_STATIC_OMIT_ENV;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JNI_OBJECT;
@@ -128,11 +128,11 @@ public class JniLibraries {
         private static final Arena SCOPE = Arena.ofAuto();
 
         @LibrarySymbol(name = "_ZN3art5Mutex13ExclusiveLockEPNS_6ThreadE")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        @CallSignature(type = NATIVE_STATIC_OMIT_ENV, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void ExclusiveLock(long mutex, long thread);
 
         @LibrarySymbol(name = "_ZN3art5Mutex15ExclusiveUnlockEPNS_6ThreadE")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
+        @CallSignature(type = NATIVE_STATIC_OMIT_ENV, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void ExclusiveUnlock(long mutex, long thread);
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
