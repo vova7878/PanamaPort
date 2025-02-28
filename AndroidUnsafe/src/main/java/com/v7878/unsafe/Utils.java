@@ -5,7 +5,6 @@ import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
 import android.annotation.SuppressLint;
-import android.util.ArrayMap;
 import android.util.Log;
 
 import com.v7878.foreign.Arena;
@@ -29,7 +28,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
@@ -297,53 +295,6 @@ public class Utils {
 
     public static ClassLoader newEmptyClassLoader() {
         return newEmptyClassLoader(getStackClass1().getClassLoader());
-    }
-
-    private static void addClass(Map<String, Class<?>> map, Class<?> clazz, ClassLoader base) {
-        {
-            Class<?> component = clazz.getComponentType();
-            while (component != null) {
-                clazz = component;
-                component = clazz.getComponentType();
-            }
-        }
-        if (clazz.getClassLoader() == base || clazz.getClassLoader() == Object.class.getClassLoader()) {
-            return;
-        }
-        String name = clazz.getName();
-        try {
-            if (base.loadClass(name) == clazz) {
-                return;
-            }
-        } catch (ClassNotFoundException e) { /* ignore */ }
-        map.put(name, clazz);
-    }
-
-    public static ClassLoader newClassLoaderWithClasses(ClassLoader base, Set<Class<?>> classes) {
-        ArrayMap<String, Class<?>> map = new ArrayMap<>(classes.size());
-        for (Class<?> clazz : classes) {
-            addClass(map, clazz, base);
-        }
-
-        if (map.isEmpty()) {
-            return newEmptyClassLoader(base);
-        }
-
-        return new ClassLoader(base) {
-            @Override
-            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                Class<?> out = map.get(name);
-                if (out != null) {
-                    return out;
-                }
-                return super.loadClass(name, resolve);
-            }
-
-            @Override
-            public Class<?> loadClass(String name) throws ClassNotFoundException {
-                return loadClass(name, false);
-            }
-        };
     }
 
     public static RuntimeException newIllegalArgumentException(String message) {
