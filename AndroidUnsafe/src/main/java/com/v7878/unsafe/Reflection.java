@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class Reflection {
@@ -607,16 +608,29 @@ public class Reflection {
         }
     }
 
+    public static void initHandle(MethodHandle handle) {
+        Objects.requireNonNull(handle);
+        try {
+            MethodHandles.publicLookup().revealDirect(handle);
+        } catch (Throwable th) {
+            // ignore
+        }
+    }
+
     @AlwaysInline
     public static MethodHandle unreflect(Method m) {
         setAccessible(m, true);
-        return nothrows_run(() -> MethodHandles.publicLookup().unreflect(m));
+        var handle = nothrows_run(() -> MethodHandles.publicLookup().unreflect(m));
+        initHandle(handle);
+        return handle;
     }
 
     @AlwaysInline
     public static MethodHandle unreflect(Constructor<?> c) {
         setAccessible(c, true);
-        return nothrows_run(() -> MethodHandles.publicLookup().unreflectConstructor(c));
+        var handle = nothrows_run(() -> MethodHandles.publicLookup().unreflectConstructor(c));
+        initHandle(handle);
+        return handle;
     }
 
     public static MethodHandle unreflectDirect(Method m) {
@@ -628,6 +642,7 @@ public class Reflection {
         MethodHandle out = unreflect(m);
         setMethodHandleKind(out, /*INVOKE_DIRECT*/ 2);
 
+        initHandle(out);
         return out;
     }
 
