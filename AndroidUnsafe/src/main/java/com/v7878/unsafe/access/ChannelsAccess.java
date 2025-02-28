@@ -1,8 +1,8 @@
 package com.v7878.unsafe.access;
 
 import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getHiddenField;
+import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
@@ -24,7 +24,7 @@ public class ChannelsAccess {
 
     public static void begin(AbstractInterruptibleChannel channel) {
         class Holder {
-            static final MethodHandle BEGIN = unreflect(getDeclaredMethod(
+            static final MethodHandle BEGIN = unreflect(getHiddenMethod(
                     AbstractInterruptibleChannel.class, "begin"));
         }
         Objects.requireNonNull(channel);
@@ -33,7 +33,7 @@ public class ChannelsAccess {
 
     public static void end(AbstractInterruptibleChannel channel, boolean completed) {
         class Holder {
-            static final MethodHandle END = unreflect(getDeclaredMethod(
+            static final MethodHandle END = unreflect(getHiddenMethod(
                     AbstractInterruptibleChannel.class, "end", boolean.class));
         }
         Objects.requireNonNull(channel);
@@ -50,7 +50,7 @@ public class ChannelsAccess {
 
     public static long allocationGranularity() {
         class Holder {
-            static final long OFFSET = fieldOffset(getDeclaredField(
+            static final long OFFSET = fieldOffset(getHiddenField(
                     fileChannelClass(), "allocationGranularity"));
             static final long VALUE = AndroidUnsafe.getLongO(fileChannelClass(), OFFSET);
         }
@@ -62,7 +62,7 @@ public class ChannelsAccess {
                                               boolean append, Object parent) {
         class Holder {
             static final MethodHandle OPEN = unreflect(
-                    getDeclaredMethod(fileChannelClass(), "open",
+                    getHiddenMethod(fileChannelClass(), "open",
                             FileDescriptor.class, String.class, boolean.class,
                             boolean.class, boolean.class, Object.class));
         }
@@ -73,7 +73,7 @@ public class ChannelsAccess {
 
     public static boolean isReadable(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getDeclaredField(
+            static final long OFFSET = fieldOffset(getHiddenField(
                     fileChannelClass(), "readable"));
         }
         Objects.requireNonNull(channel);
@@ -82,7 +82,7 @@ public class ChannelsAccess {
 
     public static boolean isWritable(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getDeclaredField(
+            static final long OFFSET = fieldOffset(getHiddenField(
                     fileChannelClass(), "writable"));
         }
         Objects.requireNonNull(channel);
@@ -91,7 +91,7 @@ public class ChannelsAccess {
 
     public static Object positionLock(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getDeclaredField(
+            static final long OFFSET = fieldOffset(getHiddenField(
                     fileChannelClass(), "positionLock"));
         }
         Objects.requireNonNull(channel);
@@ -100,7 +100,7 @@ public class ChannelsAccess {
 
     public static FileDescriptor getFD(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getDeclaredField(
+            static final long OFFSET = fieldOffset(getHiddenField(
                     fileChannelClass(), "fd"));
         }
         Objects.requireNonNull(channel);
@@ -132,14 +132,14 @@ public class ChannelsAccess {
         public int add() {
             class Holder {
                 static final MethodHandle ADD = unreflect(
-                        getDeclaredMethod(threadSetClass(), "add"));
+                        getHiddenMethod(threadSetClass(), "add"));
             }
             return nothrows_run(() -> (int) Holder.ADD.invoke(instance));
         }
 
         public void remove(int i) {
             class Holder {
-                static final MethodHandle REMOVE = unreflect(getDeclaredMethod(
+                static final MethodHandle REMOVE = unreflect(getHiddenMethod(
                         threadSetClass(), "remove", int.class));
             }
             nothrows_run(() -> Holder.REMOVE.invoke(instance, i));
@@ -148,7 +148,7 @@ public class ChannelsAccess {
 
     public static NativeThreadSet getThreadSet(FileChannel channel) {
         class Holder {
-            static final long OFFSET = fieldOffset(getDeclaredField(
+            static final long OFFSET = fieldOffset(getHiddenField(
                     fileChannelClass(), "threads"));
         }
         Objects.requireNonNull(channel);

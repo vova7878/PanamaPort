@@ -2,7 +2,7 @@ package com.v7878.unsafe;
 
 import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.r8.annotations.DoNotObfuscate;
@@ -13,8 +13,8 @@ import com.v7878.r8.annotations.DoNotShrink;
 public class Stack {
     static {
         nothrows_run(() -> registerNativeMethod(
-                getDeclaredMethod(Stack.class, "getStackClass2"),
-                getExecutableData(getDeclaredMethod(Class.forName(
+                getHiddenMethod(Stack.class, "getStackClass2"),
+                getExecutableData(getHiddenMethod(Class.forName(
                         "dalvik.system.VMStack"), "getStackClass2"))));
     }
 

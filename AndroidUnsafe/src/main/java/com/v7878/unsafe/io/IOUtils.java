@@ -4,7 +4,7 @@ import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntO;
 import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
+import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -34,7 +34,7 @@ import java.util.Objects;
 
 public class IOUtils {
     private static final int file_descriptor_offset =
-            fieldOffset(getDeclaredField(FileDescriptor.class, "descriptor"));
+            fieldOffset(getHiddenInstanceField(FileDescriptor.class, "descriptor"));
 
     public static int getDescriptorValue(FileDescriptor fd) {
         Objects.requireNonNull(fd);

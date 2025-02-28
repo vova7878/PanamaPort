@@ -4,6 +4,7 @@ import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
+import static com.v7878.unsafe.Reflection.getHiddenMethods;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.io.IOUtils.MADV_DONTNEED;
@@ -114,7 +115,7 @@ class MappedMemoryUtils {
 
     static {
         Method[] tm = getDeclaredMethods(MappedMemoryUtils.class);
-        Method[] mm = getDeclaredMethods(MappedByteBuffer.class);
+        Method[] mm = getHiddenMethods(MappedByteBuffer.class);
         Class<?> pc_type = ART_SDK_INT < 35 ? int.class : long.class;
         String suffix = ART_SDK_INT < 35 ? "_before35" : "_after35";
         registerNativeMethod(searchMethod(tm, "isLoaded0" + suffix, long.class, long.class, pc_type),

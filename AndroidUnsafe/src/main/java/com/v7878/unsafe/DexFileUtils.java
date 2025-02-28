@@ -8,7 +8,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
+import static com.v7878.unsafe.Reflection.getHiddenField;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
@@ -162,11 +162,11 @@ public class DexFileUtils {
     };
 
     private static final long dexFileOffset = fieldOffset(nothrows_run(() ->
-            getDeclaredField(Class.forName("java.lang.DexCache"), "dexFile")));
+            getHiddenField(Class.forName("java.lang.DexCache"), "dexFile")));
 
     public static Object getDexCache(Class<?> clazz) {
         class Holder {
-            static final long DEX_CACHE_OFFSET = fieldOffset(getDeclaredField(Class.class, "dexCache"));
+            static final long DEX_CACHE_OFFSET = fieldOffset(getHiddenField(Class.class, "dexCache"));
         }
         return AndroidUnsafe.getObject(Objects.requireNonNull(clazz), Holder.DEX_CACHE_OFFSET);
     }
@@ -216,7 +216,7 @@ public class DexFileUtils {
     }
 
     private static final long COOKIE_OFFSET = fieldOffset(
-            getDeclaredField(DexFile.class, "mCookie"));
+            getHiddenField(DexFile.class, "mCookie"));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static long[] getCookie(DexFile dex) {
@@ -229,7 +229,7 @@ public class DexFileUtils {
     }
 
     private static final long INTERNAL_COOKIE_OFFSET = fieldOffset(
-            getDeclaredField(DexFile.class, "mInternalCookie"));
+            getHiddenField(DexFile.class, "mInternalCookie"));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static long[] getInternalCookie(DexFile dex) {

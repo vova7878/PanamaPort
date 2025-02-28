@@ -1,6 +1,6 @@
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
@@ -276,7 +276,7 @@ public final class FileChannelUtils {
     @SuppressWarnings("RedundantThrows")
     private static int truncate0(FileDescriptor fd, long size) throws IOException {
         class Holder {
-            static final MethodHandle TRUNCATE = unreflect(getDeclaredMethod(
+            static final MethodHandle TRUNCATE = unreflect(getHiddenMethod(
                     fileDispatcherClass(), "truncate0",
                     FileDescriptor.class, long.class));
         }
@@ -286,7 +286,7 @@ public final class FileChannelUtils {
     @SuppressWarnings("RedundantThrows")
     private static long size0(FileDescriptor fd) throws IOException {
         class Holder {
-            static final MethodHandle SIZE = unreflect(getDeclaredMethod(
+            static final MethodHandle SIZE = unreflect(getHiddenMethod(
                     fileDispatcherClass(), "size0", FileDescriptor.class));
         }
         return nothrows_run(() -> (long) Holder.SIZE.invokeExact(fd));

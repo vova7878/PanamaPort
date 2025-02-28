@@ -13,6 +13,7 @@ import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
+import static com.v7878.unsafe.Reflection.getHiddenField;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.getSize;
 
@@ -93,12 +94,12 @@ public class MethodTypeHacks {
         FORM_IMPL = (Class<MethodTypeForm>) loadClass(dex, form_name, loader);
     }
 
-    public static final int ARG_TO_SLOT_TABLE_OFFSET = fieldOffset(getDeclaredField(INVOKE_FORM, "argToSlotTable"));
-    public static final int SLOT_TO_ARG_TABLE_OFFSET = fieldOffset(getDeclaredField(INVOKE_FORM, "slotToArgTable"));
-    public static final int ARG_COUNTS_OFFSET = fieldOffset(getDeclaredField(INVOKE_FORM, "argCounts"));
-    public static final int PRIM_COUNTS_OFFSET = fieldOffset(getDeclaredField(INVOKE_FORM, "primCounts"));
-    public static final int ERASED_TYPE_OFFSET = fieldOffset(getDeclaredField(INVOKE_FORM, "erasedType"));
-    public static final int BASIC_TYPE_OFFSET = fieldOffset(getDeclaredField(INVOKE_FORM, "basicType"));
+    public static final int ARG_TO_SLOT_TABLE_OFFSET = fieldOffset(getHiddenField(INVOKE_FORM, "argToSlotTable"));
+    public static final int SLOT_TO_ARG_TABLE_OFFSET = fieldOffset(getHiddenField(INVOKE_FORM, "slotToArgTable"));
+    public static final int ARG_COUNTS_OFFSET = fieldOffset(getHiddenField(INVOKE_FORM, "argCounts"));
+    public static final int PRIM_COUNTS_OFFSET = fieldOffset(getHiddenField(INVOKE_FORM, "primCounts"));
+    public static final int ERASED_TYPE_OFFSET = fieldOffset(getHiddenField(INVOKE_FORM, "erasedType"));
+    public static final int BASIC_TYPE_OFFSET = fieldOffset(getHiddenField(INVOKE_FORM, "basicType"));
 
     private static void copyFormData(Object from, Object to) {
         putObject(to, ARG_TO_SLOT_TABLE_OFFSET, getObject(from, ARG_TO_SLOT_TABLE_OFFSET));
@@ -109,7 +110,7 @@ public class MethodTypeHacks {
         putObject(to, BASIC_TYPE_OFFSET, getObject(from, BASIC_TYPE_OFFSET));
     }
 
-    public static final int FORM_OFFSET = fieldOffset(getDeclaredField(MethodType.class, "form"));
+    public static final int FORM_OFFSET = fieldOffset(getHiddenField(MethodType.class, "form"));
     public static final int FO_OFFSET = fieldOffset(getDeclaredField(FORM_IMPL, "frameOffsets"));
     public static final int RO_OFFSET = fieldOffset(getDeclaredField(FORM_IMPL, "referencesOffsets"));
 

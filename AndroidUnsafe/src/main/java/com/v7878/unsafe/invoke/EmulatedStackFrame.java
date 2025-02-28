@@ -4,8 +4,8 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.objectFieldOffset;
 import static com.v7878.unsafe.AndroidUnsafe.putObject;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
+import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.assertEq;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -61,7 +61,7 @@ public final class EmulatedStackFrame {
     }
 
     private static final MethodHandle esf_create =
-            unreflect(getDeclaredMethod(esf_class, "create", MethodType.class));
+            unreflect(getHiddenMethod(esf_class, "create", MethodType.class));
 
     public static EmulatedStackFrame create(MethodType frameType) {
         return new EmulatedStackFrame(nothrows_run(() -> esf_create.invoke(frameType)));
@@ -74,7 +74,7 @@ public final class EmulatedStackFrame {
     }
 
     private static final long references_offset =
-            objectFieldOffset(getDeclaredField(esf_class, "references"));
+            objectFieldOffset(getHiddenInstanceField(esf_class, "references"));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public Object[] references() {
@@ -88,7 +88,7 @@ public final class EmulatedStackFrame {
     }
 
     private static final long primitives_offset =
-            objectFieldOffset(getDeclaredField(esf_class, "stackFrame"));
+            objectFieldOffset(getHiddenInstanceField(esf_class, "stackFrame"));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public byte[] primitives() {
@@ -102,7 +102,7 @@ public final class EmulatedStackFrame {
     }
 
     private static final long type_offset =
-            objectFieldOffset(getDeclaredField(esf_class, "type"));
+            objectFieldOffset(getHiddenInstanceField(esf_class, "type"));
 
     public MethodType type() {
         return (MethodType) getObject(esf, type_offset);

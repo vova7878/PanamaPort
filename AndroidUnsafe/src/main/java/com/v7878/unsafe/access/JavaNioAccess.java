@@ -28,11 +28,11 @@ import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getDeclaredConstructors;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
-import static com.v7878.unsafe.Reflection.getDeclaredInstanceFields;
-import static com.v7878.unsafe.Reflection.getDeclaredMethods;
-import static com.v7878.unsafe.Reflection.getDeclaredVirtualMethods;
+import static com.v7878.unsafe.Reflection.getHiddenConstructors;
+import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
+import static com.v7878.unsafe.Reflection.getHiddenInstanceFields;
+import static com.v7878.unsafe.Reflection.getHiddenMethods;
+import static com.v7878.unsafe.Reflection.getHiddenVirtualMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
@@ -152,7 +152,7 @@ public class JavaNioAccess {
         {
             makeClassInheritable(nio_mem_ref_class);
 
-            Method[] methods = getDeclaredMethods(nio_mem_ref_class);
+            Method[] methods = getHiddenMethods(nio_mem_ref_class);
             for (Method method : methods) {
                 int flags = method.getModifiers();
                 if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
@@ -161,13 +161,13 @@ public class JavaNioAccess {
                 makeExecutablePublicApi(method);
             }
 
-            Constructor<?>[] constructors = getDeclaredConstructors(nio_mem_ref_class);
+            Constructor<?>[] constructors = getHiddenConstructors(nio_mem_ref_class);
             for (Constructor<?> constructor : constructors) {
                 makeExecutablePublic(constructor);
                 makeExecutablePublicApi(constructor);
             }
 
-            Field[] fields = getDeclaredInstanceFields(nio_mem_ref_class);
+            Field[] fields = getHiddenInstanceFields(nio_mem_ref_class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);
@@ -176,7 +176,7 @@ public class JavaNioAccess {
 
         Class<?> nio_direct_buf_class = nothrows_run(() -> Class.forName(nio_direct_buf_name));
         {
-            Method[] methods = getDeclaredMethods(nio_direct_buf_class);
+            Method[] methods = getHiddenMethods(nio_direct_buf_class);
             for (Method method : methods) {
                 int flags = method.getModifiers();
                 if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
@@ -188,13 +188,13 @@ public class JavaNioAccess {
             m_attachment = searchMethod(methods, "attachment");
             attachment = unreflect(m_attachment);
 
-            Constructor<?>[] constructors = getDeclaredConstructors(nio_direct_buf_class);
+            Constructor<?>[] constructors = getHiddenConstructors(nio_direct_buf_class);
             for (Constructor<?> constructor : constructors) {
                 makeExecutablePublic(constructor);
                 makeExecutablePublicApi(constructor);
             }
 
-            Field[] fields = getDeclaredInstanceFields(nio_direct_buf_class);
+            Field[] fields = getHiddenInstanceFields(nio_direct_buf_class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);
@@ -205,7 +205,7 @@ public class JavaNioAccess {
         {
             makeClassInheritable(nio_heap_buf_class);
 
-            Method[] methods = getDeclaredMethods(nio_heap_buf_class);
+            Method[] methods = getHiddenMethods(nio_heap_buf_class);
             for (Method method : methods) {
                 int flags = method.getModifiers();
                 if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
@@ -214,7 +214,7 @@ public class JavaNioAccess {
                 makeExecutablePublicApi(method);
             }
 
-            Constructor<?>[] constructors = getDeclaredConstructors(nio_heap_buf_class);
+            Constructor<?>[] constructors = getHiddenConstructors(nio_heap_buf_class);
             for (Constructor<?> constructor : constructors) {
                 makeExecutablePublic(constructor);
                 makeExecutablePublicApi(constructor);
@@ -226,7 +226,7 @@ public class JavaNioAccess {
             {
                 Class<?> clazz = MappedByteBuffer.class;
                 while (clazz != null && clazz != Object.class) {
-                    var methods = getDeclaredVirtualMethods(clazz);
+                    var methods = getHiddenVirtualMethods(clazz);
                     for (Method method : methods) {
                         int flags = method.getModifiers();
                         if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
@@ -238,7 +238,7 @@ public class JavaNioAccess {
                 }
             }
 
-            Field[] fields = getDeclaredInstanceFields(MappedByteBuffer.class);
+            Field[] fields = getHiddenInstanceFields(MappedByteBuffer.class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);
@@ -246,7 +246,7 @@ public class JavaNioAccess {
         }
 
         {
-            Field[] fields = getDeclaredInstanceFields(ByteBuffer.class);
+            Field[] fields = getHiddenInstanceFields(ByteBuffer.class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);
@@ -254,7 +254,7 @@ public class JavaNioAccess {
         }
 
         {
-            Field[] fields = getDeclaredInstanceFields(Buffer.class);
+            Field[] fields = getHiddenInstanceFields(Buffer.class);
             for (Field field : fields) {
                 makeFieldPublic(field);
                 makeFieldPublicApi(field);
@@ -410,7 +410,7 @@ public class JavaNioAccess {
         class Holder {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFER_VIEWS.stream()
-                    .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "bb")))
+                    .mapToLong(clazz -> fieldOffset(getHiddenInstanceField(clazz, "bb")))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
         return (ByteBuffer) getObject(buffer, Holder.OFFSET);
@@ -429,7 +429,7 @@ public class JavaNioAccess {
         class Holder {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFERS.stream()
-                    .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "hb")))
+                    .mapToLong(clazz -> fieldOffset(getHiddenInstanceField(clazz, "hb")))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
         return getObject(buffer, Holder.OFFSET);
@@ -446,7 +446,7 @@ public class JavaNioAccess {
     private static long getBufferAddress(Buffer buffer) {
         class Holder {
             static final long OFFSET = fieldOffset(
-                    getDeclaredField(Buffer.class, "address"));
+                    getHiddenInstanceField(Buffer.class, "address"));
         }
         return getLongO(buffer, Holder.OFFSET);
     }
@@ -456,7 +456,7 @@ public class JavaNioAccess {
         class Holder {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFERS.stream()
-                    .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz, "offset")))
+                    .mapToLong(clazz -> fieldOffset(getHiddenInstanceField(clazz, "offset")))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
         return getIntO(buffer, Holder.OFFSET);
@@ -467,7 +467,7 @@ public class JavaNioAccess {
         class Holder {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFER_VIEWS.stream()
-                    .mapToLong(clazz -> fieldOffset(getDeclaredField(clazz,
+                    .mapToLong(clazz -> fieldOffset(getHiddenInstanceField(clazz,
                             ART_SDK_INT >= 35 ? "byteOffset" : "offset")))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
@@ -527,7 +527,7 @@ public class JavaNioAccess {
     }
 
     static final long FD_OFFSET = fieldOffset(
-            getDeclaredField(MappedByteBuffer.class, "fd"));
+            getHiddenInstanceField(MappedByteBuffer.class, "fd"));
 
     public static UnmapperProxy unmapper(Buffer buffer) {
         if (!(buffer instanceof MappedByteBuffer mapped)) {

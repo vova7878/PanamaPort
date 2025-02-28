@@ -1,17 +1,20 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getHiddenMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.searchMethod;
 
 import com.v7878.unsafe.AndroidUnsafe;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Method;
 
 public class VMAccess {
     private static final Class<?> VM_CLASS = nothrows_run(() ->
             Class.forName("dalvik.system.VMRuntime"));
+    private static final Method[] methods = getHiddenMethods(VM_CLASS);
 
     private static Object getInstance() {
         class Holder {
@@ -29,8 +32,8 @@ public class VMAccess {
             static final String[] properties;
 
             static {
-                MethodHandle mh_properties = unreflect(getDeclaredMethod(
-                        VM_CLASS, "properties"));
+                MethodHandle mh_properties = unreflect(
+                        searchMethod(methods, "properties"));
                 properties = nothrows_run(() ->
                         (String[]) mh_properties.invoke(getInstance()));
             }
@@ -43,8 +46,8 @@ public class VMAccess {
             static final String boot_class_path;
 
             static {
-                MethodHandle bootClassPath = unreflect(getDeclaredMethod(
-                        VM_CLASS, "bootClassPath"));
+                MethodHandle bootClassPath = unreflect(
+                        searchMethod(methods, "bootClassPath"));
                 boot_class_path = nothrows_run(() ->
                         (String) bootClassPath.invoke(getInstance()));
             }
@@ -57,8 +60,8 @@ public class VMAccess {
             static final String class_path;
 
             static {
-                MethodHandle classPath = unreflect(getDeclaredMethod(
-                        VM_CLASS, "classPath"));
+                MethodHandle classPath = unreflect(
+                        searchMethod(methods, "classPath"));
                 class_path = nothrows_run(() ->
                         (String) classPath.invoke(getInstance()));
             }
@@ -71,8 +74,8 @@ public class VMAccess {
             static final String lib;
 
             static {
-                MethodHandle vmLibrary = unreflect(getDeclaredMethod(
-                        VM_CLASS, "vmLibrary"));
+                MethodHandle vmLibrary = unreflect(
+                        searchMethod(methods, "vmLibrary"));
                 lib = nothrows_run(() -> (String) vmLibrary.invoke(getInstance()));
             }
         }
@@ -84,8 +87,8 @@ public class VMAccess {
             static final String instruction_set;
 
             static {
-                MethodHandle getCurrentInstructionSet = unreflect(getDeclaredMethod(
-                        VM_CLASS, "getCurrentInstructionSet"));
+                MethodHandle getCurrentInstructionSet = unreflect(
+                        searchMethod(methods, "getCurrentInstructionSet"));
                 instruction_set = nothrows_run(() -> (String) getCurrentInstructionSet.invoke());
             }
         }
@@ -97,8 +100,8 @@ public class VMAccess {
             static final boolean check_jni;
 
             static {
-                MethodHandle isNativeDebuggable = unreflect(getDeclaredMethod(
-                        VM_CLASS, "isCheckJniEnabled"));
+                MethodHandle isNativeDebuggable = unreflect(
+                        searchMethod(methods, "isCheckJniEnabled"));
                 check_jni = nothrows_run(() ->
                         (boolean) isNativeDebuggable.invoke(getInstance()));
             }
@@ -111,8 +114,8 @@ public class VMAccess {
             static final boolean debuggable;
 
             static {
-                MethodHandle isNativeDebuggable = unreflect(getDeclaredMethod(
-                        VM_CLASS, "isNativeDebuggable"));
+                MethodHandle isNativeDebuggable = unreflect(
+                        searchMethod(methods, "isNativeDebuggable"));
                 debuggable = nothrows_run(() ->
                         (boolean) isNativeDebuggable.invoke(getInstance()));
             }
@@ -125,8 +128,8 @@ public class VMAccess {
             static final boolean debuggable;
 
             static {
-                MethodHandle isJavaDebuggable = unreflect(getDeclaredMethod(
-                        VM_CLASS, "isJavaDebuggable"));
+                MethodHandle isJavaDebuggable = unreflect(
+                        searchMethod(methods, "isJavaDebuggable"));
                 debuggable = nothrows_run(() ->
                         (boolean) isJavaDebuggable.invoke(getInstance()));
             }
@@ -139,7 +142,7 @@ public class VMAccess {
             static final MethodHandle new_array;
 
             static {
-                new_array = unreflectDirect(getDeclaredMethod(VM_CLASS,
+                new_array = unreflectDirect(searchMethod(methods,
                         "newNonMovableArray", Class.class, int.class));
             }
         }
@@ -152,8 +155,8 @@ public class VMAccess {
             static final MethodHandle address_of;
 
             static {
-                address_of = unreflectDirect(getDeclaredMethod(VM_CLASS,
-                        "addressOf", Object.class));
+                address_of = unreflectDirect(searchMethod(
+                        methods, "addressOf", Object.class));
             }
         }
         return nothrows_run(() -> (long) Holder.address_of.invoke(getInstance(), array));

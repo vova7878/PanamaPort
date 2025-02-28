@@ -271,7 +271,7 @@ public class Reflection {
     public static final long ART_FIELD_SIZE;
     public static final long ART_FIELD_PADDING;
 
-    private static final MethodHandle mGetArtField;
+    private static final MethodHandle getArtField;
 
     static {
         final int length_field_size = 4;
@@ -283,7 +283,8 @@ public class Reflection {
         ART_METHOD_PADDING = (am - methods - length_field_size)
                 % ART_METHOD_SIZE + length_field_size;
 
-        mGetArtField = unreflectDirect(getDeclaredVirtualMethod(Field.class, "getArtField"));
+        getArtField = unreflectDirect(getHiddenVirtualMethod(
+                Field.class, "getArtField"));
 
         long af = getArtField(Test.af);
         long bf = getArtField(Test.bf);
@@ -321,24 +322,6 @@ public class Reflection {
     }
 
     @AlwaysInline
-    public static long instanceFieldOffset(Field f) {
-        check(!Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
-        return fieldOffset(f);
-    }
-
-    @AlwaysInline
-    public static long staticFieldOffset(Field f) {
-        check(Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
-        return fieldOffset(f);
-    }
-
-    @AlwaysInline
-    public static Object staticFieldBase(Field f) {
-        check(Modifier.isStatic(f.getModifiers()), IllegalArgumentException::new);
-        return f.getDeclaringClass();
-    }
-
-    @AlwaysInline
     public static long getArtMethod(Executable ex) {
         var mirror = new ExecutableMirror[1];
         fillArray(mirror, ex);
@@ -347,7 +330,7 @@ public class Reflection {
 
     @AlwaysInline
     public static long getArtField(Field f) {
-        return nothrows_run(() -> (long) mGetArtField.invokeExact(f));
+        return nothrows_run(() -> (long) getArtField.invokeExact(f));
     }
 
     public static Executable toExecutable(long art_method) {
@@ -392,10 +375,10 @@ public class Reflection {
         return out;
     }
 
-    public static Field[] getDeclaredInstanceFields(Class<?> clazz) {
+    public static Field[] getHiddenInstanceFields(Class<?> clazz) {
         if (ART_SDK_INT >= 36) {
             // TODO
-            return Arrays.stream(getDeclaredFields(clazz))
+            return Arrays.stream(getHiddenFields(clazz))
                     .filter((field) -> !Modifier.isStatic(field.getModifiers()))
                     .toArray(Field[]::new);
         } else {
@@ -408,15 +391,14 @@ public class Reflection {
         }
     }
 
-    public static Field getDeclaredInstanceField(Class<?> clazz, String name) {
-        //TODO: improve performance
-        return searchField(getDeclaredInstanceFields(clazz), name);
+    public static Field getHiddenInstanceField(Class<?> clazz, String name) {
+        return searchField(getHiddenInstanceFields(clazz), name);
     }
 
-    public static Field[] getDeclaredStaticFields(Class<?> clazz) {
+    public static Field[] getHiddenStaticFields(Class<?> clazz) {
         if (ART_SDK_INT >= 36) {
             // TODO
-            return Arrays.stream(getDeclaredFields(clazz))
+            return Arrays.stream(getHiddenFields(clazz))
                     .filter((field) -> Modifier.isStatic(field.getModifiers()))
                     .toArray(Field[]::new);
         } else {
@@ -429,12 +411,11 @@ public class Reflection {
         }
     }
 
-    public static Field getDeclaredStaticField(Class<?> clazz, String name) {
-        //TODO: improve performance
-        return searchField(getDeclaredStaticFields(clazz), name);
+    public static Field gethiddenStaticField(Class<?> clazz, String name) {
+        return searchField(getHiddenStaticFields(clazz), name);
     }
 
-    public static Field[] getDeclaredFields(Class<?> clazz) {
+    public static Field[] getHiddenFields(Class<?> clazz) {
         if (ART_SDK_INT >= 36) {
             long fields = Utils_16.getFields(clazz);
             if (fields == 0) {
@@ -443,8 +424,8 @@ public class Reflection {
             int count = getIntN(fields);
             return getFields0(fields, 0, count);
         } else {
-            Field[] out1 = getDeclaredInstanceFields(clazz);
-            Field[] out2 = getDeclaredStaticFields(clazz);
+            Field[] out1 = getHiddenInstanceFields(clazz);
+            Field[] out2 = getHiddenStaticFields(clazz);
             Field[] out = new Field[out1.length + out2.length];
             System.arraycopy(out1, 0, out, 0, out1.length);
             System.arraycopy(out2, 0, out, out1.length, out2.length);
@@ -452,9 +433,8 @@ public class Reflection {
         }
     }
 
-    public static Field getDeclaredField(Class<?> clazz, String name) {
-        //TODO: improve performance
-        return searchField(getDeclaredFields(clazz), name);
+    public static Field getHiddenField(Class<?> clazz, String name) {
+        return searchField(getHiddenFields(clazz), name);
     }
 
     private static void fillExecutables0(long methods, int begin, Executable[] out) {
@@ -469,22 +449,12 @@ public class Reflection {
             mirror[0].artFieldOrMethod = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * index;
             mirror[0].info = null;
             Executable tmp = MethodHandles.reflectAs(Executable.class, impl);
-            // Throw NoClassDefFoundError if types cannot be resolved.
-            {
-                if (tmp instanceof Method m) {
-                    m.getReturnType();
-                } else {
-                    assert tmp instanceof Constructor<?>;
-                    tmp.getDeclaringClass();
-                }
-                tmp.getParameterTypes();
-            }
             setAccessible(tmp, true);
             out[i] = tmp;
         }
     }
 
-    public static Executable[] getDeclaredExecutables(Class<?> clazz) {
+    public static Executable[] getHiddenExecutables(Class<?> clazz) {
         long methods = getMethodsPtr(clazz);
         if (methods == 0) {
             return new Executable[0];
@@ -495,7 +465,7 @@ public class Reflection {
         return out;
     }
 
-    public static Executable[] getDeclaredDirectExecutables(Class<?> clazz) {
+    public static Executable[] getHiddenDirectExecutables(Class<?> clazz) {
         long methods = getMethodsPtr(clazz);
         if (methods == 0) {
             return new Executable[0];
@@ -507,7 +477,7 @@ public class Reflection {
     }
 
     // Note: only methods can be virtual
-    public static Method[] getDeclaredVirtualMethods(Class<?> clazz) {
+    public static Method[] getHiddenVirtualMethods(Class<?> clazz) {
         long methods = getMethodsPtr(clazz);
         if (methods == 0) {
             return new Method[0];
@@ -519,32 +489,30 @@ public class Reflection {
         return out;
     }
 
-    public static Method getDeclaredVirtualMethod(Class<?> clazz, String name, Class<?>... params) {
-        return searchMethod(getDeclaredVirtualMethods(clazz), name, params);
+    public static Method getHiddenVirtualMethod(Class<?> clazz, String name, Class<?>... params) {
+        return searchMethod(getHiddenVirtualMethods(clazz), name, params);
     }
 
-    public static Method[] getDeclaredMethods(Class<?> clazz) {
-        return Arrays.stream(getDeclaredExecutables(clazz))
+    public static Method[] getHiddenMethods(Class<?> clazz) {
+        return Arrays.stream(getHiddenExecutables(clazz))
                 .filter((exec) -> exec instanceof Method)
                 .toArray(Method[]::new);
     }
 
-    public static Method getDeclaredMethod(Class<?> clazz, String name, Class<?>... params) {
-        //TODO: improve performance
-        return searchMethod(getDeclaredMethods(clazz), name, params);
+    public static Method getHiddenMethod(Class<?> clazz, String name, Class<?>... params) {
+        return searchMethod(getHiddenMethods(clazz), name, params);
     }
 
-    public static <T> Constructor<T>[] getDeclaredConstructors(Class<T> clazz) {
+    public static <T> Constructor<T>[] getHiddenConstructors(Class<T> clazz) {
         //noinspection SuspiciousToArrayCall,unchecked
-        return Arrays.stream(getDeclaredDirectExecutables(clazz))
+        return Arrays.stream(getHiddenDirectExecutables(clazz))
                 .filter((exec) -> exec instanceof Constructor
                         && !Modifier.isStatic(exec.getModifiers()))
                 .toArray(Constructor[]::new);
     }
 
-    public static <T> Constructor<T> getDeclaredConstructor(Class<T> clazz, Class<?>... params) {
-        //TODO: improve performance
-        return searchConstructor(getDeclaredConstructors(clazz), params);
+    public static <T> Constructor<T> getHiddenConstructor(Class<T> clazz, Class<?>... params) {
+        return searchConstructor(getHiddenConstructors(clazz), params);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -568,7 +536,7 @@ public class Reflection {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static Method getStaticConstructor(Class<?> clazz) {
-        var value = Arrays.stream(getDeclaredDirectExecutables(clazz))
+        var value = Arrays.stream(getHiddenDirectExecutables(clazz))
                 .filter((exec) -> exec instanceof Constructor
                         && Modifier.isStatic(exec.getModifiers()))
                 .findAny().orElse(null);
@@ -576,6 +544,38 @@ public class Reflection {
             return null;
         }
         return constructorToMethod((Constructor<?>) value);
+    }
+
+    public static Method[] getDeclaredMethods(Class<?> clazz) {
+        try {
+            return clazz.getDeclaredMethods();
+        } catch (Throwable th) {
+            return AndroidUnsafe.throwException(th);
+        }
+    }
+
+    public static Method getDeclaredMethod(Class<?> clazz, String name, Class<?>... params) {
+        try {
+            return clazz.getDeclaredMethod(name, params);
+        } catch (Throwable th) {
+            return AndroidUnsafe.throwException(th);
+        }
+    }
+
+    public static <T> Constructor<T> getDeclaredConstructor(Class<T> clazz, Class<?>... params) {
+        try {
+            return clazz.getDeclaredConstructor(params);
+        } catch (Throwable th) {
+            return AndroidUnsafe.throwException(th);
+        }
+    }
+
+    public static Field getDeclaredField(Class<?> clazz, String name) {
+        try {
+            return clazz.getDeclaredField(name);
+        } catch (Throwable th) {
+            return AndroidUnsafe.throwException(th);
+        }
     }
 
     @AlwaysInline

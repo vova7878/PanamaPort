@@ -1,7 +1,7 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.Reflection.getDeclaredConstructor;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getHiddenConstructor;
+import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
@@ -20,7 +20,7 @@ public class DexFileAccess {
             static {
                 Class<?> elements = DexFileUtils.forName(
                         "[Ldalvik.system.DexPathList$Element;", null);
-                handle = unreflect(getDeclaredConstructor(DexFile.class,
+                handle = unreflect(getHiddenConstructor(DexFile.class,
                         ByteBuffer[].class, ClassLoader.class, elements));
             }
         }
@@ -32,7 +32,7 @@ public class DexFileAccess {
             static final MethodHandle handle;
 
             static {
-                handle = unreflect(getDeclaredConstructor(DexFile.class, ByteBuffer.class));
+                handle = unreflect(getHiddenConstructor(DexFile.class, ByteBuffer.class));
             }
         }
         return nothrows_run(() -> (DexFile) Holder.handle.invoke(buf));
@@ -45,7 +45,7 @@ public class DexFileAccess {
             static {
                 Class<?> elements = DexFileUtils.forName(
                         "[Ldalvik.system.DexPathList$Element;", null);
-                handle = unreflect(getDeclaredMethod(DexFile.class, "openInMemoryDexFiles",
+                handle = unreflect(getHiddenMethod(DexFile.class, "openInMemoryDexFiles",
                         ByteBuffer[].class, ClassLoader.class, elements));
             }
         }
@@ -57,7 +57,7 @@ public class DexFileAccess {
             static final MethodHandle handle;
 
             static {
-                handle = unreflect(getDeclaredMethod(DexFile.class,
+                handle = unreflect(getHiddenMethod(DexFile.class,
                         "openInMemoryDexFile", ByteBuffer.class));
             }
         }
@@ -70,7 +70,7 @@ public class DexFileAccess {
             static final MethodHandle handle;
 
             static {
-                handle = unreflect(getDeclaredMethod(DexFile.class, "defineClassNative",
+                handle = unreflect(getHiddenMethod(DexFile.class, "defineClassNative",
                         String.class, ClassLoader.class, Object.class, DexFile.class));
             }
         }
@@ -82,7 +82,7 @@ public class DexFileAccess {
             static final MethodHandle handle;
 
             static {
-                handle = unreflect(getDeclaredMethod(DexFile.class,
+                handle = unreflect(getHiddenMethod(DexFile.class,
                         "getClassNameList", Object.class));
             }
         }

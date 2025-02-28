@@ -3,7 +3,7 @@ package com.v7878.unsafe;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
+import static com.v7878.unsafe.Reflection.getHiddenField;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 
 import java.lang.reflect.Modifier;
@@ -132,9 +132,9 @@ public class ClassUtils {
     }
 
     private static final long CLASS_STATUS_OFFSET = fieldOffset(
-            getDeclaredField(Class.class, "status"));
+            getHiddenField(Class.class, "status"));
     private static final long CLASS_FLAGS_OFFSET = fieldOffset(
-            getDeclaredField(Class.class, "accessFlags"));
+            getHiddenField(Class.class, "accessFlags"));
 
     @ApiSensitive
     public static int getRawClassStatus(Class<?> clazz) {

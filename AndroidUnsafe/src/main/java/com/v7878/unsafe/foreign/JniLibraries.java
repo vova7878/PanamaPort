@@ -7,8 +7,8 @@ import static com.v7878.foreign.ValueLayout.JAVA_BOOLEAN;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
-import static com.v7878.unsafe.Reflection.instanceFieldOffset;
+import static com.v7878.unsafe.Reflection.fieldOffset;
+import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
@@ -180,8 +180,8 @@ public class JniLibraries {
     private static final long HANDLE_OFFSET = SHARED_LIBRARY
             .byteOffset(groupElement("handle_"));
 
-    private static final long ALLOCATOR_OFFSET = instanceFieldOffset(
-            getDeclaredField(ClassLoader.class, "allocator"));
+    private static final long ALLOCATOR_OFFSET = fieldOffset(
+            getHiddenInstanceField(ClassLoader.class, "allocator"));
 
     public static void forEachHandlesInClassLoader(
             ClassLoader loader, Function<MemorySegment, Boolean> consumer) {

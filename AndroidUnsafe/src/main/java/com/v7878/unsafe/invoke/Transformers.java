@@ -21,8 +21,8 @@ import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.getDeclaredConstructor;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
+import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
+import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.DEBUG_BUILD;
@@ -56,9 +56,9 @@ import dalvik.system.DexFile;
 public class Transformers {
 
     private static final MethodHandle directAsVarargsCollector = nothrows_run(() -> unreflectDirect(
-            getDeclaredMethod(MethodHandle.class, "asVarargsCollector", Class.class)));
+            getHiddenMethod(MethodHandle.class, "asVarargsCollector", Class.class)));
     private static final MethodHandle directBindTo = nothrows_run(() -> unreflectDirect(
-            getDeclaredMethod(MethodHandle.class, "bindTo", Object.class)));
+            getHiddenMethod(MethodHandle.class, "bindTo", Object.class)));
 
     private static final MethodHandle new_transformer;
     private static final InvokerI invoker;
@@ -88,7 +88,7 @@ public class Transformers {
         if (ART_SDK_INT < 33) {
             asTypeCache = FieldId.of(transformer_id, "asTypeCache", mh);
         } else {
-            Field cache = getDeclaredField(MethodHandle.class, "asTypeCache");
+            Field cache = getHiddenInstanceField(MethodHandle.class, "asTypeCache");
             makeFieldPublic(cache);
             asTypeCache = FieldId.of(cache);
         }
@@ -242,7 +242,7 @@ public class Transformers {
                                     .iop(PUT_OBJECT, ib.l(0), ib.this_(), asTypeCache)
                                     .return_object(ib.l(0));
                         } else {
-                            Method tmp = getDeclaredMethod(MethodHandle.class,
+                            Method tmp = getHiddenMethod(MethodHandle.class,
                                     "asTypeUncached", MethodType.class);
                             makeMethodInheritable(tmp);
 
@@ -298,7 +298,7 @@ public class Transformers {
                                 )
                         );
                     } else {
-                        Method uncached = getDeclaredMethod(MethodHandle.class,
+                        Method uncached = getHiddenMethod(MethodHandle.class,
                                 "asTypeUncached", MethodType.class);
                         makeMethodInheritable(uncached);
                         // return super.asTypeUncached(type);
@@ -356,7 +356,7 @@ public class Transformers {
                         )
                 )
                 .commit(cb2 -> {
-                    Method transform = getDeclaredMethod(MethodHandle.class,
+                    Method transform = getHiddenMethod(MethodHandle.class,
                             "transform", EmulatedStackFrame.esf_class);
                     makeMethodInheritable(transform);
                     // public void transform(MethodHandle handle, Object stack) {
@@ -397,7 +397,7 @@ public class Transformers {
                                                 ProtoId.of(TypeId.OBJECT, TypeId.of(Object[].class))),
                                         ProtoId.of(TypeId.V, esf), ib.p(0), ib.p(1));
                             } else {
-                                Method invokeWF = getDeclaredMethod(MethodHandle.class,
+                                Method invokeWF = getHiddenMethod(MethodHandle.class,
                                         "invokeExactWithFrame", EmulatedStackFrame.esf_class);
                                 makeExecutablePublic(invokeWF);
                                 ib.invoke(VIRTUAL, MethodId.of(invokeWF), ib.p(0), ib.p(1));
