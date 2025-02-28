@@ -40,7 +40,7 @@ For example:
 
 ```
 dependencies {
-    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.6-preview'
+    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.7-preview'
 }
 ```
 
