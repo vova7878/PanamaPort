@@ -1,17 +1,6 @@
 package com.v7878.unsafe.invoke;
 
-import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.builder.CodeBuilder.InvokeKind.DIRECT;
-import static com.v7878.dex.builder.CodeBuilder.InvokeKind.INTERFACE;
-import static com.v7878.dex.builder.CodeBuilder.InvokeKind.STATIC;
-import static com.v7878.dex.builder.CodeBuilder.InvokeKind.VIRTUAL;
-import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.ClassUtils.makeClassPublic;
-import static com.v7878.unsafe.ClassUtils.setClassStatus;
-import static com.v7878.unsafe.DexFileUtils.loadClass;
-import static com.v7878.unsafe.DexFileUtils.openDexFile;
-import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Utils.badCast;
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
@@ -24,24 +13,9 @@ import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 
 import android.annotation.TargetApi;
 import android.os.Build;
-import android.util.ArraySet;
-import android.util.SparseArray;
 
-import com.v7878.dex.DexIO;
-import com.v7878.dex.builder.ClassBuilder;
-import com.v7878.dex.builder.CodeBuilder.InvokeKind;
-import com.v7878.dex.immutable.ClassDef;
-import com.v7878.dex.immutable.Dex;
-import com.v7878.dex.immutable.MethodId;
-import com.v7878.dex.immutable.ProtoId;
-import com.v7878.dex.immutable.TypeId;
-import com.v7878.r8.annotations.DoNotObfuscate;
-import com.v7878.r8.annotations.DoNotShrink;
-import com.v7878.unsafe.AndroidUnsafe;
-import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.Reflection;
-import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.access.InvokeAccess;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.RelativeStackFrameAccessor;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
@@ -51,14 +25,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-
-import dalvik.system.DexFile;
 
 //TODO: use codegen to improve performance
 public class MethodHandlesFixes {
@@ -195,181 +163,6 @@ public class MethodHandlesFixes {
         Objects.requireNonNull(type);
         MethodType transformer_type = type.insertParameterTypes(0, MethodHandle.class);
         return Transformers.makeTransformer(transformer_type, new Invoker(type, true));
-    }
-
-    private static String getInvokerName(ProtoId proto) {
-        return MethodHandlesFixes.class.getName() + "$$$Invoker_" + proto.computeShorty();
-    }
-
-    private static ClassLoader getInvokerClassLoader(Method target, MethodType type) {
-        Set<Class<?>> set = new ArraySet<>(
-                target.getParameterCount() + type.parameterCount() + 3);
-        set.addAll(List.of(target.getParameterTypes()));
-        set.add(target.getReturnType());
-        set.add(target.getDeclaringClass());
-        set.addAll(List.of(type.parameterArray()));
-        set.add(type.returnType());
-        return Utils.newClassLoaderWithClasses(MethodHandlesFixes.class.getClassLoader(), set);
-    }
-
-    @DoNotShrink
-    @DoNotObfuscate
-    public static abstract class EmulatedInvoker {
-        public abstract void invoke(RelativeStackFrameAccessor accessor) throws Throwable;
-    }
-
-    // TODO: use StackFrameAccessor instead of RelativeStackFrameAccessor
-    private static EmulatedInvoker emulatedInvoker(Method target, InvokeKind kind, MethodType type) {
-        makeClassPublic(target.getDeclaringClass());
-        makeExecutablePublic(target);
-
-        TypeId sfa_id = TypeId.of(RelativeStackFrameAccessor.class);
-        TypeId obj_id = TypeId.OBJECT;
-
-        SparseArray<MethodId> next_ids = new SparseArray<>(9);
-        next_ids.append('Z', MethodId.of(sfa_id, "nextBoolean", ProtoId.of(TypeId.Z)));
-        next_ids.append('B', MethodId.of(sfa_id, "nextByte", ProtoId.of(TypeId.B)));
-        next_ids.append('C', MethodId.of(sfa_id, "nextChar", ProtoId.of(TypeId.C)));
-        next_ids.append('S', MethodId.of(sfa_id, "nextShort", ProtoId.of(TypeId.S)));
-        next_ids.append('I', MethodId.of(sfa_id, "nextInt", ProtoId.of(TypeId.I)));
-        next_ids.append('F', MethodId.of(sfa_id, "nextFloat", ProtoId.of(TypeId.F)));
-        next_ids.append('J', MethodId.of(sfa_id, "nextLong", ProtoId.of(TypeId.J)));
-        next_ids.append('D', MethodId.of(sfa_id, "nextDouble", ProtoId.of(TypeId.D)));
-        next_ids.append('L', MethodId.of(sfa_id, "nextReference", ProtoId.of(obj_id)));
-
-        SparseArray<MethodId> put_next_ids = new SparseArray<>(9);
-        put_next_ids.append('Z', MethodId.of(sfa_id, "putNextBoolean", ProtoId.of(TypeId.V, TypeId.Z)));
-        put_next_ids.append('B', MethodId.of(sfa_id, "putNextByte", ProtoId.of(TypeId.V, TypeId.B)));
-        put_next_ids.append('C', MethodId.of(sfa_id, "putNextChar", ProtoId.of(TypeId.V, TypeId.C)));
-        put_next_ids.append('S', MethodId.of(sfa_id, "putNextShort", ProtoId.of(TypeId.V, TypeId.S)));
-        put_next_ids.append('I', MethodId.of(sfa_id, "putNextInt", ProtoId.of(TypeId.V, TypeId.I)));
-        put_next_ids.append('F', MethodId.of(sfa_id, "putNextFloat", ProtoId.of(TypeId.V, TypeId.F)));
-        put_next_ids.append('J', MethodId.of(sfa_id, "putNextLong", ProtoId.of(TypeId.V, TypeId.J)));
-        put_next_ids.append('D', MethodId.of(sfa_id, "putNextDouble", ProtoId.of(TypeId.V, TypeId.D)));
-        put_next_ids.append('L', MethodId.of(sfa_id, "putNextReference", ProtoId.of(TypeId.V, obj_id)));
-
-        var move_to_ret = MethodId.of(sfa_id, "moveToReturn", ProtoId.of(sfa_id));
-
-        ProtoId proto = ProtoId.of(type);
-        MethodId target_id = MethodId.of(target);
-
-        final int reserved_regs = 3; // locals for result
-        final int proto_regs = proto.countInputRegisters();
-
-        String invoker_name = getInvokerName(proto);
-        TypeId invoker_id = TypeId.ofName(invoker_name);
-        ClassDef invoker_def = ClassBuilder.build(invoker_id, cb -> cb
-                .withSuperClass(TypeId.of(EmulatedInvoker.class))
-                .withFlags(ACC_PUBLIC)
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC)
-                        .withName("invoke")
-                        .withReturnType(TypeId.V)
-                        .withParameterTypes(sfa_id)
-                        .withCode(reserved_regs + proto_regs, ib -> {
-                            ib.move_object(ib.l(2), ib.p(0));
-                            int reg = reserved_regs;
-                            for (var arg_id : proto.getParameterTypes()) {
-                                char shorty = arg_id.getShorty();
-                                switch (shorty) {
-                                    case 'Z', 'B', 'C', 'S', 'I', 'F' -> {
-                                        ib.invoke(VIRTUAL, next_ids.get(shorty), ib.l(2));
-                                        ib.move_result(ib.l(0));
-                                        ib.move(ib.l(reg), ib.l(0));
-                                        reg++;
-                                    }
-                                    case 'J', 'D' -> {
-                                        ib.invoke(VIRTUAL, next_ids.get(shorty), ib.l(2));
-                                        ib.move_result_wide(ib.l(0));
-                                        ib.move_wide(ib.l(reg), ib.l(0));
-                                        reg += 2;
-                                    }
-                                    case 'L' -> {
-                                        ib.invoke(VIRTUAL, next_ids.get(shorty), ib.l(2));
-                                        ib.move_result_object(ib.l(0));
-                                        ib.check_cast(ib.l(0), arg_id);
-                                        ib.move_object(ib.l(reg), ib.l(0));
-                                        reg++;
-                                    }
-                                    default -> throw shouldNotReachHere();
-                                }
-                            }
-                            ib.invoke_range(kind, target_id, proto_regs, proto_regs == 0 ? 0 : reserved_regs);
-                            var ret_id = proto.getReturnType();
-                            var ret_shorty = ret_id.getShorty();
-                            switch (ret_shorty) {
-                                case 'V' -> { /* nop */ }
-                                case 'Z', 'B', 'C', 'S', 'I', 'F' -> {
-                                    ib.move_result(ib.l(0));
-                                    ib.invoke(VIRTUAL, move_to_ret, ib.l(2));
-                                    ib.invoke(VIRTUAL, put_next_ids.get(ret_shorty), ib.l(2), ib.l(0));
-                                }
-                                case 'J', 'D' -> {
-                                    ib.move_result_wide(ib.l(0));
-                                    ib.invoke(VIRTUAL, move_to_ret, ib.l(2));
-                                    ib.invoke(VIRTUAL, put_next_ids.get(ret_shorty), ib.l(2), ib.l(0), ib.l(1));
-                                }
-                                case 'L' -> {
-                                    ib.move_result_object(ib.l(0));
-                                    ib.invoke(VIRTUAL, move_to_ret, ib.l(2));
-                                    ib.invoke(VIRTUAL, put_next_ids.get(ret_shorty), ib.l(2), ib.l(0));
-                                }
-                                default -> throw shouldNotReachHere();
-                            }
-                            ib.return_void();
-                        })
-                )
-        );
-
-        DexFile dex = openDexFile(DexIO.write(Dex.of(invoker_def)));
-        setTrusted(dex);
-
-        Class<?> invoker = loadClass(dex, invoker_name, getInvokerClassLoader(target, type));
-        setClassStatus(invoker, ClassStatus.Verified);
-
-        return (EmulatedInvoker) AndroidUnsafe.allocateInstance(invoker);
-    }
-
-    private static class MethodInvoker extends AbstractTransformer {
-        private final EmulatedInvoker target;
-
-        MethodInvoker(EmulatedInvoker target) {
-            this.target = target;
-        }
-
-        @Override
-        public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
-            target.invoke(stack.relativeAccessor());
-        }
-    }
-
-    private static InvokeKind getInvokeKind(Method target) {
-        int mods = target.getModifiers();
-        if (Modifier.isStatic(mods)) {
-            return STATIC;
-        }
-        if (Modifier.isPrivate(mods)) {
-            return DIRECT;
-        }
-        return target.getDeclaringClass().isInterface() ? INTERFACE : VIRTUAL;
-    }
-
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static MethodHandle unreflectWithTransform(Method target, InvokeKind kind, MethodType type) {
-        var invoker = emulatedInvoker(target, kind, type);
-        return makeTransformer(type, new MethodInvoker(invoker));
-    }
-
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static MethodHandle unreflectWithTransform(Method target, MethodType type) {
-        var invoker = emulatedInvoker(target, getInvokeKind(target), type);
-        return makeTransformer(type, new MethodInvoker(invoker));
-    }
-
-    public static MethodHandle unreflectWithTransform(Method target) {
-        MethodType type = Utils.methodTypeOf(target);
-        var invoker = emulatedInvoker(target, getInvokeKind(target), type);
-        return makeTransformer(type, new MethodInvoker(invoker));
     }
 
     static class ExplicitCastArguments extends AbstractTransformer {
