@@ -491,6 +491,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         public static MemorySegment allocateCopy(MemorySegment segment, Arena arena, long size, long align) {
             if (size == 0) {
+                // TODO?: check segment
                 return MemorySegment.NULL;
             }
             // TODO: improve performance
@@ -539,28 +540,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         public static void putErrno(MemorySegment capturedState) {
             VH_ERRNO.set(capturedState, 0, Errno.errno());
-        }
-    }
-
-    // TODO: move to CodeBuilder
-    private static void move_result_shorty(CodeBuilder b, char shorty, int reg) {
-        switch (shorty) {
-            case 'V' -> { /* nop */ }
-            case 'Z', 'B', 'C', 'S', 'I', 'F' -> b.move_result(reg);
-            case 'J', 'D' -> b.move_result_wide(reg);
-            case 'L' -> b.move_result_object(reg);
-            default -> throw shouldNotReachHere();
-        }
-    }
-
-    // TODO: move to CodeBuilder
-    private static void return_shorty(CodeBuilder b, char shorty, int reg) {
-        switch (shorty) {
-            case 'V' -> b.return_void();
-            case 'Z', 'B', 'C', 'S', 'I', 'F' -> b.return_(reg);
-            case 'J', 'D' -> b.return_wide(reg);
-            case 'L' -> b.return_object(reg);
-            default -> throw shouldNotReachHere();
         }
     }
 
@@ -807,8 +786,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
                                 .invoke_range(STATIC, native_stub_id,
                                         native_ins, ib.l(reserved[0]))
-                                .if_(native_ret_reg != -1, ib2 -> move_result_shorty(
-                                        ib2, native_ret_shorty, ib2.l(native_ret_reg)))
+                                .if_(native_ret_reg != -1, ib2 -> ib2.
+                                        move_result_shorty(native_ret_shorty,
+                                                ib2.l(native_ret_reg))
+                                )
 
                                 .if_((capturedStateMask & ERRNO.mask()) != 0, ib2 -> ib2
                                         .invoke_range(STATIC, put_errno_id, 1, ib2.p(state_arg[0]))
@@ -852,7 +833,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         ib2.move_object(ib2.l(0), ib2.p(allocator_arg[0]));
                                         ib2.return_object(ib2.l(0));
                                     } else {
-                                        return_shorty(ib2, native_ret_shorty, ib2.l(native_ret_reg));
+                                        ib2.return_shorty(native_ret_shorty, ib2.l(native_ret_reg));
                                     }
                                 })
                                 .commit(ib2 -> {
