@@ -21,7 +21,7 @@ The project contains 4 sublibraries:
 
 ### Get started
 
-Just add the library to the list of dependencies:
+Just add this library to the list of dependencies:
 
 ```
 dependencies {
