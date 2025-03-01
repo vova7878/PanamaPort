@@ -183,8 +183,6 @@ final class _Utils {
             throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
-    @DoNotShrink
-    @DoNotObfuscate
     public static MemorySegment checkCaptureSegment(MemorySegment captureSegment) {
         Objects.requireNonNull(captureSegment);
         if (captureSegment.equals(MemorySegment.NULL)) {
