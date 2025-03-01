@@ -17,11 +17,11 @@ The project contains 4 sublibraries:
 - Gradle 8.0+
 - Android Gradle plugin 8.1.1+
 - compileSdk 34+
-- Support for dependencies from jitpack.io ([see documentation](https://docs.jitpack.io/))
+- Support for dependencies from jitpack.io [(see documentation)](https://docs.jitpack.io/)
 
 ### Get started
 
-Add the library to the list of dependencies:
+Just add the library to the list of dependencies:
 
 ```
 dependencies {
@@ -77,7 +77,7 @@ Port of methods outside the java.lang.foreign package:
 
 ### Interaction with jextract
 
-Usually, to use the output of jextract, it is enough to fix package names. If something doesn't work, create an issue
+Usually, to use the output of jextract, it is enough to fix package names. If something doesn't work properly, please create an issue
 
 ### Examples and tests
 
