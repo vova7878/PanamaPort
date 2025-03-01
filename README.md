@@ -1,4 +1,4 @@
-## PanamaPort
+## About
 
 `PanamaPort` is a library implementing the [Foreign Function & Memory API](https://openjdk.org/jeps/454) from JDK 22+ for Android since Oreo (API level 26)
 
@@ -9,26 +9,19 @@ The project contains 4 sublibraries:
 - AndroidPanama - the entire public API and implementation of the Panama project
 - AndroidUnsafe - low-level implementation details and additional capabilities not provided by the original API
 - LLVM - bindings to the built-in libLLVM.so Android library
-- VarHandleApi - backport of java.lang.invoke.VarHandle, but without polymorphic behavior. Unfortunately, it did not exist before Android 9
+- VarHandleApi - backport of java.lang.invoke.VarHandle which didn't exist in android 8.0
+
+### Requirements
+
+- JDK 21+
+- Gradle 8.0+
+- Android Gradle plugin 8.1.1+
+- compileSdk 34+
+- Support for dependencies from jitpack.io ([see documentation](https://docs.jitpack.io/))
 
 ### Get started
 
-To use the library you need at least JDK 21 and compileSdk 34
-
-Before you add the library to your project, make sure it supports the dependencies from jitpack.io
-
-Add it in your root settings.gradle at the end of repositories:
-
-```
-dependencyResolutionManagement {
-    repositories {
-        <...>
-        maven { url 'https://jitpack.io' }
-    }
-}
-```
-
-After this, you can add the library to the list of dependencies:
+Add the library to the list of dependencies:
 
 ```
 dependencies {
@@ -46,26 +39,45 @@ dependencies {
 
 ---
 
-### Supported features and differences from the original API
+### Supported features
 
-PanamaPort implements FULL Foreign Function & Memory API support, including:
+PanamaPort implements full Foreign Function & Memory API support, including:
 
 - Downcall handles - allows Java code to call foreign functions
 - Upcall stubs - allows foreign functions to call Java method handles
 - Linker options such as captureCallState("errno") and even critical(allowHeapAccess: true)
-- Volatile access to native memory via VarHandles (including compareAndSet, getAndSet, etc.)
-- Management of memory segments via Arenas (and all Arena.ofAuto(), global(), ofConfined() and ofShared() methods)
+- Access to native memory via VarHandles
+- Management of memory segments via Arenas
 - And much more
 
-Important differences:
+### Differences from the original API
 
-- All classes from the java.lang.foreign package are in the com.v7878.foreign package because it is a port and not part of the Java core library
-- Due to technical difficulties, my implementation of VarHandle is used instead of java.lang.invoke.VarHandle
-- Added MemoryLayout.valueLayout() and paddedStructLayout() methods, which were removed in recent versions of the source API
+- Package java.lang.foreign moved to com.v7878.foreign package because it is a port and not part of the Java core library
+- WrongThreadException class is also in the com.v7878.foreign package because it doesn't exist on android
+- My implementation of VarHandle is used instead of java.lang.invoke.VarHandle
+
+### What was added
+
+All non-standard apis added to the port are marked with `@PortApi` annotation
+
+This includes just useful methods:
+
+- `MemoryLayout.valueLayout(Class<?>, ByteOrder)`
+- `MemoryLayout.sequenceLayout(MemoryLayout)`
+- `MemoryLayout.paddedStructLayout(MemoryLayout...)`
+- `MemorySegment.nativeAddress()`
+
+Android-specific linker options:
+
+- `Option.allowExceptions()` and `Option.JNIEnvArg(int)`
+
+Port of methods outside the java.lang.foreign package:
+
+- `FileChannelUtils.map(FileChannel, MapMode, long, long, Arena)`
 
 ### Interaction with jextract
 
-I have not tested this tool in practice, but all classes it generates should work after manually replacing java.lang.foreign with com.v7878.foreign and java.lang.invoke.VarHandle with com.v7878.invoke.VarHandle
+Usually, to use the output of jextract, it is enough to fix package names. If something doesn't work, create an issue
 
 ### Examples and tests
 
