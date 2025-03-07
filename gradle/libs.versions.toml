@@ -1,7 +1,7 @@
 [versions]
-agp = "8.8.1"
+agp = "8.8.2"
 androidmisc = "v0.0.5"
-dexfile = "c43d34debd"
+dexfile = "1ae6c4a33f"
 r8_annotations = "v0.0.3"
 sun_cleanerstub = "v0.0.3"
 sun_unsafewrapper = "v0.0.3"
