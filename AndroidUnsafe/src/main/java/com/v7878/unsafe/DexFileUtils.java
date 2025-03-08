@@ -302,8 +302,16 @@ public class DexFileUtils {
     }
 
     public static Class<?> loadClass(DexFile dex, String name, ClassLoader loader) {
+        class Holder {
+            static final ClassLoader BOOT_CLASS_LOADER =
+                    ClassLoader.getSystemClassLoader().getParent();
+        }
+        if (loader == Holder.BOOT_CLASS_LOADER) {
+            loader = null;
+        }
         return DexFileAccess.defineClassNative(
-                name.replace('.', '/'), loader, getCookie(dex), dex);
+                name.replace('.', '/'),
+                loader, getCookie(dex), dex);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)

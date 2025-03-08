@@ -5,6 +5,15 @@ import static com.v7878.unsafe.Utils.unsupportedSDK;
 
 public class ArtModifiers {
     @ApiSensitive
+    public static final int kAccSkipAccessChecks = switch (ART_SDK_INT) {
+        case 36 /*android 16*/, 35 /*android 15*/, 34 /*android 14*/,
+             33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
+             30 /*android 11*/, 29 /*android 10*/, 28 /*android 9*/,
+             27 /*android 8.1*/, 26 /*android 8*/ -> 0x00080000;
+        default -> throw unsupportedSDK(ART_SDK_INT);
+    };
+
+    @ApiSensitive
     public static final int kAccIntrinsic = 0x80000000;
 
     @ApiSensitive
