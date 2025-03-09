@@ -439,6 +439,20 @@ public class Reflection {
         return searchField(getHiddenFields(clazz), name);
     }
 
+    // The order is same as in the dex file. There is no such thing for fields
+    public static long[] getArtMethods(Class<?> clazz) {
+        long methods = getMethodsPtr(clazz);
+        if (methods == 0) {
+            return new long[0];
+        }
+        int count = getCopiedMethodsOffset(clazz);
+        var out = new long[count];
+        for (int i = 0; i < count; i++) {
+            out[i] = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * i;
+        }
+        return out;
+    }
+
     private static void fillExecutables0(long methods, int begin, Executable[] out) {
         if (out.length == 0) {
             return;
