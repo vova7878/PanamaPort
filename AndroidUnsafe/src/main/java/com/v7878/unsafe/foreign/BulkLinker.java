@@ -1,5 +1,7 @@
 package com.v7878.unsafe.foreign;
 
+import static com.v7878.dex.DexConstants.ACC_FINAL;
+import static com.v7878.dex.DexConstants.ACC_INTERFACE;
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
@@ -95,7 +97,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import dalvik.system.DexFile;
 
@@ -139,31 +141,19 @@ public class BulkLinker {
         }
     }
 
-    private abstract static sealed class SymbolSource
+    private sealed interface SymbolSource
             permits ASMSource, SegmentSource {
     }
 
-    private static final class ASMSource extends SymbolSource {
-        final Supplier<byte[]> generator;
-
-        private ASMSource(Supplier<byte[]> generator) {
-            this.generator = generator;
-        }
-
-        public static ASMSource of(Supplier<byte[]> generator) {
-            Objects.requireNonNull(generator);
-            return new ASMSource(generator);
+    private record ASMSource(byte[] code) implements SymbolSource {
+        public static ASMSource of(byte[] code) {
+            Objects.requireNonNull(code);
+            return new ASMSource(code);
         }
     }
 
-    private static final class SegmentSource extends SymbolSource {
-        final Supplier<MemorySegment> symbol;
-
-        private SegmentSource(Supplier<MemorySegment> symbol) {
-            this.symbol = symbol;
-        }
-
-        public static SegmentSource of(Supplier<MemorySegment> symbol) {
+    private record SegmentSource(MemorySegment symbol) implements SymbolSource {
+        public static SegmentSource of(MemorySegment symbol) {
             Objects.requireNonNull(symbol);
             return new SegmentSource(symbol);
         }
@@ -174,16 +164,17 @@ public class BulkLinker {
     }
 
     public enum CallType {
-        NATIVE_STATIC(false, EnvType.FULL_ENV, false, true, ACC_NATIVE | ACC_STATIC),
-        NATIVE_STATIC_OMIT_ENV(true, EnvType.OMIT_ENV, false, true, ACC_NATIVE | ACC_STATIC),
-        NATIVE_VIRTUAL(false, EnvType.FULL_ENV, false, false, ACC_NATIVE),
-        NATIVE_VIRTUAL_REPLACE_THIS(false, EnvType.FULL_ENV, true, false, ACC_NATIVE),
-        FAST_STATIC(false, EnvType.FULL_ENV, false, true, ACC_NATIVE | ACC_STATIC, Annotation.FastNative()),
-        FAST_STATIC_OMIT_ENV(true, EnvType.OMIT_ENV, false, true, ACC_NATIVE | ACC_STATIC, Annotation.FastNative()),
-        FAST_VIRTUAL(false, EnvType.FULL_ENV, false, false, ACC_NATIVE, Annotation.FastNative()),
-        FAST_VIRTUAL_REPLACE_THIS(false, EnvType.FULL_ENV, true, false, ACC_NATIVE, Annotation.FastNative()),
-        CRITICAL(false, EnvType.NO_ENV, false, true, ACC_NATIVE | ACC_STATIC, Annotation.CriticalNative());
+        NATIVE_STATIC(false, false, EnvType.FULL_ENV, false, true, ACC_NATIVE | ACC_STATIC),
+        NATIVE_STATIC_OMIT_ENV(false, true, EnvType.OMIT_ENV, false, true, ACC_NATIVE | ACC_STATIC),
+        NATIVE_VIRTUAL(false, false, EnvType.FULL_ENV, false, false, ACC_NATIVE),
+        NATIVE_VIRTUAL_REPLACE_THIS(false, false, EnvType.FULL_ENV, true, false, ACC_NATIVE),
+        FAST_STATIC(true, false, EnvType.FULL_ENV, false, true, ACC_NATIVE | ACC_STATIC, Annotation.FastNative()),
+        FAST_STATIC_OMIT_ENV(true, true, EnvType.OMIT_ENV, false, true, ACC_NATIVE | ACC_STATIC, Annotation.FastNative()),
+        FAST_VIRTUAL(true, false, EnvType.FULL_ENV, false, false, ACC_NATIVE, Annotation.FastNative()),
+        FAST_VIRTUAL_REPLACE_THIS(true, false, EnvType.FULL_ENV, true, false, ACC_NATIVE, Annotation.FastNative()),
+        CRITICAL(true, false, EnvType.NO_ENV, false, true, ACC_NATIVE | ACC_STATIC, Annotation.CriticalNative());
 
+        final boolean allowObjPtrs;
         final boolean requireNativeStub;
         final EnvType envType;
         final boolean replaceThis;
@@ -191,8 +182,9 @@ public class BulkLinker {
         final int flags;
         final Set<Annotation> annotations;
 
-        CallType(boolean requireNativeStub, EnvType envType, boolean replaceThis,
+        CallType(boolean allowObjPtrs, boolean requireNativeStub, EnvType envType, boolean replaceThis,
                  boolean isStatic, int flags, Annotation... annotations) {
+            this.allowObjPtrs = allowObjPtrs;
             this.requireNativeStub = requireNativeStub;
             this.envType = envType;
             this.replaceThis = replaceThis;
@@ -213,10 +205,23 @@ public class BulkLinker {
             Objects.requireNonNull(source);
             Objects.requireNonNull(call_type);
             if (call_type.replaceThis && (args.length < 1 || args[0] != MapType.OBJECT)) {
-                throw new IllegalArgumentException("call_type requires first object parameter");
+                throw new IllegalArgumentException(String.format(
+                        "Call type %s requires first object parameter", call_type));
             }
-            // TODO: MapType.OBJECT incompatible with CallType.CRITICAL
-            // TODO: MapType.OBJECT_AS_* incompatible with CallType.NATIVE_*
+            if (call_type == CallType.CRITICAL) {
+                if (Stream.concat(Stream.of(ret), Stream.of(args))
+                        .anyMatch(value -> value == MapType.OBJECT)) {
+                    throw new IllegalArgumentException("MapType.OBJECT incompatible with CallType.CRITICAL");
+                }
+            }
+            if (!call_type.allowObjPtrs) {
+                if (Stream.concat(Stream.of(ret), Stream.of(args))
+                        .anyMatch(value -> value == MapType.OBJECT_AS_ADDRESS
+                                || value == MapType.OBJECT_AS_RAW_INT)) {
+                    throw new IllegalArgumentException(String.format(
+                            "Call type %s incompatible with object pointers", call_type));
+                }
+            }
             boolean requireNativeStub = call_type.requireNativeStub || ret.requireNativeStub
                     || Arrays.stream(args).anyMatch(arg -> arg.requireNativeStub);
             return new SymbolInfo(name, ret, args.clone(), source, call_type, requireNativeStub);
@@ -463,10 +468,10 @@ public class BulkLinker {
                 if (info.requireNativeStub) native_stubs_map[native_stubs_count++] = i;
                 if (info.source instanceof ASMSource gs) {
                     asm_map[asm_count] = i;
-                    asm_data[asm_count] = Objects.requireNonNull(gs.generator.get());
+                    asm_data[asm_count] = Objects.requireNonNull(gs.code());
                     asm_count++;
                 } else if (info.source instanceof SegmentSource ss) {
-                    symbols[i] = Objects.requireNonNull(ss.symbol.get());
+                    symbols[i] = Objects.requireNonNull(ss.symbol());
                 } else {
                     shouldNotReachHere();
                 }
@@ -578,8 +583,9 @@ public class BulkLinker {
     @Target(METHOD)
     @DoNotShrink
     @DoNotShrinkType
-    //TODO: make repeatable with conditions
     public @interface CallSignature {
+        Conditions conditions() default @Conditions();
+
         CallType type();
 
         MapType ret();
@@ -587,9 +593,17 @@ public class BulkLinker {
         MapType[] args();
     }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @DoNotShrink
+    @DoNotShrinkType
+    public @interface CallSignatures {
+        CallSignature[] value();
+    }
+
     private static byte[] getCode(ASM asm) {
         byte[] code = asm.code();
-        if (code.length == 0) {
+        if (code == null || code.length == 0) {
             return null;
         }
         return code;
@@ -640,39 +654,34 @@ public class BulkLinker {
     private static ASMSource getASMSource(
             ASM[] asms, ASMGenerator generator, Class<?> clazz,
             Map<Class<?>, Method[]> cached_methods, Method method) {
-        if (asms.length == 0 && generator == null) {
+        byte[] code = null;
+        for (ASM asm : asms) {
+            Conditions cond = asm.conditions();
+            if (checkConditions(cond)) {
+                code = getCode(asm);
+                if (code != null) {
+                    break;
+                }
+            }
+        }
+        if (DEBUG_BUILD) {
+            if (generator != null) {
+                byte[] generated_code = getCode(generator, clazz, cached_methods);
+                if (code != null && !Arrays.equals(code, generated_code)) {
+                    Log.w(LOG_TAG, String.format("Code from ASM(%s) != code from generator(%s) for method %s",
+                            Arrays.toString(code), Arrays.toString(generated_code), method));
+                }
+                code = generated_code;
+            }
+        } else {
+            if (code == null && generator != null) {
+                code = getCode(generator, clazz, cached_methods);
+            }
+        }
+        if (code == null) {
             return null;
         }
-        return ASMSource.of(() -> {
-            byte[] code = null;
-            for (ASM asm : asms) {
-                Conditions cond = asm.conditions();
-                if (checkConditions(cond)) {
-                    code = getCode(asm);
-                    if (code != null) {
-                        break;
-                    }
-                }
-            }
-            if (DEBUG_BUILD) {
-                if (generator != null) {
-                    byte[] tmp_code = getCode(generator, clazz, cached_methods);
-                    if (code != null && !Arrays.equals(code, tmp_code)) {
-                        Log.w(LOG_TAG, String.format("code from ASM(%s) != code from generator(%s) for method %s",
-                                Arrays.toString(code), Arrays.toString(tmp_code), method));
-                    }
-                    code = tmp_code;
-                }
-            } else {
-                if (code == null && generator != null) {
-                    code = getCode(generator, clazz, cached_methods);
-                }
-            }
-            if (code == null) {
-                throw new IllegalStateException("could not find code for method " + method);
-            }
-            return code;
-        });
+        return ASMSource.of(code);
     }
 
     private static MemorySegment getSymbol(SymbolGenerator generator, Class<?> clazz,
@@ -682,7 +691,7 @@ public class BulkLinker {
         }
         Method method = searchMethod(cached_methods.computeIfAbsent(clazz, Reflection::getDeclaredMethods), generator.method());
         if (!Modifier.isStatic(method.getModifiers())) {
-            throw new IllegalArgumentException("symbol generator method is not static: " + method);
+            throw new IllegalArgumentException("Symbol generator method is not static: " + method);
         }
         if (method.getReturnType() != MemorySegment.class) {
             throw new IllegalArgumentException("return type of symbol generator method is not MemorySegment: " + method);
@@ -692,40 +701,34 @@ public class BulkLinker {
 
     private static SegmentSource getSegmentSource(
             LibrarySymbol[] syms, SymbolGenerator generator, SymbolLookup lookup,
-            Class<?> clazz, Map<Class<?>, Method[]> cached_methods, Method method) {
-        if (syms.length == 0 && generator == null) {
+            Class<?> clazz, Map<Class<?>, Method[]> cached_methods) {
+        MemorySegment symbol = null;
+        for (LibrarySymbol sym : syms) {
+            Conditions cond = sym.conditions();
+            if (checkConditions(cond)) {
+                symbol = lookup.find(sym.name()).orElse(null);
+                if (symbol != null) {
+                    break;
+                }
+            }
+        }
+        if (symbol == null && generator != null) {
+            symbol = getSymbol(generator, clazz, cached_methods);
+        }
+        if (symbol == null) {
             return null;
         }
-        return SegmentSource.of(() -> {
-            MemorySegment symbol = null;
-            for (LibrarySymbol sym : syms) {
-                Conditions cond = sym.conditions();
-                if (checkConditions(cond)) {
-                    symbol = lookup.find(sym.name()).orElse(null);
-                    if (symbol != null) {
-                        break;
-                    }
-                }
+        return SegmentSource.of(symbol);
+    }
+
+    private static CallSignature getSignature(CallSignature[] signatures) {
+        for (CallSignature signature : signatures) {
+            Conditions cond = signature.conditions();
+            if (checkConditions(cond)) {
+                return signature;
             }
-            if (DEBUG_BUILD) {
-                if (generator != null) {
-                    MemorySegment tmp_symbol = getSymbol(generator, clazz, cached_methods);
-                    if (symbol != null && !symbol.equals(tmp_symbol)) {
-                        Log.w(LOG_TAG, String.format("symbol from library(%s) != symbol from generator(%s) for method %s",
-                                symbol, tmp_symbol, method));
-                    }
-                    symbol = tmp_symbol;
-                }
-            } else {
-                if (symbol == null && generator != null) {
-                    symbol = getSymbol(generator, clazz, cached_methods);
-                }
-            }
-            if (symbol == null) {
-                throw new IllegalStateException("could not find symbol for method " + method);
-            }
-            return symbol;
-        });
+        }
+        return null;
     }
 
     public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz) {
@@ -736,13 +739,16 @@ public class BulkLinker {
         return processSymbols(arena, clazz, clazz.getClassLoader(), lookup);
     }
 
-    //TODO: add CachedStub annotation
     public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz, ClassLoader loader, SymbolLookup lookup) {
         Objects.requireNonNull(arena);
         Objects.requireNonNull(clazz);
-        // TODO: clazz shouldn`t be interface or final class
         Objects.requireNonNull(loader);
         Objects.requireNonNull(lookup);
+
+        if ((clazz.getModifiers() & (ACC_INTERFACE | ACC_FINAL)) != 0) {
+            throw new IllegalArgumentException(
+                    "Interfaces and final classes are not allowed" + clazz);
+        }
 
         Map<Class<?>, Method[]> cached_methods = new HashMap<>();
         Method[] clazz_methods = getDeclaredMethods(clazz);
@@ -750,33 +756,30 @@ public class BulkLinker {
         List<SymbolInfo> infos = new ArrayList<>(clazz_methods.length);
 
         for (Method method : clazz_methods) {
-            CallSignature signature = method.getDeclaredAnnotation(CallSignature.class);
+            CallSignature[] signatures = method.getDeclaredAnnotationsByType(CallSignature.class);
+            CallSignature signature = getSignature(signatures);
 
-            ASM[] asms = method.getDeclaredAnnotationsByType(ASM.class);
-            ASMGenerator asm_generator = method.getDeclaredAnnotation(ASMGenerator.class);
-            ASMSource asm_source = getASMSource(asms, asm_generator, clazz, cached_methods, method);
+            // Skip, this method does not require processing
+            if (signature == null) continue;
+
+            if (!Modifier.isAbstract(method.getModifiers())) {
+                throw new IllegalStateException("Method must be abstract " + method);
+            }
 
             LibrarySymbol[] syms = method.getDeclaredAnnotationsByType(LibrarySymbol.class);
             SymbolGenerator sym_generator = method.getDeclaredAnnotation(SymbolGenerator.class);
-            SymbolSource sym_source = getSegmentSource(syms, sym_generator, lookup, clazz, cached_methods, method);
+            SymbolSource source = getSegmentSource(syms, sym_generator, lookup, clazz, cached_methods);
 
-            if (asm_source == null && sym_source == null) {
-                if (signature == null) {
-                    continue; // skip, this method does not require processing
-                } else {
-                    throw new IllegalStateException("Signature is present, but ASM or Symbol sources aren`t for method " + method);
-                }
-            } else if (asm_source != null && sym_source != null) {
-                throw new IllegalStateException("Both ASM and Symbol sources are present for method " + method);
-            } else if (signature == null) {
-                throw new IllegalStateException("ASM or Symbol sources are present, but signeture isn`t for method " + method);
+            if (source == null) {
+                ASM[] asms = method.getDeclaredAnnotationsByType(ASM.class);
+                ASMGenerator asm_generator = method.getDeclaredAnnotation(ASMGenerator.class);
+                source = getASMSource(asms, asm_generator, clazz, cached_methods, method);
             }
 
-            if (!Modifier.isAbstract(method.getModifiers())) {
-                throw new IllegalStateException("Method must be abstract: " + method);
+            if (source == null) {
+                throw new IllegalStateException("Could not find source for method " + method);
             }
 
-            SymbolSource source = asm_source == null ? sym_source : asm_source;
             var info = SymbolInfo.of(method.getName(), signature.type(), source, signature.ret(), signature.args());
             info.checkImplSignature(method);
             infos.add(info);
