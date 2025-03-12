@@ -36,6 +36,7 @@ import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.DEBUG_BUILD;
 import static com.v7878.unsafe.Utils.LOG_TAG;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildAddressToRawObject;
@@ -88,6 +89,7 @@ import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -547,7 +549,9 @@ public class BulkLinker {
     public @interface ASMGenerator {
         Class<?> clazz() default /*search in current class*/ void.class;
 
-        String method();
+        String field() default "";
+
+        String method() default "";
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -576,7 +580,9 @@ public class BulkLinker {
     public @interface SymbolGenerator {
         Class<?> clazz() default /*search in current class*/ void.class;
 
-        String method();
+        String field() default "";
+
+        String method() default "";
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -599,32 +605,6 @@ public class BulkLinker {
     @DoNotShrinkType
     public @interface CallSignatures {
         CallSignature[] value();
-    }
-
-    private static byte[] getCode(ASM asm) {
-        byte[] code = asm.code();
-        if (code == null || code.length == 0) {
-            return null;
-        }
-        return code;
-    }
-
-    private static byte[] getCode(ASMGenerator generator, Class<?> clazz, Map<Class<?>, Method[]> cached_methods) {
-        if (generator.clazz() != void.class) {
-            clazz = generator.clazz();
-        }
-        Method method = searchMethod(cached_methods.computeIfAbsent(clazz, Reflection::getDeclaredMethods), generator.method());
-        if (!Modifier.isStatic(method.getModifiers())) {
-            throw new IllegalArgumentException("asm generator method is not static: " + method);
-        }
-        if (method.getReturnType() != byte[].class) {
-            throw new IllegalArgumentException("return type of asm generator method is not byte[]: " + method);
-        }
-        byte[] code = nothrows_run(() -> (byte[]) unreflect(method).invokeExact());
-        if (code == null || code.length == 0) {
-            return null;
-        }
-        return code;
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -651,13 +631,56 @@ public class BulkLinker {
                 checkPoisoning(cond.poisoning());
     }
 
+    private static byte[] getCode(ASM asm) {
+        byte[] code = asm.code();
+        if (code == null || code.length == 0) {
+            return null;
+        }
+        return code;
+    }
+
+    // TODO: simplify
+    private static byte[] getCode(ASMGenerator generator, Class<?> clazz, Map<Class<?>,
+            Method[]> cached_methods, Map<Class<?>, Field[]> cached_fields) {
+        if (generator.clazz() != void.class) {
+            clazz = generator.clazz();
+        }
+        byte[] code = null;
+        if (!generator.field().isEmpty()) {
+            Field field = searchField(cached_fields.computeIfAbsent(clazz, Reflection::getDeclaredFields), generator.field());
+            if (!Modifier.isStatic(field.getModifiers())) {
+                throw new IllegalArgumentException("asm field is not static: " + field);
+            }
+            if (field.getType() != byte[].class) {
+                throw new IllegalArgumentException("Type of asm field is not byte[]: " + field);
+            }
+            code = nothrows_run(() -> (byte[]) field.get(null));
+            if (code == null || code.length == 0) {
+                code = null;
+            }
+        }
+        if (code == null && !generator.method().isEmpty()) {
+            Method method = searchMethod(cached_methods.computeIfAbsent(clazz, Reflection::getDeclaredMethods), generator.method());
+            if (!Modifier.isStatic(method.getModifiers())) {
+                throw new IllegalArgumentException("asm generator method is not static: " + method);
+            }
+            if (method.getReturnType() != byte[].class) {
+                throw new IllegalArgumentException("Return type of asm generator method is not byte[]: " + method);
+            }
+            code = nothrows_run(() -> (byte[]) unreflect(method).invokeExact());
+            if (code == null || code.length == 0) {
+                code = null;
+            }
+        }
+        return code;
+    }
+
     private static ASMSource getASMSource(
-            ASM[] asms, ASMGenerator generator, Class<?> clazz,
-            Map<Class<?>, Method[]> cached_methods, Method method) {
+            ASM[] asms, ASMGenerator generator, Class<?> clazz, Method method,
+            Map<Class<?>, Method[]> cached_methods, Map<Class<?>, Field[]> cached_fields) {
         byte[] code = null;
         for (ASM asm : asms) {
-            Conditions cond = asm.conditions();
-            if (checkConditions(cond)) {
+            if (checkConditions(asm.conditions())) {
                 code = getCode(asm);
                 if (code != null) {
                     break;
@@ -666,7 +689,7 @@ public class BulkLinker {
         }
         if (DEBUG_BUILD) {
             if (generator != null) {
-                byte[] generated_code = getCode(generator, clazz, cached_methods);
+                byte[] generated_code = getCode(generator, clazz, cached_methods, cached_fields);
                 if (code != null && !Arrays.equals(code, generated_code)) {
                     Log.w(LOG_TAG, String.format("Code from ASM(%s) != code from generator(%s) for method %s",
                             Arrays.toString(code), Arrays.toString(generated_code), method));
@@ -675,7 +698,7 @@ public class BulkLinker {
             }
         } else {
             if (code == null && generator != null) {
-                code = getCode(generator, clazz, cached_methods);
+                code = getCode(generator, clazz, cached_methods, cached_fields);
             }
         }
         if (code == null) {
@@ -684,28 +707,44 @@ public class BulkLinker {
         return ASMSource.of(code);
     }
 
+    // TODO: simplify
     private static MemorySegment getSymbol(SymbolGenerator generator, Class<?> clazz,
-                                           Map<Class<?>, Method[]> cached_methods) {
+                                           Map<Class<?>, Method[]> cached_methods,
+                                           Map<Class<?>, Field[]> cached_fields) {
         if (generator.clazz() != void.class) {
             clazz = generator.clazz();
         }
-        Method method = searchMethod(cached_methods.computeIfAbsent(clazz, Reflection::getDeclaredMethods), generator.method());
-        if (!Modifier.isStatic(method.getModifiers())) {
-            throw new IllegalArgumentException("Symbol generator method is not static: " + method);
+        MemorySegment out = null;
+        if (!generator.field().isEmpty()) {
+            Field field = searchField(cached_fields.computeIfAbsent(clazz, Reflection::getDeclaredFields), generator.field());
+            if (!Modifier.isStatic(field.getModifiers())) {
+                throw new IllegalArgumentException("Symbol field is not static: " + field);
+            }
+            if (field.getType() != MemorySegment.class) {
+                throw new IllegalArgumentException("Type of symbol field is not MemorySegment: " + field);
+            }
+            out = nothrows_run(() -> (MemorySegment) field.get(null));
         }
-        if (method.getReturnType() != MemorySegment.class) {
-            throw new IllegalArgumentException("return type of symbol generator method is not MemorySegment: " + method);
+        if (out == null && !generator.method().isEmpty()) {
+            Method method = searchMethod(cached_methods.computeIfAbsent(clazz, Reflection::getDeclaredMethods), generator.method());
+            if (!Modifier.isStatic(method.getModifiers())) {
+                throw new IllegalArgumentException("Symbol generator method is not static: " + method);
+            }
+            if (method.getReturnType() != MemorySegment.class) {
+                throw new IllegalArgumentException("Return type of symbol generator method is not MemorySegment: " + method);
+            }
+            out = nothrows_run(() -> (MemorySegment) unreflect(method).invokeExact());
         }
-        return nothrows_run(() -> (MemorySegment) unreflect(method).invokeExact());
+        return out;
     }
 
     private static SegmentSource getSegmentSource(
             LibrarySymbol[] syms, SymbolGenerator generator, SymbolLookup lookup,
-            Class<?> clazz, Map<Class<?>, Method[]> cached_methods) {
+            Class<?> clazz, Map<Class<?>, Method[]> cached_methods,
+            Map<Class<?>, Field[]> cached_fields) {
         MemorySegment symbol = null;
         for (LibrarySymbol sym : syms) {
-            Conditions cond = sym.conditions();
-            if (checkConditions(cond)) {
+            if (checkConditions(sym.conditions())) {
                 symbol = lookup.find(sym.name()).orElse(null);
                 if (symbol != null) {
                     break;
@@ -713,7 +752,7 @@ public class BulkLinker {
             }
         }
         if (symbol == null && generator != null) {
-            symbol = getSymbol(generator, clazz, cached_methods);
+            symbol = getSymbol(generator, clazz, cached_methods, cached_fields);
         }
         if (symbol == null) {
             return null;
@@ -723,8 +762,7 @@ public class BulkLinker {
 
     private static CallSignature getSignature(CallSignature[] signatures) {
         for (CallSignature signature : signatures) {
-            Conditions cond = signature.conditions();
-            if (checkConditions(cond)) {
+            if (checkConditions(signature.conditions())) {
                 return signature;
             }
         }
@@ -751,6 +789,7 @@ public class BulkLinker {
         }
 
         Map<Class<?>, Method[]> cached_methods = new HashMap<>();
+        Map<Class<?>, Field[]> cached_fields = new HashMap<>();
         Method[] clazz_methods = getDeclaredMethods(clazz);
         cached_methods.put(clazz, clazz_methods);
         List<SymbolInfo> infos = new ArrayList<>(clazz_methods.length);
@@ -768,12 +807,12 @@ public class BulkLinker {
 
             LibrarySymbol[] syms = method.getDeclaredAnnotationsByType(LibrarySymbol.class);
             SymbolGenerator sym_generator = method.getDeclaredAnnotation(SymbolGenerator.class);
-            SymbolSource source = getSegmentSource(syms, sym_generator, lookup, clazz, cached_methods);
+            SymbolSource source = getSegmentSource(syms, sym_generator, lookup, clazz, cached_methods, cached_fields);
 
             if (source == null) {
                 ASM[] asms = method.getDeclaredAnnotationsByType(ASM.class);
                 ASMGenerator asm_generator = method.getDeclaredAnnotation(ASMGenerator.class);
-                source = getASMSource(asms, asm_generator, clazz, cached_methods, method);
+                source = getASMSource(asms, asm_generator, clazz, method, cached_methods, cached_fields);
             }
 
             if (source == null) {
