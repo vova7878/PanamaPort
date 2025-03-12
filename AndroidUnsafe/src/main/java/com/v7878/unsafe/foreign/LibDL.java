@@ -5,6 +5,8 @@ import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.VM.vmLibrary;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -88,47 +90,37 @@ public class LibDL {
     @DoNotShrink
     @DoNotObfuscate
     @SuppressWarnings("unused")
-    private static final MemorySegment s_dladdr;
-    @DoNotShrink
-    @DoNotObfuscate
-    @SuppressWarnings("unused")
-    private static final MemorySegment s_dlclose;
-    @DoNotShrink
-    @DoNotObfuscate
-    @SuppressWarnings("unused")
-    private static final MemorySegment s_dlerror;
-    @DoNotShrink
-    @DoNotObfuscate
-    @SuppressWarnings("unused")
-    private static final MemorySegment s_dlopen;
-    @DoNotShrink
-    @DoNotObfuscate
-    @SuppressWarnings("unused")
-    private static final MemorySegment s_dlvsym;
-    @DoNotShrink
-    @DoNotObfuscate
-    @SuppressWarnings("unused")
-    private static final MemorySegment s_dlsym;
-
-    // for LibDLExt
-    @DoNotShrink
-    @DoNotObfuscate
-    static final MemorySegment s_android_dlopen_ext;
-
-    static {
-        MMapEntry libdl = MMap.findFirstByPath("/\\S+/libdl.so");
-        SymTab symbols = ELF.readSymTab(libdl.path(), true);
-
-        s_dladdr = symbols.findFunction("dladdr", libdl.start());
-        s_dlclose = symbols.findFunction("dlclose", libdl.start());
-        s_dlerror = symbols.findFunction("dlerror", libdl.start());
-        s_dlopen = symbols.findFunction("dlopen", libdl.start());
-        s_dlvsym = symbols.findFunction("dlvsym", libdl.start());
-        s_dlsym = symbols.findFunction("dlsym", libdl.start());
+    static class LinkerSymbols {
+        static final MemorySegment s_dladdr;
+        static final MemorySegment s_dlclose;
+        static final MemorySegment s_dlerror;
+        static final MemorySegment s_dlopen;
+        static final MemorySegment s_dlvsym;
 
         // for LibDLExt
-        s_android_dlopen_ext = symbols.findFunction("android_dlopen_ext", libdl.start());
+        static final MemorySegment s_android_create_namespace;
+        static final MemorySegment s_android_dlopen_ext;
+
+        static {
+            String linker_name = IS64BIT ? "linker64" : "linker";
+            MMapEntry linker = MMap.findFirstByPath("/\\S+/" + linker_name);
+            SymTab symbols = ELF.readSymTab(linker.path(), ART_SDK_INT >= 28);
+
+            s_dladdr = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z8__dladdrPKvP7Dl_info" : "__loader_dladdr", linker.start());
+            s_dlclose = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z9__dlclosePv" : "__loader_dlclose", linker.start());
+            s_dlerror = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z9__dlerrorv" : "__loader_dlerror", linker.start());
+            s_dlopen = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z8__dlopenPKciPKv" : "__loader_dlopen", linker.start());
+            s_dlvsym = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z8__dlvsymPvPKcS1_PKv" : "__loader_dlvsym", linker.start());
+
+            s_android_create_namespace = symbols.findFunction(ART_SDK_INT <= 27 ?
+                    "__dl__Z26__android_create_namespacePKcS0_S0_yS0_P19android_namespace_tPKv" : "__loader_android_create_namespace", linker.start());
+            s_android_dlopen_ext = symbols.findFunction(ART_SDK_INT <= 27 ?
+                    "__dl__Z20__android_dlopen_extPKciPK17android_dlextinfoPKv" : "__loader_android_dlopen_ext", linker.start());
+        }
     }
+
+    // TODO: Maybe some other symbol from libart?
+    static final long ART_CALLER = MMap.findFirstByPath("/\\S+/" + vmLibrary()).start();
 
     @DoNotShrinkType
     @DoNotOptimize
@@ -136,27 +128,23 @@ public class LibDL {
         @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @SymbolGenerator(clazz = LibDL.class, field = "s_dlopen")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
-        abstract long dlopen(long filename, int flags);
+        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dlopen")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
+        abstract long dlopen(long filename, int flags, long caller_addr);
 
-        @SymbolGenerator(clazz = LibDL.class, field = "s_dlclose")
+        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dlclose")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int dlclose(long handle);
 
-        @SymbolGenerator(clazz = LibDL.class, field = "s_dlerror")
+        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dlerror")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long dlerror();
 
-        @SymbolGenerator(clazz = LibDL.class, field = "s_dlsym")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
-        abstract long dlsym(long handle, long symbol);
+        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dlvsym")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
+        abstract long dlvsym(long handle, long symbol, long version, long caller_addr);
 
-        @SymbolGenerator(clazz = LibDL.class, field = "s_dlvsym")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
-        abstract long dlvsym(long handle, long symbol, long version);
-
-        @SymbolGenerator(clazz = LibDL.class, field = "s_dladdr")
+        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dladdr")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract int dladdr(long addr, long info);
 
@@ -202,7 +190,7 @@ public class LibDL {
         Objects.requireNonNull(filename);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_filename = allocString(arena, filename);
-            return Native.INSTANCE.dlopen(c_filename.nativeAddress(), flags);
+            return Native.INSTANCE.dlopen(c_filename.nativeAddress(), flags, ART_CALLER);
         }
     }
 
@@ -220,7 +208,7 @@ public class LibDL {
     static long dlsym_nochecks(long handle, String symbol) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_symbol = allocString(arena, symbol);
-            return Native.INSTANCE.dlsym(handle, c_symbol.nativeAddress());
+            return Native.INSTANCE.dlvsym(handle, c_symbol.nativeAddress(), 0, ART_CALLER);
         }
     }
 
@@ -235,7 +223,7 @@ public class LibDL {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_symbol = allocString(arena, symbol);
             MemorySegment c_version = allocString(arena, version);
-            return Native.INSTANCE.dlvsym(handle, c_symbol.nativeAddress(), c_version.nativeAddress());
+            return Native.INSTANCE.dlvsym(handle, c_symbol.nativeAddress(), c_version.nativeAddress(), ART_CALLER);
         }
     }
 

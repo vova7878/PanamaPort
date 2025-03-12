@@ -13,6 +13,7 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
+import static com.v7878.unsafe.foreign.LibDL.ART_CALLER;
 import static com.v7878.unsafe.foreign.LibDL.RTLD_NOW;
 import static com.v7878.unsafe.io.IOUtils.getDescriptorValue;
 
@@ -33,6 +34,7 @@ import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
+import com.v7878.unsafe.foreign.LibDL.LinkerSymbols;
 import com.v7878.unsafe.io.IOUtils;
 
 import java.io.FileDescriptor;
@@ -221,9 +223,9 @@ public class LibDLExt {
         private static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
                 CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", SCOPE);
 
-        @SymbolGenerator(clazz = LibDL.class, field = "s_android_dlopen_ext")
-        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
-        abstract long dlopen_ext(long filename, int flags, long info);
+        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_android_dlopen_ext")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract long dlopen_ext(long filename, int flags, long info, long caller_addr);
 
         @LibrarySymbol(name = "android_update_LD_LIBRARY_PATH")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})
@@ -234,12 +236,12 @@ public class LibDLExt {
         abstract boolean init_anonymous_namespace(
                 long shared_libs_sonames, long library_search_path);
 
-        @LibrarySymbol(name = "android_create_namespace")
+        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_android_create_namespace")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {
-                LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG, LONG_AS_WORD, LONG_AS_WORD})
+                LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long create_namespace(
                 long name, long ld_library_path, long default_library_path,
-                long type, long permitted_when_isolated_path, long parent);
+                long type, long permitted_when_isolated_path, long parent, long caller_addr);
 
         @LibrarySymbol(name = "android_link_namespaces")
         @CallSignature(type = CRITICAL, ret = BOOL, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
@@ -272,7 +274,8 @@ public class LibDLExt {
             VH_LIBRARY_FD.set(c_extinfo, 0, extinfo.library_fd);
             VH_FD_OFFSET.set(c_extinfo, 0, extinfo.library_fd_offset);
             VH_NAMESPACE.set(c_extinfo, 0, MemorySegment.ofAddress(extinfo.library_namespace));
-            return Native.INSTANCE.dlopen_ext(c_filename.nativeAddress(), flags, c_extinfo.nativeAddress());
+            return Native.INSTANCE.dlopen_ext(c_filename.nativeAddress(),
+                    flags, c_extinfo.nativeAddress(), ART_CALLER);
         }
     }
 
@@ -339,7 +342,7 @@ public class LibDLExt {
             MemorySegment c_permitted_when_isolated_path = arena.allocateFrom(permitted_when_isolated_path);
             return new Namespace(Native.INSTANCE.create_namespace(
                     c_name.nativeAddress(), c_ld_library_path.nativeAddress(), c_default_library_path.nativeAddress(),
-                    type, c_permitted_when_isolated_path.nativeAddress(), parent.value()));
+                    type, c_permitted_when_isolated_path.nativeAddress(), parent.value(), ART_CALLER));
         }
     }
 
