@@ -223,7 +223,7 @@ public class LibDLExt {
         private static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
                 CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", SCOPE);
 
-        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_android_dlopen_ext")
+        @SymbolGenerator(klass = LinkerSymbols.class, field = "s_android_dlopen_ext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})
         abstract long dlopen_ext(long filename, int flags, long info, long caller_addr);
 
@@ -236,7 +236,7 @@ public class LibDLExt {
         abstract boolean init_anonymous_namespace(
                 long shared_libs_sonames, long library_search_path);
 
-        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_android_create_namespace")
+        @SymbolGenerator(klass = LinkerSymbols.class, field = "s_android_create_namespace")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {
                 LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long create_namespace(

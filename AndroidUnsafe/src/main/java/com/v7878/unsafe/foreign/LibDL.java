@@ -128,23 +128,23 @@ public class LibDL {
         @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dlopen")
+        @SymbolGenerator(klass = LinkerSymbols.class, field = "s_dlopen")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long dlopen(long filename, int flags, long caller_addr);
 
-        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dlclose")
+        @SymbolGenerator(klass = LinkerSymbols.class, field = "s_dlclose")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int dlclose(long handle);
 
-        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dlerror")
+        @SymbolGenerator(klass = LinkerSymbols.class, field = "s_dlerror")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long dlerror();
 
-        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dlvsym")
+        @SymbolGenerator(klass = LinkerSymbols.class, field = "s_dlvsym")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long dlvsym(long handle, long symbol, long version, long caller_addr);
 
-        @SymbolGenerator(clazz = LinkerSymbols.class, field = "s_dladdr")
+        @SymbolGenerator(klass = LinkerSymbols.class, field = "s_dladdr")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract int dladdr(long addr, long info);
 

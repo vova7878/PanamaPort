@@ -547,7 +547,7 @@ public class BulkLinker {
     @DoNotShrink
     @DoNotShrinkType
     public @interface ASMGenerator {
-        Class<?> clazz() default /*search in current class*/ void.class;
+        Class<?> klass() default /*search in current class*/ void.class;
 
         String field() default "";
 
@@ -578,7 +578,7 @@ public class BulkLinker {
     @DoNotShrink
     @DoNotShrinkType
     public @interface SymbolGenerator {
-        Class<?> clazz() default /*search in current class*/ void.class;
+        Class<?> klass() default /*search in current class*/ void.class;
 
         String field() default "";
 
@@ -642,8 +642,8 @@ public class BulkLinker {
     // TODO: simplify
     private static byte[] getCode(ASMGenerator generator, Class<?> clazz, Map<Class<?>,
             Method[]> cached_methods, Map<Class<?>, Field[]> cached_fields) {
-        if (generator.clazz() != void.class) {
-            clazz = generator.clazz();
+        if (generator.klass() != void.class) {
+            clazz = generator.klass();
         }
         byte[] code = null;
         if (!generator.field().isEmpty()) {
@@ -711,8 +711,8 @@ public class BulkLinker {
     private static MemorySegment getSymbol(SymbolGenerator generator, Class<?> clazz,
                                            Map<Class<?>, Method[]> cached_methods,
                                            Map<Class<?>, Field[]> cached_fields) {
-        if (generator.clazz() != void.class) {
-            clazz = generator.clazz();
+        if (generator.klass() != void.class) {
+            clazz = generator.klass();
         }
         MemorySegment out = null;
         if (!generator.field().isEmpty()) {
