@@ -24,7 +24,6 @@ import com.v7878.foreign.GroupLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.SymbolLookup;
 import com.v7878.invoke.VarHandle;
-import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
@@ -222,16 +221,9 @@ public class LibDLExt {
         private static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
                 CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", SCOPE);
 
-        @SymbolGenerator(method = "s_android_dlopen_ext")
+        @SymbolGenerator(clazz = LibDL.class, field = "s_android_dlopen_ext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD})
         abstract long dlopen_ext(long filename, int flags, long info);
-
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static MemorySegment s_android_dlopen_ext() {
-            return LibDL.s_android_dlopen_ext;
-        }
 
         @LibrarySymbol(name = "android_update_LD_LIBRARY_PATH")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD})

@@ -85,14 +85,34 @@ public class LibDL {
             ADDRESS.withName("saddr")
     );
 
+    @DoNotShrink
+    @DoNotObfuscate
+    @SuppressWarnings("unused")
     private static final MemorySegment s_dladdr;
+    @DoNotShrink
+    @DoNotObfuscate
+    @SuppressWarnings("unused")
     private static final MemorySegment s_dlclose;
+    @DoNotShrink
+    @DoNotObfuscate
+    @SuppressWarnings("unused")
     private static final MemorySegment s_dlerror;
+    @DoNotShrink
+    @DoNotObfuscate
+    @SuppressWarnings("unused")
     private static final MemorySegment s_dlopen;
+    @DoNotShrink
+    @DoNotObfuscate
+    @SuppressWarnings("unused")
     private static final MemorySegment s_dlvsym;
+    @DoNotShrink
+    @DoNotObfuscate
+    @SuppressWarnings("unused")
     private static final MemorySegment s_dlsym;
 
     // for LibDLExt
+    @DoNotShrink
+    @DoNotObfuscate
     static final MemorySegment s_android_dlopen_ext;
 
     static {
@@ -116,71 +136,29 @@ public class LibDL {
         @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @SymbolGenerator(method = "s_dlopen")
+        @SymbolGenerator(clazz = LibDL.class, field = "s_dlopen")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT})
         abstract long dlopen(long filename, int flags);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static MemorySegment s_dlopen() {
-            return s_dlopen;
-        }
-
-        @SymbolGenerator(method = "s_dlclose")
+        @SymbolGenerator(clazz = LibDL.class, field = "s_dlclose")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD})
         abstract int dlclose(long handle);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static MemorySegment s_dlclose() {
-            return s_dlclose;
-        }
-
-        @SymbolGenerator(method = "s_dlerror")
+        @SymbolGenerator(clazz = LibDL.class, field = "s_dlerror")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long dlerror();
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static MemorySegment s_dlerror() {
-            return s_dlerror;
-        }
-
-        @SymbolGenerator(method = "s_dlsym")
+        @SymbolGenerator(clazz = LibDL.class, field = "s_dlsym")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract long dlsym(long handle, long symbol);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static MemorySegment s_dlsym() {
-            return s_dlsym;
-        }
-
-        @SymbolGenerator(method = "s_dlvsym")
+        @SymbolGenerator(clazz = LibDL.class, field = "s_dlvsym")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, LONG_AS_WORD})
         abstract long dlvsym(long handle, long symbol, long version);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static MemorySegment s_dlvsym() {
-            return s_dlvsym;
-        }
-
-        @SymbolGenerator(method = "s_dladdr")
+        @SymbolGenerator(clazz = LibDL.class, field = "s_dladdr")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract int dladdr(long addr, long info);
-
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static MemorySegment s_dladdr() {
-            return s_dladdr;
-        }
 
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class, unused -> Optional.empty()));
