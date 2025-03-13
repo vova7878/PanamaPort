@@ -3,7 +3,6 @@ package com.v7878.unsafe;
 import static com.v7878.unsafe.AndroidUnsafe.PAGE_SIZE;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
-import static com.v7878.unsafe.io.IOUtils.MAP_ANONYMOUS;
 import static com.v7878.unsafe.misc.Math.roundUpUL;
 
 import android.system.ErrnoException;
@@ -21,7 +20,7 @@ public class NativeCodeBlob {
 
     private static final int PROT_RW = OsConstants.PROT_READ | OsConstants.PROT_WRITE;
     private static final int PROT_RX = OsConstants.PROT_READ | OsConstants.PROT_EXEC;
-    private static final int CODE_FLAGS = OsConstants.MAP_PRIVATE | MAP_ANONYMOUS;
+    private static final int CODE_FLAGS = OsConstants.MAP_SHARED;
     private static final int CODE_ALIGNMENT = CURRENT_INSTRUCTION_SET.codeAlignment();
 
     private static MemorySegment[] makeCodeBlobInternal(Arena arena, MemorySegment... code) {
@@ -36,8 +35,8 @@ public class NativeCodeBlob {
         roundUpUL(size, PAGE_SIZE);
 
         MemorySegment data;
-        try {
-            data = IOUtils.mmap(0, null, 0, size, PROT_RW, CODE_FLAGS, arena);
+        try (var fd = IOUtils.ashmem_create_scoped_region("(runtime code)", size)) {
+            data = IOUtils.mmap(0, fd.value(), 0, size, PROT_RW, CODE_FLAGS, arena);
         } catch (ErrnoException e) {
             throw shouldNotHappen(e);
         }

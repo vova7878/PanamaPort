@@ -17,7 +17,6 @@ import static com.v7878.unsafe.foreign.LibDL.DEFAULT_CALLER;
 import static com.v7878.unsafe.io.IOUtils.getDescriptorValue;
 
 import android.system.ErrnoException;
-import android.system.Os;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.GroupLayout;
@@ -366,20 +365,14 @@ public class LibDLExt {
 
     public static long mem_dlopen(MemorySegment segment, int flags) {
         long length = segment.byteSize();
-        try {
-            FileDescriptor fd = IOUtils.ashmem_create_region(
-                    "(mem_dlopen)", length);
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment target = IOUtils.mmap(fd, 0, length, arena);
-                target.copyFrom(segment);
-                target.force();
-                return dlopen_ext(fd, 0, flags);
-            } finally {
-                try {
-                    Os.close(fd);
-                } catch (ErrnoException e) { /* swallow exception */ }
-            }
+        try (Arena arena = Arena.ofConfined(); var fd = IOUtils
+                .ashmem_create_scoped_region("(mem_dlopen)", length)) {
+            MemorySegment target = IOUtils.mmap(fd.value(), 0, length, arena);
+            target.copyFrom(segment);
+            target.force();
+            return dlopen_ext(fd.value(), 0, flags);
         } catch (ErrnoException e) {
+            // TODO: log warning
             return 0;
         }
     }

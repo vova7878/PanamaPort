@@ -21,6 +21,7 @@ import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.DangerLevel;
+import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 import com.v7878.unsafe.foreign.BulkLinker;
@@ -50,6 +51,15 @@ public class IOUtils {
         FileDescriptor out = allocateInstance(FileDescriptor.class);
         setDescriptorValue(out, value);
         return out;
+    }
+
+    public record ScopedFD(FileDescriptor value) implements FineClosable {
+        @Override
+        public void close() {
+            try {
+                Os.close(value);
+            } catch (ErrnoException e) { /* swallow exception */ }
+        }
     }
 
     @DoNotShrinkType
@@ -115,6 +125,10 @@ public class IOUtils {
             }
             return newFileDescriptor(value);
         }
+    }
+
+    public static ScopedFD ashmem_create_scoped_region(String name, long size) throws ErrnoException {
+        return new ScopedFD(ashmem_create_region(name, size));
     }
 
     public static void ashmem_set_prot_region(FileDescriptor fd, int prot) throws ErrnoException {
