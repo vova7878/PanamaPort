@@ -13,8 +13,7 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
-import static com.v7878.unsafe.foreign.LibDL.ART_CALLER;
-import static com.v7878.unsafe.foreign.LibDL.RTLD_NOW;
+import static com.v7878.unsafe.foreign.LibDL.DEFAULT_CALLER;
 import static com.v7878.unsafe.io.IOUtils.getDescriptorValue;
 
 import android.system.ErrnoException;
@@ -30,7 +29,6 @@ import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
-import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
@@ -265,7 +263,8 @@ public class LibDLExt {
     }
 
     // TODO: make it public api
-    private static long dlopen_ext(String filename, int flags, dlextinfo extinfo) {
+    private static long cdlopen_ext(String filename, int flags,
+                                    dlextinfo extinfo, long caller_addr) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_filename = filename == null ?
                     MemorySegment.NULL : arena.allocateFrom(filename);
@@ -275,44 +274,36 @@ public class LibDLExt {
             VH_FD_OFFSET.set(c_extinfo, 0, extinfo.library_fd_offset);
             VH_NAMESPACE.set(c_extinfo, 0, MemorySegment.ofAddress(extinfo.library_namespace));
             return Native.INSTANCE.dlopen_ext(c_filename.nativeAddress(),
-                    flags, c_extinfo.nativeAddress(), ART_CALLER);
+                    flags, c_extinfo.nativeAddress(), caller_addr);
         }
     }
 
-    public static long dlopen_ext(FileDescriptor fd, long fd_offset, int flags) {
+    public static long cdlopen_ext(FileDescriptor fd, long fd_offset,
+                                   int flags, long caller_addr) {
         Objects.requireNonNull(fd);
         dlextinfo info = new dlextinfo(
                 dlextinfo_flags.ANDROID_DLEXT_USE_LIBRARY_FD |
                         dlextinfo_flags.ANDROID_DLEXT_USE_LIBRARY_FD_OFFSET,
                 getDescriptorValue(fd), fd_offset, 0);
-        return dlopen_ext(null, flags, info);
+        return cdlopen_ext(null, flags, info, caller_addr);
     }
 
-    public static long dlopen_ext(String filename, Namespace namespace,
-                                  int flags, boolean force_load) {
+    public static long dlopen_ext(FileDescriptor fd, long fd_offset, int flags) {
+        return cdlopen_ext(fd, fd_offset, flags, DEFAULT_CALLER);
+    }
+
+    public static long cdlopen_ext(String filename, Namespace namespace,
+                                   int flags, long caller_addr) {
         Objects.requireNonNull(filename);
         Objects.requireNonNull(namespace);
         dlextinfo info = new dlextinfo(
-                dlextinfo_flags.ANDROID_DLEXT_USE_NAMESPACE
-                        | (force_load ? dlextinfo_flags.ANDROID_DLEXT_FORCE_LOAD : 0),
+                dlextinfo_flags.ANDROID_DLEXT_USE_NAMESPACE,
                 0, 0, namespace.value());
-        return dlopen_ext(filename, flags, info);
+        return cdlopen_ext(filename, flags, info, caller_addr);
     }
 
     public static long dlopen_ext(String filename, Namespace namespace, int flags) {
-        return dlopen_ext(filename, namespace, flags, false);
-    }
-
-    public static long dlopen_ext(String filename, Namespace namespace) {
-        return dlopen_ext(filename, namespace, RTLD_NOW);
-    }
-
-    public static long dlopen_force(String filename, int flags) {
-        Objects.requireNonNull(filename);
-        dlextinfo info = new dlextinfo(
-                dlextinfo_flags.ANDROID_DLEXT_FORCE_LOAD,
-                0, 0, 0);
-        return dlopen_ext(filename, flags, info);
+        return cdlopen_ext(filename, namespace, flags, DEFAULT_CALLER);
     }
 
     public static boolean init_anonymous_namespace(String shared_libs_sonames,
@@ -329,7 +320,7 @@ public class LibDLExt {
 
     public static Namespace create_namespace(
             String name, String ld_library_path, String default_library_path,
-            long type, String permitted_when_isolated_path, Namespace parent) {
+            long type, String permitted_when_isolated_path, Namespace parent, long caller_addr) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(ld_library_path);
         Objects.requireNonNull(default_library_path);
@@ -342,8 +333,15 @@ public class LibDLExt {
             MemorySegment c_permitted_when_isolated_path = arena.allocateFrom(permitted_when_isolated_path);
             return new Namespace(Native.INSTANCE.create_namespace(
                     c_name.nativeAddress(), c_ld_library_path.nativeAddress(), c_default_library_path.nativeAddress(),
-                    type, c_permitted_when_isolated_path.nativeAddress(), parent.value(), ART_CALLER));
+                    type, c_permitted_when_isolated_path.nativeAddress(), parent.value(), caller_addr));
         }
+    }
+
+    public static Namespace create_namespace(
+            String name, String ld_library_path, String default_library_path,
+            long type, String permitted_when_isolated_path, Namespace parent) {
+        return create_namespace(name, ld_library_path, default_library_path,
+                type, permitted_when_isolated_path, parent, DEFAULT_CALLER);
     }
 
     public static boolean link_namespaces(Namespace namespace_from,
@@ -384,23 +382,5 @@ public class LibDLExt {
         } catch (ErrnoException e) {
             return 0;
         }
-    }
-
-    public static Namespace systemNamespace() {
-        class Holder {
-            static final Namespace default_namespace;
-
-            static {
-                String path = System.getProperty("java.library.path");
-                assert path != null;
-                default_namespace = create_namespace("panama_default", path, "",
-                        NamespaceType.SHARED, "", Namespace.NULL);
-            }
-        }
-        return Holder.default_namespace;
-    }
-
-    public static SymbolLookup systemLibraryLookup(String name, Arena arena) {
-        return JavaForeignAccess.libraryLookup(RawNativeLibraries.load(name, systemNamespace()), arena);
     }
 }

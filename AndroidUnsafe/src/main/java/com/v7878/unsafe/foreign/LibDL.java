@@ -6,7 +6,6 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.VM.vmLibrary;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -119,8 +118,9 @@ public class LibDL {
         }
     }
 
-    // TODO: Maybe some other symbol from libart?
-    static final long ART_CALLER = MMap.findFirstByPath("/\\S+/" + vmLibrary()).start();
+    // TODO: Maybe some other symbols?
+    public static final long ART_CALLER = MMap.findFirstByPath("/\\S+/libart.so").start();
+    public static final long DEFAULT_CALLER = MMap.findFirstByPath("/\\S+/libc.so").start();
 
     @DoNotShrinkType
     @DoNotOptimize
@@ -186,12 +186,16 @@ public class LibDL {
         return data.toString();
     }
 
-    public static long dlopen(String filename, int flags) {
+    public static long cdlopen(String filename, int flags, long caller_addr) {
         Objects.requireNonNull(filename);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_filename = allocString(arena, filename);
-            return Native.INSTANCE.dlopen(c_filename.nativeAddress(), flags, ART_CALLER);
+            return Native.INSTANCE.dlopen(c_filename.nativeAddress(), flags, caller_addr);
         }
+    }
+
+    public static long dlopen(String filename, int flags) {
+        return cdlopen(filename, flags, DEFAULT_CALLER);
     }
 
     public static void dlclose(long handle) {
@@ -205,26 +209,25 @@ public class LibDL {
         return segmentToString(MemorySegment.ofAddress(msg));
     }
 
-    static long dlsym_nochecks(long handle, String symbol) {
+    public static long cdlvsym(long handle, String symbol, String version, long caller_addr) {
+        Objects.requireNonNull(symbol);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_symbol = allocString(arena, symbol);
-            return Native.INSTANCE.dlvsym(handle, c_symbol.nativeAddress(), 0, ART_CALLER);
+            MemorySegment c_version = version == null ? MemorySegment.NULL : allocString(arena, version);
+            return Native.INSTANCE.dlvsym(handle, c_symbol.nativeAddress(), c_version.nativeAddress(), caller_addr);
         }
-    }
-
-    public static long dlsym(long handle, String symbol) {
-        Objects.requireNonNull(symbol);
-        return dlsym_nochecks(handle, symbol);
     }
 
     public static long dlvsym(long handle, String symbol, String version) {
-        Objects.requireNonNull(symbol);
-        Objects.requireNonNull(version);
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment c_symbol = allocString(arena, symbol);
-            MemorySegment c_version = allocString(arena, version);
-            return Native.INSTANCE.dlvsym(handle, c_symbol.nativeAddress(), c_version.nativeAddress(), ART_CALLER);
-        }
+        return cdlvsym(handle, symbol, version, DEFAULT_CALLER);
+    }
+
+    public static long cdlsym(long handle, String symbol, long caller_addr) {
+        return cdlvsym(handle, symbol, null, caller_addr);
+    }
+
+    public static long dlsym(long handle, String symbol) {
+        return cdlsym(handle, symbol, DEFAULT_CALLER);
     }
 
     private static final VarHandle fname_handle = dlinfo_layout.varHandle(groupElement("fname"));

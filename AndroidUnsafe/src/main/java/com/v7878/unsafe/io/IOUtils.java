@@ -27,7 +27,6 @@ import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 import com.v7878.unsafe.foreign.Errno;
-import com.v7878.unsafe.foreign.LibDLExt;
 
 import java.io.FileDescriptor;
 import java.util.Objects;
@@ -59,7 +58,7 @@ public class IOUtils {
         @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
         private static final SymbolLookup CUTILS =
-                LibDLExt.systemLibraryLookup("libcutils.so", SCOPE);
+                SymbolLookup.libraryLookup("libcutils.so", SCOPE);
 
         @LibrarySymbol(name = "ashmem_valid")
         @CallSignature(type = CRITICAL, ret = INT, args = {INT})
@@ -85,12 +84,20 @@ public class IOUtils {
         @CallSignature(type = CRITICAL, ret = INT, args = {INT})
         abstract int ashmem_get_size_region(int fd);
 
+        @LibrarySymbol(name = "mprotect")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
+        abstract int mprotect(long addr, long len, int prot);
+
+        @LibrarySymbol(name = "madvise")
+        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
+        abstract int madvise(long address, long length, int advice);
+
         static final Native INSTANCE = AndroidUnsafe.allocateInstance(
                 BulkLinker.processSymbols(SCOPE, Native.class, CUTILS));
     }
 
     public static void ashmem_valid(FileDescriptor fd) throws ErrnoException {
-        int value = Native.INSTANCE.ashmem_valid(getDescriptorValue(fd));
+        int value = IOUtils.Native.INSTANCE.ashmem_valid(getDescriptorValue(fd));
         if (value < 0) {
             throw new ErrnoException("ashmem_valid", Errno.errno());
         }
@@ -102,7 +109,7 @@ public class IOUtils {
         }
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_name = arena.allocateFrom(name);
-            int value = Native.INSTANCE.ashmem_create_region(c_name.nativeAddress(), size);
+            int value = IOUtils.Native.INSTANCE.ashmem_create_region(c_name.nativeAddress(), size);
             if (value == -1) {
                 throw new ErrnoException("ashmem_create_region", Errno.errno());
             }
@@ -111,54 +118,36 @@ public class IOUtils {
     }
 
     public static void ashmem_set_prot_region(FileDescriptor fd, int prot) throws ErrnoException {
-        int value = Native.INSTANCE.ashmem_set_prot_region(getDescriptorValue(fd), prot);
+        int value = IOUtils.Native.INSTANCE.ashmem_set_prot_region(getDescriptorValue(fd), prot);
         if (value < 0) {
             throw new ErrnoException("ashmem_set_prot_region", Errno.errno());
         }
     }
 
     public static void ashmem_pin_region(FileDescriptor fd, long offset, long len) throws ErrnoException {
-        int value = Native.INSTANCE.ashmem_pin_region(getDescriptorValue(fd), offset, len);
+        int value = IOUtils.Native.INSTANCE.ashmem_pin_region(getDescriptorValue(fd), offset, len);
         if (value < 0) {
             throw new ErrnoException("ashmem_pin_region", Errno.errno());
         }
     }
 
     public static void ashmem_unpin_region(FileDescriptor fd, long offset, long len) throws ErrnoException {
-        int value = Native.INSTANCE.ashmem_unpin_region(getDescriptorValue(fd), offset, len);
+        int value = IOUtils.Native.INSTANCE.ashmem_unpin_region(getDescriptorValue(fd), offset, len);
         if (value < 0) {
             throw new ErrnoException("ashmem_unpin_region", Errno.errno());
         }
     }
 
     public static int ashmem_get_size_region(FileDescriptor fd) throws ErrnoException {
-        int value = Native.INSTANCE.ashmem_get_size_region(getDescriptorValue(fd));
+        int value = IOUtils.Native.INSTANCE.ashmem_get_size_region(getDescriptorValue(fd));
         if (value < 0) {
             throw new ErrnoException("ashmem_get_size_region", Errno.errno());
         }
         return value;
     }
 
-    @DoNotShrinkType
-    @DoNotOptimize
-    private abstract static class EarlyNative {
-        @DoNotShrink
-        private static final Arena SCOPE = Arena.ofAuto();
-
-        @LibrarySymbol(name = "mprotect")
-        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract int mprotect(long addr, long len, int prot);
-
-        @LibrarySymbol(name = "madvise")
-        @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
-        abstract int madvise(long address, long length, int advice);
-
-        static final EarlyNative INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, EarlyNative.class));
-    }
-
     public static void mprotect(long address, long length, int prot) throws ErrnoException {
-        int value = EarlyNative.INSTANCE.mprotect(address, length, prot);
+        int value = Native.INSTANCE.mprotect(address, length, prot);
         if (value < 0) {
             throw new ErrnoException("mprotect", Errno.errno());
         }
@@ -171,7 +160,7 @@ public class IOUtils {
     public static final int MADV_DONTNEED = 4;
 
     public static void madvise(long address, long length, int advice) throws ErrnoException {
-        int value = EarlyNative.INSTANCE.madvise(address, length, advice);
+        int value = Native.INSTANCE.madvise(address, length, advice);
         if (value < 0) {
             throw new ErrnoException("madvise", Errno.errno());
         }
