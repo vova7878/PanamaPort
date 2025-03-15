@@ -394,11 +394,13 @@ public class JNIUtils {
 
     public static SymbolLookup getJNINativeInterfaceLookup() {
         return (name) -> {
+            long offset;
             try {
-                return Optional.of(getJNINativeInterfaceFunction(name));
+                offset = JNI_NATIVE_INTERFACE_LAYOUT.byteOffset(groupElement(name));
             } catch (Throwable th) {
                 return Optional.empty();
             }
+            return Optional.of(getJNINativeInterface().get(ADDRESS, offset));
         };
     }
 
@@ -457,11 +459,13 @@ public class JNIUtils {
 
     public static SymbolLookup getJNIInvokeInterfaceLookup() {
         return (name) -> {
+            long offset;
             try {
-                return Optional.of(getJNIInvokeInterfaceFunction(name));
+                offset = JNI_INVOKE_INTERFACE_LAYOUT.byteOffset(groupElement(name));
             } catch (Throwable th) {
                 return Optional.empty();
             }
+            return Optional.of(getJNIInvokeInterface().get(ADDRESS, offset));
         };
     }
 

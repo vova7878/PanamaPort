@@ -6,6 +6,7 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -19,6 +20,7 @@ import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.ArtMethodUtils;
 import com.v7878.unsafe.ExtraMemoryAccess;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
@@ -88,8 +90,8 @@ public class LibDL {
 
     @DoNotShrink
     @DoNotObfuscate
-    @SuppressWarnings("unused")
     static class LinkerSymbols {
+        // for LibDL
         static final MemorySegment s_dladdr;
         static final MemorySegment s_dlclose;
         static final MemorySegment s_dlerror;
@@ -118,9 +120,15 @@ public class LibDL {
         }
     }
 
-    // TODO: Maybe some other symbols?
-    public static final long ART_CALLER = MMap.findFirstByPath("/\\S+/libart.so").start();
-    public static final long DEFAULT_CALLER = MMap.findFirstByPath("/\\S+/libc.so").start();
+    public static final long ART_CALLER;
+    public static final long DEFAULT_CALLER;
+
+    static {
+        // Just any symbols belonging to libart and libc
+        ART_CALLER = ArtMethodUtils.getExecutableData(getDeclaredMethod(System.class, "currentTimeMillis"));
+        DEFAULT_CALLER = cdlsym(RTLD_DEFAULT, "malloc", ART_CALLER);
+        assert DEFAULT_CALLER != 0;
+    }
 
     @DoNotShrinkType
     @DoNotOptimize
