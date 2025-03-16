@@ -52,7 +52,7 @@ import java.util.Optional;
 @DoNotOptimize
 abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl {
 
-    private static final int BYTE_ARRAY_BASE = _Utils.BaseAndScale.BYTE.base();
+    private static final long BYTE_ARRAY_BASE = _Utils.BaseAndScale.BYTE.base();
 
     // Constants defining the maximum alignment supported by various kinds of heap arrays.
 
@@ -63,10 +63,10 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
     //private static final long MAX_ALIGN_LONG_ARRAY = ValueLayout.JAVA_LONG.byteAlignment();
 
     private static final long MAX_ALIGN_OBJECT = VM.OBJECT_ALIGNMENT;
-    private static final long MAX_ALIGN_BYTE_ARRAY = Integer.lowestOneBit(AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET);
-    private static final long MAX_ALIGN_SHORT_ARRAY = Integer.lowestOneBit(AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET);
-    private static final long MAX_ALIGN_INT_ARRAY = Integer.lowestOneBit(AndroidUnsafe.ARRAY_INT_BASE_OFFSET);
-    private static final long MAX_ALIGN_LONG_ARRAY = Integer.lowestOneBit(AndroidUnsafe.ARRAY_LONG_BASE_OFFSET);
+    private static final long MAX_ALIGN_BYTE_ARRAY = Long.lowestOneBit(AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET);
+    private static final long MAX_ALIGN_SHORT_ARRAY = Long.lowestOneBit(AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET);
+    private static final long MAX_ALIGN_INT_ARRAY = Long.lowestOneBit(AndroidUnsafe.ARRAY_INT_BASE_OFFSET);
+    private static final long MAX_ALIGN_LONG_ARRAY = Long.lowestOneBit(AndroidUnsafe.ARRAY_LONG_BASE_OFFSET);
 
     final long offset;
     final Object base;
@@ -103,7 +103,7 @@ abstract sealed class _HeapMemorySegmentImpl extends _AbstractMemorySegmentImpl 
         if (!(base instanceof byte[] baseByte && this instanceof OfByte)) {
             throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
         }
-        return JavaNioAccess.newHeapByteBuffer(baseByte, (int) offset - BYTE_ARRAY_BASE, (int) byteSize(), scope);
+        return JavaNioAccess.newHeapByteBuffer(baseByte, (int) (offset - BYTE_ARRAY_BASE), (int) byteSize(), scope);
     }
 
     // factories

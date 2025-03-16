@@ -489,7 +489,7 @@ public class JavaNioAccess {
         throw shouldNotReachHere();
     }
 
-    private static int getArrayBase(Buffer buffer) {
+    private static long getArrayBase(Buffer buffer) {
         if (buffer instanceof ByteBuffer) {
             return ARRAY_BYTE_BASE_OFFSET;
         } else if (buffer instanceof CharBuffer) {

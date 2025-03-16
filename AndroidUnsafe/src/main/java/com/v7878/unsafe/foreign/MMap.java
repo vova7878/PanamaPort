@@ -3,6 +3,7 @@ package com.v7878.unsafe.foreign;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,7 +36,7 @@ class MMap {
         if (!match.find()) {
             throw new IllegalStateException("Can`t find mmap entry with path " + path);
         }
-        long start = Long.parseLong(match.group("start"), 16);
+        long start = Long.parseLong(Objects.requireNonNull(match.group("start")), 16);
         path = match.group("path");
         return new MMapEntry(start, path);
     }

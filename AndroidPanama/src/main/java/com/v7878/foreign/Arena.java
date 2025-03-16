@@ -243,9 +243,9 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     }
 
     /**
-     * {@return a new confined arena} Segments allocated with the confined arena can be
-     * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by the thread
-     * that created the arena, the arena's <em>owner thread</em>.
+     * {@return a new confined arena} Segments allocated with the confined arena can
+     * only be {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by the
+     * thread that created the arena, the arena's <em>owner thread</em>.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
      * are zero-initialized.

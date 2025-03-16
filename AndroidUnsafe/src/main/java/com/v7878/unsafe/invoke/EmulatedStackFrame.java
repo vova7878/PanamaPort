@@ -197,7 +197,7 @@ public final class EmulatedStackFrame {
     }
 
     public static sealed class StackFrameAccessor permits RelativeStackFrameAccessor {
-        private static final int BASE = ARRAY_BYTE_BASE_OFFSET;
+        private static final long BASE = ARRAY_BYTE_BASE_OFFSET;
 
         final int[] primitivesOffsets;
         final int[] referencesOffsets;
@@ -268,19 +268,18 @@ public final class EmulatedStackFrame {
 
         @AlwaysInline
         protected void putSSLOT(int offset, int value) {
-            offset += BASE;
-            AndroidUnsafe.putIntO(primitives, offset, value);
+            AndroidUnsafe.putIntO(primitives, BASE + offset, value);
         }
 
         @AlwaysInline
         protected void putDSLOT(int offset, long value) {
-            offset += BASE;
-            if ((offset & 0x7) == 0) {
-                AndroidUnsafe.putLongO(primitives, offset, value);
+            long array_offset = BASE + offset;
+            if ((array_offset & 0x7) == 0) {
+                AndroidUnsafe.putLongO(primitives, array_offset, value);
             } else {
                 // Note: android is always little-endian
-                AndroidUnsafe.putIntO(primitives, offset, (int) value);
-                AndroidUnsafe.putIntO(primitives, offset + 4, (int) (value >> 32));
+                AndroidUnsafe.putIntO(primitives, array_offset, (int) value);
+                AndroidUnsafe.putIntO(primitives, array_offset + 4, (int) (value >> 32));
             }
         }
 
@@ -291,19 +290,18 @@ public final class EmulatedStackFrame {
 
         @AlwaysInline
         protected int getSSLOT(int offset) {
-            offset += BASE;
-            return AndroidUnsafe.getIntO(primitives, offset);
+            return AndroidUnsafe.getIntO(primitives, BASE + offset);
         }
 
         @AlwaysInline
         protected long getDSLOT(int offset) {
-            offset += BASE;
-            if ((offset & 0x7) == 0) {
-                return AndroidUnsafe.getLongO(primitives, offset);
+            long array_offset = BASE + offset;
+            if ((array_offset & 0x7) == 0) {
+                return AndroidUnsafe.getLongO(primitives, array_offset);
             } else {
                 // Note: android is always little-endian
-                int lo = AndroidUnsafe.getIntO(primitives, offset);
-                int hi = AndroidUnsafe.getIntO(primitives, offset + 4);
+                int lo = AndroidUnsafe.getIntO(primitives, array_offset);
+                int hi = AndroidUnsafe.getIntO(primitives, array_offset + 4);
                 return (lo & 0xffffffffL) | ((long) hi << 32);
             }
         }

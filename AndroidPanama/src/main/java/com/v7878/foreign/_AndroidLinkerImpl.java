@@ -481,6 +481,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     @DoNotShrink
     @SuppressWarnings("unused")
     static class DowncallHelper {
+        // TODO: public static Arena SharedUtils.newBoundedArena(long size)
         public static Arena createArena() {
             return Arena.ofConfined();
         }

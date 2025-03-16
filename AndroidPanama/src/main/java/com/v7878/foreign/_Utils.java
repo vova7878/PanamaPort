@@ -360,10 +360,10 @@ final class _Utils {
         LONG(ARRAY_LONG_BASE_OFFSET, ARRAY_LONG_INDEX_SCALE),
         DOUBLE(ARRAY_DOUBLE_BASE_OFFSET, ARRAY_DOUBLE_INDEX_SCALE);
 
-        private final int base;
+        private final long base;
         private final long scale;
 
-        BaseAndScale(int base, long scale) {
+        BaseAndScale(long base, long scale) {
             this.base = base;
             this.scale = scale;
         }
@@ -388,7 +388,7 @@ final class _Utils {
                     + array.getClass().getSimpleName());
         }
 
-        public int base() {
+        public long base() {
             return base;
         }
 

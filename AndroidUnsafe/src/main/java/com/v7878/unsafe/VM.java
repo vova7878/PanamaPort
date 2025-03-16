@@ -260,7 +260,7 @@ public class VM {
         }
         Class<?> clazz = obj.getClass();
         if (clazz.isArray()) {
-            return arrayBaseOffset(clazz) + arrayIndexScale(clazz) * getArrayLength(obj);
+            return (int) arrayBaseOffset(clazz) + arrayIndexScale(clazz) * getArrayLength(obj);
         }
         return objectSizeField(clazz);
     }

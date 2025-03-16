@@ -90,11 +90,20 @@ final class _ConfinedSession extends _MemorySessionImpl {
      * A confined resource list; no races are possible here.
      */
     static final class ConfinedResourceList extends ResourceList {
+        // The first element of the list is pulled into a separate field
+        // which helps escape analysis keep track of the instance, allowing
+        // it to be scalar replaced.
+        ResourceCleanup cache;
+
         @Override
         void add(ResourceCleanup cleanup) {
             if (fst != ResourceCleanup.CLOSED_LIST) {
-                cleanup.next = fst;
-                fst = cleanup;
+                if (cache == null) {
+                    cache = cleanup;
+                } else {
+                    cleanup.next = fst;
+                    fst = cleanup;
+                }
             } else {
                 throw alreadyClosed();
             }
@@ -105,7 +114,12 @@ final class _ConfinedSession extends _MemorySessionImpl {
             if (fst != ResourceCleanup.CLOSED_LIST) {
                 ResourceCleanup prev = fst;
                 fst = ResourceCleanup.CLOSED_LIST;
-                cleanup(prev);
+                RuntimeException pendingException = null;
+                if (cache != null) {
+                    //noinspection ConstantValue
+                    pendingException = cleanupSingle(cache, pendingException);
+                }
+                cleanup(prev, pendingException);
             } else {
                 throw alreadyClosed();
             }

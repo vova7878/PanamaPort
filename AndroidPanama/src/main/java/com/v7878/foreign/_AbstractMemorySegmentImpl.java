@@ -126,17 +126,20 @@ abstract sealed class _AbstractMemorySegmentImpl
     }
 
     @Override
+    @AlwaysInline
     public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(newSize, _MemorySessionImpl.toMemorySession(arena), cleanup);
     }
 
     @Override
+    @AlwaysInline
     public final MemorySegment reinterpret(long newSize) {
         return reinterpretInternal(newSize, scope, null);
     }
 
     @Override
+    @AlwaysInline
     public final MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(byteSize(), _MemorySessionImpl.toMemorySession(arena), cleanup);

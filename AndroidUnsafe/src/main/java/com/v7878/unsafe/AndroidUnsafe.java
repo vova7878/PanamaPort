@@ -34,15 +34,15 @@ public class AndroidUnsafe {
                 || arch.equals("amd64") || arch.equals("x86_64"));
     }
 
-    public static final int ARRAY_BOOLEAN_BASE_OFFSET = arrayBaseOffset(boolean[].class);
-    public static final int ARRAY_BYTE_BASE_OFFSET = arrayBaseOffset(byte[].class);
-    public static final int ARRAY_SHORT_BASE_OFFSET = arrayBaseOffset(short[].class);
-    public static final int ARRAY_CHAR_BASE_OFFSET = arrayBaseOffset(char[].class);
-    public static final int ARRAY_INT_BASE_OFFSET = arrayBaseOffset(int[].class);
-    public static final int ARRAY_LONG_BASE_OFFSET = arrayBaseOffset(long[].class);
-    public static final int ARRAY_FLOAT_BASE_OFFSET = arrayBaseOffset(float[].class);
-    public static final int ARRAY_DOUBLE_BASE_OFFSET = arrayBaseOffset(double[].class);
-    public static final int ARRAY_OBJECT_BASE_OFFSET = arrayBaseOffset(Object[].class);
+    public static final long ARRAY_BOOLEAN_BASE_OFFSET = arrayBaseOffset(boolean[].class);
+    public static final long ARRAY_BYTE_BASE_OFFSET = arrayBaseOffset(byte[].class);
+    public static final long ARRAY_SHORT_BASE_OFFSET = arrayBaseOffset(short[].class);
+    public static final long ARRAY_CHAR_BASE_OFFSET = arrayBaseOffset(char[].class);
+    public static final long ARRAY_INT_BASE_OFFSET = arrayBaseOffset(int[].class);
+    public static final long ARRAY_LONG_BASE_OFFSET = arrayBaseOffset(long[].class);
+    public static final long ARRAY_FLOAT_BASE_OFFSET = arrayBaseOffset(float[].class);
+    public static final long ARRAY_DOUBLE_BASE_OFFSET = arrayBaseOffset(double[].class);
+    public static final long ARRAY_OBJECT_BASE_OFFSET = arrayBaseOffset(Object[].class);
 
     public static final int ARRAY_BOOLEAN_INDEX_SCALE = arrayIndexScale(boolean[].class);
     public static final int ARRAY_BYTE_INDEX_SCALE = arrayIndexScale(byte[].class);
@@ -142,8 +142,8 @@ public class AndroidUnsafe {
     }
 
     @AlwaysInline
-    public static int arrayBaseOffset(Class<?> clazz) {
-        int out = SunUnsafe.arrayBaseOffset(clazz);
+    public static long arrayBaseOffset(Class<?> clazz) {
+        long out = SunUnsafe.arrayBaseOffset(clazz) & 0xffffffffL;
         check(out != 0, IllegalStateException::new);
         return out;
     }
