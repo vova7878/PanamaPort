@@ -18,8 +18,8 @@ import java.util.Objects;
 
 public class NativeCodeBlob {
 
-    private static final int PROT_RW = OsConstants.PROT_READ | OsConstants.PROT_WRITE;
     private static final int PROT_RX = OsConstants.PROT_READ | OsConstants.PROT_EXEC;
+    private static final int PROT_RWX = PROT_RX | OsConstants.PROT_WRITE;
     private static final int CODE_FLAGS = OsConstants.MAP_SHARED;
     private static final int CODE_ALIGNMENT = CURRENT_INSTRUCTION_SET.codeAlignment();
 
@@ -36,7 +36,7 @@ public class NativeCodeBlob {
 
         MemorySegment data;
         try (var fd = IOUtils.ashmem_create_scoped_region("(runtime code)", size)) {
-            data = IOUtils.mmap(0, fd.value(), 0, size, PROT_RW, CODE_FLAGS, arena);
+            data = IOUtils.mmap(0, fd.value(), 0, size, PROT_RWX, CODE_FLAGS, arena);
         } catch (ErrnoException e) {
             throw shouldNotHappen(e);
         }
