@@ -285,7 +285,7 @@ public class Reflection {
         ART_METHOD_PADDING = (am - methods - length_field_size)
                 % ART_METHOD_SIZE + length_field_size;
 
-        getArtField = unreflectDirect(getHiddenVirtualMethod(
+        getArtField = unreflect(getHiddenVirtualMethod(
                 Field.class, "getArtField"));
 
         long af = getArtField(Test.af);
@@ -624,11 +624,7 @@ public class Reflection {
 
     public static void initHandle(MethodHandle handle) {
         Objects.requireNonNull(handle);
-        try {
-            MethodHandles.publicLookup().revealDirect(handle);
-        } catch (Throwable th) {
-            // ignore
-        }
+        MethodHandles.reflectAs(Member.class, handle);
     }
 
     @AlwaysInline
@@ -658,16 +654,6 @@ public class Reflection {
 
         initHandle(out);
         return out;
-    }
-
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
-    @AlwaysInline
-    // TODO: move to InvokeAccess
-    public static void setMethodType(MethodHandle handle, MethodType type) {
-        // TODO: android 8-12L nominalType
-        var mirror = new MethodHandleMirror[1];
-        fillArray(mirror, handle);
-        mirror[0].type = type;
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)

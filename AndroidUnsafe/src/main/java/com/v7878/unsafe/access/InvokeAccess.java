@@ -3,8 +3,10 @@ package com.v7878.unsafe.access;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
+import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
+import static com.v7878.unsafe.ArtFieldUtils.makeFieldNonFinal;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
@@ -39,7 +41,7 @@ import java.util.Objects;
 import dalvik.system.DexFile;
 
 public class InvokeAccess {
-    private static final AccessI access;
+    private static final AccessI ACCESS;
 
     static {
         TypeId mh = TypeId.of(MethodHandle.class);
@@ -54,38 +56,76 @@ public class InvokeAccess {
         ClassDef access_def = ClassBuilder.build(access_id, cb -> cb
                 .withSuperClass(TypeId.of(AccessI.class))
                 .withFlags(ACC_PUBLIC | ACC_FINAL)
-                // public MethodType realType(MethodHandle handle) {
-                //     return handle.type;
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("realType")
-                        .withReturnType(mt)
-                        .withParameterTypes(mh)
-                        .withCode(0, ib -> {
-                            Field type = getHiddenInstanceField(MethodHandle.class, "type");
-                            makeFieldPublic(type);
-                            ib.iop(GET_OBJECT, ib.p(0), ib.p(0), FieldId.of(type));
-                            ib.return_object(ib.p(0));
-                        })
-                )
-                .if_(ART_SDK_INT <= 32, cb2 -> cb2
-                        // public MethodType nominalType(MethodHandle handle) {
-                        //     return handle.nominalType;
-                        // }
-                        .withMethod(mb -> mb
-                                .withFlags(ACC_PUBLIC | ACC_FINAL)
-                                .withName("nominalType")
-                                .withReturnType(mt)
-                                .withParameterTypes(mh)
-                                .withCode(0, ib -> {
-                                    Field type = getHiddenInstanceField(
-                                            MethodHandle.class, "nominalType");
-                                    makeFieldPublic(type);
-                                    ib.iop(GET_OBJECT, ib.p(0), ib.p(0), FieldId.of(type));
-                                    ib.return_object(ib.p(0));
-                                })
-                        )
+                .commit(cb2 -> {
+                    FieldId type_id;
+                    {
+                        Field type = getHiddenInstanceField(MethodHandle.class, "type");
+                        makeFieldPublic(type);
+                        makeFieldNonFinal(type);
+                        type_id = FieldId.of(type);
+                    }
+                    // public MethodType realType(MethodHandle handle) {
+                    //     return handle.type;
+                    // }
+                    cb2.withMethod(mb -> mb
+                            .withFlags(ACC_PUBLIC | ACC_FINAL)
+                            .withName("realType")
+                            .withReturnType(mt)
+                            .withParameterTypes(mh)
+                            .withCode(0, ib -> {
+                                ib.iop(GET_OBJECT, ib.p(0), ib.p(0), type_id);
+                                ib.return_object(ib.p(0));
+                            })
+                    );
+                    // public void realType(MethodHandle handle, MethodType type) {
+                    //     handle.type = type;
+                    // }
+                    cb2.withMethod(mb -> mb
+                            .withFlags(ACC_PUBLIC | ACC_FINAL)
+                            .withName("realType")
+                            .withReturnType(TypeId.V)
+                            .withParameterTypes(mh, mt)
+                            .withCode(0, ib -> {
+                                ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), type_id);
+                                ib.return_void();
+                            })
+                    );
+                })
+                .if_(ART_SDK_INT <= 32, cb2 -> {
+                            FieldId nominal_type_id;
+                            {
+                                Field nominal_type = getHiddenInstanceField(MethodHandle.class, "nominalType");
+                                makeFieldPublic(nominal_type);
+                                makeFieldNonFinal(nominal_type);
+                                nominal_type_id = FieldId.of(nominal_type);
+                            }
+                            // public MethodType nominalType(MethodHandle handle) {
+                            //     return handle.nominalType;
+                            // }
+                            cb2.withMethod(mb -> mb
+                                    .withFlags(ACC_PUBLIC | ACC_FINAL)
+                                    .withName("nominalType")
+                                    .withReturnType(mt)
+                                    .withParameterTypes(mh)
+                                    .withCode(0, ib -> {
+                                        ib.iop(GET_OBJECT, ib.p(0), ib.p(0), nominal_type_id);
+                                        ib.return_object(ib.p(0));
+                                    })
+                            );
+                            // public void nominalType(MethodHandle handle, MethodType type) {
+                            //     handle.nominalType = type;
+                            // }
+                            cb2.withMethod(mb -> mb
+                                    .withFlags(ACC_PUBLIC | ACC_FINAL)
+                                    .withName("nominalType")
+                                    .withReturnType(TypeId.V)
+                                    .withParameterTypes(mh, mt)
+                                    .withCode(0, ib -> {
+                                        ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), nominal_type_id);
+                                        ib.return_void();
+                                    })
+                            );
+                        }
                 )
         );
 
@@ -95,7 +135,7 @@ public class InvokeAccess {
         ClassLoader loader = InvokeAccess.class.getClassLoader();
 
         Class<?> invoker_class = loadClass(dex, access_name, loader);
-        access = (AccessI) allocateInstance(invoker_class);
+        ACCESS = (AccessI) allocateInstance(invoker_class);
     }
 
     @DoNotShrink
@@ -103,19 +143,33 @@ public class InvokeAccess {
     private abstract static class AccessI {
         abstract MethodType realType(MethodHandle handle);
 
+        abstract void realType(MethodHandle handle, MethodType type);
+
         abstract MethodType nominalType(MethodHandle handle);
+
+        abstract void nominalType(MethodHandle handle, MethodType type);
     }
 
     public static MethodType realType(MethodHandle handle) {
-        return access.realType(handle);
+        return ACCESS.realType(handle);
     }
 
     public static MethodType nominalType(MethodHandle handle) {
         if (ART_SDK_INT >= 33) {
-            Objects.requireNonNull(handle);
-            return null;
+            throw new UnsupportedOperationException();
         }
-        return access.nominalType(handle);
+        return ACCESS.nominalType(handle);
+    }
+
+    public static void setRealType(MethodHandle handle, MethodType type) {
+        ACCESS.realType(handle, type);
+    }
+
+    public static void setNominalType(MethodHandle handle, MethodType type) {
+        if (ART_SDK_INT >= 33) {
+            throw new UnsupportedOperationException();
+        }
+        ACCESS.nominalType(handle, type);
     }
 
     public static boolean isConvertibleTo(MethodType from, MethodType to) {
@@ -123,7 +177,7 @@ public class InvokeAccess {
             static final MethodHandle isConvertibleTo = nothrows_run(() -> unreflect(
                     getHiddenMethod(MethodType.class, "isConvertibleTo", MethodType.class)));
         }
-        // TODO: move to access
+        // TODO: move to AccessI
         return nothrows_run(() -> (boolean) Holder.isConvertibleTo.invokeExact(from, to));
     }
 
@@ -132,7 +186,7 @@ public class InvokeAccess {
             static final MethodHandle explicitCastEquivalentToAsType = nothrows_run(() -> unreflect(
                     getHiddenMethod(MethodType.class, "explicitCastEquivalentToAsType", MethodType.class)));
         }
-        // TODO: move to access
+        // TODO: move to AccessI
         return nothrows_run(() -> (boolean) Holder.explicitCastEquivalentToAsType.invokeExact(from, to));
     }
 
@@ -141,7 +195,7 @@ public class InvokeAccess {
             static final MethodHandle getMethodHandleImpl = nothrows_run(() -> unreflect(
                     getHiddenMethod(MethodHandles.class, "getMethodHandleImpl", MethodHandle.class)));
         }
-        // TODO: move to access
+        // TODO: move to AccessI
         return nothrows_run(() -> (MethodHandle) Holder.getMethodHandleImpl.invoke(target));
     }
 
@@ -152,7 +206,7 @@ public class InvokeAccess {
             static final MethodHandle getMemberInternal = nothrows_run(() ->
                     unreflect(getHiddenMethod(mhi, "getMemberInternal")));
         }
-        // TODO: move to access
+        // TODO: move to AccessI
         return nothrows_run(() -> (Member) Holder.getMemberInternal.invoke(target));
     }
 

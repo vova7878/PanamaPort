@@ -15,7 +15,6 @@ import android.annotation.TargetApi;
 import android.os.Build;
 
 import com.v7878.unsafe.DangerLevel;
-import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.access.InvokeAccess;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.RelativeStackFrameAccessor;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
@@ -890,7 +889,7 @@ public class MethodHandlesFixes {
             return makeTransformer(type, new ReinterpretInvoker(handle));
         }
         handle = InvokeAccess.duplicateHandle(handle);
-        Reflection.setMethodType(handle, type);
+        InvokeAccess.setRealType(handle, type);
         return handle;
     }
 

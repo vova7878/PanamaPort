@@ -2,7 +2,6 @@ package com.v7878.unsafe.access;
 
 import static com.v7878.unsafe.Reflection.getHiddenMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 
@@ -142,7 +141,7 @@ public class VMAccess {
             static final MethodHandle new_array;
 
             static {
-                new_array = unreflectDirect(searchMethod(methods,
+                new_array = unreflect(searchMethod(methods,
                         "newNonMovableArray", Class.class, int.class));
             }
         }
@@ -155,7 +154,7 @@ public class VMAccess {
             static final MethodHandle address_of;
 
             static {
-                address_of = unreflectDirect(searchMethod(
+                address_of = unreflect(searchMethod(
                         methods, "addressOf", Object.class));
             }
         }
