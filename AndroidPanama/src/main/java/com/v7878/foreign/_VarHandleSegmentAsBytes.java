@@ -99,7 +99,7 @@ final class _VarHandleSegmentAsBytes {
 
     @DoNotShrink
     @DoNotObfuscate
-    public static byte get(MemorySegment ms, MemoryLayout encl, long base, long offset) {
+    public static byte getAligned(MemorySegment ms, MemoryLayout encl, long base, long offset) {
         return get((_AbstractMemorySegmentImpl) ms, encl, base, offset);
     }
 
@@ -111,7 +111,7 @@ final class _VarHandleSegmentAsBytes {
 
     @DoNotShrink
     @DoNotObfuscate
-    public static void set(MemorySegment ms, MemoryLayout encl, long base, long offset, byte value) {
+    public static void setAligned(MemorySegment ms, MemoryLayout encl, long base, long offset, byte value) {
         set((_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
     }
 

@@ -90,16 +90,12 @@ final class _Utils {
             rawAddressType = int.class;
         }
         ADDRESS_CARRIER_TYPE = rawAddressType;
-        try {
-            UNBOX_SEGMENT = lookup.findStatic(_Utils.class, unboxSegmentName,
-                    MethodType.methodType(rawAddressType, MemorySegment.class));
-            MAKE_SEGMENT_TARGET = lookup.findStatic(_Utils.class, "makeSegment",
-                    MethodType.methodType(MemorySegment.class, rawAddressType, AddressLayout.class));
-            MAKE_SEGMENT_NO_TARGET = lookup.findStatic(_Utils.class, "makeSegment",
-                    MethodType.methodType(MemorySegment.class, rawAddressType));
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
+        UNBOX_SEGMENT = _MhUtil.findStatic(lookup, _Utils.class, unboxSegmentName,
+                MethodType.methodType(rawAddressType, MemorySegment.class));
+        MAKE_SEGMENT_TARGET = _MhUtil.findStatic(lookup, _Utils.class, "makeSegment",
+                MethodType.methodType(MemorySegment.class, rawAddressType, AddressLayout.class));
+        MAKE_SEGMENT_NO_TARGET = _MhUtil.findStatic(lookup, _Utils.class, "makeSegment",
+                MethodType.methodType(MemorySegment.class, rawAddressType));
     }
 
     public static long requireByteSizeValid(long byteSize, boolean allowZero) {
@@ -208,6 +204,7 @@ final class _Utils {
 
     @DoNotShrink
     @DoNotObfuscate
+    @SuppressWarnings("unused")
     public static int unboxSegment32(MemorySegment segment) {
         // This cast to 'int' is safe, because we only call this method on 32-bit
         // platforms, where we know the address of a segment is truncated to 32-bits.
@@ -218,6 +215,7 @@ final class _Utils {
 
     @DoNotShrink
     @DoNotObfuscate
+    @SuppressWarnings("unused")
     public static MemorySegment makeSegment(long addr) {
         return makeSegment(addr, 0, 1);
     }
@@ -225,12 +223,14 @@ final class _Utils {
     // 32 bit
     @DoNotShrink
     @DoNotObfuscate
+    @SuppressWarnings("unused")
     public static MemorySegment makeSegment(int addr) {
         return makeSegment(addr, 0, 1);
     }
 
     @DoNotShrink
     @DoNotObfuscate
+    @SuppressWarnings("unused")
     public static MemorySegment makeSegment(long addr, AddressLayout layout) {
         return makeSegment(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
     }
@@ -238,15 +238,13 @@ final class _Utils {
     // 32 bit
     @DoNotShrink
     @DoNotObfuscate
+    @SuppressWarnings("unused")
     public static MemorySegment makeSegment(int addr, AddressLayout layout) {
         return makeSegment(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
     }
 
     public static MemorySegment makeSegment(long addr, long size, long align) {
-        if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
-        }
-        return _SegmentFactories.makeNativeSegmentUnchecked(addr, size);
+        return makeSegment(addr, size, align, _GlobalSession.INSTANCE);
     }
 
     public static MemorySegment makeSegment(long addr, long size, long align, _MemorySessionImpl scope) {

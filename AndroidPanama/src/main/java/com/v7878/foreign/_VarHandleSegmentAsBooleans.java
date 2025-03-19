@@ -91,7 +91,7 @@ final class _VarHandleSegmentAsBooleans {
 
     @DoNotShrink
     @DoNotObfuscate
-    public static boolean get(MemorySegment ms, MemoryLayout encl, long base, long offset) {
+    public static boolean getAligned(MemorySegment ms, MemoryLayout encl, long base, long offset) {
         return get((_AbstractMemorySegmentImpl) ms, encl, base, offset);
     }
 
@@ -103,7 +103,7 @@ final class _VarHandleSegmentAsBooleans {
 
     @DoNotShrink
     @DoNotObfuscate
-    public static void set(MemorySegment ms, MemoryLayout encl, long base, long offset, boolean value) {
+    public static void setAligned(MemorySegment ms, MemoryLayout encl, long base, long offset, boolean value) {
         set((_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
     }
 

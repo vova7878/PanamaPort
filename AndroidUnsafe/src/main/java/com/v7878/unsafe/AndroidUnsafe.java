@@ -2,7 +2,9 @@ package com.v7878.unsafe;
 
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.misc.Math.convEndian;
+import static com.v7878.unsafe.misc.Math.convEndian16;
+import static com.v7878.unsafe.misc.Math.convEndian32;
+import static com.v7878.unsafe.misc.Math.convEndian64;
 import static com.v7878.unsafe.misc.Math.toUnsignedInt;
 import static com.v7878.unsafe.misc.Math.toUnsignedLong;
 
@@ -589,7 +591,7 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     public static long getLongUnaligned(Object obj, long offset, boolean swap) {
-        return convEndian(getLongUnaligned(obj, offset), swap);
+        return convEndian64(getLongUnaligned(obj, offset), swap);
     }
 
     @AlwaysInline
@@ -618,7 +620,7 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     public static int getIntUnaligned(Object obj, long offset, boolean swap) {
-        return convEndian(getIntUnaligned(obj, offset), swap);
+        return convEndian32(getIntUnaligned(obj, offset), swap);
     }
 
     @AlwaysInline
@@ -642,7 +644,7 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     public static short getShortUnaligned(Object obj, long offset, boolean swap) {
-        return convEndian(getShortUnaligned(obj, offset), swap);
+        return convEndian16(getShortUnaligned(obj, offset), swap);
     }
 
     @AlwaysInline
@@ -756,7 +758,7 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     public static void putLongUnaligned(Object o, long offset, long value, boolean swap) {
-        putLongUnaligned(o, offset, convEndian(value, swap));
+        putLongUnaligned(o, offset, convEndian64(value, swap));
     }
 
     @AlwaysInline
@@ -787,7 +789,7 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     public static void putIntUnaligned(Object o, long offset, int value, boolean swap) {
-        putIntUnaligned(o, offset, convEndian(value, swap));
+        putIntUnaligned(o, offset, convEndian32(value, swap));
     }
 
     @AlwaysInline
@@ -812,7 +814,7 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     public static void putShortUnaligned(Object o, long offset, short value, boolean swap) {
-        putShortUnaligned(o, offset, convEndian(value, swap));
+        putShortUnaligned(o, offset, convEndian16(value, swap));
     }
 
     @AlwaysInline

@@ -4,38 +4,38 @@ import com.v7878.r8.annotations.AlwaysInline;
 
 public class Math {
     @AlwaysInline
-    public static short convEndian(short value, boolean swap) {
+    public static short convEndian16(short value, boolean swap) {
         return swap ? Short.reverseBytes(value) : value;
     }
 
     @AlwaysInline
-    public static int convEndian(int value, boolean swap) {
+    public static int convEndian32(int value, boolean swap) {
         return swap ? Integer.reverseBytes(value) : value;
     }
 
     @AlwaysInline
-    public static long convEndian(long value, boolean swap) {
+    public static long convEndian64(long value, boolean swap) {
         return swap ? Long.reverseBytes(value) : value;
     }
 
     @AlwaysInline
     public static float i2f(int n, boolean swap) {
-        return Float.intBitsToFloat(convEndian(n, swap));
+        return Float.intBitsToFloat(convEndian32(n, swap));
     }
 
     @AlwaysInline
     public static int f2i(float n, boolean swap) {
-        return convEndian(Float.floatToRawIntBits(n), swap);
+        return convEndian32(Float.floatToRawIntBits(n), swap);
     }
 
     @AlwaysInline
     public static double l2d(long n, boolean swap) {
-        return Double.longBitsToDouble(convEndian(n, swap));
+        return Double.longBitsToDouble(convEndian64(n, swap));
     }
 
     @AlwaysInline
     public static long d2l(double n, boolean swap) {
-        return convEndian(Double.doubleToRawLongBits(n), swap);
+        return convEndian64(Double.doubleToRawLongBits(n), swap);
     }
 
     @AlwaysInline

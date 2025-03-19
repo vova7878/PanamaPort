@@ -69,23 +69,19 @@ class _LayoutPath {
     private static final MethodHandle MH_ADD_EXACT;
 
     static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            MH_ADD_SCALED_OFFSET = lookup.findStatic(_LayoutPath.class, "addScaledOffset",
-                    MethodType.methodType(long.class, long.class, long.class, long.class, long.class));
-            MH_SLICE = lookup.findVirtual(MemorySegment.class, "asSlice",
-                    MethodType.methodType(MemorySegment.class, long.class, long.class));
-            MH_SLICE_LAYOUT = lookup.findVirtual(MemorySegment.class, "asSlice",
-                    MethodType.methodType(MemorySegment.class, long.class, MemoryLayout.class));
-            MH_CHECK_ENCL_LAYOUT = lookup.findStatic(_LayoutPath.class, "checkEnclosingLayout",
-                    MethodType.methodType(void.class, MemorySegment.class, long.class, MemoryLayout.class));
-            MH_SEGMENT_RESIZE = lookup.findStatic(_LayoutPath.class, "resizeSegment",
-                    MethodType.methodType(MemorySegment.class, MemorySegment.class));
-            MH_ADD_EXACT = lookup.findStatic(Math.class, "addExact",
-                    MethodType.methodType(long.class, long.class, long.class));
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MH_ADD_SCALED_OFFSET = _MhUtil.findStatic(lookup, _LayoutPath.class, "addScaledOffset",
+                MethodType.methodType(long.class, long.class, long.class, long.class, long.class));
+        MH_SLICE = _MhUtil.findVirtual(lookup, MemorySegment.class, "asSlice",
+                MethodType.methodType(MemorySegment.class, long.class, long.class));
+        MH_SLICE_LAYOUT = _MhUtil.findVirtual(lookup, MemorySegment.class, "asSlice",
+                MethodType.methodType(MemorySegment.class, long.class, MemoryLayout.class));
+        MH_CHECK_ENCL_LAYOUT = _MhUtil.findStatic(lookup, _LayoutPath.class, "checkEnclosingLayout",
+                MethodType.methodType(void.class, MemorySegment.class, long.class, MemoryLayout.class));
+        MH_SEGMENT_RESIZE = _MhUtil.findStatic(lookup, _LayoutPath.class, "resizeSegment",
+                MethodType.methodType(MemorySegment.class, MemorySegment.class));
+        MH_ADD_EXACT = _MhUtil.findStatic(lookup, Math.class, "addExact",
+                MethodType.methodType(long.class, long.class, long.class));
     }
 
     private final MemoryLayout layout;
@@ -185,6 +181,7 @@ class _LayoutPath {
 
     @DoNotShrink
     @DoNotObfuscate
+    @SuppressWarnings("unused")
     private static MemorySegment resizeSegment(MemorySegment segment) {
         // Avoid adapting for specific target layout. The check for the root layout
         // size and alignment will be inserted by LayoutPath::dereferenceHandle anyway.
@@ -238,6 +235,7 @@ class _LayoutPath {
 
     @DoNotShrink
     @DoNotObfuscate
+    @SuppressWarnings("unused")
     private static long addScaledOffset(long base, long index, long stride, long bound) {
         Objects.checkIndex(index, bound);
         // note: the below can overflow, depending on 'base'. When constructing var handles
@@ -290,6 +288,7 @@ class _LayoutPath {
 
     @DoNotShrink
     @DoNotObfuscate
+    @SuppressWarnings("unused")
     private static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
         ((_AbstractMemorySegmentImpl) segment).checkEnclosingLayout(offset, enclosing, true);
     }

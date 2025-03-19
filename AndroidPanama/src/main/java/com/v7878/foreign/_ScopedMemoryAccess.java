@@ -151,20 +151,6 @@ final class _ScopedMemoryAccess {
     }
 
     @AlwaysInline
-    public static char getChar(_MemorySessionImpl session, Object base, long offset) {
-        try (var ignored = lock(session)) {
-            return AndroidUnsafe.getChar(base, offset);
-        }
-    }
-
-    @AlwaysInline
-    public static void putChar(_MemorySessionImpl session, Object base, long offset, char value) {
-        try (var ignored = lock(session)) {
-            AndroidUnsafe.putChar(base, offset, value);
-        }
-    }
-
-    @AlwaysInline
     public static short getShort(_MemorySessionImpl session, Object base, long offset) {
         try (var ignored = lock(session)) {
             return AndroidUnsafe.getShort(base, offset);
@@ -193,20 +179,6 @@ final class _ScopedMemoryAccess {
     }
 
     @AlwaysInline
-    public static float getFloat(_MemorySessionImpl session, Object base, long offset) {
-        try (var ignored = lock(session)) {
-            return AndroidUnsafe.getFloat(base, offset);
-        }
-    }
-
-    @AlwaysInline
-    public static void putFloat(_MemorySessionImpl session, Object base, long offset, float value) {
-        try (var ignored = lock(session)) {
-            AndroidUnsafe.putFloat(base, offset, value);
-        }
-    }
-
-    @AlwaysInline
     public static long getLong(_MemorySessionImpl session, Object base, long offset) {
         try (var ignored = lock(session)) {
             return AndroidUnsafe.getLong(base, offset);
@@ -217,20 +189,6 @@ final class _ScopedMemoryAccess {
     public static void putLong(_MemorySessionImpl session, Object base, long offset, long value) {
         try (var ignored = lock(session)) {
             AndroidUnsafe.putLong(base, offset, value);
-        }
-    }
-
-    @AlwaysInline
-    public static double getDouble(_MemorySessionImpl session, Object base, long offset) {
-        try (var ignored = lock(session)) {
-            return AndroidUnsafe.getDouble(base, offset);
-        }
-    }
-
-    @AlwaysInline
-    public static void putDouble(_MemorySessionImpl session, Object base, long offset, double value) {
-        try (var ignored = lock(session)) {
-            AndroidUnsafe.putDouble(base, offset, value);
         }
     }
 

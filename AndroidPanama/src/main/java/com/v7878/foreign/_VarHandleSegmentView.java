@@ -1,6 +1,5 @@
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import com.v7878.invoke.VarHandle;
@@ -35,15 +34,17 @@ final class _VarHandleSegmentView {
         }
 
         long min_align_mask = Wrapper.forPrimitiveType(carrier).byteWidth() - 1;
-        boolean allowAtomicAccess = (alignmentMask & min_align_mask) == min_align_mask;
-        int modesMask = VarHandleImpl.accessModesBitMask(carrier, allowAtomicAccess);
+        boolean aligned = (alignmentMask & min_align_mask) == min_align_mask;
+        int modesMask = VarHandleImpl.accessModesBitMask(carrier, aligned);
 
         Class<?> handle_class;
         if (carrier == boolean.class) {
             assert !swap;
+            assert aligned;
             handle_class = _VarHandleSegmentAsBooleans.class;
         } else if (carrier == byte.class) {
             assert !swap;
+            assert aligned;
             handle_class = _VarHandleSegmentAsBytes.class;
         } else if (carrier == short.class) {
             handle_class = _VarHandleSegmentAsShorts.class;
@@ -64,17 +65,18 @@ final class _VarHandleSegmentView {
         // TODO: cache handles
         var lookup = MethodHandles.lookup();
         return VarHandleImpl.newVarHandle(modesMask, (mode, type) -> {
-            var name = methodName(mode, swap);
-            return nothrows_run(() -> lookup.findStatic(handle_class, name, type));
+            var name = methodName(mode, swap, aligned);
+            return _MhUtil.findStatic(lookup, handle_class, name, type);
         }, carrier, MemorySegment.class, MemoryLayout.class, long.class, long.class);
     }
 
-    private static String methodName(AccessMode mode, boolean swap) {
+    private static String methodName(AccessMode mode, boolean swap, boolean aligned) {
         String suffix = swap ? "Swap" : "";
+        String suffix2 = aligned ? "Aligned" : "";
         return switch (mode) {
-            case GET -> "get";
+            case GET -> "get" + suffix2;
             case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> "getVolatile";
-            case SET -> "set";
+            case SET -> "set" + suffix2;
             case SET_VOLATILE, SET_RELEASE, SET_OPAQUE -> "setVolatile";
             case GET_AND_SET, GET_AND_SET_ACQUIRE, GET_AND_SET_RELEASE -> "getAndSet";
             case COMPARE_AND_EXCHANGE, COMPARE_AND_EXCHANGE_ACQUIRE,

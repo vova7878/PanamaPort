@@ -2,7 +2,7 @@ package com.v7878.foreign;
 
 import static com.v7878.foreign._VarHandleSegmentView.checkSegment;
 import static com.v7878.foreign._VarHandleSegmentView.getOffset;
-import static com.v7878.unsafe.misc.Math.convEndian;
+import static com.v7878.unsafe.misc.Math.convEndian16;
 
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotObfuscate;
@@ -11,11 +11,15 @@ import com.v7878.r8.annotations.DoNotShrink;
 @SuppressWarnings("unused")
 final class _VarHandleSegmentAsChars {
     @AlwaysInline
-    public static char get(boolean swap, _AbstractMemorySegmentImpl ms, MemoryLayout encl, long base, long offset) {
+    public static char get(boolean aligned, boolean swap, _AbstractMemorySegmentImpl ms, MemoryLayout encl, long base, long offset) {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        return _ScopedMemoryAccess.getCharUnaligned(ms.sessionImpl(), heap_base, offset, swap);
+        if (aligned) {
+            return (char) convEndian16(_ScopedMemoryAccess.getShort(ms.sessionImpl(), heap_base, offset), swap);
+        } else {
+            return _ScopedMemoryAccess.getCharUnaligned(ms.sessionImpl(), heap_base, offset, swap);
+        }
     }
 
     @AlwaysInline
@@ -23,15 +27,19 @@ final class _VarHandleSegmentAsChars {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        return (char) convEndian(_ScopedMemoryAccess.getShortVolatile(ms.sessionImpl(), heap_base, offset), swap);
+        return (char) convEndian16(_ScopedMemoryAccess.getShortVolatile(ms.sessionImpl(), heap_base, offset), swap);
     }
 
     @AlwaysInline
-    public static void set(boolean swap, _AbstractMemorySegmentImpl ms, MemoryLayout encl, long base, long offset, char value) {
+    public static void set(boolean aligned, boolean swap, _AbstractMemorySegmentImpl ms, MemoryLayout encl, long base, long offset, char value) {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        _ScopedMemoryAccess.putCharUnaligned(ms.sessionImpl(), heap_base, offset, value, swap);
+        if (aligned) {
+            _ScopedMemoryAccess.putShort(ms.sessionImpl(), heap_base, offset, convEndian16((short) value, swap));
+        } else {
+            _ScopedMemoryAccess.putCharUnaligned(ms.sessionImpl(), heap_base, offset, value, swap);
+        }
     }
 
     @AlwaysInline
@@ -39,7 +47,7 @@ final class _VarHandleSegmentAsChars {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        _ScopedMemoryAccess.putShortVolatile(ms.sessionImpl(), heap_base, offset, (short) convEndian(value, swap));
+        _ScopedMemoryAccess.putShortVolatile(ms.sessionImpl(), heap_base, offset, convEndian16((short) value, swap));
     }
 
     @AlwaysInline
@@ -47,7 +55,7 @@ final class _VarHandleSegmentAsChars {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        return (char) convEndian(_ScopedMemoryAccess.getAndSetShort(ms.sessionImpl(), heap_base, offset, (short) convEndian(value, swap)), swap);
+        return (char) convEndian16(_ScopedMemoryAccess.getAndSetShort(ms.sessionImpl(), heap_base, offset, convEndian16((short) value, swap)), swap);
     }
 
     @AlwaysInline
@@ -55,7 +63,7 @@ final class _VarHandleSegmentAsChars {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        return (char) convEndian(_ScopedMemoryAccess.compareAndExchangeShort(ms.sessionImpl(), heap_base, offset, (short) convEndian(expected, swap), (short) convEndian(desired, swap)), swap);
+        return (char) convEndian16(_ScopedMemoryAccess.compareAndExchangeShort(ms.sessionImpl(), heap_base, offset, convEndian16((short) expected, swap), convEndian16((short) desired, swap)), swap);
     }
 
     @AlwaysInline
@@ -63,7 +71,7 @@ final class _VarHandleSegmentAsChars {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        return _ScopedMemoryAccess.compareAndSetShort(ms.sessionImpl(), heap_base, offset, (short) convEndian(expected, swap), (short) convEndian(desired, swap));
+        return _ScopedMemoryAccess.compareAndSetShort(ms.sessionImpl(), heap_base, offset, convEndian16((short) expected, swap), convEndian16((short) desired, swap));
     }
 
     @AlwaysInline
@@ -71,7 +79,7 @@ final class _VarHandleSegmentAsChars {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        return (char) convEndian(_ScopedMemoryAccess.getAndBitwiseAndShort(ms.sessionImpl(), heap_base, offset, (short) convEndian(value, swap)), swap);
+        return (char) convEndian16(_ScopedMemoryAccess.getAndBitwiseAndShort(ms.sessionImpl(), heap_base, offset, convEndian16((short) value, swap)), swap);
     }
 
     @AlwaysInline
@@ -79,7 +87,7 @@ final class _VarHandleSegmentAsChars {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        return (char) convEndian(_ScopedMemoryAccess.getAndBitwiseOrShort(ms.sessionImpl(), heap_base, offset, (short) convEndian(value, swap)), swap);
+        return (char) convEndian16(_ScopedMemoryAccess.getAndBitwiseOrShort(ms.sessionImpl(), heap_base, offset, convEndian16((short) value, swap)), swap);
     }
 
     @AlwaysInline
@@ -87,7 +95,7 @@ final class _VarHandleSegmentAsChars {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        return (char) convEndian(_ScopedMemoryAccess.getAndBitwiseXorShort(ms.sessionImpl(), heap_base, offset, (short) convEndian(value, swap)), swap);
+        return (char) convEndian16(_ScopedMemoryAccess.getAndBitwiseXorShort(ms.sessionImpl(), heap_base, offset, convEndian16((short) value, swap)), swap);
     }
 
     @AlwaysInline
@@ -101,7 +109,13 @@ final class _VarHandleSegmentAsChars {
     @DoNotShrink
     @DoNotObfuscate
     public static char get(MemorySegment ms, MemoryLayout encl, long base, long offset) {
-        return get(false, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
+        return get(false, false, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
+    }
+
+    @DoNotShrink
+    @DoNotObfuscate
+    public static char getAligned(MemorySegment ms, MemoryLayout encl, long base, long offset) {
+        return get(true, false, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
     }
 
     @DoNotShrink
@@ -113,7 +127,13 @@ final class _VarHandleSegmentAsChars {
     @DoNotShrink
     @DoNotObfuscate
     public static void set(MemorySegment ms, MemoryLayout encl, long base, long offset, char value) {
-        set(false, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
+        set(false, false, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
+    }
+
+    @DoNotShrink
+    @DoNotObfuscate
+    public static void setAligned(MemorySegment ms, MemoryLayout encl, long base, long offset, char value) {
+        set(true, false, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
     }
 
     @DoNotShrink
@@ -167,7 +187,13 @@ final class _VarHandleSegmentAsChars {
     @DoNotShrink
     @DoNotObfuscate
     public static char getSwap(MemorySegment ms, MemoryLayout encl, long base, long offset) {
-        return get(true, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
+        return get(false, true, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
+    }
+
+    @DoNotShrink
+    @DoNotObfuscate
+    public static char getAlignedSwap(MemorySegment ms, MemoryLayout encl, long base, long offset) {
+        return get(true, true, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
     }
 
     @DoNotShrink
@@ -179,7 +205,13 @@ final class _VarHandleSegmentAsChars {
     @DoNotShrink
     @DoNotObfuscate
     public static void setSwap(MemorySegment ms, MemoryLayout encl, long base, long offset, char value) {
-        set(true, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
+        set(false, true, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
+    }
+
+    @DoNotShrink
+    @DoNotObfuscate
+    public static void setAlignedSwap(MemorySegment ms, MemoryLayout encl, long base, long offset, char value) {
+        set(true, true, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
     }
 
     @DoNotShrink

@@ -60,7 +60,9 @@ import static com.v7878.unsafe.llvm.LLVMTypes.int64_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeArray;
-import static com.v7878.unsafe.misc.Math.convEndian;
+import static com.v7878.unsafe.misc.Math.convEndian16;
+import static com.v7878.unsafe.misc.Math.convEndian32;
+import static com.v7878.unsafe.misc.Math.convEndian64;
 import static com.v7878.unsafe.misc.Math.d2l;
 import static com.v7878.unsafe.misc.Math.f2i;
 import static com.v7878.unsafe.misc.Math.i2f;
@@ -1138,9 +1140,9 @@ public class ExtraMemoryAccess {
         short nativeExpectedValue, expectedValue;
         do {
             nativeExpectedValue = loadShortAtomic(base, offset);
-            expectedValue = convEndian(nativeExpectedValue, swap);
+            expectedValue = convEndian16(nativeExpectedValue, swap);
         } while (/* TODO: weak? */!atomicCompareAndSetShort(base, offset,
-                nativeExpectedValue, convEndian((short) (expectedValue + delta), swap)));
+                nativeExpectedValue, convEndian16((short) (expectedValue + delta), swap)));
         return expectedValue;
     }
 
@@ -1148,9 +1150,9 @@ public class ExtraMemoryAccess {
         int nativeExpectedValue, expectedValue;
         do {
             nativeExpectedValue = loadIntAtomic(base, offset);
-            expectedValue = convEndian(nativeExpectedValue, swap);
+            expectedValue = convEndian32(nativeExpectedValue, swap);
         } while (/* TODO: weak? */!atomicCompareAndSetInt(base, offset,
-                nativeExpectedValue, convEndian(expectedValue + delta, swap)));
+                nativeExpectedValue, convEndian32(expectedValue + delta, swap)));
         return expectedValue;
     }
 
@@ -1169,9 +1171,9 @@ public class ExtraMemoryAccess {
         long nativeExpectedValue, expectedValue;
         do {
             nativeExpectedValue = loadLongAtomic(base, offset);
-            expectedValue = convEndian(nativeExpectedValue, swap);
+            expectedValue = convEndian64(nativeExpectedValue, swap);
         } while (/* TODO: weak? */!atomicCompareAndSetLong(base, offset,
-                nativeExpectedValue, convEndian(expectedValue + delta, swap)));
+                nativeExpectedValue, convEndian64(expectedValue + delta, swap)));
         return expectedValue;
     }
 

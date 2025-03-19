@@ -12,11 +12,15 @@ import com.v7878.r8.annotations.DoNotShrink;
 @SuppressWarnings("unused")
 final class _VarHandleSegmentAsDoubles {
     @AlwaysInline
-    public static double get(boolean swap, _AbstractMemorySegmentImpl ms, MemoryLayout encl, long base, long offset) {
+    public static double get(boolean aligned, boolean swap, _AbstractMemorySegmentImpl ms, MemoryLayout encl, long base, long offset) {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        return _ScopedMemoryAccess.getDoubleUnaligned(ms.sessionImpl(), heap_base, offset, swap);
+        if (aligned) {
+            return l2d(_ScopedMemoryAccess.getLong(ms.sessionImpl(), heap_base, offset), swap);
+        } else {
+            return _ScopedMemoryAccess.getDoubleUnaligned(ms.sessionImpl(), heap_base, offset, swap);
+        }
     }
 
     @AlwaysInline
@@ -28,11 +32,15 @@ final class _VarHandleSegmentAsDoubles {
     }
 
     @AlwaysInline
-    public static void set(boolean swap, _AbstractMemorySegmentImpl ms, MemoryLayout encl, long base, long offset, double value) {
+    public static void set(boolean aligned, boolean swap, _AbstractMemorySegmentImpl ms, MemoryLayout encl, long base, long offset, double value) {
         checkSegment(ms, encl, base, true);
         offset = getOffset(ms, base, offset);
         Object heap_base = ms.unsafeGetBase();
-        _ScopedMemoryAccess.putDoubleUnaligned(ms.sessionImpl(), heap_base, offset, value, swap);
+        if (aligned) {
+            _ScopedMemoryAccess.putLong(ms.sessionImpl(), heap_base, offset, d2l(value, swap));
+        } else {
+            _ScopedMemoryAccess.putDoubleUnaligned(ms.sessionImpl(), heap_base, offset, value, swap);
+        }
     }
 
     @AlwaysInline
@@ -78,7 +86,13 @@ final class _VarHandleSegmentAsDoubles {
     @DoNotShrink
     @DoNotObfuscate
     public static double get(MemorySegment ms, MemoryLayout encl, long base, long offset) {
-        return get(false, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
+        return get(false, false, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
+    }
+
+    @DoNotShrink
+    @DoNotObfuscate
+    public static double getAligned(MemorySegment ms, MemoryLayout encl, long base, long offset) {
+        return get(true, false, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
     }
 
     @DoNotShrink
@@ -90,7 +104,13 @@ final class _VarHandleSegmentAsDoubles {
     @DoNotShrink
     @DoNotObfuscate
     public static void set(MemorySegment ms, MemoryLayout encl, long base, long offset, double value) {
-        set(false, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
+        set(false, false, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
+    }
+
+    @DoNotShrink
+    @DoNotObfuscate
+    public static void setAligned(MemorySegment ms, MemoryLayout encl, long base, long offset, double value) {
+        set(true, false, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
     }
 
     @DoNotShrink
@@ -126,7 +146,13 @@ final class _VarHandleSegmentAsDoubles {
     @DoNotShrink
     @DoNotObfuscate
     public static double getSwap(MemorySegment ms, MemoryLayout encl, long base, long offset) {
-        return get(true, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
+        return get(false, true, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
+    }
+
+    @DoNotShrink
+    @DoNotObfuscate
+    public static double getAlignedSwap(MemorySegment ms, MemoryLayout encl, long base, long offset) {
+        return get(true, true, (_AbstractMemorySegmentImpl) ms, encl, base, offset);
     }
 
     @DoNotShrink
@@ -138,7 +164,13 @@ final class _VarHandleSegmentAsDoubles {
     @DoNotShrink
     @DoNotObfuscate
     public static void setSwap(MemorySegment ms, MemoryLayout encl, long base, long offset, double value) {
-        set(true, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
+        set(false, true, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
+    }
+
+    @DoNotShrink
+    @DoNotObfuscate
+    public static void setAlignedSwap(MemorySegment ms, MemoryLayout encl, long base, long offset, double value) {
+        set(true, true, (_AbstractMemorySegmentImpl) ms, encl, base, offset, value);
     }
 
     @DoNotShrink

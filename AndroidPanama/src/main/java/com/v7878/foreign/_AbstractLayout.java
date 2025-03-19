@@ -163,16 +163,10 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
 
     public MethodHandle scaleHandle() {
         class Holder {
-            static final MethodHandle MH_SCALE;
+            static final MethodHandle MH_SCALE = _MhUtil.findVirtual(
+                    MethodHandles.lookup(), MemoryLayout.class, "scale",
+                    MethodType.methodType(long.class, long.class, long.class));
 
-            static {
-                try {
-                    MH_SCALE = MethodHandles.lookup().findVirtual(MemoryLayout.class, "scale",
-                            MethodType.methodType(long.class, long.class, long.class));
-                } catch (ReflectiveOperationException e) {
-                    throw new ExceptionInInitializerError(e);
-                }
-            }
         }
         return MethodHandlesFixes.bindTo(Holder.MH_SCALE, this);
     }
