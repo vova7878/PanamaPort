@@ -131,11 +131,15 @@ public class MethodTypeHacks {
 
             {
                 Class<?>[] ptypes = InvokeAccess.ptypes(type);
-                int[] frameOffsets = new int[ptypes.length + 1];
-                int[] referencesOffsets = new int[ptypes.length + 1];
+                Class<?> rtype = InvokeAccess.rtype(type);
+                int[] frameOffsets = new int[ptypes.length + 2];
+                int[] referencesOffsets = new int[ptypes.length + 2];
+
+                int i = 0;
                 int frameOffset = 0;
                 int referenceOffset = 0;
-                for (int i = 0; i < ptypes.length; i++) {
+
+                for (; i < ptypes.length; i++) {
                     Class<?> ptype = ptypes[i];
                     if (ptype.isPrimitive()) {
                         frameOffset += getSize(ptype);
@@ -145,6 +149,15 @@ public class MethodTypeHacks {
                     frameOffsets[i + 1] = frameOffset;
                     referencesOffsets[i + 1] = referenceOffset;
                 }
+
+                if (rtype.isPrimitive()) {
+                    frameOffset += getSize(rtype);
+                } else {
+                    referenceOffset++;
+                }
+                frameOffsets[i + 1] = frameOffset;
+                referencesOffsets[i + 1] = referenceOffset;
+
                 AndroidUnsafe.putObject(new_form, FO_OFFSET, frameOffsets);
                 AndroidUnsafe.putObject(new_form, RO_OFFSET, referencesOffsets);
             }

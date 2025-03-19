@@ -873,9 +873,9 @@ public class MethodHandlesFixes {
         @Override
         public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
             var backup = stack.type();
-            stack.setType(target.type());
+            stack.type(target.type());
             Transformers.invokeTransformNoChecks(target, stack);
-            stack.setType(backup);
+            stack.type(backup);
         }
     }
 

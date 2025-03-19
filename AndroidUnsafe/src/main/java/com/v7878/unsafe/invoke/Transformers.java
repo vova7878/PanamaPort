@@ -357,7 +357,7 @@ public class Transformers {
                 )
                 .commit(cb2 -> {
                     Method transform = getHiddenMethod(MethodHandle.class,
-                            "transform", EmulatedStackFrame.esf_class);
+                            "transform", EmulatedStackFrame.ESF_CLASS);
                     makeMethodInheritable(transform);
                     // public void transform(MethodHandle handle, Object stack) {
                     //     handle.transform((dalvik.system.EmulatedStackFrame) stack);
@@ -398,7 +398,7 @@ public class Transformers {
                                         ProtoId.of(TypeId.V, esf), ib.p(0), ib.p(1));
                             } else {
                                 Method invokeWF = getHiddenMethod(MethodHandle.class,
-                                        "invokeExactWithFrame", EmulatedStackFrame.esf_class);
+                                        "invokeExactWithFrame", EmulatedStackFrame.ESF_CLASS);
                                 makeExecutablePublic(invokeWF);
                                 ib.invoke(VIRTUAL, MethodId.of(invokeWF), ib.p(0), ib.p(1));
                             }

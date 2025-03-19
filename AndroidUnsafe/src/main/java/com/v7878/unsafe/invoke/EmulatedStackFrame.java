@@ -1,29 +1,173 @@
 package com.v7878.unsafe.invoke;
 
+import static com.v7878.dex.DexConstants.ACC_FINAL;
+import static com.v7878.dex.DexConstants.ACC_PUBLIC;
+import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
+import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
-import static com.v7878.unsafe.AndroidUnsafe.getObject;
-import static com.v7878.unsafe.AndroidUnsafe.objectFieldOffset;
-import static com.v7878.unsafe.AndroidUnsafe.putObject;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
-import static com.v7878.unsafe.Reflection.getHiddenMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
+import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
+import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.DexFileUtils.loadClass;
+import static com.v7878.unsafe.DexFileUtils.openDexFile;
+import static com.v7878.unsafe.DexFileUtils.setTrusted;
+import static com.v7878.unsafe.Reflection.getHiddenInstanceFields;
 import static com.v7878.unsafe.Utils.assertEq;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
+import com.v7878.dex.DexIO;
+import com.v7878.dex.builder.ClassBuilder;
+import com.v7878.dex.immutable.ClassDef;
+import com.v7878.dex.immutable.Dex;
+import com.v7878.dex.immutable.FieldId;
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.ArtFieldUtils;
+import com.v7878.unsafe.ClassUtils;
+import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.access.InvokeAccess;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.Objects;
 
+import dalvik.system.DexFile;
+
 public final class EmulatedStackFrame {
+    static final Class<?> ESF_CLASS = nothrows_run(() ->
+            Class.forName("dalvik.system.EmulatedStackFrame"));
+    private static final AccessI ACCESS;
+
+    @DoNotShrink
+    @DoNotObfuscate
+    private abstract static class AccessI {
+        abstract Object create(MethodType type, Object[] references, byte[] stackFrame);
+
+        abstract MethodType type(Object frame);
+
+        abstract void type(Object frame, MethodType type);
+
+        abstract Object[] references(Object frame);
+
+        abstract void references(Object frame, Object[] references);
+
+        abstract byte[] primitives(Object frame);
+
+        abstract void primitives(Object frame, byte[] primitives);
+    }
+
+    static {
+        for (var field : getHiddenInstanceFields(ESF_CLASS)) {
+            ArtFieldUtils.makeFieldPublic(field);
+            ArtFieldUtils.makeFieldNonFinal(field);
+        }
+
+        TypeId mt = TypeId.of(MethodType.class);
+        TypeId esf = TypeId.of(ESF_CLASS);
+
+        String access_name = EmulatedStackFrame.class.getName() + "$Access";
+        TypeId access_id = TypeId.ofName(access_name);
+
+        var type_id = FieldId.of(esf, "type", mt);
+        var callsite_id = FieldId.of(esf, "callsiteType", mt);
+        var references_id = FieldId.of(esf, "references", TypeId.OBJECT.array());
+        var primitives_id = FieldId.of(esf, "stackFrame", TypeId.B.array());
+
+        ClassDef access_def = ClassBuilder.build(access_id, cb -> cb
+                .withSuperClass(TypeId.of(AccessI.class))
+                .withFlags(ACC_PUBLIC | ACC_FINAL)
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName("create")
+                        .withReturnType(TypeId.OBJECT)
+                        .withParameterTypes(mt, TypeId.OBJECT.array(), TypeId.B.array())
+                        .withCode(0, ib -> {
+                            ib.new_instance(ib.this_(), esf);
+                            ib.iop(PUT_OBJECT, ib.p(0), ib.this_(), type_id);
+                            if (ART_SDK_INT <= 32) {
+                                ib.iop(PUT_OBJECT, ib.p(0), ib.this_(), callsite_id);
+                            }
+                            ib.iop(PUT_OBJECT, ib.p(1), ib.this_(), references_id);
+                            ib.iop(PUT_OBJECT, ib.p(2), ib.this_(), primitives_id);
+                            ib.return_object(ib.this_());
+                        })
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName("type")
+                        .withReturnType(mt)
+                        .withParameterTypes(TypeId.OBJECT)
+                        .withCode(0, ib -> {
+                            ib.iop(GET_OBJECT, ib.this_(), ib.p(0), type_id);
+                            ib.return_object(ib.this_());
+                        })
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName("type")
+                        .withReturnType(TypeId.V)
+                        .withParameterTypes(TypeId.OBJECT, mt)
+                        .withCode(0, ib -> {
+                            ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), type_id);
+                            ib.return_void();
+                        })
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName("references")
+                        .withReturnType(TypeId.OBJECT.array())
+                        .withParameterTypes(TypeId.OBJECT)
+                        .withCode(0, ib -> {
+                            ib.iop(GET_OBJECT, ib.this_(), ib.p(0), references_id);
+                            ib.return_object(ib.this_());
+                        })
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName("references")
+                        .withReturnType(TypeId.V)
+                        .withParameterTypes(TypeId.OBJECT, TypeId.OBJECT.array())
+                        .withCode(0, ib -> {
+                            ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), references_id);
+                            ib.return_void();
+                        })
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName("primitives")
+                        .withReturnType(TypeId.B.array())
+                        .withParameterTypes(TypeId.OBJECT)
+                        .withCode(0, ib -> {
+                            ib.iop(GET_OBJECT, ib.this_(), ib.p(0), primitives_id);
+                            ib.return_object(ib.this_());
+                        })
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName("primitives")
+                        .withReturnType(TypeId.V)
+                        .withParameterTypes(TypeId.OBJECT, TypeId.B.array())
+                        .withCode(0, ib -> {
+                            ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), primitives_id);
+                            ib.return_void();
+                        })
+                )
+        );
+
+        DexFile dex = openDexFile(DexIO.write(Dex.of(access_def)));
+        setTrusted(dex);
+
+        ClassLoader loader = EmulatedStackFrame.class.getClassLoader();
+
+        Class<?> invoker_class = loadClass(dex, access_name, loader);
+        ClassUtils.setClassStatus(invoker_class, ClassStatus.Verified);
+        ACCESS = (AccessI) allocateInstance(invoker_class);
+    }
+
     public static final int RETURN_VALUE_IDX = -2;
     private static final int SREG = 4;
     private static final int DREG = 8;
@@ -49,22 +193,28 @@ public final class EmulatedStackFrame {
                 String.format("Incorrect type: %s, expected: %s", actual, expected));
     }
 
-    static final Class<?> esf_class = nothrows_run(() ->
-            Class.forName("dalvik.system.EmulatedStackFrame"));
-
     @DoNotShrink
     @DoNotObfuscate
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static EmulatedStackFrame wrap(Object esf) {
-        assert esf_class.isAssignableFrom(esf.getClass());
+        assert ESF_CLASS.isAssignableFrom(esf.getClass());
         return new EmulatedStackFrame(esf);
     }
 
-    private static final MethodHandle esf_create =
-            unreflect(getHiddenMethod(esf_class, "create", MethodType.class));
+    public static EmulatedStackFrame create(MethodType frameType, Object[] references, byte[] stackFrame) {
+        Objects.requireNonNull(frameType);
+        Objects.requireNonNull(references);
+        Objects.requireNonNull(stackFrame);
+        return wrap(ACCESS.create(frameType, references, stackFrame));
+    }
 
     public static EmulatedStackFrame create(MethodType frameType) {
-        return new EmulatedStackFrame(nothrows_run(() -> esf_create.invoke(frameType)));
+        var form = MethodTypeHacks.getForm(frameType);
+        var refs = form.referencesOffsets();
+        var prims = form.frameOffsets();
+        return wrap(ACCESS.create(frameType,
+                new Object[refs[refs.length - 1]],
+                new byte[prims[prims.length - 1]]));
     }
 
     final Object esf;
@@ -73,45 +223,36 @@ public final class EmulatedStackFrame {
         this.esf = esf;
     }
 
-    private static final long references_offset =
-            objectFieldOffset(getHiddenInstanceField(esf_class, "references"));
-
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public Object[] references() {
-        return (Object[]) getObject(esf, references_offset);
+        return ACCESS.references(esf);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public void setReferences(Object[] references) {
+    public void references(Object[] references) {
         Objects.requireNonNull(references);
-        putObject(esf, references_offset, references);
+        ACCESS.references(esf, references);
     }
-
-    private static final long primitives_offset =
-            objectFieldOffset(getHiddenInstanceField(esf_class, "stackFrame"));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public byte[] primitives() {
-        return (byte[]) getObject(esf, primitives_offset);
+        return ACCESS.primitives(esf);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public void setStackFrame(byte[] stackFrame) {
-        Objects.requireNonNull(stackFrame);
-        putObject(esf, primitives_offset, stackFrame);
+    public void primitives(byte[] primitives) {
+        Objects.requireNonNull(primitives);
+        ACCESS.primitives(esf, primitives);
     }
-
-    private static final long type_offset =
-            objectFieldOffset(getHiddenInstanceField(esf_class, "type"));
 
     public MethodType type() {
-        return (MethodType) getObject(esf, type_offset);
+        return ACCESS.type(esf);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public void setType(MethodType type) {
+    public void type(MethodType type) {
         Objects.requireNonNull(type);
-        putObject(esf, type_offset, type);
+        ACCESS.type(esf, type);
     }
 
     public StackFrameAccessor accessor() {
@@ -123,6 +264,7 @@ public final class EmulatedStackFrame {
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
+    // TODO: simplify
     public static void copyArguments(StackFrameAccessor reader, int reader_start_idx,
                                      StackFrameAccessor writer, int writer_start_idx, int count) {
         Objects.checkFromIndexSize(reader_start_idx, count, reader.ptypes.length);
@@ -473,8 +615,6 @@ public final class EmulatedStackFrame {
             return this;
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public RelativeStackFrameAccessor moveToReturn() {
             return moveTo(RETURN_VALUE_IDX);
         }
@@ -524,64 +664,46 @@ public final class EmulatedStackFrame {
             return value;
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public void putNextBoolean(boolean value) {
             checkWriteType(boolean.class);
             putNextSSLOT(value ? 1 : 0);
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public void putNextByte(byte value) {
             checkWriteType(byte.class);
             putNextSSLOT(value);
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public void putNextChar(char value) {
             checkWriteType(char.class);
             putNextSSLOT(value);
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public void putNextShort(short value) {
             checkWriteType(short.class);
             putNextSSLOT(value);
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public void putNextInt(int value) {
             checkWriteType(int.class);
             putNextSSLOT(value);
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public void putNextFloat(float value) {
             checkWriteType(float.class);
             putNextSSLOT(Float.floatToRawIntBits(value));
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public void putNextLong(long value) {
             checkWriteType(long.class);
             putNextDSLOT(value);
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public void putNextDouble(double value) {
             checkWriteType(double.class);
             putNextDSLOT(Double.doubleToRawLongBits(value));
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public void putNextReference(Object value) {
             checkWriteType(Object.class);
             putNextRef(value);
@@ -603,64 +725,46 @@ public final class EmulatedStackFrame {
             }
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public boolean nextBoolean() {
             checkReadType(boolean.class);
             return getNextSSLOT() != 0;
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public byte nextByte() {
             checkReadType(byte.class);
             return (byte) getNextSSLOT();
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public char nextChar() {
             checkReadType(char.class);
             return (char) getNextSSLOT();
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public short nextShort() {
             checkReadType(short.class);
             return (short) getNextSSLOT();
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public int nextInt() {
             checkReadType(int.class);
             return getNextSSLOT();
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public float nextFloat() {
             checkReadType(float.class);
             return Float.intBitsToFloat(getNextSSLOT());
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public long nextLong() {
             checkReadType(long.class);
             return getNextDSLOT();
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public double nextDouble() {
             checkReadType(double.class);
             return Double.longBitsToDouble(getNextDSLOT());
         }
 
-        @DoNotShrink
-        @DoNotObfuscate
         public <T> T nextReference() {
             checkReadType(Object.class);
             return getNextRef();
