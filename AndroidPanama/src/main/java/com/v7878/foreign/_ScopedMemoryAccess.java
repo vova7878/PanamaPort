@@ -1,5 +1,8 @@
 package com.v7878.foreign;
 
+import static com.v7878.unsafe.misc.Math.bool2byte;
+import static com.v7878.unsafe.misc.Math.byte2bool;
+
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.CheckDiscard;
 import com.v7878.unsafe.AndroidUnsafe;
@@ -316,6 +319,16 @@ final class _ScopedMemoryAccess {
     }
 
     @AlwaysInline
+    public static boolean getBooleanVolatile(_MemorySessionImpl session, Object base, long offset) {
+        return byte2bool(getByteVolatile(session, base, offset));
+    }
+
+    @AlwaysInline
+    public static void putBooleanVolatile(_MemorySessionImpl session, Object base, long offset, boolean value) {
+        putByteVolatile(session, base, offset, bool2byte(value));
+    }
+
+    @AlwaysInline
     public static byte getByteVolatile(_MemorySessionImpl session, Object base, long offset) {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.loadByteAtomic(base, offset);
@@ -369,6 +382,11 @@ final class _ScopedMemoryAccess {
         try (var ignored = lock(session)) {
             ExtraMemoryAccess.storeLongAtomic(base, offset, value);
         }
+    }
+
+    @AlwaysInline
+    public static boolean getAndSetBoolean(_MemorySessionImpl session, Object base, long offset, boolean value) {
+        return byte2bool(getAndSetByte(session, base, offset, bool2byte(value)));
     }
 
     @AlwaysInline
@@ -442,6 +460,11 @@ final class _ScopedMemoryAccess {
     }
 
     @AlwaysInline
+    public static boolean getAndBitwiseAndBoolean(_MemorySessionImpl session, Object base, long offset, boolean value) {
+        return byte2bool(getAndBitwiseAndByte(session, base, offset, bool2byte(value)));
+    }
+
+    @AlwaysInline
     public static byte getAndBitwiseAndByte(_MemorySessionImpl session, Object base, long offset, byte value) {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.atomicFetchAndByte(base, offset, value);
@@ -467,6 +490,11 @@ final class _ScopedMemoryAccess {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.atomicFetchAndLong(base, offset, value);
         }
+    }
+
+    @AlwaysInline
+    public static boolean getAndBitwiseOrBoolean(_MemorySessionImpl session, Object base, long offset, boolean value) {
+        return byte2bool(getAndBitwiseOrByte(session, base, offset, bool2byte(value)));
     }
 
     @AlwaysInline
@@ -498,6 +526,11 @@ final class _ScopedMemoryAccess {
     }
 
     @AlwaysInline
+    public static boolean getAndBitwiseXorBoolean(_MemorySessionImpl session, Object base, long offset, boolean value) {
+        return byte2bool(getAndBitwiseXorByte(session, base, offset, bool2byte(value)));
+    }
+
+    @AlwaysInline
     public static byte getAndBitwiseXorByte(_MemorySessionImpl session, Object base, long offset, byte value) {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.atomicFetchXorByte(base, offset, value);
@@ -526,6 +559,11 @@ final class _ScopedMemoryAccess {
     }
 
     @AlwaysInline
+    public static boolean compareAndExchangeBoolean(_MemorySessionImpl session, Object base, long offset, boolean expected, boolean desired) {
+        return byte2bool(compareAndExchangeByte(session, base, offset, bool2byte(expected), bool2byte(desired)));
+    }
+
+    @AlwaysInline
     public static byte compareAndExchangeByte(_MemorySessionImpl session, Object base, long offset, byte expected, byte desired) {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.atomicCompareAndExchangeByte(base, offset, expected, desired);
@@ -551,6 +589,11 @@ final class _ScopedMemoryAccess {
         try (var ignored = lock(session)) {
             return ExtraMemoryAccess.atomicCompareAndExchangeLong(base, offset, expected, desired);
         }
+    }
+
+    @AlwaysInline
+    public static boolean compareAndSetBoolean(_MemorySessionImpl session, Object base, long offset, boolean expected, boolean desired) {
+        return compareAndSetByte(session, base, offset, bool2byte(expected), bool2byte(desired));
     }
 
     @AlwaysInline

@@ -39,6 +39,16 @@ public class Math {
     }
 
     @AlwaysInline
+    public static boolean byte2bool(byte b) {
+        return b != 0;
+    }
+
+    @AlwaysInline
+    public static byte bool2byte(boolean b) {
+        return b ? (byte) 1 : (byte) 0;
+    }
+
+    @AlwaysInline
     public static long maxUL(long a, long b) {
         return Long.compareUnsigned(a, b) > 0 ? a : b;
     }

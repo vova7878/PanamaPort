@@ -104,7 +104,7 @@ public enum Wrapper {
      * How many bytes are in the wrapped value?  Returns 0 for OBJECT or VOID.
      */
     public int byteWidth() {
-        return bitWidth() / 8;
+        return (bitWidth() + 7) / 8;
     }
 
     /**

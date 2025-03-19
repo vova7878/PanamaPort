@@ -13,34 +13,37 @@ import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 
 final class _VarHandleSegmentView {
-
     /**
-     * Creates a memory segment view var handle.
+     * Creates a memory segment view var handle accessing a {@code carrier} element.
+     * It has access coordinates {@code (MS, ML, long, (validated) long)}.
      * <p>
      * The resulting var handle will take a memory segment as first argument (the segment to be dereferenced),
-     * and a {@code long} as second argument (the offset into the segment).
+     * and a {@code long} as third argument (the offset into the segment). Both arguments are checked.
+     * The second argument is enclosing layout to perform bound and alignment checks against
      * <p>
-     * Note: the returned var handle does not perform any size or alignment check. It is up to clients
-     * to adapt the returned var handle and insert the appropriate checks.
+     * The resulting var handle will take a pre-validated additional
+     * offset as fourth argument, and caller must ensure that passed value is valid.
      *
-     * @param carrier       the Java carrier type.
-     * @param alignmentMask alignment requirement to be checked upon access. In bytes. Expressed as a mask.
-     * @return the created VarHandle.
+     * @param carrier       the Java carrier type of the element
+     * @param alignmentMask alignment of this accessed element in the enclosing layout
+     * @param swap          true if byte order change is needed
+     * @return the created var handle
      */
-    public static VarHandle rawMemorySegmentViewHandle(
-            Class<?> carrier, long alignmentMask, boolean swap, int disallowedModes) {
-        if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
+    static VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, boolean swap) {
+        if (!carrier.isPrimitive() || carrier == void.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
 
         long min_align_mask = Wrapper.forPrimitiveType(carrier).byteWidth() - 1;
         boolean allowAtomicAccess = (alignmentMask & min_align_mask) == min_align_mask;
         int modesMask = VarHandleImpl.accessModesBitMask(carrier, allowAtomicAccess);
-        modesMask &= ~disallowedModes;
 
         Class<?> handle_class;
-        if (carrier == byte.class) {
-            swap = false;
+        if (carrier == boolean.class) {
+            assert !swap;
+            handle_class = _VarHandleSegmentAsBooleans.class;
+        } else if (carrier == byte.class) {
+            assert !swap;
             handle_class = _VarHandleSegmentAsBytes.class;
         } else if (carrier == short.class) {
             handle_class = _VarHandleSegmentAsShorts.class;
@@ -57,16 +60,17 @@ final class _VarHandleSegmentView {
         } else {
             throw shouldNotReachHere();
         }
-        var lookup = MethodHandles.lookup();
 
-        String suffix = swap ? "Swap" : "";
+        // TODO: cache handles
+        var lookup = MethodHandles.lookup();
         return VarHandleImpl.newVarHandle(modesMask, (mode, type) -> {
-            var name = methodName(mode) + suffix;
+            var name = methodName(mode, swap);
             return nothrows_run(() -> lookup.findStatic(handle_class, name, type));
         }, carrier, MemorySegment.class, MemoryLayout.class, long.class, long.class);
     }
 
-    private static String methodName(AccessMode mode) {
+    private static String methodName(AccessMode mode, boolean swap) {
+        String suffix = swap ? "Swap" : "";
         return switch (mode) {
             case GET -> "get";
             case GET_VOLATILE, GET_ACQUIRE, GET_OPAQUE -> "getVolatile";
@@ -86,7 +90,7 @@ final class _VarHandleSegmentView {
             case GET_AND_ADD, GET_AND_ADD_RELEASE, GET_AND_ADD_ACQUIRE -> "compareAndAdd";
             //noinspection UnnecessaryDefault
             default -> throw shouldNotReachHere();
-        };
+        } + suffix;
     }
 
     @AlwaysInline

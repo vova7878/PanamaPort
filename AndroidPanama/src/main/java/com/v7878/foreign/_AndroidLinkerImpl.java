@@ -511,7 +511,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
 
         public static MemorySegment makeSegment(long addr, long size, long align) {
-            return _Utils.longToAddress(addr, size, align);
+            return _Utils.makeSegment(addr, size, align);
         }
 
         public static long unboxSymbolSegment(MemorySegment segment) {
@@ -1124,7 +1124,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
 
         public static MemorySegment makeSegment(long addr, long size, long align, Arena arena) {
-            return _Utils.longToAddress(addr, size, align, (_MemorySessionImpl) arena.scope());
+            return _Utils.makeSegment(addr, size, align, (_MemorySessionImpl) arena.scope());
         }
 
         public static void putByte(long address, byte data) {
