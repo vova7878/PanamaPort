@@ -624,7 +624,11 @@ public class Reflection {
 
     public static void initHandle(MethodHandle handle) {
         Objects.requireNonNull(handle);
-        MethodHandles.reflectAs(Member.class, handle);
+        try {
+            MethodHandles.publicLookup().revealDirect(handle);
+        } catch (Throwable th) {
+            // ignore
+        }
     }
 
     @AlwaysInline
