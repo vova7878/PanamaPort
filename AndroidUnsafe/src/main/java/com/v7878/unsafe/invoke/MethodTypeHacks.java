@@ -53,9 +53,9 @@ import dalvik.system.DexFile;
 
 @ApiSensitive
 public class MethodTypeHacks {
-    public static final Class<?> INVOKE_FORM = nothrows_run(
+    private static final Class<?> INVOKE_FORM = nothrows_run(
             () -> Class.forName("java.lang.invoke.MethodTypeForm"));
-    public static final Class<MethodTypeForm0> FORM_IMPL;
+    private static final Class<MethodTypeForm0> FORM_IMPL;
 
     @DoNotShrinkType
     private interface MethodTypeForm0 extends MethodTypeForm {
@@ -176,7 +176,7 @@ public class MethodTypeHacks {
         }
     }
 
-    public static final int FORM_OFFSET = fieldOffset(
+    private static final int FORM_OFFSET = fieldOffset(
             getHiddenInstanceField(MethodType.class, "form"));
 
     private static MethodTypeForm0 getForm0(MethodType type) {
