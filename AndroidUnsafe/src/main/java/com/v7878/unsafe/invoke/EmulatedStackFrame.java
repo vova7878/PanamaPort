@@ -210,11 +210,9 @@ public final class EmulatedStackFrame {
 
     public static EmulatedStackFrame create(MethodType frameType) {
         var form = MethodTypeHacks.getForm(frameType);
-        var refs = form.referencesOffsets();
-        var prims = form.frameOffsets();
         return wrap(ACCESS.create(frameType,
-                new Object[refs[refs.length - 1]],
-                new byte[prims[prims.length - 1]]));
+                new Object[form.referencesCount()],
+                new byte[form.primitivesCount()]));
     }
 
     final Object esf;
@@ -361,7 +359,7 @@ public final class EmulatedStackFrame {
             ptypes = InvokeAccess.ptypes(type);
 
             MethodTypeForm form = MethodTypeHacks.getForm(type);
-            primitivesOffsets = form.frameOffsets();
+            primitivesOffsets = form.primitivesOffsets();
             referencesOffsets = form.referencesOffsets();
         }
 

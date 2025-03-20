@@ -63,8 +63,6 @@ public class Transformers {
     private static final MethodHandle new_transformer;
     private static final InvokerI invoker;
 
-    private static final boolean SKIP_CHECK_CAST = !DEBUG_BUILD;
-
     static {
         Class<?> invoke_transformer = nothrows_run(() -> Class.forName(
                 "java.lang.invoke.Transformers$Transformer"));
@@ -368,7 +366,7 @@ public class Transformers {
                             .withReturnType(TypeId.V)
                             .withParameterTypes(mh, TypeId.OBJECT)
                             .withCode(0, ib -> ib
-                                    .if_(!SKIP_CHECK_CAST, ib2 -> ib2
+                                    .if_(DEBUG_BUILD, ib2 -> ib2
                                             .check_cast(ib.p(1), esf)
                                     )
                                     .invoke(VIRTUAL, MethodId.of(transform), ib.p(0), ib.p(1))
@@ -389,7 +387,7 @@ public class Transformers {
                         .withReturnType(TypeId.V)
                         .withParameterTypes(mh, TypeId.OBJECT)
                         .withCode(0, ib -> {
-                            if (!SKIP_CHECK_CAST) {
+                            if (DEBUG_BUILD) {
                                 ib.check_cast(ib.p(1), esf);
                             }
                             if (ART_SDK_INT <= 32) {
@@ -413,7 +411,7 @@ public class Transformers {
         ClassLoader loader = Transformers.class.getClassLoader();
 
         Class<?> invoker_class = loadClass(dex, invoker_name, loader);
-        if (SKIP_CHECK_CAST) {
+        if (!DEBUG_BUILD) {
             setClassStatus(invoker_class, ClassStatus.Verified);
         }
         invoker = (InvokerI) allocateInstance(invoker_class);

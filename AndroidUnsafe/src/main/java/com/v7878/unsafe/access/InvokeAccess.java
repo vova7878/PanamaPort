@@ -5,14 +5,12 @@ import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
-import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldNonFinal;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
-import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
@@ -42,6 +40,20 @@ import dalvik.system.DexFile;
 
 public class InvokeAccess {
     private static final AccessI ACCESS;
+
+    @DoNotShrink
+    @DoNotObfuscate
+    private abstract static class AccessI {
+        abstract MethodType realType(MethodHandle handle);
+
+        abstract void realType(MethodHandle handle, MethodType type);
+
+        abstract MethodType nominalType(MethodHandle handle);
+
+        abstract void nominalType(MethodHandle handle, MethodType type);
+
+        abstract Class<?>[] ptypes(MethodType type);
+    }
 
     static {
         TypeId mh = TypeId.of(MethodHandle.class);
@@ -127,6 +139,27 @@ public class InvokeAccess {
                             );
                         }
                 )
+                .commit(cb2 -> {
+                    FieldId ptypes_id;
+                    {
+                        Field ptypes = getHiddenInstanceField(MethodType.class, "ptypes");
+                        makeFieldPublic(ptypes);
+                        ptypes_id = FieldId.of(ptypes);
+                    }
+                    // public Class<?>[] ptypes(MethodType type) {
+                    //     return type.ptypes;
+                    // }
+                    cb2.withMethod(mb -> mb
+                            .withFlags(ACC_PUBLIC | ACC_FINAL)
+                            .withName("ptypes")
+                            .withReturnType(TypeId.of(Class[].class))
+                            .withParameterTypes(mt)
+                            .withCode(0, ib -> {
+                                ib.iop(GET_OBJECT, ib.p(0), ib.p(0), ptypes_id);
+                                ib.return_object(ib.p(0));
+                            })
+                    );
+                })
         );
 
         DexFile dex = openDexFile(DexIO.write(Dex.of(access_def)));
@@ -136,18 +169,6 @@ public class InvokeAccess {
 
         Class<?> invoker_class = loadClass(dex, access_name, loader);
         ACCESS = (AccessI) allocateInstance(invoker_class);
-    }
-
-    @DoNotShrink
-    @DoNotObfuscate
-    private abstract static class AccessI {
-        abstract MethodType realType(MethodHandle handle);
-
-        abstract void realType(MethodHandle handle, MethodType type);
-
-        abstract MethodType nominalType(MethodHandle handle);
-
-        abstract void nominalType(MethodHandle handle, MethodType type);
     }
 
     public static MethodType realType(MethodHandle handle) {
@@ -241,11 +262,7 @@ public class InvokeAccess {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static Class<?>[] ptypes(MethodType type) {
-        class Holder {
-            static final long PTYPES_OFFSET = fieldOffset(
-                    getHiddenInstanceField(MethodType.class, "ptypes"));
-        }
-        return (Class<?>[]) getObject(Objects.requireNonNull(type), Holder.PTYPES_OFFSET);
+        return ACCESS.ptypes(type);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
