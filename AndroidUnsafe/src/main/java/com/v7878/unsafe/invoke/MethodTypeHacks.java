@@ -42,7 +42,6 @@ import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ArtFieldUtils;
 import com.v7878.unsafe.ClassUtils;
-import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DexFileUtils;
 import com.v7878.unsafe.access.InvokeAccess;
 
@@ -172,7 +171,7 @@ public class MethodTypeHacks {
         //noinspection unchecked
         FORM_IMPL = (Class<MethodTypeForm0>) loadClass(dex, form_name, loader);
         if (!DEBUG_BUILD) {
-            ClassUtils.setClassStatus(FORM_IMPL, ClassStatus.Verified);
+            ClassUtils.forceClassVerified(FORM_IMPL);
         }
     }
 

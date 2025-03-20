@@ -27,7 +27,6 @@ import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ArtFieldUtils;
 import com.v7878.unsafe.ClassUtils;
-import com.v7878.unsafe.ClassUtils.ClassStatus;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.access.InvokeAccess;
 
@@ -164,7 +163,7 @@ public final class EmulatedStackFrame {
         ClassLoader loader = EmulatedStackFrame.class.getClassLoader();
 
         Class<?> invoker_class = loadClass(dex, access_name, loader);
-        ClassUtils.setClassStatus(invoker_class, ClassStatus.Verified);
+        ClassUtils.forceClassVerified(invoker_class);
         ACCESS = (AccessI) allocateInstance(invoker_class);
     }
 

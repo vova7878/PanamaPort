@@ -16,7 +16,6 @@ import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
@@ -41,7 +40,7 @@ import com.v7878.dex.immutable.TypeId;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.ApiSensitive;
-import com.v7878.unsafe.ClassUtils.ClassStatus;
+import com.v7878.unsafe.ClassUtils;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -412,7 +411,7 @@ public class Transformers {
 
         Class<?> invoker_class = loadClass(dex, invoker_name, loader);
         if (!DEBUG_BUILD) {
-            setClassStatus(invoker_class, ClassStatus.Verified);
+            ClassUtils.forceClassVerified(invoker_class);
         }
         invoker = (InvokerI) allocateInstance(invoker_class);
 

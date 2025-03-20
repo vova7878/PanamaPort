@@ -1,6 +1,8 @@
 package com.v7878.unsafe;
 
+import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
+import static com.v7878.unsafe.ArtModifiers.kAccSkipAccessChecks;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
@@ -224,6 +226,21 @@ public class ClassUtils {
         ensureClassInitialized(clazz);
         if (!isClassVisiblyInitialized(clazz)) {
             AndroidUnsafe.allocateInstance(clazz);
+        }
+    }
+
+    public static void forceClassVerified(Class<?> clazz) {
+        if (getClassStatus(clazz).ordinal() < ClassStatus.Verified.ordinal()) {
+            setClassStatus(clazz, ClassStatus.Verified);
+
+            for (var method : Reflection.getArtMethods(clazz)) {
+                ArtMethodUtils.changeExecutableFlags(method, flags -> {
+                    if ((flags & ACC_NATIVE) == 0) {
+                        return flags | kAccSkipAccessChecks;
+                    }
+                    return flags;
+                });
+            }
         }
     }
 }

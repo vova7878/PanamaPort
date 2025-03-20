@@ -48,27 +48,54 @@ public class ArtFieldUtils {
     private static final long ACCESS_FLAGS_OFFSET = ARTFIELD_LAYOUT
             .byteOffset(groupElement("access_flags_"));
 
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static int getFieldFlags(long art_field) {
+        return getIntN(art_field + ACCESS_FLAGS_OFFSET);
+    }
+
     public static int getFieldFlags(Field f) {
-        return getIntN(getArtField(f) + ACCESS_FLAGS_OFFSET);
+        return getFieldFlags(getArtField(f));
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setFieldFlags(long art_field, int flags) {
+        putIntN(art_field + ACCESS_FLAGS_OFFSET, flags);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setFieldFlags(Field f, int flags) {
-        putIntN(getArtField(f) + ACCESS_FLAGS_OFFSET, flags);
+        setFieldFlags(getArtField(f), flags);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void changeFieldFlags(long art_field, int remove_flags, int add_flags) {
+        int old_flags = getFieldFlags(art_field);
+        int new_flags = (old_flags & ~remove_flags) | add_flags;
+        if (new_flags != old_flags) {
+            setFieldFlags(art_field, new_flags);
+            fullFence();
+        }
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeFieldFlags(Field f, int remove_flags, int add_flags) {
-        int flags = getFieldFlags(f) & ~remove_flags;
-        setFieldFlags(f, flags | add_flags);
-        fullFence();
+        changeFieldFlags(getArtField(f), remove_flags, add_flags);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void changeFieldFlags(long art_field, IntUnaryOperator filter) {
+        Objects.requireNonNull(filter);
+        int old_flags = getFieldFlags(art_field);
+        int new_flags = filter.applyAsInt(old_flags);
+        if (new_flags != old_flags) {
+            setFieldFlags(art_field, new_flags);
+            fullFence();
+        }
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeFieldFlags(Field f, IntUnaryOperator filter) {
-        Objects.requireNonNull(filter);
-        setFieldFlags(f, filter.applyAsInt(getFieldFlags(f)));
-        fullFence();
+        changeFieldFlags(getArtField(f), filter);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)

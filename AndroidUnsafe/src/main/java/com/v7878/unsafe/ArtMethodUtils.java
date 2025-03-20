@@ -113,6 +113,7 @@ public class ArtMethodUtils {
     private static final long DATA_OFFSET = ARTMETHOD_LAYOUT.byteOffset(
             groupElement("ptr_sized_fields_"), groupElement("data_"));
 
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static long getExecutableData(long art_method) {
         return getWordN(art_method + DATA_OFFSET);
     }
@@ -135,6 +136,7 @@ public class ArtMethodUtils {
             groupElement("ptr_sized_fields_"),
             groupElement("entry_point_from_quick_compiled_code_"));
 
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static long getExecutableEntryPoint(long art_method) {
         return getWordN(art_method + ENTRYPOINT_OFFSET);
     }
@@ -166,27 +168,54 @@ public class ArtMethodUtils {
     private static final long ACCESS_FLAGS_OFFSET = ARTMETHOD_LAYOUT
             .byteOffset(groupElement("access_flags_"));
 
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static int getExecutableFlags(long art_method) {
+        return getIntN(art_method + ACCESS_FLAGS_OFFSET);
+    }
+
     public static int getExecutableFlags(Executable ex) {
-        return getIntN(getArtMethod(ex) + ACCESS_FLAGS_OFFSET);
+        return getExecutableFlags(getArtMethod(ex));
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setExecutableFlags(long art_method, int flags) {
+        putIntN(art_method + ACCESS_FLAGS_OFFSET, flags);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setExecutableFlags(Executable ex, int flags) {
-        putIntN(getArtMethod(ex) + ACCESS_FLAGS_OFFSET, flags);
+        setExecutableFlags(getArtMethod(ex), flags);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void changeExecutableFlags(long art_method, int remove_flags, int add_flags) {
+        int old_flags = getExecutableFlags(art_method);
+        int new_flags = (old_flags & ~remove_flags) | add_flags;
+        if (new_flags != old_flags) {
+            setExecutableFlags(art_method, new_flags);
+            fullFence();
+        }
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeExecutableFlags(Executable ex, int remove_flags, int add_flags) {
-        int flags = getExecutableFlags(ex) & ~remove_flags;
-        setExecutableFlags(ex, flags | add_flags);
-        fullFence();
+        changeExecutableFlags(getArtMethod(ex), remove_flags, add_flags);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void changeExecutableFlags(long art_method, IntUnaryOperator filter) {
+        Objects.requireNonNull(filter);
+        int old_flags = getExecutableFlags(art_method);
+        int new_flags = filter.applyAsInt(old_flags);
+        if (new_flags != old_flags) {
+            setExecutableFlags(art_method, new_flags);
+            fullFence();
+        }
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeExecutableFlags(Executable ex, IntUnaryOperator filter) {
-        Objects.requireNonNull(filter);
-        setExecutableFlags(ex, filter.applyAsInt(getExecutableFlags(ex)));
-        fullFence();
+        changeExecutableFlags(getArtMethod(ex), filter);
     }
 
     private static final int VISIBILITY_MASK = Modifier.PROTECTED | Modifier.PRIVATE;

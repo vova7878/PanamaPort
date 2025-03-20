@@ -22,7 +22,6 @@ import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.ClassUtils.setClassStatus;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.InstructionSet.ARM;
@@ -77,7 +76,7 @@ import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.ApiSensitive;
-import com.v7878.unsafe.ClassUtils.ClassStatus;
+import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.InstructionSet;
 import com.v7878.unsafe.NativeCodeBlob;
@@ -493,7 +492,7 @@ public class BulkLinker {
             DexFile dex = openDexFile(generateJavaStub(parent, impl_name, infos));
             //noinspection unchecked
             impl = (Class<T>) loadClass(dex, impl_name, loader);
-            setClassStatus(impl, ClassStatus.Verified);
+            ClassUtils.forceClassVerified(impl);
 
             Method[] methods = getDeclaredMethods(impl);
             for (int i = 0; i < infos.length; i++) {
