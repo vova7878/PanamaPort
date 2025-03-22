@@ -21,16 +21,17 @@ public class AndroidUnsafe {
     public static final int ADDRESS_SIZE = SunUnsafe.addressSize();
     @NoSideEffects
     public static final int PAGE_SIZE = SunUnsafe.pageSize();
+    @NoSideEffects
+    public static final boolean IS_BIG_ENDIAN = false;
 
     static {
         check((ADDRESS_SIZE == 4) || (ADDRESS_SIZE == 8), AssertionError::new);
+        // Note: Android is always little-endian
+        check(ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN), AssertionError::new);
     }
 
     @NoSideEffects
     public static final boolean IS64BIT = ADDRESS_SIZE == 8;
-    @NoSideEffects
-    public static final boolean IS_BIG_ENDIAN =
-            ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN);
 
     @NoSideEffects
     public static final boolean UNALIGNED_ACCESS;
