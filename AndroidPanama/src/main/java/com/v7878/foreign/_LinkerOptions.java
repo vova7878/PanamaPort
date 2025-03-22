@@ -38,7 +38,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
-class _LinkerOptions {
+final class _LinkerOptions {
     private static final _LinkerOptions EMPTY = new _LinkerOptions(Map.of());
     private final Map<Class<?>, LinkerOptionImpl> optionsMap;
 

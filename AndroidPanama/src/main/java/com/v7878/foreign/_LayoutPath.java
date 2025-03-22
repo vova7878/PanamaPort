@@ -54,7 +54,7 @@ import java.util.stream.IntStream;
  * by the path (see {@link #offset}), or obtain var handle to access the selected layout element
  * given an address pointing to a segment associated with the root layout (see {@link #dereferenceHandle()}).
  */
-class _LayoutPath {
+final class _LayoutPath {
 
     private static final long[] EMPTY_STRIDES = new long[0];
     private static final long[] EMPTY_BOUNDS = new long[0];
