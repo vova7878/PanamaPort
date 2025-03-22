@@ -852,6 +852,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         ib2.return_shorty(native_ret_shorty, ib2.l(native_ret_reg));
                                     }
                                 })
+                                // TODO: Ljava/lang/Throwable;->addSuppressed(Ljava/lang/Throwable;)V
                                 .commit(ib2 -> {
                                     Integer previous_reg = null;
                                     for (int i = acquired_segments.size() - 1; i >= 0; i--) {
@@ -1369,6 +1370,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                 .return_void()
                                 .label("try_3_end")
 
+                                // TODO: Ljava/lang/Throwable;->addSuppressed(Ljava/lang/Throwable;)V
                                 .if_(has_arena, ib2 -> ib2
                                         .try_catch_all("try_2_start", "try_2_end")
                                         .label("try_4_start")

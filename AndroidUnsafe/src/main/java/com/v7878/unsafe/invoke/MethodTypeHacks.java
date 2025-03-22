@@ -3,21 +3,8 @@ package com.v7878.unsafe.invoke;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.builder.CodeBuilder.Op.GET;
-import static com.v7878.dex.builder.CodeBuilder.Op.GET_BOOLEAN;
-import static com.v7878.dex.builder.CodeBuilder.Op.GET_BYTE;
-import static com.v7878.dex.builder.CodeBuilder.Op.GET_CHAR;
 import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
-import static com.v7878.dex.builder.CodeBuilder.Op.GET_SHORT;
-import static com.v7878.dex.builder.CodeBuilder.Op.GET_WIDE;
-import static com.v7878.dex.builder.CodeBuilder.Op.PUT;
-import static com.v7878.dex.builder.CodeBuilder.Op.PUT_BOOLEAN;
-import static com.v7878.dex.builder.CodeBuilder.Op.PUT_BYTE;
-import static com.v7878.dex.builder.CodeBuilder.Op.PUT_CHAR;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
-import static com.v7878.dex.builder.CodeBuilder.Op.PUT_SHORT;
-import static com.v7878.dex.builder.CodeBuilder.Op.PUT_WIDE;
-import static com.v7878.dex.util.ShortyUtils.unrecognizedShorty;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -30,7 +17,6 @@ import static com.v7878.unsafe.invoke.EmulatedStackFrame.getSize;
 
 import com.v7878.dex.DexIO;
 import com.v7878.dex.builder.ClassBuilder;
-import com.v7878.dex.builder.CodeBuilder;
 import com.v7878.dex.immutable.ClassDef;
 import com.v7878.dex.immutable.Dex;
 import com.v7878.dex.immutable.FieldId;
@@ -61,38 +47,6 @@ public class MethodTypeHacks {
         @DoNotShrink
         @DoNotObfuscate
         void init(Object form, int[] primitivesOffsets, int[] referencesOffsets);
-    }
-
-    // TODO: move to CodeBuilder
-    private static void iget(CodeBuilder ib, int value_reg_or_pair, int object_reg, FieldId instance_field) {
-        var shorty = instance_field.getType().getShorty();
-        var op = switch (shorty) {
-            case 'Z' -> GET_BOOLEAN;
-            case 'B' -> GET_BYTE;
-            case 'S' -> GET_SHORT;
-            case 'C' -> GET_CHAR;
-            case 'I', 'F' -> GET;
-            case 'J', 'D' -> GET_WIDE;
-            case 'L' -> GET_OBJECT;
-            default -> throw unrecognizedShorty(shorty);
-        };
-        ib.iop(op, value_reg_or_pair, object_reg, instance_field);
-    }
-
-    // TODO: move to CodeBuilder
-    private static void iput(CodeBuilder ib, int value_reg_or_pair, int object_reg, FieldId instance_field) {
-        var shorty = instance_field.getType().getShorty();
-        var op = switch (shorty) {
-            case 'Z' -> PUT_BOOLEAN;
-            case 'B' -> PUT_BYTE;
-            case 'S' -> PUT_SHORT;
-            case 'C' -> PUT_CHAR;
-            case 'I', 'F' -> PUT;
-            case 'J', 'D' -> PUT_WIDE;
-            case 'L' -> PUT_OBJECT;
-            default -> throw unrecognizedShorty(shorty);
-        };
-        ib.iop(op, value_reg_or_pair, object_reg, instance_field);
     }
 
     static {
@@ -135,8 +89,8 @@ public class MethodTypeHacks {
                                 ArtFieldUtils.makeFieldNonFinal(field);
 
                                 var field_id = FieldId.of(field);
-                                iget(ib, ib.l(0), ib.p(0), field_id);
-                                iput(ib, ib.l(0), ib.this_(), field_id);
+                                ib.iget(ib.l(0), ib.p(0), field_id);
+                                ib.iput(ib.l(0), ib.this_(), field_id);
                             }
                             ib.return_void();
                         })
