@@ -29,6 +29,7 @@ package com.v7878.foreign;
 
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.KeepCodeAttribute;
+import com.v7878.r8.annotations.NoSideEffects;
 
 import java.util.Objects;
 
@@ -38,7 +39,7 @@ import java.util.Objects;
  * Acquiring and or releasing a memory session similarly does nothing.
  */
 sealed class _GlobalSession extends _MemorySessionImpl {
-
+    @NoSideEffects
     public static final _GlobalSession INSTANCE = new _GlobalSession();
 
     public _GlobalSession() {

@@ -100,6 +100,7 @@ import com.v7878.foreign._LLVMStorageDescriptor.MemoryStorage;
 import com.v7878.foreign._LLVMStorageDescriptor.NoStorage;
 import com.v7878.foreign._LLVMStorageDescriptor.RawStorage;
 import com.v7878.foreign._LLVMStorageDescriptor.WrapperStorage;
+import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import com.v7878.invoke.VarHandle;
 import com.v7878.llvm.Types.LLVMAttributeRef;
 import com.v7878.llvm.Types.LLVMBuilderRef;
@@ -133,7 +134,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         ClassUtils.makeClassPublic(DowncallHelper.class);
         ClassUtils.makeClassPublic(UpcallHelper.class);
     }
-
 
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
     private static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
@@ -480,28 +480,40 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     @DoNotShrink
     @SuppressWarnings("unused")
     static class DowncallHelper {
-        // TODO: public static Arena SharedUtils.newBoundedArena(long size)
-        public static Arena createArena() {
-            return Arena.ofConfined();
+        public static Arena createArena(long size) {
+            if (size == 0) return null;
+            return _Utils.newBoundedArena(size);
         }
 
         public static MemorySegment allocateSegment(SegmentAllocator allocator, long size, long align) {
             return allocator.allocate(size, align);
         }
 
+        // Note: If the execution is without heap access, and a heap segment is received,
+        //  it must be copied to a temporary native segment so that it can be passed on
         public static MemorySegment allocateCopy(MemorySegment segment, Arena arena, long size, long align) {
+            var session = ((_AbstractMemorySegmentImpl) segment).sessionImpl();
             if (size == 0) {
-                // TODO?: check segment
+                session.checkValidState();
                 return MemorySegment.NULL;
             }
-            // TODO: improve performance
-            MemorySegment tmp = arena.allocate(size, align);
-            // by-value struct
-            MemorySegment.copy(segment, 0, tmp, 0, size);
-            return tmp;
+            assert arena != null;
+            if (segment.isNative()) {
+                var tmp_session = ((_MemorySessionImpl) arena.scope());
+                session.acquire0();
+                tmp_session.addOrCleanupIfFail(
+                        ResourceCleanup.ofRunnable(session::release0));
+                return segment;
+            } else {
+                MemorySegment tmp = arena.allocate(size, align);
+                // by-value struct
+                MemorySegment.copy(segment, 0, tmp, 0, size);
+                return tmp;
+            }
         }
 
         public static void closeArena(Arena arena) {
+            if (arena == null) return;
             arena.close();
         }
 
@@ -589,7 +601,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         FieldId scope_id = FieldId.of(stub_id, scope_field_name, TypeId.OBJECT);
         MethodId native_stub_id = MethodId.of(stub_id, native_stub_name, native_stub_proto);
 
-        MethodId create_arena_id = MethodId.of(helper_id, "createArena", arena_id);
+        MethodId create_arena_id = MethodId.of(helper_id, "createArena", arena_id, TypeId.J);
         MethodId allocate_segment_id = MethodId.of(helper_id,
                 "allocateSegment", ms_id, sa_id, TypeId.J, TypeId.J);
         MethodId allocate_copy_id = MethodId.of(helper_id,
@@ -607,7 +619,11 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         MethodId release_id = MethodId.of(helper_id, "release", TypeId.V, ms_id);
         MethodId put_errno_id = MethodId.of(helper_id, "putErrno", TypeId.V, ms_id);
 
-        var has_arena = Stream.of(args).anyMatch(layout -> layout instanceof GroupLayout);
+        var has_arena = !heap_access && Stream.of(args)
+                .anyMatch(layout -> layout instanceof GroupLayout);
+        var max_arena_size = !has_arena ? -1 : Stream.of(args)
+                .filter(layout -> layout instanceof GroupLayout)
+                .mapToLong(MemoryLayout::byteSize).sum();
 
         int native_ins = native_stub_proto.countInputRegisters();
 
@@ -626,11 +642,11 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         int[] regs = {/* native args start */ reserved[0], /* java args start */ 0};
         int locals = reserved[0] + native_ins;
 
-        // TODO: use a known number of segments?
         List<Integer> acquired_segments = new ArrayList<>();
 
         Consumer<CodeBuilder> create_arena = ib -> ib
-                .invoke(STATIC, create_arena_id)
+                .const_wide(ib.l(0), max_arena_size)
+                .invoke_range(STATIC, create_arena_id, 2, ib.l(0))
                 .move_result_object(ib.l(arena_reg));
 
         Consumer<CodeBuilder> close_arena = ib -> ib
@@ -744,7 +760,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         } else if (arg instanceof AddressLayout || arg instanceof GroupLayout) {
                                             var segment_reg = regs[1]++;
 
-                                            if (arg instanceof GroupLayout gl) {
+                                            if (!heap_access && arg instanceof GroupLayout gl) {
                                                 ib2.move_object(ib2.l(0), ib2.p(segment_reg));
                                                 ib2.move_object(ib2.l(1), ib2.l(arena_reg));
                                                 ib2.const_wide(ib2.l(2), gl.byteSize());
@@ -1110,20 +1126,20 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     @DoNotShrink
     @SuppressWarnings("unused")
     static class UpcallHelper {
-        public static Arena createArena() {
-            return Arena.ofConfined();
+        public static _MemorySessionImpl createScope() {
+            return _MemorySessionImpl.createConfined(Thread.currentThread());
         }
 
-        public static void closeArena(Arena arena) {
-            arena.close();
+        public static void closeScope(_MemorySessionImpl scope) {
+            scope.close();
         }
 
         public static void handleException(Throwable th) {
             handleUncaughtException(th);
         }
 
-        public static MemorySegment makeSegment(long addr, long size, long align, Arena arena) {
-            return _Utils.makeSegment(addr, size, align, (_MemorySessionImpl) arena.scope());
+        public static MemorySegment makeSegment(long addr, long size, long align, _MemorySessionImpl scope) {
+            return _Utils.makeSegment(addr, size, align, scope);
         }
 
         public static void putByte(long address, byte data) {
@@ -1166,7 +1182,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         final TypeId mh_id = TypeId.of(MethodHandle.class);
         final TypeId ms_id = TypeId.of(MemorySegment.class);
         final TypeId helper_id = TypeId.of(UpcallHelper.class);
-        final TypeId arena_id = TypeId.of(Arena.class);
+        final TypeId scope_id = TypeId.of(_MemorySessionImpl.class);
 
         MemoryLayout[] args = descriptor.argumentLayouts().toArray(new MemoryLayout[0]);
         MemoryLayout ret = descriptor.returnLayoutPlain();
@@ -1188,12 +1204,12 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         MethodId mh_invoke_id = MethodId.of(mh_id, "invokeExact",
                 ProtoId.of(TypeId.OBJECT, TypeId.OBJECT.array()));
-        MethodId create_arena_id = MethodId.of(helper_id, "createArena", arena_id);
-        MethodId close_arena_id = MethodId.of(helper_id, "closeArena", TypeId.V, arena_id);
+        MethodId create_scope_id = MethodId.of(helper_id, "createScope", scope_id);
+        MethodId close_scope_id = MethodId.of(helper_id, "closeScope", TypeId.V, scope_id);
         MethodId handle_exception_id = MethodId.of(helper_id,
                 "handleException", TypeId.V, TypeId.of(Throwable.class));
         MethodId make_segment_id = MethodId.of(helper_id, "makeSegment",
-                ms_id, TypeId.J, TypeId.J, TypeId.J, arena_id);
+                ms_id, TypeId.J, TypeId.J, TypeId.J, scope_id);
 
         MethodId put_byte_id = MethodId.of(helper_id, "putByte", TypeId.V, TypeId.J, TypeId.B);
         MethodId put_short_id = MethodId.of(helper_id, "putShort", TypeId.V, TypeId.J, TypeId.S);
@@ -1222,11 +1238,11 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         int locals = reserved[0] + target_ins + /* handle */ 1;
 
         Consumer<CodeBuilder> create_arena = ib -> ib
-                .invoke(STATIC, create_arena_id)
+                .invoke(STATIC, create_scope_id)
                 .move_result_object(ib.l(arena_reg));
 
         Consumer<CodeBuilder> close_arena = ib -> ib
-                .invoke(STATIC, close_arena_id, ib.l(arena_reg));
+                .invoke(STATIC, close_scope_id, ib.l(arena_reg));
 
         Consumer<CodeBuilder> handle_exception = ib -> ib
                 .invoke(STATIC, handle_exception_id, ib.l(exception_reg))
@@ -1340,7 +1356,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                     } else if (ret instanceof AddressLayout) {
                                         ib2.invoke_range(STATIC, put_address_id, 3, ib2.l(0));
                                     } else if (ret instanceof GroupLayout gl) {
-                                        // TODO: optimize if return layout is empty
                                         ib2.const_wide(ib2.l(3), gl.byteSize());
                                         ib2.invoke_range(STATIC, put_segment_id, 5, ib2.l(0));
                                     } else {

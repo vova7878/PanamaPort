@@ -36,6 +36,7 @@ import com.v7878.foreign._ImplicitSession.ImplicitHolderSession;
 import com.v7878.foreign._ScopedMemoryAccess.ScopedAccessError;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.sun.cleaner.SunCleaner;
 
 import java.util.Objects;
@@ -54,7 +55,9 @@ abstract sealed class _MemorySessionImpl implements Scope
 
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
+    @NoSideEffects
     static final ScopedAccessError ALREADY_CLOSED = new ScopedAccessError(_MemorySessionImpl::alreadyClosed);
+    @NoSideEffects
     static final ScopedAccessError WRONG_THREAD = new ScopedAccessError(_MemorySessionImpl::wrongThread);
 
     // This is the session of all zero-length memory segments

@@ -9,6 +9,7 @@ import static com.v7878.unsafe.misc.Math.toUnsignedInt;
 import static com.v7878.unsafe.misc.Math.toUnsignedLong;
 
 import com.v7878.r8.annotations.AlwaysInline;
+import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.sun.unsafe.SunUnsafe;
 
 import java.lang.reflect.Field;
@@ -16,18 +17,22 @@ import java.nio.ByteOrder;
 import java.util.Objects;
 
 public class AndroidUnsafe {
-
+    @NoSideEffects
     public static final int ADDRESS_SIZE = SunUnsafe.addressSize();
+    @NoSideEffects
     public static final int PAGE_SIZE = SunUnsafe.pageSize();
 
     static {
         check((ADDRESS_SIZE == 4) || (ADDRESS_SIZE == 8), AssertionError::new);
     }
 
+    @NoSideEffects
     public static final boolean IS64BIT = ADDRESS_SIZE == 8;
+    @NoSideEffects
     public static final boolean IS_BIG_ENDIAN =
             ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN);
 
+    @NoSideEffects
     public static final boolean UNALIGNED_ACCESS;
 
     static {
@@ -36,24 +41,42 @@ public class AndroidUnsafe {
                 || arch.equals("amd64") || arch.equals("x86_64"));
     }
 
+    @NoSideEffects
     public static final long ARRAY_BOOLEAN_BASE_OFFSET = arrayBaseOffset(boolean[].class);
+    @NoSideEffects
     public static final long ARRAY_BYTE_BASE_OFFSET = arrayBaseOffset(byte[].class);
+    @NoSideEffects
     public static final long ARRAY_SHORT_BASE_OFFSET = arrayBaseOffset(short[].class);
+    @NoSideEffects
     public static final long ARRAY_CHAR_BASE_OFFSET = arrayBaseOffset(char[].class);
+    @NoSideEffects
     public static final long ARRAY_INT_BASE_OFFSET = arrayBaseOffset(int[].class);
+    @NoSideEffects
     public static final long ARRAY_LONG_BASE_OFFSET = arrayBaseOffset(long[].class);
+    @NoSideEffects
     public static final long ARRAY_FLOAT_BASE_OFFSET = arrayBaseOffset(float[].class);
+    @NoSideEffects
     public static final long ARRAY_DOUBLE_BASE_OFFSET = arrayBaseOffset(double[].class);
+    @NoSideEffects
     public static final long ARRAY_OBJECT_BASE_OFFSET = arrayBaseOffset(Object[].class);
 
+    @NoSideEffects
     public static final int ARRAY_BOOLEAN_INDEX_SCALE = arrayIndexScale(boolean[].class);
+    @NoSideEffects
     public static final int ARRAY_BYTE_INDEX_SCALE = arrayIndexScale(byte[].class);
+    @NoSideEffects
     public static final int ARRAY_SHORT_INDEX_SCALE = arrayIndexScale(short[].class);
+    @NoSideEffects
     public static final int ARRAY_CHAR_INDEX_SCALE = arrayIndexScale(char[].class);
+    @NoSideEffects
     public static final int ARRAY_INT_INDEX_SCALE = arrayIndexScale(int[].class);
+    @NoSideEffects
     public static final int ARRAY_LONG_INDEX_SCALE = arrayIndexScale(long[].class);
+    @NoSideEffects
     public static final int ARRAY_FLOAT_INDEX_SCALE = arrayIndexScale(float[].class);
+    @NoSideEffects
     public static final int ARRAY_DOUBLE_INDEX_SCALE = arrayIndexScale(double[].class);
+    @NoSideEffects
     public static final int ARRAY_OBJECT_INDEX_SCALE = arrayIndexScale(Object[].class);
 
     @AlwaysInline

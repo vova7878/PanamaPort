@@ -39,6 +39,7 @@ import com.v7878.foreign.ValueLayout.OfInt;
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
@@ -1536,6 +1537,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      * The {@linkplain MemorySegment#maxByteAlignment() maximum byte alignment} for
      * the {@code NULL} segment is of 2<sup>62</sup>.
      */
+    @NoSideEffects
     MemorySegment NULL = MemorySegment.ofAddress(0L);
 
     /**

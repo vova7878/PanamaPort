@@ -49,6 +49,7 @@ import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.unsafe.invoke.MethodHandlesFixes;
 import com.v7878.unsafe.invoke.Wrapper;
 
@@ -73,9 +74,13 @@ final class _Utils {
     private _Utils() {
     }
 
+    @NoSideEffects
     private static final Class<?> ADDRESS_CARRIER_TYPE;
+    @NoSideEffects
     private static final MethodHandle UNBOX_SEGMENT;
+    @NoSideEffects
     private static final MethodHandle MAKE_SEGMENT_TARGET;
+    @NoSideEffects
     private static final MethodHandle MAKE_SEGMENT_NO_TARGET;
 
     static {
@@ -411,5 +416,28 @@ final class _Utils {
         public long scale() {
             return scale;
         }
+    }
+
+    public static Arena newBoundedArena(long size) {
+        return new Arena() {
+            final Arena arena = Arena.ofConfined();
+            final SegmentAllocator slicingAllocator = SegmentAllocator
+                    .slicingAllocator(arena.allocate(size));
+
+            @Override
+            public MemorySegment.Scope scope() {
+                return arena.scope();
+            }
+
+            @Override
+            public void close() {
+                arena.close();
+            }
+
+            @Override
+            public MemorySegment allocate(long byteSize, long byteAlignment) {
+                return slicingAllocator.allocate(byteSize, byteAlignment);
+            }
+        };
     }
 }
