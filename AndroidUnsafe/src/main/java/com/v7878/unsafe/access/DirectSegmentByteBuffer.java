@@ -102,36 +102,42 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
         }
     }
 
+    @Override
     public ByteBuffer put(ByteBuffer src) {
         try (FineClosable ignored = lock(scope)) {
             return super.put(src);
         }
     }
 
+    @Override
     public ByteBuffer put(int index, ByteBuffer src, int offset, int length) {
         try (FineClosable ignored = lock(scope)) {
             return super.put(index, src, offset, length);
         }
     }
 
+    @Override
     public ByteBuffer get(byte[] dst, int offset, int length) {
         try (FineClosable ignored = lock(scope)) {
             return super.get(dst, offset, length);
         }
     }
 
+    @Override
     public ByteBuffer get(int index, byte[] dst, int offset, int length) {
         try (FineClosable ignored = lock(scope)) {
             return super.get(index, dst, offset, length);
         }
     }
 
+    @Override
     public ByteBuffer put(byte[] src, int offset, int length) {
         try (FineClosable ignored = lock(scope)) {
             return super.put(src, offset, length);
         }
     }
 
+    @Override
     public ByteBuffer put(int index, byte[] src, int offset, int length) {
         try (FineClosable ignored = lock(scope)) {
             return super.put(index, src, offset, length);
@@ -149,6 +155,20 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
     public byte get(int i) {
         try (FineClosable ignored = lock(scope)) {
             return super.get(i);
+        }
+    }
+
+    @Override
+    public ByteBuffer put(byte x) {
+        try (FineClosable ignored = lock(scope)) {
+            return super.put(x);
+        }
+    }
+
+    @Override
+    public ByteBuffer put(int i, byte x) {
+        try (FineClosable ignored = lock(scope)) {
+            return super.put(i, x);
         }
     }
 
@@ -181,6 +201,13 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
     }
 
     @Override
+    public ByteBuffer putChar(char x) {
+        try (FineClosable ignored = lock(scope)) {
+            return super.putChar(x);
+        }
+    }
+
+    @Override
     public char getCharUnchecked(int i) {
         try (FineClosable ignored = lock(scope)) {
             return super.getCharUnchecked(i);
@@ -191,13 +218,6 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
     public void getUnchecked(int pos, char[] dst, int dstOffset, int length) {
         try (FineClosable ignored = lock(scope)) {
             super.getUnchecked(pos, dst, dstOffset, length);
-        }
-    }
-
-    @Override
-    public ByteBuffer putChar(char x) {
-        try (FineClosable ignored = lock(scope)) {
-            return super.putChar(x);
         }
     }
 
