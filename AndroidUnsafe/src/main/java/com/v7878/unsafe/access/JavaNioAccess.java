@@ -663,7 +663,7 @@ public class JavaNioAccess {
         return offset + getBufferOffset(buffer);
     }
 
-    static final long FD_OFFSET = fieldOffset(
+    private static final long FD_OFFSET = fieldOffset(
             getHiddenInstanceField(MappedByteBuffer.class, "fd"));
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
