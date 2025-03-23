@@ -9,7 +9,7 @@ import java.nio.LongBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
 
-//TODO: generate FakeHeapByteBuffer with jasmin gradle plugin?
+//TODO: generate FakeMappedByteBuffer with jasmin gradle plugin?
 
 public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
     public MappedByteBufferBase() {
@@ -17,12 +17,79 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
     }
 
     // from java.nio.Buffer
+
+    public int mark;
+    public int position;
+    public int limit;
+    public int capacity;
     public long address;
 
+    public boolean isReadOnly() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public boolean isDirect() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     // from java.nio.ByteBuffer
-    public final byte[] hb;
-    public final int offset;
+
+    public byte[] hb;
+    public int offset;
     public boolean isReadOnly;
+
+    public boolean bigEndian;
+    public boolean nativeByteOrder;
+
+    public ByteBuffer put(ByteBuffer src) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public ByteBuffer put(int index, ByteBuffer src, int offset, int length) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public ByteBuffer get(byte[] dst, int offset, int length) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public ByteBuffer get(int index, byte[] dst, int offset, int length) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public ByteBuffer put(byte[] src, int offset, int length) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public ByteBuffer put(int index, byte[] src, int offset, int length) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public CharBuffer asCharBuffer() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public ShortBuffer asShortBuffer() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public IntBuffer asIntBuffer() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public LongBuffer asLongBuffer() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public FloatBuffer asFloatBuffer() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    public DoubleBuffer asDoubleBuffer() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    // from java.nio.DirectByteBuffer
 
     public abstract MappedByteBuffer slice();
 
@@ -32,28 +99,7 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
 
     public abstract MappedByteBuffer asReadOnlyBuffer();
 
-    public ByteBuffer compact() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public boolean isDirect() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public boolean isReadOnly() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public boolean isAccessible() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public void setAccessible(boolean value) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    // from java.nio.Buffer
-    public int markValue() {
+    public MappedByteBuffer compact() {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -65,14 +111,6 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public ByteBuffer get(byte[] dst, int dstOffset, int length) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public ByteBuffer put(ByteBuffer src) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public ByteBuffer put(byte x) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -81,16 +119,10 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public ByteBuffer put(byte[] src, int srcOffset, int length) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    // Used by java.nio.Bits
     public byte _get(int i) {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    // Used by java.nio.Bits
     public void _put(int i, byte b) {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -103,15 +135,15 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    public ByteBuffer putChar(char x) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     public char getCharUnchecked(int i) {
         throw new UnsupportedOperationException("Stub!");
     }
 
     public void getUnchecked(int pos, char[] dst, int dstOffset, int length) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public ByteBuffer putChar(char x) {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -124,10 +156,6 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
     }
 
     public void putUnchecked(int pos, char[] src, int srcOffset, int length) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public CharBuffer asCharBuffer() {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -163,10 +191,6 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public ShortBuffer asShortBuffer() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public int getInt() {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -196,10 +220,6 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
     }
 
     public void putUnchecked(int pos, int[] src, int srcOffset, int length) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public IntBuffer asIntBuffer() {
         throw new UnsupportedOperationException("Stub!");
     }
 
@@ -235,10 +255,6 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public LongBuffer asLongBuffer() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public float getFloat() {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -271,10 +287,6 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    public FloatBuffer asFloatBuffer() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     public double getDouble() {
         throw new UnsupportedOperationException("Stub!");
     }
@@ -304,10 +316,6 @@ public abstract class MappedByteBufferBase extends FakeMappedByteBuffer {
     }
 
     public void putUnchecked(int pos, double[] src, int srcOffset, int length) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    public DoubleBuffer asDoubleBuffer() {
         throw new UnsupportedOperationException("Stub!");
     }
 }

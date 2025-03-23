@@ -7,6 +7,7 @@ import com.v7878.unsafe.DirectByteBuffer;
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.util.Objects;
 
 class DirectSegmentByteBuffer extends DirectByteBuffer {
@@ -58,7 +59,7 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
         if (attachment().isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
-        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), markValue(),
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), mark,
                 position(), limit(), capacity(), offset, isReadOnly, scope);
     }
 
@@ -67,8 +68,74 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
         if (attachment().isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
-        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), markValue(),
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), mark,
                 position(), limit(), capacity(), offset, true, scope);
+    }
+
+    // TODO: public MappedByteBuffer compact()
+
+    @Override
+    protected boolean isLoadedImpl() {
+        try (FineClosable ignored = lock(scope)) {
+            return isLoadedSuper();
+        }
+    }
+
+    @Override
+    protected MappedByteBuffer loadImpl() {
+        try (FineClosable ignored = lock(scope)) {
+            return loadSuper();
+        }
+    }
+
+    @Override
+    protected MappedByteBuffer forceImpl() {
+        try (FineClosable ignored = lock(scope)) {
+            return forceSuper();
+        }
+    }
+
+    @Override
+    protected MappedByteBuffer forceImpl(int index, int length) {
+        try (FineClosable ignored = lock(scope)) {
+            return forceSuper(index, length);
+        }
+    }
+
+    public ByteBuffer put(ByteBuffer src) {
+        try (FineClosable ignored = lock(scope)) {
+            return super.put(src);
+        }
+    }
+
+    public ByteBuffer put(int index, ByteBuffer src, int offset, int length) {
+        try (FineClosable ignored = lock(scope)) {
+            return super.put(index, src, offset, length);
+        }
+    }
+
+    public ByteBuffer get(byte[] dst, int offset, int length) {
+        try (FineClosable ignored = lock(scope)) {
+            return super.get(dst, offset, length);
+        }
+    }
+
+    public ByteBuffer get(int index, byte[] dst, int offset, int length) {
+        try (FineClosable ignored = lock(scope)) {
+            return super.get(index, dst, offset, length);
+        }
+    }
+
+    public ByteBuffer put(byte[] src, int offset, int length) {
+        try (FineClosable ignored = lock(scope)) {
+            return super.put(src, offset, length);
+        }
+    }
+
+    public ByteBuffer put(int index, byte[] src, int offset, int length) {
+        try (FineClosable ignored = lock(scope)) {
+            return super.put(index, src, offset, length);
+        }
     }
 
     @Override
@@ -82,41 +149,6 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
     public byte get(int i) {
         try (FineClosable ignored = lock(scope)) {
             return super.get(i);
-        }
-    }
-
-    @Override
-    public ByteBuffer get(byte[] dst, int dstOffset, int length) {
-        try (FineClosable ignored = lock(scope)) {
-            return super.get(dst, dstOffset, length);
-        }
-    }
-
-    @Override
-    public ByteBuffer put(ByteBuffer src) {
-        try (FineClosable ignored = lock(scope)) {
-            return super.put(src);
-        }
-    }
-
-    @Override
-    public ByteBuffer put(byte x) {
-        try (FineClosable ignored = lock(scope)) {
-            return super.put(x);
-        }
-    }
-
-    @Override
-    public ByteBuffer put(int i, byte x) {
-        try (FineClosable ignored = lock(scope)) {
-            return super.put(i, x);
-        }
-    }
-
-    @Override
-    public ByteBuffer put(byte[] src, int srcOffset, int length) {
-        try (FineClosable ignored = lock(scope)) {
-            return super.put(src, srcOffset, length);
         }
     }
 

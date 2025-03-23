@@ -1,6 +1,7 @@
 package com.v7878.unsafe;
 
 import java.io.FileDescriptor;
+import java.nio.MappedByteBuffer;
 
 // Compile-time stub, real DirectByteBuffer will be generated at runtime
 public abstract class DirectByteBuffer extends MappedByteBufferBase {
@@ -13,8 +14,7 @@ public abstract class DirectByteBuffer extends MappedByteBufferBase {
         public boolean isAccessible;
         public boolean isFreed;
 
-        // use the "originalBufferObject" field from java.nio.DirectByteBuffer
-        // if it exists, else generate it
+        // Will be generated if does not exist
         public final Object originalBufferObject;
 
         public MemoryRef(long address, Object originalBufferObject) {
@@ -54,4 +54,30 @@ public abstract class DirectByteBuffer extends MappedByteBufferBase {
 
     @Override
     public abstract DirectByteBuffer asReadOnlyBuffer();
+
+    // Runtime generated methods to bypass presence of the final modifier
+
+    protected abstract boolean isLoadedImpl();
+
+    protected abstract MappedByteBuffer loadImpl();
+
+    protected abstract MappedByteBuffer forceImpl();
+
+    protected abstract MappedByteBuffer forceImpl(int index, int length);
+
+    protected final boolean isLoadedSuper() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    protected final MappedByteBuffer loadSuper() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    protected final MappedByteBuffer forceSuper() {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    protected final MappedByteBuffer forceSuper(int index, int length) {
+        throw new UnsupportedOperationException("Stub!");
+    }
 }
