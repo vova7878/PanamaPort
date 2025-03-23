@@ -6,6 +6,7 @@ import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.unsafe.DirectByteBuffer;
 import com.v7878.unsafe.Utils.FineClosable;
 
+import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Objects;
@@ -19,9 +20,10 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
 
     public final Scope scope;
 
-    DirectSegmentByteBuffer(SegmentMemoryRef memoryRef, int mark, int pos, int lim,
-                            int cap, int off, boolean isReadOnly, Scope scope) {
+    DirectSegmentByteBuffer(SegmentMemoryRef memoryRef, FileDescriptor fd, int mark, int pos,
+                            int lim, int cap, int off, boolean isReadOnly, Scope scope) {
         super(memoryRef, mark, pos, lim, cap, off, isReadOnly);
+        JavaNioAccess.putBufferFD(this, fd);
         this.scope = scope;
     }
 
@@ -41,7 +43,7 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
         int rem = lim - pos;
         int off = pos + offset;
         return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(),
-                -1, 0, rem, rem, off, isReadOnly, scope);
+                fd, -1, 0, rem, rem, off, isReadOnly, scope);
     }
 
     @Override
@@ -51,7 +53,7 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
         }
         Objects.checkFromIndexSize(index, length, limit());
         return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(),
-                -1, 0, length, length, index, isReadOnly, scope);
+                fd, -1, 0, length, length, index, isReadOnly, scope);
     }
 
     @Override
@@ -59,8 +61,8 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
         if (attachment().isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
-        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), mark,
-                position(), limit(), capacity(), offset, isReadOnly, scope);
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), fd,
+                mark, position(), limit(), capacity(), offset, isReadOnly, scope);
     }
 
     @Override
@@ -68,8 +70,8 @@ class DirectSegmentByteBuffer extends DirectByteBuffer {
         if (attachment().isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
-        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), mark,
-                position(), limit(), capacity(), offset, true, scope);
+        return new DirectSegmentByteBuffer((SegmentMemoryRef) attachment(), fd,
+                mark, position(), limit(), capacity(), offset, true, scope);
     }
 
     // TODO: public MappedByteBuffer compact()

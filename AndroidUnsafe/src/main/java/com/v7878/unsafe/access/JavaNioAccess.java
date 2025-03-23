@@ -83,7 +83,7 @@ public class JavaNioAccess {
     private static class SegmentBufferAccess {
         public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
             var memref = new SegmentMemoryRef(addr, obj);
-            var buffer = new DirectSegmentByteBuffer(memref,
+            var buffer = new DirectSegmentByteBuffer(memref, null,
                     -1, 0, cap, cap, 0, false, scope);
             JavaForeignAccess.addOrCleanupIfFail(scope, memref::free);
             return buffer;
@@ -91,12 +91,9 @@ public class JavaNioAccess {
 
         public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapper, long addr,
                                                      int cap, Object obj, Scope scope) {
-            ByteBuffer out = new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
-                    -1, 0, cap, cap, 0, false, scope);
-            if (unmapper != null) {
-                putObject(out, FD_OFFSET, unmapper.fileDescriptor());
-            }
-            return out;
+            var fd = unmapper.fileDescriptor();
+            return new DirectSegmentByteBuffer(new SegmentMemoryRef(addr, obj),
+                    fd, -1, 0, cap, cap, 0, false, scope);
         }
 
         public static ByteBuffer newHeapByteBuffer(byte[] buf, int off, int cap, Scope scope) {
@@ -666,13 +663,18 @@ public class JavaNioAccess {
         return offset + getBufferOffset(buffer);
     }
 
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
-    private static FileDescriptor getBufferFD(MappedByteBuffer buffer) {
-        return (FileDescriptor) getObject(buffer, FD_OFFSET);
-    }
-
     static final long FD_OFFSET = fieldOffset(
             getHiddenInstanceField(MappedByteBuffer.class, "fd"));
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static FileDescriptor getBufferFD(MappedByteBuffer buffer) {
+        return (FileDescriptor) getObject(Objects.requireNonNull(buffer), FD_OFFSET);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void putBufferFD(MappedByteBuffer buffer, FileDescriptor fd) {
+        putObject(Objects.requireNonNull(buffer), FD_OFFSET, fd);
+    }
 
     public static UnmapperProxy unmapper(Buffer buffer) {
         if (!(buffer instanceof MappedByteBuffer mapped)) {
