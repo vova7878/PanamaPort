@@ -288,6 +288,7 @@ public class JavaNioAccess {
                         .withConstructorSignature()
                         .withParameterTypes(TypeId.J, TypeId.OBJECT)
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .if_(ART_SDK_INT == 26,
                                         ib2 -> ib2
                                                 .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id, TypeId.J),
@@ -315,6 +316,7 @@ public class JavaNioAccess {
                         .withParameterTypes(mem_ref_id, TypeId.I, TypeId.I,
                                 TypeId.I, TypeId.I, TypeId.I, TypeId.Z)
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke_range(DIRECT, MethodId.constructor(nio_direct_buf_id, nio_mem_ref_id,
                                                 TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
                                         8, ib.this_())
@@ -330,6 +332,7 @@ public class JavaNioAccess {
                         .withReturnType(mem_ref_id)
                         .withParameters()
                         .withCode(1, ib -> ib
+                                .generate_lines()
                                 .invoke(SUPER, MethodId.of(m_attachment), ib.this_())
                                 .move_result_object(ib.l(0))
                                 .check_cast(ib.l(0), mem_ref_id)
@@ -373,6 +376,7 @@ public class JavaNioAccess {
                         .withReturnType(TypeId.Z)
                         .withParameters()
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke(SUPER, MethodId.of(nio_direct_buf_id, "isLoaded", TypeId.Z), ib.this_())
                                 .move_result(ib.this_())
                                 .return_(ib.this_())
@@ -387,6 +391,7 @@ public class JavaNioAccess {
                         .withReturnType(mbb_id)
                         .withParameters()
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke(SUPER, MethodId.of(nio_direct_buf_id, "load", mbb_id), ib.this_())
                                 .move_result_object(ib.this_())
                                 .return_object(ib.this_())
@@ -401,6 +406,7 @@ public class JavaNioAccess {
                         .withReturnType(mbb_id)
                         .withParameters()
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke(SUPER, MethodId.of(nio_direct_buf_id, "force", mbb_id), ib.this_())
                                 .move_result_object(ib.this_())
                                 .return_object(ib.this_())
@@ -415,6 +421,7 @@ public class JavaNioAccess {
                         .withReturnType(mbb_id)
                         .withParameterTypes(TypeId.I, TypeId.I)
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke_range(SUPER, MethodId.of(nio_direct_buf_id, "force",
                                         mbb_id, TypeId.I, TypeId.I), 3, ib.this_())
                                 .move_result_object(ib.this_())
@@ -430,6 +437,7 @@ public class JavaNioAccess {
                         .withReturnType(TypeId.Z)
                         .withParameters()
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke(VIRTUAL, MethodId.of(direct_buf_id, "isLoadedImpl", TypeId.Z), ib.this_())
                                 .move_result(ib.this_())
                                 .return_(ib.this_())
@@ -444,6 +452,7 @@ public class JavaNioAccess {
                         .withReturnType(mbb_id)
                         .withParameters()
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke(VIRTUAL, MethodId.of(direct_buf_id, "loadImpl", mbb_id), ib.this_())
                                 .move_result_object(ib.this_())
                                 .return_object(ib.this_())
@@ -458,6 +467,7 @@ public class JavaNioAccess {
                         .withReturnType(mbb_id)
                         .withParameters()
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke(VIRTUAL, MethodId.of(direct_buf_id, "forceImpl", mbb_id), ib.this_())
                                 .move_result_object(ib.this_())
                                 .return_object(ib.this_())
@@ -472,6 +482,7 @@ public class JavaNioAccess {
                         .withReturnType(mbb_id)
                         .withParameterTypes(TypeId.I, TypeId.I)
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke_range(VIRTUAL, MethodId.of(direct_buf_id, "forceImpl",
                                         mbb_id, TypeId.I, TypeId.I), 3, ib.this_())
                                 .move_result_object(ib.this_())
@@ -492,6 +503,7 @@ public class JavaNioAccess {
                         .withParameterTypes(TypeId.of(byte[].class), TypeId.I,
                                 TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z)
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke_range(DIRECT, MethodId.constructor(nio_heap_buf_id, TypeId.of(byte[].class),
                                                 TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
                                         8, ib.this_())

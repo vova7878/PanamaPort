@@ -664,6 +664,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         .withParameterTypes(TypeId.OBJECT)
                         .withFlags(ACC_PRIVATE | ACC_STATIC)
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .sop(PUT_OBJECT, ib.p(0), scope_id)
                                 .return_void()
                         )
@@ -680,6 +681,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         .withName(java_stub_name)
                         .withProto(java_stub_proto)
                         .withCode(locals, ib -> ib
+                                .generate_lines()
                                 .if_(has_arena, create_arena)
 
                                 .label("try_arena_start")
@@ -1258,6 +1260,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         .withName(method_name)
                         .withProto(stub_proto)
                         .withCode(locals, ib -> ib
+                                .generate_lines()
                                 .label("try_1_start")
                                 .if_(has_arena, create_arena)
                                 .label("try_1_end")

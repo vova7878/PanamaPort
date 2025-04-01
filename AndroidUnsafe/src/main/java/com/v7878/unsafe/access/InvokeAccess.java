@@ -84,10 +84,11 @@ public class InvokeAccess {
                             .withName("realType")
                             .withReturnType(mt)
                             .withParameterTypes(mh)
-                            .withCode(0, ib -> {
-                                ib.iop(GET_OBJECT, ib.p(0), ib.p(0), type_id);
-                                ib.return_object(ib.p(0));
-                            })
+                            .withCode(0, ib -> ib
+                                    .generate_lines()
+                                    .iop(GET_OBJECT, ib.p(0), ib.p(0), type_id)
+                                    .return_object(ib.p(0))
+                            )
                     );
                     // public void realType(MethodHandle handle, MethodType type) {
                     //     handle.type = type;
@@ -97,10 +98,11 @@ public class InvokeAccess {
                             .withName("realType")
                             .withReturnType(TypeId.V)
                             .withParameterTypes(mh, mt)
-                            .withCode(0, ib -> {
-                                ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), type_id);
-                                ib.return_void();
-                            })
+                            .withCode(0, ib -> ib
+                                    .generate_lines()
+                                    .iop(PUT_OBJECT, ib.p(1), ib.p(0), type_id)
+                                    .return_void()
+                            )
                     );
                 })
                 .if_(ART_SDK_INT <= 32, cb2 -> {
@@ -119,10 +121,11 @@ public class InvokeAccess {
                                     .withName("nominalType")
                                     .withReturnType(mt)
                                     .withParameterTypes(mh)
-                                    .withCode(0, ib -> {
-                                        ib.iop(GET_OBJECT, ib.p(0), ib.p(0), nominal_type_id);
-                                        ib.return_object(ib.p(0));
-                                    })
+                                    .withCode(0, ib -> ib
+                                            .generate_lines()
+                                            .iop(GET_OBJECT, ib.p(0), ib.p(0), nominal_type_id)
+                                            .return_object(ib.p(0))
+                                    )
                             );
                             // public void nominalType(MethodHandle handle, MethodType type) {
                             //     handle.nominalType = type;
@@ -132,10 +135,11 @@ public class InvokeAccess {
                                     .withName("nominalType")
                                     .withReturnType(TypeId.V)
                                     .withParameterTypes(mh, mt)
-                                    .withCode(0, ib -> {
-                                        ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), nominal_type_id);
-                                        ib.return_void();
-                                    })
+                                    .withCode(0, ib -> ib
+                                            .generate_lines()
+                                            .iop(PUT_OBJECT, ib.p(1), ib.p(0), nominal_type_id)
+                                            .return_void()
+                                    )
                             );
                         }
                 )
@@ -154,10 +158,11 @@ public class InvokeAccess {
                             .withName("ptypes")
                             .withReturnType(TypeId.of(Class[].class))
                             .withParameterTypes(mt)
-                            .withCode(0, ib -> {
-                                ib.iop(GET_OBJECT, ib.p(0), ib.p(0), ptypes_id);
-                                ib.return_object(ib.p(0));
-                            })
+                            .withCode(0, ib -> ib
+                                    .generate_lines()
+                                    .iop(GET_OBJECT, ib.p(0), ib.p(0), ptypes_id)
+                                    .return_object(ib.p(0))
+                            )
                     );
                 })
         );

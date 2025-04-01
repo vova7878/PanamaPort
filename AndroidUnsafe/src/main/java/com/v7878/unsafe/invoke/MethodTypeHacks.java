@@ -79,6 +79,7 @@ public class MethodTypeHacks {
                         .withReturnType(TypeId.V)
                         .withParameterTypes(TypeId.OBJECT, TypeId.I.array(), TypeId.I.array())
                         .withCode(2, ib -> {
+                            ib.generate_lines();
                             if (DEBUG_BUILD) {
                                 ib.check_cast(ib.p(0), TypeId.of(INVOKE_FORM));
                             }
@@ -101,6 +102,7 @@ public class MethodTypeHacks {
                         .withReturnType(i_arr)
                         .withParameters()
                         .withCode(1, ib -> ib
+                                .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), po_field)
                                 .return_object(ib.l(0))
                         )
@@ -111,6 +113,7 @@ public class MethodTypeHacks {
                         .withReturnType(i_arr)
                         .withParameters()
                         .withCode(1, ib -> ib
+                                .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), ro_field)
                                 .return_object(ib.l(0))
                         )

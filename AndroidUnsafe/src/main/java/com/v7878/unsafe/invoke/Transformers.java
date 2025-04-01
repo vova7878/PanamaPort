@@ -111,6 +111,7 @@ public class Transformers {
                         .withConstructorSignature()
                         .withParameterTypes(mt, TypeId.I, transformer_impl_id)
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .invoke(DIRECT, MethodId.constructor(invoke_transformer_id, mt, TypeId.I),
                                         ib.this_(), ib.p(0), ib.p(1))
                                 .iop(PUT_OBJECT, ib.p(2), ib.this_(), impl_field)
@@ -126,6 +127,7 @@ public class Transformers {
                         .withReturnType(TypeId.V)
                         .withParameterTypes(esf)
                         .withCode(1, ib -> ib
+                                .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(STATIC, MethodId.of(mesf, "wrap",
                                         ProtoId.of(mesf, TypeId.OBJECT)), ib.p(0))
@@ -145,6 +147,7 @@ public class Transformers {
                         .withReturnType(TypeId.Z)
                         .withParameters()
                         .withCode(1, ib -> ib
+                                .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id,
                                                 "isVarargsCollector", ProtoId.of(TypeId.Z, mh)),
@@ -162,6 +165,7 @@ public class Transformers {
                         .withReturnType(mh)
                         .withParameterTypes(TypeId.of(Class.class))
                         .withCode(1, ib -> ib
+                                .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "asVarargsCollector",
                                                 ProtoId.of(mh, mh, TypeId.of(Class.class))),
@@ -179,6 +183,7 @@ public class Transformers {
                         .withReturnType(mh)
                         .withParameters()
                         .withCode(1, ib -> ib
+                                .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "asFixedArity",
                                         ProtoId.of(mh, mh)), ib.l(0), ib.this_())
@@ -195,6 +200,7 @@ public class Transformers {
                         .withReturnType(mh)
                         .withParameterTypes(TypeId.OBJECT)
                         .withCode(1, ib -> ib
+                                .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "bindTo",
                                                 ProtoId.of(mh, mh, TypeId.OBJECT)),
@@ -212,6 +218,7 @@ public class Transformers {
                         .withReturnType(TypeId.of(String.class))
                         .withParameters()
                         .withCode(1, ib -> ib
+                                .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "toString",
                                         ProtoId.of(TypeId.of(String.class), mh)), ib.l(0), ib.this_())
@@ -271,6 +278,8 @@ public class Transformers {
                                 .withReturnType(mh)
                                 .withParameterTypes(mt)
                                 .withCode(2, ib -> ib
+                                        .generate_lines()
+
                                         .invoke(VIRTUAL, type, ib.this_())
                                         .move_result_object(ib.l(0))
                                         .invoke(VIRTUAL, equals, ib.p(0), ib.l(0))
@@ -315,6 +324,7 @@ public class Transformers {
                             .of(asTypeUncached)
                             .withFlags(ACC_PUBLIC | ACC_FINAL)
                             .withCode(1, ib -> ib
+                                    .generate_lines()
                                     .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                     .invoke(VIRTUAL, MethodId.of(TypeId.of(TransformerImpl.class),
                                                     "asTypeUncached", ProtoId.of(mh, mh, mt)),
@@ -348,6 +358,7 @@ public class Transformers {
                         .withReturnType(TypeId.Z)
                         .withParameterTypes(mh)
                         .withCode(0, ib -> ib
+                                .generate_lines()
                                 .instance_of(ib.p(0), ib.p(0), invoke_transformer_id)
                                 .return_(ib.p(0))
                         )
@@ -365,6 +376,7 @@ public class Transformers {
                             .withReturnType(TypeId.V)
                             .withParameterTypes(mh, TypeId.OBJECT)
                             .withCode(0, ib -> ib
+                                    .generate_lines()
                                     .if_(DEBUG_BUILD, ib2 -> ib2
                                             .check_cast(ib.p(1), esf)
                                     )
@@ -386,6 +398,7 @@ public class Transformers {
                         .withReturnType(TypeId.V)
                         .withParameterTypes(mh, TypeId.OBJECT)
                         .withCode(0, ib -> {
+                            ib.generate_lines();
                             if (DEBUG_BUILD) {
                                 ib.check_cast(ib.p(1), esf);
                             }

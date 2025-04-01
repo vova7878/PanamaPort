@@ -286,6 +286,7 @@ public class BulkLinker {
                                 .of(id)
                                 .withFlags(ACC_PUBLIC)
                                 .withCode(locals, ib -> {
+                                    ib.generate_lines();
                                     if (!info.call_type.isStatic && !info.call_type.replaceThis) {
                                         ib.move_object(ib.l(regs[0]++), ib.this_());
                                     }

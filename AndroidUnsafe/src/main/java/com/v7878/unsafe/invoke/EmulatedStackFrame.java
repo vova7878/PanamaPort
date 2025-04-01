@@ -85,6 +85,7 @@ public final class EmulatedStackFrame {
                         .withReturnType(TypeId.OBJECT)
                         .withParameterTypes(mt, TypeId.OBJECT.array(), TypeId.B.array())
                         .withCode(0, ib -> {
+                            ib.generate_lines();
                             ib.new_instance(ib.this_(), esf);
                             ib.iop(PUT_OBJECT, ib.p(0), ib.this_(), type_id);
                             if (ART_SDK_INT <= 32) {
@@ -101,6 +102,7 @@ public final class EmulatedStackFrame {
                         .withReturnType(mt)
                         .withParameterTypes(TypeId.OBJECT)
                         .withCode(0, ib -> {
+                            ib.generate_lines();
                             ib.iop(GET_OBJECT, ib.this_(), ib.p(0), type_id);
                             ib.return_object(ib.this_());
                         })
@@ -111,6 +113,7 @@ public final class EmulatedStackFrame {
                         .withReturnType(TypeId.V)
                         .withParameterTypes(TypeId.OBJECT, mt)
                         .withCode(0, ib -> {
+                            ib.generate_lines();
                             ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), type_id);
                             ib.return_void();
                         })
@@ -121,6 +124,7 @@ public final class EmulatedStackFrame {
                         .withReturnType(TypeId.OBJECT.array())
                         .withParameterTypes(TypeId.OBJECT)
                         .withCode(0, ib -> {
+                            ib.generate_lines();
                             ib.iop(GET_OBJECT, ib.this_(), ib.p(0), references_id);
                             ib.return_object(ib.this_());
                         })
@@ -131,6 +135,7 @@ public final class EmulatedStackFrame {
                         .withReturnType(TypeId.V)
                         .withParameterTypes(TypeId.OBJECT, TypeId.OBJECT.array())
                         .withCode(0, ib -> {
+                            ib.generate_lines();
                             ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), references_id);
                             ib.return_void();
                         })
@@ -141,6 +146,7 @@ public final class EmulatedStackFrame {
                         .withReturnType(TypeId.B.array())
                         .withParameterTypes(TypeId.OBJECT)
                         .withCode(0, ib -> {
+                            ib.generate_lines();
                             ib.iop(GET_OBJECT, ib.this_(), ib.p(0), primitives_id);
                             ib.return_object(ib.this_());
                         })
@@ -151,6 +157,7 @@ public final class EmulatedStackFrame {
                         .withReturnType(TypeId.V)
                         .withParameterTypes(TypeId.OBJECT, TypeId.B.array())
                         .withCode(0, ib -> {
+                            ib.generate_lines();
                             ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), primitives_id);
                             ib.return_void();
                         })
