@@ -1,6 +1,6 @@
 ## About
 
-`PanamaPort` is a library implementing the [Foreign Function & Memory API](https://openjdk.org/jeps/454) from JDK 22+ for Android since Oreo (API level 26)
+`PanamaPort` is a library implementing the [Foreign Function & Memory API](https://openjdk.org/jeps/454) for Android 8.0+ (API level 26)
 
 ### Components
 
@@ -9,7 +9,7 @@ The project contains 4 sublibraries:
 - AndroidPanama - the entire public API and implementation of the Panama project
 - AndroidUnsafe - low-level implementation details and additional capabilities not provided by the original API
 - LLVM - bindings to the built-in libLLVM.so Android library
-- VarHandleApi - backport of java.lang.invoke.VarHandle which didn't exist in android 8.0
+- VarHandleApi - backport of java.lang.invoke.VarHandle which didn't exist in android 8.x
 
 ### Requirements
 
@@ -33,7 +33,7 @@ For example:
 
 ```
 dependencies {
-    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.7-preview'
+    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.8-preview'
 }
 ```
 
