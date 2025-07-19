@@ -12,5 +12,5 @@ android {
 }
 
 dependencies {
-    compileOnly project(':fake_panama')
+    compileOnly project(':stub_panama')
 }

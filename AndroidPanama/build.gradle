@@ -23,8 +23,7 @@ android {
 }
 
 dependencies {
-    compileOnly project(':fake_llvm')
-
+    compileOnly project(':stub_llvm')
     api project(':VarHandleApi')
 
     implementation project(':AndroidUnsafe')

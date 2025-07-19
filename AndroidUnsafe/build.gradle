@@ -27,9 +27,9 @@ android {
 }
 
 dependencies {
-    compileOnly project(':fake_buffers')
-    compileOnly project(':fake_panama')
-    compileOnly project(':fake_llvm')
+    compileOnly project(':stub_buffers')
+    compileOnly project(':stub_panama')
+    compileOnly project(':stub_llvm')
 
     api libs.dexfile
 
