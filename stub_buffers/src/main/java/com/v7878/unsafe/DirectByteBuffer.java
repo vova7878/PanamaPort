@@ -47,34 +47,8 @@ public abstract class DirectByteBuffer extends FakeMappedByteBuffer {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    // TODO: use raung bytecode generation
-    // Runtime generated methods to bypass presence of the final modifier
-
-    protected abstract boolean isLoadedImpl();
-
-    protected abstract MappedByteBuffer loadImpl();
-
-    protected abstract MappedByteBuffer forceImpl();
-
-    protected abstract MappedByteBuffer forceImpl(int index, int length);
-
-    protected final boolean isLoadedSuper() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    protected final MappedByteBuffer loadSuper() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    protected final MappedByteBuffer forceSuper() {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
-    protected final MappedByteBuffer forceSuper(int index, int length) {
-        throw new UnsupportedOperationException("Stub!");
-    }
-
     // from java.nio.MappedByteBuffer
+
     public final FileDescriptor fd;
 
     // from java.nio.Buffer

@@ -3,7 +3,6 @@ package com.v7878.unsafe.access;
 import static com.v7878.unsafe.access.JavaForeignAccess.lock;
 
 import com.v7878.foreign.MemorySegment.Scope;
-import com.v7878.unsafe.DirectByteBuffer;
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.io.FileDescriptor;
@@ -11,7 +10,8 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Objects;
 
-class DirectSegmentByteBuffer extends DirectByteBuffer {
+class DirectSegmentByteBuffer extends DirectSegmentByteBufferBase {
+
     static class SegmentMemoryRef extends MemoryRef {
         public SegmentMemoryRef(long allocatedAddress, Object obj) {
             super(allocatedAddress, obj);

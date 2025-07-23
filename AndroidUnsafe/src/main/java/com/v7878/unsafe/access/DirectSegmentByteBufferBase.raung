@@ -1,0 +1,81 @@
+.version 52
+.class public com/v7878/unsafe/access/DirectSegmentByteBufferBase
+.super com/v7878/unsafe/DirectByteBuffer
+.auto frames
+
+.method public <init>(Lcom/v7878/unsafe/DirectByteBuffer$MemoryRef;IIIIIZ)V
+    aload 0
+    aload 1
+    iload 2
+    iload 3
+    iload 4
+    iload 5
+    iload 6
+    iload 7
+    invokespecial com/v7878/unsafe/DirectByteBuffer <init> (Lcom/v7878/unsafe/DirectByteBuffer$MemoryRef;IIIIIZ)V
+    return
+.end method
+
+.method protected abstract isLoadedImpl()Z
+.end method
+
+.method protected abstract loadImpl()Ljava/nio/MappedByteBuffer;
+.end method
+
+.method protected abstract forceImpl()Ljava/nio/MappedByteBuffer;
+.end method
+
+.method protected abstract forceImpl(II)Ljava/nio/MappedByteBuffer;
+.end method
+
+.method protected isLoadedSuper()Z
+    aload 0
+    invokespecial com/v7878/unsafe/DirectByteBuffer isLoaded ()Z
+    ireturn
+.end method
+
+.method protected loadSuper()Ljava/nio/MappedByteBuffer;
+    aload 0
+    invokespecial com/v7878/unsafe/DirectByteBuffer load ()Ljava/nio/MappedByteBuffer;
+    areturn
+.end method
+
+.method protected forceSuper()Ljava/nio/MappedByteBuffer;
+    aload 0
+    invokespecial com/v7878/unsafe/DirectByteBuffer force ()Ljava/nio/MappedByteBuffer;
+    areturn
+.end method
+
+.method protected forceSuper(II)Ljava/nio/MappedByteBuffer;
+    aload 0
+    iload 1
+    iload 2
+    invokespecial com/v7878/unsafe/DirectByteBuffer force (II)Ljava/nio/MappedByteBuffer;
+    areturn
+.end method
+
+.method public final isLoaded()Z
+    aload 0
+    invokevirtual com/v7878/unsafe/access/DirectSegmentByteBufferBase isLoadedImpl ()Z
+    ireturn
+.end method
+
+.method public final load()Ljava/nio/MappedByteBuffer;
+    aload 0
+    invokevirtual com/v7878/unsafe/access/DirectSegmentByteBufferBase loadImpl ()Ljava/nio/MappedByteBuffer;
+    areturn
+.end method
+
+.method public final force()Ljava/nio/MappedByteBuffer;
+    aload 0
+    invokevirtual com/v7878/unsafe/access/DirectSegmentByteBufferBase forceImpl ()Ljava/nio/MappedByteBuffer;
+    areturn
+.end method
+
+.method public final force(II)Ljava/nio/MappedByteBuffer;
+    aload 0
+    iload 1
+    iload 2
+    invokevirtual com/v7878/unsafe/access/DirectSegmentByteBufferBase forceImpl (II)Ljava/nio/MappedByteBuffer;
+    areturn
+.end method

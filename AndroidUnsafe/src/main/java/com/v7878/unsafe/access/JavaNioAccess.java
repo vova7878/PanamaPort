@@ -3,11 +3,9 @@ package com.v7878.unsafe.access;
 import static com.v7878.dex.DexConstants.ACC_ABSTRACT;
 import static com.v7878.dex.DexConstants.ACC_CONSTRUCTOR;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
-import static com.v7878.dex.DexConstants.ACC_PROTECTED;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.builder.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.builder.CodeBuilder.InvokeKind.SUPER;
-import static com.v7878.dex.builder.CodeBuilder.InvokeKind.VIRTUAL;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_BASE_OFFSET;
@@ -148,8 +146,6 @@ public class JavaNioAccess {
         TypeId nio_mem_ref_id = TypeId.ofName(nio_mem_ref_name);
         String nio_heap_buf_name = "java.nio.HeapByteBuffer";
         TypeId nio_heap_buf_id = TypeId.ofName(nio_heap_buf_name);
-
-        TypeId mbb_id = TypeId.of(MappedByteBuffer.class);
 
         Class<?> nio_mem_ref_class = nothrows_run(() -> Class.forName(nio_mem_ref_name));
         {
@@ -337,156 +333,6 @@ public class JavaNioAccess {
                                 .move_result_object(ib.l(0))
                                 .check_cast(ib.l(0), mem_ref_id)
                                 .return_object(ib.l(0))
-                        )
-                )
-                // protected abstract boolean isLoadedImpl();
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PROTECTED | ACC_ABSTRACT)
-                        .withName("isLoadedImpl")
-                        .withReturnType(TypeId.Z)
-                        .withParameters()
-                )
-                // protected abstract MappedByteBuffer loadImpl();
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PROTECTED | ACC_ABSTRACT)
-                        .withName("loadImpl")
-                        .withReturnType(mbb_id)
-                        .withParameters()
-                )
-                // protected abstract MappedByteBuffer forceImpl();
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PROTECTED | ACC_ABSTRACT)
-                        .withName("forceImpl")
-                        .withReturnType(mbb_id)
-                        .withParameters()
-                )
-                // protected abstract MappedByteBuffer forceImpl(int index, int length);
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PROTECTED | ACC_ABSTRACT)
-                        .withName("forceImpl")
-                        .withReturnType(mbb_id)
-                        .withParameterTypes(TypeId.I, TypeId.I)
-                )
-                // protected final boolean isLoadedSuper() {
-                //     return super.isLoaded();
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PROTECTED | ACC_FINAL)
-                        .withName("isLoadedSuper")
-                        .withReturnType(TypeId.Z)
-                        .withParameters()
-                        .withCode(0, ib -> ib
-                                .generate_lines()
-                                .invoke(SUPER, MethodId.of(nio_direct_buf_id, "isLoaded", TypeId.Z), ib.this_())
-                                .move_result(ib.this_())
-                                .return_(ib.this_())
-                        )
-                )
-                // protected final MappedByteBuffer loadSuper() {
-                //     return super.load();
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PROTECTED | ACC_FINAL)
-                        .withName("loadSuper")
-                        .withReturnType(mbb_id)
-                        .withParameters()
-                        .withCode(0, ib -> ib
-                                .generate_lines()
-                                .invoke(SUPER, MethodId.of(nio_direct_buf_id, "load", mbb_id), ib.this_())
-                                .move_result_object(ib.this_())
-                                .return_object(ib.this_())
-                        )
-                )
-                // protected final MappedByteBuffer forceSuper() {
-                //     return super.force();
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PROTECTED | ACC_FINAL)
-                        .withName("forceSuper")
-                        .withReturnType(mbb_id)
-                        .withParameters()
-                        .withCode(0, ib -> ib
-                                .generate_lines()
-                                .invoke(SUPER, MethodId.of(nio_direct_buf_id, "force", mbb_id), ib.this_())
-                                .move_result_object(ib.this_())
-                                .return_object(ib.this_())
-                        )
-                )
-                // protected final MappedByteBuffer forceSuper(int index, int length) {
-                //     return super.force(index, length);
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PROTECTED | ACC_FINAL)
-                        .withName("forceSuper")
-                        .withReturnType(mbb_id)
-                        .withParameterTypes(TypeId.I, TypeId.I)
-                        .withCode(0, ib -> ib
-                                .generate_lines()
-                                .invoke_range(SUPER, MethodId.of(nio_direct_buf_id, "force",
-                                        mbb_id, TypeId.I, TypeId.I), 3, ib.this_())
-                                .move_result_object(ib.this_())
-                                .return_object(ib.this_())
-                        )
-                )
-                // public final boolean isLoaded() {
-                //     return isLoadedImpl();
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("isLoaded")
-                        .withReturnType(TypeId.Z)
-                        .withParameters()
-                        .withCode(0, ib -> ib
-                                .generate_lines()
-                                .invoke(VIRTUAL, MethodId.of(direct_buf_id, "isLoadedImpl", TypeId.Z), ib.this_())
-                                .move_result(ib.this_())
-                                .return_(ib.this_())
-                        )
-                )
-                // public final MappedByteBuffer load() {
-                //     return loadImpl();
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("load")
-                        .withReturnType(mbb_id)
-                        .withParameters()
-                        .withCode(0, ib -> ib
-                                .generate_lines()
-                                .invoke(VIRTUAL, MethodId.of(direct_buf_id, "loadImpl", mbb_id), ib.this_())
-                                .move_result_object(ib.this_())
-                                .return_object(ib.this_())
-                        )
-                )
-                // public final MappedByteBuffer force() {
-                //     return forceImpl();
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("force")
-                        .withReturnType(mbb_id)
-                        .withParameters()
-                        .withCode(0, ib -> ib
-                                .generate_lines()
-                                .invoke(VIRTUAL, MethodId.of(direct_buf_id, "forceImpl", mbb_id), ib.this_())
-                                .move_result_object(ib.this_())
-                                .return_object(ib.this_())
-                        )
-                )
-                // public final MappedByteBuffer force(int index, int length) {
-                //     return forceImpl(index, length);
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("force")
-                        .withReturnType(mbb_id)
-                        .withParameterTypes(TypeId.I, TypeId.I)
-                        .withCode(0, ib -> ib
-                                .generate_lines()
-                                .invoke_range(VIRTUAL, MethodId.of(direct_buf_id, "forceImpl",
-                                        mbb_id, TypeId.I, TypeId.I), 3, ib.this_())
-                                .move_result_object(ib.this_())
-                                .return_object(ib.this_())
                         )
                 )
         );
