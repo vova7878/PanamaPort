@@ -1,0 +1,8 @@
+.version 52
+.class public com/v7878/unsafe/FakeHeapByteBuffer
+.super java/nio/ByteBuffer
+.auto frames
+
+.method public <init>()V
+    return
+.end method
