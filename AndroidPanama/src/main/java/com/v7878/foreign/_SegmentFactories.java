@@ -27,8 +27,6 @@
 
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.Utils.shouldNotReachHere;
-
 import com.v7878.foreign._HeapMemorySegmentImpl.OfByte;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfChar;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfDouble;
@@ -38,12 +36,10 @@ import com.v7878.foreign._HeapMemorySegmentImpl.OfLong;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfObject;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfShort;
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
-import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
-import com.v7878.unsafe.cpp_std.MemoryOperators;
 
 import java.util.Objects;
 
@@ -177,62 +173,61 @@ final class _SegmentFactories {
         return new OfDouble(offset, base, length, readOnly, bufferScope);
     }
 
-    public static _NativeMemorySegmentImpl allocateSegment(long byteSize, long byteAlignment,
-                                                           _MemorySessionImpl sessionImpl, boolean use_new) {
+    public static _NativeMemorySegmentImpl allocateNativeSegment(
+            long byteSize, long byteAlignment, _MemorySessionImpl sessionImpl, boolean init) {
+        long address = allocateNativeInternal(byteSize, byteAlignment, sessionImpl, init);
+        return new _NativeMemorySegmentImpl(address, byteSize, false, sessionImpl);
+    }
+
+    private static long allocateNativeInternal(long byteSize, long byteAlignment,
+                                               _MemorySessionImpl sessionImpl, boolean init) {
+        _Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         sessionImpl.checkValidState();
-        //TODO
+
+        // TODO?
         //if (VM.isDirectMemoryPageAligned()) {
         //    byteAlignment = Math.max(byteAlignment, AndroidUnsafe.pageSize());
         //}
-        if (use_new) {
-            byteSize = Math.max(1L, byteSize);
-            long buf = allocateMemoryWrapperOperatorNew(byteSize, byteAlignment);
-            if (!_Utils.isAligned(buf, byteAlignment)) {
-                throw shouldNotReachHere();
-            }
-            _NativeMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
-                    buf, byteSize, false, sessionImpl);
-            sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
-                @Override
-                public void cleanup() {
-                    MemoryOperators.delete(buf, byteAlignment);
-                }
-            });
-            return segment;
-        } else {
-            long alignedSize = Math.max(1L, byteAlignment > MAX_MALLOC_ALIGN ?
-                    byteSize + (byteAlignment - 1) : byteSize);
 
-            long buf = allocateMemoryWrapperMalloc(alignedSize);
-            long alignedBuf = _Utils.alignUp(buf, byteAlignment);
-            _NativeMemorySegmentImpl segment = new _NativeMemorySegmentImpl(
-                    buf, alignedSize, false, sessionImpl);
-            sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
-                @Override
-                public void cleanup() {
-                    AndroidUnsafe.freeMemory(buf);
-                }
-            });
-            if (alignedSize != byteSize) {
-                long delta = alignedBuf - buf;
-                segment = (_NativeMemorySegmentImpl) segment.asSlice(delta, byteSize);
-            }
-            return segment;
+        long allocationSize;
+        long allocationBase;
+        long result;
+
+        if (byteAlignment > MAX_MALLOC_ALIGN) {
+            allocationSize = byteSize + byteAlignment - MAX_MALLOC_ALIGN;
+
+            allocationBase = allocateMemoryWrapper(allocationSize);
+            result = _Utils.alignUp(allocationBase, byteAlignment);
+        } else {
+            allocationSize = byteSize;
+
+            allocationBase = allocateMemoryWrapper(allocationSize);
+            result = allocationBase;
         }
+
+        if (init) {
+            initNativeMemory(result, byteSize);
+        }
+
+        sessionImpl.addOrCleanupIfFail(new ResourceCleanup() {
+            @Override
+            public void cleanup() {
+                AndroidUnsafe.freeMemory(allocationBase);
+            }
+        });
+        return result;
     }
 
-    @AlwaysInline
-    private static long allocateMemoryWrapperMalloc(long size) {
+    private static void initNativeMemory(long address, long byteSize) {
+        AndroidUnsafe.setMemory(address, byteSize, (byte) 0);
+    }
+
+    private static long allocateMemoryWrapper(long size) {
         try {
             return AndroidUnsafe.allocateMemory(size);
         } catch (IllegalArgumentException ex) {
             throw new OutOfMemoryError();
         }
-    }
-
-    @AlwaysInline
-    private static long allocateMemoryWrapperOperatorNew(long size, long alignment) {
-        return MemoryOperators.new_(size, alignment);
     }
 
     public static _MappedMemorySegmentImpl mapSegment(UnmapperProxy unmapper, long size,

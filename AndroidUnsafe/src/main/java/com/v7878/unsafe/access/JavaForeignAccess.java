@@ -73,19 +73,17 @@ public abstract class JavaForeignAccess {
         return INSTANCE._makeNativeSegmentUnchecked(min, byteSize, readOnly, scope, action);
     }
 
-    protected abstract MemorySegment _allocateNoInit(
-            long byteSize, long byteAlignment, Arena scope,
-            boolean use_operator_new_instead_of_malloc);
+    protected abstract MemorySegment _allocateNativeSegment(
+            long byteSize, long byteAlignment, Arena scope, boolean init);
 
-    public static MemorySegment allocateNoInit(
-            long byteSize, long byteAlignment, Arena scope,
-            boolean use_operator_new_instead_of_malloc) {
-        return INSTANCE._allocateNoInit(byteSize, byteAlignment,
-                scope, use_operator_new_instead_of_malloc);
+    public static MemorySegment allocateNativeSegment(
+            long byteSize, long byteAlignment, Arena scope, boolean init) {
+        return INSTANCE._allocateNativeSegment(byteSize,
+                byteAlignment, scope, init);
     }
 
     public static MemorySegment allocateNoInit(long byteSize, long byteAlignment, Arena scope) {
-        return allocateNoInit(byteSize, byteAlignment, scope, false);
+        return allocateNativeSegment(byteSize, byteAlignment, scope, false);
     }
 
     protected abstract MemorySegment _mapSegment(UnmapperProxy unmapper, long size, boolean readOnly, Arena scope);

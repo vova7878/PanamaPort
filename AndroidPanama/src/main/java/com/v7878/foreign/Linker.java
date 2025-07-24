@@ -30,9 +30,7 @@ package com.v7878.foreign;
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -834,10 +832,11 @@ public sealed interface Linker permits _AbstractAndroidLinker {
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
-            Set<_CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
+            int set = Stream.of(Objects.requireNonNull(capturedState))
                     .map(Objects::requireNonNull)
                     .map(_CapturableState::forName)
-                    .collect(Collectors.toSet());
+                    .mapToInt(state -> 1 << state.ordinal())
+                    .sum();
             return new _LinkerOptions.CaptureCallState(set);
         }
 

@@ -154,8 +154,19 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     // Using a static helper method ensures there is no unintended lambda capturing of `this`
     private static Runnable cleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) {
-        return cleanup == null ? null : () -> cleanup.accept(
-                _SegmentFactories.makeNativeSegmentUnchecked(address, newSize));
+        record CleanupAction(long address, long newSize,
+                             Consumer<MemorySegment> cleanup) implements Runnable {
+            @Override
+            public void run() {
+                cleanup().accept(_SegmentFactories.makeNativeSegmentUnchecked(address(), newSize()));
+            }
+        }
+
+        return cleanup != null
+                // Use a record (which is always static) instead of a lambda to avoid
+                // capturing and to enable early use in the init sequence.
+                ? new CleanupAction(address, newSize, cleanup)
+                : null;
     }
 
     private _AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {

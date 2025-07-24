@@ -31,6 +31,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT;
 
 import com.v7878.unsafe.foreign.Errno;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +42,11 @@ enum _CapturableState {
 
     public static final StructLayout LAYOUT = MemoryLayout.structLayout(
             supportedStates().map(_CapturableState::layout).toArray(MemoryLayout[]::new));
+    public static final List<_CapturableState> BY_ORDINAL = List.of(values());
+
+    static {
+        assert (BY_ORDINAL.size() < Integer.SIZE); // Update LinkerOptions.CaptureCallState
+    }
 
     static {
         // Init errno

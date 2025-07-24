@@ -2794,13 +2794,10 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
             }
 
             @Override
-            protected MemorySegment _allocateNoInit(
-                    long byteSize, long byteAlignment, Arena scope,
-                    boolean use_operator_new_instead_of_malloc) {
-                Objects.requireNonNull(scope);
-                _Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-                return _SegmentFactories.allocateSegment(byteSize, byteAlignment,
-                        _MemorySessionImpl.toMemorySession(scope), use_operator_new_instead_of_malloc);
+            protected MemorySegment _allocateNativeSegment(
+                    long byteSize, long byteAlignment, Arena scope, boolean init) {
+                return _SegmentFactories.allocateNativeSegment(byteSize, byteAlignment,
+                        _MemorySessionImpl.toMemorySession(scope), init);
             }
 
             @Override
