@@ -36,6 +36,7 @@ import com.v7878.foreign._HeapMemorySegmentImpl.OfLong;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfObject;
 import com.v7878.foreign._HeapMemorySegmentImpl.OfShort;
 import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.VM;
@@ -218,10 +219,12 @@ final class _SegmentFactories {
         return result;
     }
 
+    @AlwaysInline
     private static void initNativeMemory(long address, long byteSize) {
         AndroidUnsafe.setMemory(address, byteSize, (byte) 0);
     }
 
+    @AlwaysInline
     private static long allocateMemoryWrapper(long size) {
         try {
             return AndroidUnsafe.allocateMemory(size);
