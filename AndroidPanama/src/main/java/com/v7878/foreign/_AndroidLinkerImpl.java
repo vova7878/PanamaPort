@@ -17,7 +17,6 @@ import static com.v7878.foreign.ValueLayout.OfDouble;
 import static com.v7878.foreign.ValueLayout.OfFloat;
 import static com.v7878.foreign.ValueLayout.OfInt;
 import static com.v7878.foreign.ValueLayout.OfLong;
-import static com.v7878.foreign._CapturableState.ERRNO;
 import static com.v7878.llvm.Core.LLVMAddAttributeAtIndex;
 import static com.v7878.llvm.Core.LLVMAddCallSiteAttribute;
 import static com.v7878.llvm.Core.LLVMAddFunction;
@@ -136,6 +135,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     }
 
     public static final Linker INSTANCE = new _AndroidLinkerImpl();
+
+    private static final int ERRNO_MASK = _CapturableState.maskFromName("errno");
     private static final VarHandle VH_ERRNO = _CapturableState.LAYOUT.varHandle(groupElement("errno"));
 
     private static Class<?> carrierTypeFor(MemoryLayout layout) {
@@ -463,11 +464,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             out.append(var_index);
         }
         if (options.hasCapturedCallState()) {
-            out.append("_state");
-            options.capturedCallState().forEach(state -> {
-                out.append("$");
-                out.append(state.stateName());
-            });
+            out.append("_state$");
+            out.append(options.capturedCallStateMask());
         }
         if (options.isCritical()) {
             out.append("_critical");
@@ -505,6 +503,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         ResourceCleanup.ofRunnable(session::release0));
                 return segment;
             } else {
+                // TODO? BufferStack
+                //  https://github.com/openjdk/jdk/commit/9f9e73d5f9fcb5e926a2674c54cbbc92012b75f6#diff-80063aaf72a19fa27f001c17fc7687086ea71b35b01f5e2b3fcd7f50d8c682fb
                 MemorySegment tmp = arena.allocate(size, align);
                 // by-value struct
                 MemorySegment.copy(segment, 0, tmp, 0, size);
@@ -574,10 +574,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         boolean heap_access = options.allowsHeapAccess();
 
-        int capturedStateMask = options.capturedCallState()
-                .mapToInt(_CapturableState::mask)
-                .reduce(0, (a, b) -> a | b)
-                | (options.hasCapturedCallState() ? 1 << 31 : 0);
+        int capturedStateMask = options.capturedCallStateMask();
 
         MemoryLayout[] args = descriptor.argumentLayouts().toArray(new MemoryLayout[0]);
         MemoryLayout ret = descriptor.returnLayoutPlain();
@@ -809,7 +806,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                                 ib2.l(native_ret_reg))
                                 )
 
-                                .if_((capturedStateMask & ERRNO.mask()) != 0, ib2 -> ib2
+                                .if_((capturedStateMask & ERRNO_MASK) != 0, ib2 -> ib2
                                         .invoke_range(STATIC, put_errno_id, 1, ib2.p(state_arg[0]))
                                 )
 
@@ -1142,6 +1139,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
 
         public static MemorySegment makeSegment(long addr, long size, long align, _MemorySessionImpl scope) {
+            if (scope == null) {
+                scope = _GlobalSession.INSTANCE;
+            }
             return _Utils.makeSegment(addr, size, align, scope);
         }
 
@@ -1226,8 +1226,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         int target_ins = target_proto.countInputRegisters();
 
         var check_exceptions = !options.allowExceptions();
-        var has_arena = Stream.of(args).anyMatch(layout ->
-                layout instanceof AddressLayout || layout instanceof GroupLayout);
+        var has_arena = Stream.of(args).anyMatch(
+                layout -> layout instanceof GroupLayout);
 
         int[] reserved = {7};
         int arena_reg = has_arena ? reserved[0]++ : -1;
@@ -1297,13 +1297,15 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                                 MemoryLayout target = al.targetLayout().orElse(null);
                                                 size = target == null ? 0 : target.byteSize();
                                                 align = target == null ? 1 : target.byteAlignment();
+                                                // null for global scope
+                                                ib2.const_(ib2.l(6), 0);
                                             } else {
                                                 size = arg.byteSize();
                                                 align = arg.byteAlignment();
+                                                ib2.move_object(ib2.l(6), arena_reg);
                                             }
                                             ib2.const_wide(ib2.l(2), size);
                                             ib2.const_wide(ib2.l(4), align);
-                                            ib2.move_object(ib2.l(6), arena_reg);
                                             ib2.invoke_range(STATIC, make_segment_id, 7, ib2.l(0));
                                             ib2.move_result_object(ib2.l(0));
                                             ib2.move_object(ib2.l(regs[0]++), ib2.l(0));

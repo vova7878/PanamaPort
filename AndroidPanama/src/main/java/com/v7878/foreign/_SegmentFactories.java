@@ -190,6 +190,14 @@ final class _SegmentFactories {
         //    byteAlignment = Math.max(byteAlignment, AndroidUnsafe.pageSize());
         //}
 
+        // Check for wrap around
+        if (byteSize < 0) {
+            throw new OutOfMemoryError();
+        }
+        // Always allocate at least some memory so that zero-length segments have distinct
+        // non-zero addresses.
+        byteSize = Math.max(1, byteSize);
+
         long allocationSize;
         long allocationBase;
         long result;

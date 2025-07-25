@@ -29,71 +29,49 @@ package com.v7878.foreign;
 
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 
-import com.v7878.unsafe.foreign.Errno;
+import java.util.ArrayList;
+import java.util.Map;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-enum _CapturableState {
-    GET_LAST_ERROR("GetLastError", JAVA_INT, 1, false),
-    WSA_GET_LAST_ERROR("WSAGetLastError", JAVA_INT, 1 << 1, false),
-    ERRNO("errno", JAVA_INT, 1 << 2, true);
-
-    public static final StructLayout LAYOUT = MemoryLayout.structLayout(
-            supportedStates().map(_CapturableState::layout).toArray(MemoryLayout[]::new));
-    public static final List<_CapturableState> BY_ORDINAL = List.of(values());
+final class _CapturableState {
+    public static final StructLayout LAYOUT;
+    private static final Map<String, Integer> MASKS;
 
     static {
-        assert (BY_ORDINAL.size() < Integer.SIZE); // Update LinkerOptions.CaptureCallState
+        LAYOUT = MemoryLayout.structLayout(
+                JAVA_INT.withName("errno"));
+        MASKS = Map.of(
+                "errno", 1 << 2
+        );
     }
 
-    static {
-        // Init errno
-        Errno.errno();
+    private _CapturableState() {
     }
 
-    private final String stateName;
-    private final ValueLayout layout;
-    private final int mask;
-    private final boolean isSupported;
-
-    _CapturableState(String stateName, ValueLayout layout, int mask, boolean isSupported) {
-        this.stateName = stateName;
-        this.layout = layout.withName(stateName);
-        this.mask = mask;
-        this.isSupported = isSupported;
+    /**
+     * Returns the mask for a supported capturable state, or throw an
+     * IllegalArgumentException if no supported state with this name exists.
+     */
+    public static int maskFromName(String name) {
+        var ret = MASKS.get(name);
+        if (ret == null) {
+            throw new IllegalArgumentException(
+                    "Unknown name: " + name + ", must be one of: "
+                            + MASKS.keySet());
+        }
+        return ret;
     }
 
-    private static Stream<_CapturableState> supportedStates() {
-        return Stream.of(values()).filter(_CapturableState::isSupported);
-    }
-
-    public static _CapturableState forName(String name) {
-        return Stream.of(values())
-                .filter(stl -> stl.stateName().equals(name))
-                .filter(_CapturableState::isSupported)
-                .findAny()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Unknown name: " + name + ", must be one of: "
-                                + supportedStates()
-                                .map(_CapturableState::stateName)
-                                .collect(Collectors.joining(", "))));
-    }
-
-    public String stateName() {
-        return stateName;
-    }
-
-    public ValueLayout layout() {
-        return layout;
-    }
-
-    public int mask() {
-        return mask;
-    }
-
-    public boolean isSupported() {
-        return isSupported;
+    /**
+     * Returns a collection-like display string for a captured state mask.
+     * Enclosed with brackets.
+     */
+    public static String displayString(int mask) {
+        var displayList = new ArrayList<>(); // unordered
+        for (var e : MASKS.entrySet()) {
+            if ((mask & e.getValue()) != 0) {
+                displayList.add(e.getKey());
+            }
+        }
+        return displayList.toString();
     }
 }

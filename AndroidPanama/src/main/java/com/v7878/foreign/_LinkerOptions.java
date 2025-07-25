@@ -30,14 +30,11 @@ package com.v7878.foreign;
 import com.v7878.foreign.Linker.Option;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.stream.Stream;
 
 final class _LinkerOptions {
     private static final _LinkerOptions EMPTY = new _LinkerOptions(Map.of());
@@ -91,9 +88,9 @@ final class _LinkerOptions {
         return getOption(CaptureCallState.class) != null;
     }
 
-    public Stream<_CapturableState> capturedCallState() {
-        var stl = getOption(CaptureCallState.class);
-        return stl == null ? Stream.empty() : stl.saved().stream();
+    public int capturedCallStateMask() {
+        CaptureCallState stl = getOption(CaptureCallState.class);
+        return stl == null ? 0 : (stl.mask() | (1 << 31));
     }
 
     public boolean isVariadicFunction() {
@@ -190,24 +187,15 @@ final class _LinkerOptions {
         }
     }
 
-    public record CaptureCallState(int compact) implements LinkerOptionImpl {
+    public record CaptureCallState(int mask) implements LinkerOptionImpl {
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // done during construction
         }
 
-        public Set<_CapturableState> saved() {
-            var set = EnumSet.noneOf(_CapturableState.class);
-            int mask = compact;
-            int i = 0;
-            while (mask != 0) {
-                if ((mask & 1) == 1) {
-                    set.add(_CapturableState.BY_ORDINAL.get(i));
-                }
-                mask >>= 1;
-                i++;
-            }
-            return set;
+        @Override
+        public String toString() {
+            return "CaptureCallState" + _CapturableState.displayString(mask);
         }
     }
 
