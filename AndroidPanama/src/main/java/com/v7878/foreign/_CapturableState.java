@@ -29,6 +29,8 @@ package com.v7878.foreign;
 
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 
+import com.v7878.unsafe.foreign.Errno;
+
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -42,6 +44,8 @@ final class _CapturableState {
         MASKS = Map.of(
                 "errno", 1 << 2
         );
+        // Init errno
+        Errno.errno();
     }
 
     private _CapturableState() {
