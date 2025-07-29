@@ -9,6 +9,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
+import static com.v7878.unsafe.AndroidUnsafe.getShortN;
 import static com.v7878.unsafe.AndroidUnsafe.getWordN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordN;
@@ -163,6 +164,20 @@ public class ArtMethodUtils {
         }
         ClassUtils.ensureClassInitialized(m.getDeclaringClass());
         setExecutableData(m, data);
+    }
+
+    // Entry within a dispatch table for this method. For static/direct methods the index is into
+    // the declaringClass.directMethods, for virtual methods the vtable and for interface methods the
+    // ifTable.
+    private static final long DISPATCH_TABLE_INDEX_OFFSET = ARTMETHOD_LAYOUT
+            .byteOffset(groupElement("method_index_"));
+
+    public static int getDispatchTableIndex(long art_method) {
+        return getShortN(art_method + DISPATCH_TABLE_INDEX_OFFSET) & 0xffff;
+    }
+
+    public static int getDispatchTableIndex(Executable ex) {
+        return getDispatchTableIndex(getArtMethod(ex));
     }
 
     private static final long ACCESS_FLAGS_OFFSET = ARTMETHOD_LAYOUT

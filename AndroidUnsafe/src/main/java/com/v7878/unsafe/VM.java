@@ -240,6 +240,26 @@ public class VM {
         putWordO(clazz, VTABLE_OFFSET + (long) index * ADDRESS_SIZE, art_method);
     }
 
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static /* PointerArray */ Object getVTable(Class<?> clazz) {
+        return Reflection.getVTable(clazz);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setVTable(Class<?> clazz, Object /* PointerArray */ vtable) {
+        Reflection.setVTable(clazz, vtable);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static /* IfTable */ Object[] getIFTable(Class<?> clazz) {
+        return Reflection.getIFTable(clazz);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setIFTable(Class<?> clazz, Object[] /* IfTable */ ifTable) {
+        Reflection.setIFTable(clazz, ifTable);
+    }
+
     public static boolean isCompressedString(String s) {
         var mirror = new StringMirror[1];
         fillArray(mirror, s);
