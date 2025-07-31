@@ -1,7 +1,13 @@
 .version 52
-.class public com/v7878/unsafe/access/DirectSegmentByteBufferBase
+.class public abstract com/v7878/unsafe/access/DirectSegmentByteBufferBase
 .super com/v7878/unsafe/DirectByteBuffer
 .auto frames
+
+.annotation build Lcom/v7878/r8/annotations/DoNotShrink;
+.end annotation
+
+.annotation build Lcom/v7878/r8/annotations/DoNotObfuscate;
+.end annotation
 
 .method public <init>(Lcom/v7878/unsafe/DirectByteBuffer$MemoryRef;IIIIIZ)V
     aload 0

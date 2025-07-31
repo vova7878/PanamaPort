@@ -49,7 +49,10 @@ import com.v7878.dex.immutable.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.ApiSensitive;
+import com.v7878.unsafe.ArtMethodUtils;
 import com.v7878.unsafe.DangerLevel;
+import com.v7878.unsafe.Utils.FineClosable;
+import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
 
 import java.io.FileDescriptor;
@@ -67,8 +70,10 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
+import java.nio.channels.CompletionHandler;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -78,7 +83,7 @@ import dalvik.system.DexFile;
 public class JavaNioAccess {
     // SegmentByteBuffers should not appear in JavaNioAccess as it breaks class loading order
     @DoNotOptimize
-    private static class SegmentBufferAccess {
+    private static class Helper {
         public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
             var memref = new SegmentMemoryRef(addr, obj);
             var buffer = new DirectSegmentByteBuffer(memref, null,
@@ -99,7 +104,7 @@ public class JavaNioAccess {
                     cap, cap, off, false, scope);
         }
 
-        public static Scope getBufferScope(Buffer buffer) {
+        public static Scope getBufferScope(Object buffer) {
             if (buffer instanceof DirectSegmentByteBuffer) {
                 return ((DirectSegmentByteBuffer) buffer).scope;
             }
@@ -107,6 +112,14 @@ public class JavaNioAccess {
                 return ((HeapSegmentByteBuffer) buffer).scope;
             }
             return null;
+        }
+
+        public static Class<?> getFileChannelHook() {
+            return AsynchronousFileChannelHook.class;
+        }
+
+        public static Class<?> getSocketChannelHook() {
+            return AsynchronousSocketChannelHook.class;
         }
     }
 
@@ -138,7 +151,12 @@ public class JavaNioAccess {
 
     // TODO: simpify
     static {
-        Method m_attachment;
+        Method attachment_method;
+
+        Method read_file_method;
+        Method write_file_method;
+        Method read_socket_method;
+        Method write_socket_method;
 
         String nio_direct_buf_name = "java.nio.DirectByteBuffer";
         TypeId nio_direct_buf_id = TypeId.ofName(nio_direct_buf_name);
@@ -146,6 +164,11 @@ public class JavaNioAccess {
         TypeId nio_mem_ref_id = TypeId.ofName(nio_mem_ref_name);
         String nio_heap_buf_name = "java.nio.HeapByteBuffer";
         TypeId nio_heap_buf_id = TypeId.ofName(nio_heap_buf_name);
+
+        String nio_file_channel_name = "sun.nio.ch.SimpleAsynchronousFileChannelImpl";
+        TypeId nio_file_channel_id = TypeId.ofName(nio_file_channel_name);
+        String nio_socket_channel_name = "sun.nio.ch.UnixAsynchronousSocketChannelImpl";
+        TypeId nio_socket_channel_id = TypeId.ofName(nio_socket_channel_name);
 
         Class<?> nio_mem_ref_class = nothrows_run(() -> Class.forName(nio_mem_ref_name));
         {
@@ -184,8 +207,8 @@ public class JavaNioAccess {
                 makeExecutablePublicApi(method);
             }
 
-            m_attachment = searchMethod(methods, "attachment");
-            attachment = unreflect(m_attachment);
+            attachment_method = searchMethod(methods, "attachment");
+            attachment = unreflect(attachment_method);
 
             Constructor<?>[] constructors = getHiddenConstructors(nio_direct_buf_class);
             for (Constructor<?> constructor : constructors) {
@@ -221,40 +244,52 @@ public class JavaNioAccess {
         }
 
         {
-            // All virtual methods (including those from superclasses)
-            {
-                Class<?> clazz = MappedByteBuffer.class;
-                while (clazz != null && clazz != Object.class) {
-                    var methods = getHiddenVirtualMethods(clazz);
-                    for (Method method : methods) {
-                        makeMethodInheritable(method);
-                        makeExecutablePublicApi(method);
-                    }
-                    clazz = clazz.getSuperclass();
+            Class<?> clazz = MappedByteBuffer.class;
+            while (clazz != null && clazz != Object.class) {
+                var methods = getHiddenVirtualMethods(clazz);
+                for (Method method : methods) {
+                    makeMethodInheritable(method);
+                    makeExecutablePublicApi(method);
                 }
-            }
-
-            Field[] fields = getHiddenInstanceFields(MappedByteBuffer.class);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-                makeFieldPublicApi(field);
-            }
-        }
-
-        {
-            Field[] fields = getHiddenInstanceFields(ByteBuffer.class);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-                makeFieldPublicApi(field);
+                var fields = getHiddenInstanceFields(clazz);
+                for (Field field : fields) {
+                    makeFieldPublic(field);
+                    makeFieldPublicApi(field);
+                }
+                clazz = clazz.getSuperclass();
             }
         }
 
+        Class<?> nio_file_channel_class = nothrows_run(() -> Class.forName(nio_file_channel_name));
         {
-            Field[] fields = getHiddenInstanceFields(Buffer.class);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-                makeFieldPublicApi(field);
+            makeClassInheritable(nio_file_channel_class);
+
+            Method[] methods = getHiddenVirtualMethods(nio_file_channel_class);
+            for (Method method : methods) {
+                makeMethodInheritable(method);
+                makeExecutablePublicApi(method);
             }
+            read_file_method = searchMethod(methods, "implRead",
+                    ByteBuffer.class, long.class, Object.class, CompletionHandler.class);
+            write_file_method = searchMethod(methods, "implWrite",
+                    ByteBuffer.class, long.class, Object.class, CompletionHandler.class);
+        }
+
+        Class<?> nio_socket_channel_class = nothrows_run(() -> Class.forName(nio_socket_channel_name));
+        {
+            makeClassInheritable(nio_socket_channel_class);
+
+            Method[] methods = getHiddenVirtualMethods(nio_socket_channel_class);
+            for (Method method : methods) {
+                makeMethodInheritable(method);
+                makeExecutablePublicApi(method);
+            }
+            read_socket_method = searchMethod(methods, "implRead",
+                    boolean.class, ByteBuffer.class, ByteBuffer[].class, long.class,
+                    TimeUnit.class, Object.class, CompletionHandler.class);
+            write_socket_method = searchMethod(methods, "implWrite",
+                    boolean.class, ByteBuffer.class, ByteBuffer[].class, long.class,
+                    TimeUnit.class, Object.class, CompletionHandler.class);
         }
 
         String direct_buf_name = "com.v7878.unsafe.DirectByteBuffer";
@@ -263,6 +298,11 @@ public class JavaNioAccess {
         TypeId mem_ref_id = TypeId.ofName(mem_ref_name);
         String heap_buf_name = "com.v7878.unsafe.HeapByteBuffer";
         TypeId heap_buf_id = TypeId.ofName(heap_buf_name);
+
+        String file_channel_name = "com.v7878.unsafe.AsynchronousFileChannelBase";
+        TypeId file_channel_id = TypeId.ofName(file_channel_name);
+        String socket_channel_name = "com.v7878.unsafe.AsynchronousSocketChannelBase";
+        TypeId socket_channel_id = TypeId.ofName(socket_channel_name);
 
         FieldId obo = FieldId.of(mem_ref_id, "originalBufferObject", TypeId.OBJECT);
 
@@ -329,7 +369,7 @@ public class JavaNioAccess {
                         .withParameters()
                         .withCode(1, ib -> ib
                                 .generate_lines()
-                                .invoke(SUPER, MethodId.of(m_attachment), ib.this_())
+                                .invoke(SUPER, MethodId.of(attachment_method), ib.this_())
                                 .move_result_object(ib.l(0))
                                 .check_cast(ib.l(0), mem_ref_id)
                                 .return_object(ib.l(0))
@@ -358,7 +398,18 @@ public class JavaNioAccess {
                 )
         );
 
-        DexFile dex = openDexFile(DexIO.write(Dex.of(mem_def, direct_buf_def, heap_buf_def)));
+        ClassDef file_channel_def = ClassBuilder.build(file_channel_id, cb -> cb
+                .withSuperClass(nio_file_channel_id)
+                .withFlags(ACC_PUBLIC)
+        );
+
+        ClassDef socket_channel_def = ClassBuilder.build(socket_channel_id, cb -> cb
+                .withSuperClass(nio_socket_channel_id)
+                .withFlags(ACC_PUBLIC)
+        );
+
+        DexFile dex = openDexFile(DexIO.write(Dex.of(mem_def, direct_buf_def,
+                heap_buf_def, file_channel_def, socket_channel_def)));
         setTrusted(dex);
 
         ClassLoader loader = JavaNioAccess.class.getClassLoader();
@@ -366,22 +417,46 @@ public class JavaNioAccess {
         loadClass(dex, mem_ref_name, loader);
         loadClass(dex, direct_buf_name, loader);
         loadClass(dex, heap_buf_name, loader);
+
+        loadClass(dex, file_channel_name, loader);
+        loadClass(dex, socket_channel_name, loader);
+
+        {
+            int index = ArtMethodUtils.getDispatchTableIndex(read_file_method);
+            VM.setEmbeddedVTableEntry(nio_file_channel_class, index,
+                    VM.getEmbeddedVTableEntry(Helper.getFileChannelHook(), index));
+        }
+        {
+            int index = ArtMethodUtils.getDispatchTableIndex(write_file_method);
+            VM.setEmbeddedVTableEntry(nio_file_channel_class, index,
+                    VM.getEmbeddedVTableEntry(Helper.getFileChannelHook(), index));
+        }
+        {
+            int index = ArtMethodUtils.getDispatchTableIndex(read_socket_method);
+            VM.setEmbeddedVTableEntry(nio_socket_channel_class, index,
+                    VM.getEmbeddedVTableEntry(Helper.getSocketChannelHook(), index));
+        }
+        {
+            int index = ArtMethodUtils.getDispatchTableIndex(write_socket_method);
+            VM.setEmbeddedVTableEntry(nio_socket_channel_class, index,
+                    VM.getEmbeddedVTableEntry(Helper.getSocketChannelHook(), index));
+        }
     }
 
     public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
         Objects.requireNonNull(scope);
-        return SegmentBufferAccess.newDirectByteBuffer(addr, cap, obj, scope);
+        return Helper.newDirectByteBuffer(addr, cap, obj, scope);
     }
 
     public static ByteBuffer newMappedByteBuffer(UnmapperProxy unmapper, long addr,
                                                  int cap, Object obj, Scope scope) {
         Objects.requireNonNull(scope);
-        return SegmentBufferAccess.newMappedByteBuffer(unmapper, addr, cap, obj, scope);
+        return Helper.newMappedByteBuffer(unmapper, addr, cap, obj, scope);
     }
 
     public static ByteBuffer newHeapByteBuffer(byte[] buffer, int offset, int capacity, Scope scope) {
         Objects.requireNonNull(scope);
-        return SegmentBufferAccess.newHeapByteBuffer(buffer, offset, capacity, scope);
+        return Helper.newHeapByteBuffer(buffer, offset, capacity, scope);
     }
 
     private static long assert_same(long v1, long v2) {
@@ -421,7 +496,15 @@ public class JavaNioAccess {
         if (isBufferView(buffer)) {
             return getBufferScope(getDerivedBuffer(buffer));
         }
-        return SegmentBufferAccess.getBufferScope(buffer);
+        return Helper.getBufferScope(buffer);
+    }
+
+    public static FineClosable lockScope(ByteBuffer bb, boolean async) {
+        var scope = getBufferScope(bb);
+        if (async && scope != null && JavaForeignAccess.isThreadConfined(scope)) {
+            throw new IllegalArgumentException("Buffer is thread confined");
+        }
+        return JavaForeignAccess.lock(scope);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)

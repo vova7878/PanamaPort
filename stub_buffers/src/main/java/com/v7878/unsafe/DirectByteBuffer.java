@@ -10,7 +10,7 @@ import java.nio.LongBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
 
-// Compile-time stub, real DirectByteBuffer will be generated at runtime
+// Compile-time stub, real class will be generated at runtime
 public abstract class DirectByteBuffer extends FakeMappedByteBuffer {
 
     public static class MemoryRef {

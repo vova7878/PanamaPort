@@ -3,6 +3,8 @@ package com.v7878.unsafe.access;
 import static com.v7878.unsafe.access.JavaForeignAccess.lock;
 
 import com.v7878.foreign.MemorySegment.Scope;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.io.FileDescriptor;
@@ -10,8 +12,12 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Objects;
 
+@DoNotShrink
+@DoNotObfuscate
 class DirectSegmentByteBuffer extends DirectSegmentByteBufferBase {
 
+    @DoNotShrink
+    @DoNotObfuscate
     static class SegmentMemoryRef extends MemoryRef {
         public SegmentMemoryRef(long allocatedAddress, Object obj) {
             super(allocatedAddress, obj);
@@ -106,6 +112,7 @@ class DirectSegmentByteBuffer extends DirectSegmentByteBufferBase {
 
     @Override
     public ByteBuffer put(ByteBuffer src) {
+        // TODO:? lock src
         try (FineClosable ignored = lock(scope)) {
             return super.put(src);
         }
@@ -113,6 +120,7 @@ class DirectSegmentByteBuffer extends DirectSegmentByteBufferBase {
 
     @Override
     public ByteBuffer put(int index, ByteBuffer src, int offset, int length) {
+        // TODO:? lock src
         try (FineClosable ignored = lock(scope)) {
             return super.put(index, src, offset, length);
         }

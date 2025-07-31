@@ -3,12 +3,16 @@ package com.v7878.unsafe.access;
 import static com.v7878.unsafe.access.JavaForeignAccess.lock;
 
 import com.v7878.foreign.MemorySegment.Scope;
+import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.HeapByteBuffer;
 import com.v7878.unsafe.Utils.FineClosable;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
+@DoNotShrink
+@DoNotObfuscate
 public class HeapSegmentByteBuffer extends HeapByteBuffer {
     public final Scope scope;
 
@@ -51,6 +55,7 @@ public class HeapSegmentByteBuffer extends HeapByteBuffer {
 
     @Override
     public ByteBuffer put(ByteBuffer src) {
+        // TODO:? lock src
         try (FineClosable ignored = lock(scope)) {
             return super.put(src);
         }
@@ -58,6 +63,7 @@ public class HeapSegmentByteBuffer extends HeapByteBuffer {
 
     @Override
     public ByteBuffer put(int index, ByteBuffer src, int offset, int length) {
+        // TODO:? lock src
         try (FineClosable ignored = lock(scope)) {
             return super.put(index, src, offset, length);
         }

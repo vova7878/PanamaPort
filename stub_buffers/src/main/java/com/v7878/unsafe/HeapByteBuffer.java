@@ -8,7 +8,7 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 
-// Compile-time stub, real DirectByteBuffer will be generated at runtime
+// Compile-time stub, real class will be generated at runtime
 public abstract class HeapByteBuffer extends FakeHeapByteBuffer {
 
     public HeapByteBuffer(byte[] buf, int mark, int pos, int lim, int cap, int off,
