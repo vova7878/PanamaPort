@@ -1,97 +1,85 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.Reflection.getDeclaredMethod;
-import static com.v7878.unsafe.Utils.nothrows_run;
-
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemoryLayout;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.foreign.MemorySegment.Scope;
+import com.v7878.foreign.RawJavaForeignAccess;
 import com.v7878.foreign.SymbolLookup;
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 import com.v7878.unsafe.foreign.NativeLibrary;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
 
-import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.Optional;
 
-public abstract class JavaForeignAccess {
-    private static final JavaForeignAccess INSTANCE = (JavaForeignAccess) nothrows_run(() -> {
-        Method init = getDeclaredMethod(MemorySegment.class, "initAccess");
-        return init.invoke(null);
-    });
+public final class JavaForeignAccess {
+    @AlwaysInline
+    public static boolean isThreadConfined(Scope scope) {
+        return RawJavaForeignAccess.isThreadConfined(scope);
+    }
 
-    protected abstract FineClosable _lock(Scope scope);
-
+    @AlwaysInline
     public static FineClosable lock(Scope scope) {
-        return INSTANCE._lock(scope);
+        return RawJavaForeignAccess.lock(scope);
     }
 
-    protected abstract void _checkValidState(Scope scope);
-
+    @AlwaysInline
     public static void checkValidState(Scope scope) {
-        INSTANCE._checkValidState(scope);
+        RawJavaForeignAccess.checkValidState(scope);
     }
 
-    protected abstract void _addCloseAction(Scope scope, Runnable cleanup);
-
+    @AlwaysInline
     public static void addCloseAction(Scope scope, Runnable cleanup) {
-        INSTANCE._addCloseAction(scope, cleanup);
+        RawJavaForeignAccess.addCloseAction(scope, cleanup);
     }
 
-    protected abstract void _addOrCleanupIfFail(Scope scope, Runnable cleanup);
-
+    @AlwaysInline
     public static void addOrCleanupIfFail(Scope scope, Runnable cleanup) {
-        INSTANCE._addOrCleanupIfFail(scope, cleanup);
+        RawJavaForeignAccess.addOrCleanupIfFail(scope, cleanup);
     }
 
-    protected abstract MemorySegment _objectSegment(Object obj);
-
+    @AlwaysInline
     public static MemorySegment objectSegment(Object obj) {
-        return INSTANCE._objectSegment(obj);
+        return RawJavaForeignAccess.objectSegment(obj);
     }
 
-    protected abstract Arena _createGlobalHolderArena(Object ref);
-
+    @AlwaysInline
     public static Arena createGlobalHolderArena(Object ref) {
-        return INSTANCE._createGlobalHolderArena(ref);
+        return RawJavaForeignAccess.createGlobalHolderArena(ref);
     }
 
-    protected abstract Arena _createImplicitHolderArena(Object ref);
-
+    @AlwaysInline
     public static Arena createImplicitHolderArena(Object ref) {
-        return INSTANCE._createImplicitHolderArena(ref);
+        return RawJavaForeignAccess.createImplicitHolderArena(ref);
     }
 
-    protected abstract MemorySegment _makeNativeSegmentUnchecked(
-            long min, long byteSize, boolean readOnly, Arena scope, Runnable action);
-
+    // NOTE: no @AlwaysInline
     public static MemorySegment makeNativeSegment(long min, long byteSize, boolean readOnly,
                                                   Arena scope, Runnable action) {
-        return INSTANCE._makeNativeSegmentUnchecked(min, byteSize, readOnly, scope, action);
+        return RawJavaForeignAccess.makeNativeSegment(min, byteSize, readOnly, scope, action);
     }
 
-    protected abstract MemorySegment _allocateNativeSegment(
-            long byteSize, long byteAlignment, Arena scope, boolean init);
-
+    @AlwaysInline
     public static MemorySegment allocateNativeSegment(
             long byteSize, long byteAlignment, Arena scope, boolean init) {
-        return INSTANCE._allocateNativeSegment(byteSize,
+        return RawJavaForeignAccess.allocateNativeSegment(byteSize,
                 byteAlignment, scope, init);
     }
 
+    @AlwaysInline
     public static MemorySegment allocateNoInit(long byteSize, long byteAlignment, Arena scope) {
         return allocateNativeSegment(byteSize, byteAlignment, scope, false);
     }
 
-    protected abstract MemorySegment _mapSegment(UnmapperProxy unmapper, long size, boolean readOnly, Arena scope);
-
+    @AlwaysInline
     public static MemorySegment mapSegment(UnmapperProxy unmapper, long size, boolean readOnly, Arena scope) {
-        return INSTANCE._mapSegment(unmapper, size, readOnly, scope);
+        return RawJavaForeignAccess.mapSegment(unmapper, size, readOnly, scope);
     }
 
+    @AlwaysInline
     public static SymbolLookup libraryLookup(NativeLibrary library, Arena libArena) {
         Objects.requireNonNull(library);
         Objects.requireNonNull(libArena);
@@ -106,21 +94,18 @@ public abstract class JavaForeignAccess {
         };
     }
 
-    protected abstract boolean _hasNaturalAlignment(MemoryLayout layout);
-
+    @AlwaysInline
     public static boolean hasNaturalAlignment(MemoryLayout layout) {
-        return INSTANCE._hasNaturalAlignment(layout);
+        return RawJavaForeignAccess.hasNaturalAlignment(layout);
     }
 
-    protected abstract long _unsafeGetOffset(MemorySegment segment);
-
+    @AlwaysInline
     public static long unsafeGetOffset(MemorySegment segment) {
-        return INSTANCE._unsafeGetOffset(segment);
+        return RawJavaForeignAccess.unsafeGetOffset(segment);
     }
 
-    protected abstract Object _unsafeGetBase(MemorySegment segment);
-
+    @AlwaysInline
     public static Object unsafeGetBase(MemorySegment segment) {
-        return INSTANCE._unsafeGetBase(segment);
+        return RawJavaForeignAccess.unsafeGetBase(segment);
     }
 }

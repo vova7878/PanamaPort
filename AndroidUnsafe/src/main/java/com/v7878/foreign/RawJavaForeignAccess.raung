@@ -1,0 +1,142 @@
+.version 52
+.class public abstract com/v7878/foreign/RawJavaForeignAccess
+.super java/lang/Object
+.auto frames
+
+.method public static isThreadConfined(Lcom/v7878/foreign/MemorySegment$Scope;)Z
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl isThreadConfined (Lcom/v7878/foreign/MemorySegment$Scope;)Z
+    ireturn
+.end method
+
+.method public static lock(Lcom/v7878/foreign/MemorySegment$Scope;)Lcom/v7878/unsafe/Utils$FineClosable;
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl lock (Lcom/v7878/foreign/MemorySegment$Scope;)Lcom/v7878/unsafe/Utils$FineClosable;
+    areturn
+.end method
+
+.method public static checkValidState(Lcom/v7878/foreign/MemorySegment$Scope;)V
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl checkValidState (Lcom/v7878/foreign/MemorySegment$Scope;)V
+    return
+.end method
+
+.method public static addCloseAction(Lcom/v7878/foreign/MemorySegment$Scope;Ljava/lang/Runnable;)V
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    aload 1
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl addCloseAction (Lcom/v7878/foreign/MemorySegment$Scope;Ljava/lang/Runnable;)V
+    return
+.end method
+
+.method public static addOrCleanupIfFail(Lcom/v7878/foreign/MemorySegment$Scope;Ljava/lang/Runnable;)V
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    aload 1
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl addOrCleanupIfFail (Lcom/v7878/foreign/MemorySegment$Scope;Ljava/lang/Runnable;)V
+    return
+.end method
+
+.method public static objectSegment(Ljava/lang/Object;)Lcom/v7878/foreign/MemorySegment;
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl objectSegment (Ljava/lang/Object;)Lcom/v7878/foreign/MemorySegment;
+    areturn
+.end method
+
+.method public static createGlobalHolderArena(Ljava/lang/Object;)Lcom/v7878/foreign/Arena;
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl createGlobalHolderArena (Ljava/lang/Object;)Lcom/v7878/foreign/Arena;
+    areturn
+.end method
+
+.method public static createImplicitHolderArena(Ljava/lang/Object;)Lcom/v7878/foreign/Arena;
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl createImplicitHolderArena (Ljava/lang/Object;)Lcom/v7878/foreign/Arena;
+    areturn
+.end method
+
+.method public static makeNativeSegment(JJZLcom/v7878/foreign/Arena;Ljava/lang/Runnable;)Lcom/v7878/foreign/MemorySegment;
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    lload 0
+    lload 2
+    iload 4
+    aload 5
+    aload 6
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl makeNativeSegmentUnchecked (JJZLcom/v7878/foreign/Arena;Ljava/lang/Runnable;)Lcom/v7878/foreign/MemorySegment;
+    areturn
+.end method
+
+.method public static allocateNativeSegment(JJLcom/v7878/foreign/Arena;Z)Lcom/v7878/foreign/MemorySegment;
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    lload 0
+    lload 2
+    aload 4
+    iload 5
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl allocateNativeSegment (JJLcom/v7878/foreign/Arena;Z)Lcom/v7878/foreign/MemorySegment;
+    areturn
+.end method
+
+.method public static mapSegment(Lcom/v7878/unsafe/access/JavaNioAccess$UnmapperProxy;JZLcom/v7878/foreign/Arena;)Lcom/v7878/foreign/MemorySegment;
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    lload 1
+    iload 3
+    aload 4
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl mapSegment (Lcom/v7878/unsafe/access/JavaNioAccess$UnmapperProxy;JZLcom/v7878/foreign/Arena;)Lcom/v7878/foreign/MemorySegment;
+    areturn
+.end method
+
+.method public static hasNaturalAlignment(Lcom/v7878/foreign/MemoryLayout;)Z
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl hasNaturalAlignment (Lcom/v7878/foreign/MemoryLayout;)Z
+    ireturn
+.end method
+
+.method public static unsafeGetOffset(Lcom/v7878/foreign/MemorySegment;)J
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl unsafeGetOffset (Lcom/v7878/foreign/MemorySegment;)J
+    lreturn
+.end method
+
+.method public static unsafeGetBase(Lcom/v7878/foreign/MemorySegment;)Ljava/lang/Object;
+    .annotation build Lcom/v7878/r8/annotations/AlwaysInline;
+    .end annotation
+
+    aload 0
+    invokestatic com/v7878/foreign/_JavaForeignAccessImpl unsafeGetBase (Lcom/v7878/foreign/MemorySegment;)Ljava/lang/Object;
+    areturn
+.end method

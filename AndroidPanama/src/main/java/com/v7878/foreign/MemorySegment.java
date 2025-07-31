@@ -36,13 +36,9 @@ import static com.v7878.foreign.ValueLayout.OfLong;
 import static com.v7878.foreign.ValueLayout.OfShort;
 
 import com.v7878.foreign.ValueLayout.OfInt;
-import com.v7878.foreign._MemorySessionImpl.ResourceList.ResourceCleanup;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.NoSideEffects;
-import com.v7878.unsafe.Utils.FineClosable;
-import com.v7878.unsafe.access.JavaForeignAccess;
-import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 
 import java.io.UncheckedIOException;
 import java.nio.Buffer;
@@ -2736,89 +2732,5 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
          */
         @Override
         int hashCode();
-    }
-
-    // Port-added: JavaForeignAccess
-    @DoNotShrink
-    @DoNotObfuscate
-    @SuppressWarnings("unused")
-    //TODO: Remove this method when the module system is enabled
-    private static JavaForeignAccess initAccess() {
-        return new JavaForeignAccess() {
-            @Override
-            public FineClosable _lock(Scope scope) {
-                _MemorySessionImpl session = (_MemorySessionImpl) scope;
-                session.acquire0();
-                return session::release0;
-            }
-
-            @Override
-            protected void _checkValidState(Scope scope) {
-                ((_MemorySessionImpl) scope).checkValidState();
-            }
-
-            @Override
-            protected void _addCloseAction(Scope scope, Runnable cleanup) {
-                ((_MemorySessionImpl) scope).addCloseAction(cleanup);
-            }
-
-            @Override
-            protected void _addOrCleanupIfFail(Scope scope, Runnable cleanup) {
-                ((_MemorySessionImpl) scope).addOrCleanupIfFail(ResourceCleanup.ofRunnable(cleanup));
-            }
-
-            @Override
-            protected MemorySegment _objectSegment(Object obj) {
-                return _SegmentFactories.fromObject(obj);
-            }
-
-            @Override
-            protected Arena _createGlobalHolderArena(Object ref) {
-                return _MemorySessionImpl.createGlobalHolder(ref).asArena();
-            }
-
-            @Override
-            protected Arena _createImplicitHolderArena(Object ref) {
-                return _MemorySessionImpl.createImplicitHolder(ref).asArena();
-            }
-
-            @Override
-            protected MemorySegment _makeNativeSegmentUnchecked(
-                    long min, long byteSize, boolean readOnly, Arena scope, Runnable action) {
-                Objects.requireNonNull(scope);
-                _Utils.checkNonNegativeArgument(byteSize, "byteSize");
-                return _SegmentFactories.makeNativeSegmentUnchecked(min, byteSize,
-                        _MemorySessionImpl.toMemorySession(scope), readOnly, action);
-            }
-
-            @Override
-            protected MemorySegment _allocateNativeSegment(
-                    long byteSize, long byteAlignment, Arena scope, boolean init) {
-                return _SegmentFactories.allocateNativeSegment(byteSize, byteAlignment,
-                        _MemorySessionImpl.toMemorySession(scope), init);
-            }
-
-            @Override
-            protected MemorySegment _mapSegment(
-                    UnmapperProxy unmapper, long size, boolean readOnly, Arena scope) {
-                return _SegmentFactories.mapSegment(unmapper, size, readOnly,
-                        _MemorySessionImpl.toMemorySession(scope));
-            }
-
-            @Override
-            protected boolean _hasNaturalAlignment(MemoryLayout layout) {
-                return ((_AbstractLayout<?>) layout).hasNaturalAlignment();
-            }
-
-            @Override
-            protected long _unsafeGetOffset(MemorySegment segment) {
-                return ((_AbstractMemorySegmentImpl) segment).unsafeGetOffset();
-            }
-
-            @Override
-            protected Object _unsafeGetBase(MemorySegment segment) {
-                return ((_AbstractMemorySegmentImpl) segment).unsafeGetBase();
-            }
-        };
     }
 }
