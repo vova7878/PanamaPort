@@ -9,7 +9,7 @@ import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 import java.util.Objects;
 
 @SuppressWarnings("unused")
-class _JavaForeignAccessImpl {
+final class _JavaForeignAccessImpl {
     @AlwaysInline
     public static boolean isThreadConfined(Scope scope) {
         return ((_MemorySessionImpl) scope).ownerThread() != null;

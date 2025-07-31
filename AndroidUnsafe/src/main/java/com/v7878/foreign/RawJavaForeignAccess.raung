@@ -1,5 +1,5 @@
 .version 52
-.class public abstract com/v7878/foreign/RawJavaForeignAccess
+.class public final com/v7878/foreign/RawJavaForeignAccess
 .super java/lang/Object
 .auto frames
 
