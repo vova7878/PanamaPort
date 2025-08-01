@@ -51,6 +51,7 @@ import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ArtMethodUtils;
 import com.v7878.unsafe.DangerLevel;
+import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.VM;
 import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
@@ -505,6 +506,26 @@ public class JavaNioAccess {
             throw new IllegalArgumentException("Buffer is thread confined");
         }
         return JavaForeignAccess.lock(scope);
+    }
+
+    public static FineClosable lockScopes(ByteBuffer[] buffers, boolean async) {
+        FineClosable releaser = FineClosable.NOP;
+        for (var bb : buffers) {
+            releaser = Utils.linkClosables(lockScope(bb, async), releaser);
+        }
+        return releaser;
+    }
+
+    public static FineClosable lockScopes(ByteBuffer buf, ByteBuffer[] buffers, boolean async) {
+        if (buffers == null) {
+            assert buf != null;
+
+            return lockScope(buf, async);
+        } else {
+            assert buf == null;
+
+            return lockScopes(buffers, async);
+        }
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)

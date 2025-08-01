@@ -20,12 +20,9 @@ final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase 
                                                     TimeUnit unit,
                                                     A attachment,
                                                     CompletionHandler<V, ? super A> handler) {
-        if (isScatteringRead) {
-            // TODO: check dsts
-        } else {
-            // TODO: check dst
+        try (var ignored1 = JavaNioAccess.lockScopes(dst, dsts, true)) {
+            return super.implRead(isScatteringRead, dst, dsts, timeout, unit, attachment, handler);
         }
-        return super.implRead(isScatteringRead, dst, dsts, timeout, unit, attachment, handler);
     }
 
     @Override
@@ -36,11 +33,8 @@ final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase 
                                                      TimeUnit unit,
                                                      A attachment,
                                                      CompletionHandler<V, ? super A> handler) {
-        if (isGatheringWrite) {
-            // TODO: check srcs
-        } else {
-            // TODO: check src
+        try (var ignored1 = JavaNioAccess.lockScopes(src, srcs, true)) {
+            return super.implWrite(isGatheringWrite, src, srcs, timeout, unit, attachment, handler);
         }
-        return super.implWrite(isGatheringWrite, src, srcs, timeout, unit, attachment, handler);
     }
 }

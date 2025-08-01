@@ -46,7 +46,32 @@ public class Utils {
     public static final String LOG_TAG = "PANAMA";
 
     public interface FineClosable extends AutoCloseable {
+        FineClosable NOP = () -> { /* nop */ };
+
         void close();
+    }
+
+    public static FineClosable linkClosables(FineClosable first, FineClosable second) {
+        record LinkedClosable(FineClosable first, FineClosable second) implements FineClosable {
+            @Override
+            public void close() {
+                try {
+                    first.close();
+                } finally {
+                    second.close();
+                }
+            }
+        }
+        if (first == second) {
+            return first;
+        }
+        if (first == FineClosable.NOP) {
+            return second;
+        }
+        if (second == FineClosable.NOP) {
+            return first;
+        }
+        return new LinkedClosable(first, second);
     }
 
     public static boolean arrayContentsEq(Object[] a1, Object[] a2) {

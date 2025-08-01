@@ -19,19 +19,16 @@ final class _JavaForeignAccessImpl {
     public static FineClosable lock(Scope scope) {
         record SessionLock(_MemorySessionImpl session) implements FineClosable {
             SessionLock {
-                if (session != null) {
-                    session.acquire0();
-                }
+                session.acquire0();
             }
 
             @Override
             public void close() {
-                if (session != null) {
-                    session.release0();
-                }
+                session.release0();
             }
         }
-        return new SessionLock((_MemorySessionImpl) scope);
+        return scope == null ? FineClosable.NOP :
+                new SessionLock((_MemorySessionImpl) scope);
     }
 
     @AlwaysInline
