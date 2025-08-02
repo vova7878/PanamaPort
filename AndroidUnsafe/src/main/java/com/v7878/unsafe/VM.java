@@ -227,7 +227,20 @@ public class VM {
         return getIntO(clazz, emptyClassSize());
     }
 
-    private static final long VTABLE_OFFSET = roundUpUL(emptyClassSize() + 4, ADDRESS_SIZE) + ADDRESS_SIZE;
+    private static final long IMTABLE_OFFSET = roundUpUL(emptyClassSize() + 4, ADDRESS_SIZE);
+
+    public static long getIMTable(Class<?> clazz) {
+        check(shouldHaveEmbeddedVTableAndImt(clazz), IllegalArgumentException::new);
+        return getWordO(clazz, IMTABLE_OFFSET);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setIMTable(Class<?> clazz, long imtable) {
+        check(shouldHaveEmbeddedVTableAndImt(clazz), IllegalArgumentException::new);
+        putWordO(clazz, IMTABLE_OFFSET, imtable);
+    }
+
+    private static final long VTABLE_OFFSET = IMTABLE_OFFSET + ADDRESS_SIZE;
 
     public static long getEmbeddedVTableEntry(Class<?> clazz, int index) {
         Objects.checkIndex(index, getEmbeddedVTableLength(clazz));
@@ -258,6 +271,17 @@ public class VM {
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setIFTable(Class<?> clazz, Object[] /* IfTable */ ifTable) {
         Reflection.setIFTable(clazz, ifTable);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void copyTables(Class<?> from, Class<?> to) {
+        int vtable_size = VM.getEmbeddedVTableLength(to);
+        for (int i = 0; i < vtable_size; i++) {
+            VM.setEmbeddedVTableEntry(to, i, VM.getEmbeddedVTableEntry(from, i));
+        }
+        VM.setVTable(to, VM.getVTable(from));
+        VM.setIFTable(to, VM.getIFTable(from));
+        VM.setIMTable(to, VM.getIMTable(from));
     }
 
     public static boolean isCompressedString(String s) {

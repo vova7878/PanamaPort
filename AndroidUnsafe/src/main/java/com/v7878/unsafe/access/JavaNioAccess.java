@@ -79,6 +79,15 @@ import dalvik.system.DexFile;
 
 @ApiSensitive
 public class JavaNioAccess {
+    // TODO: fix sun.nio.ch.IOUtil.read/write calls in
+    //  sun.nio.ch.FileChannelImpl
+    //  sun.nio.ch.SimpleAsynchronousFileChannelImpl
+    //  sun.nio.ch.SocketChannelImpl
+    //  sun.nio.ch.UnixAsynchronousSocketChannelImpl
+    //  sun.nio.ch.DatagramChannelImpl
+    //  sun.nio.ch.SinkChannelImpl
+    //  sun.nio.ch.SourceChannelImpl
+
     // SegmentByteBuffers should not appear in JavaNioAccess as it breaks class loading order
     @DoNotOptimize
     private static class Helper {
@@ -412,20 +421,8 @@ public class JavaNioAccess {
         loadClass(dex, file_channel_name, loader);
         loadClass(dex, socket_channel_name, loader);
 
-        {
-            int vtable_size = VM.getEmbeddedVTableLength(nio_file_channel_class);
-            for (int i = 0; i < vtable_size; i++) {
-                VM.setEmbeddedVTableEntry(nio_file_channel_class, i,
-                        VM.getEmbeddedVTableEntry(Helper.getFileChannelHook(), i));
-            }
-        }
-        {
-            int vtable_size = VM.getEmbeddedVTableLength(nio_socket_channel_class);
-            for (int i = 0; i < vtable_size; i++) {
-                VM.setEmbeddedVTableEntry(nio_socket_channel_class, i,
-                        VM.getEmbeddedVTableEntry(Helper.getSocketChannelHook(), i));
-            }
-        }
+        VM.copyTables(Helper.getFileChannelHook(), nio_file_channel_class);
+        VM.copyTables(Helper.getSocketChannelHook(), nio_socket_channel_class);
     }
 
     public static ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, Scope scope) {
@@ -490,6 +487,19 @@ public class JavaNioAccess {
             throw new IllegalArgumentException("Buffer is thread confined");
         }
         return JavaForeignAccess.lock(scope);
+    }
+
+    public static void checkAsyncScope(ByteBuffer bb) {
+        var scope = getBufferScope(bb);
+        if (scope != null && JavaForeignAccess.isThreadConfined(scope)) {
+            throw new IllegalArgumentException("Buffer is thread confined");
+        }
+    }
+
+    public static void checkAsyncScope(ByteBuffer[] buffers) {
+        for (var bb : buffers) {
+            checkAsyncScope(bb);
+        }
     }
 
     public static FineClosable lockScopes(ByteBuffer[] buffers, boolean async) {

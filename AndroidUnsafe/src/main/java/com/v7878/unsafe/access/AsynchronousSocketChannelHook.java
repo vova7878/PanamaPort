@@ -20,9 +20,8 @@ final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase 
                          TimeUnit unit,
                          A attachment,
                          CompletionHandler<Long, ? super A> handler) {
-        try (var ignored1 = JavaNioAccess.lockScopes(dsts, true)) {
-            super.read(dsts, offset, length, timeout, unit, attachment, handler);
-        }
+        JavaNioAccess.checkAsyncScope(dsts);
+        super.read(dsts, offset, length, timeout, unit, attachment, handler);
     }
 
     @Override
@@ -31,16 +30,14 @@ final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase 
                          TimeUnit unit,
                          A attachment,
                          CompletionHandler<Integer, ? super A> handler) {
-        try (var ignored1 = JavaNioAccess.lockScope(dst, true)) {
-            super.read(dst, timeout, unit, attachment, handler);
-        }
+        JavaNioAccess.checkAsyncScope(dst);
+        super.read(dst, timeout, unit, attachment, handler);
     }
 
     @Override
     public Future<Integer> read(ByteBuffer dst) {
-        try (var ignored1 = JavaNioAccess.lockScope(dst, true)) {
-            return super.read(dst);
-        }
+        JavaNioAccess.checkAsyncScope(dst);
+        return super.read(dst);
     }
 
     @Override
@@ -51,9 +48,8 @@ final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase 
                           TimeUnit unit,
                           A attachment,
                           CompletionHandler<Long, ? super A> handler) {
-        try (var ignored1 = JavaNioAccess.lockScopes(srcs, true)) {
-            super.write(srcs, offset, length, timeout, unit, attachment, handler);
-        }
+        JavaNioAccess.checkAsyncScope(srcs);
+        super.write(srcs, offset, length, timeout, unit, attachment, handler);
     }
 
     @Override
@@ -62,15 +58,13 @@ final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase 
                           TimeUnit unit,
                           A attachment,
                           CompletionHandler<Integer, ? super A> handler) {
-        try (var ignored1 = JavaNioAccess.lockScope(src, true)) {
-            super.write(src, timeout, unit, attachment, handler);
-        }
+        JavaNioAccess.checkAsyncScope(src);
+        super.write(src, timeout, unit, attachment, handler);
     }
 
     @Override
     public Future<Integer> write(ByteBuffer src) {
-        try (var ignored1 = JavaNioAccess.lockScope(src, true)) {
-            return super.write(src);
-        }
+        JavaNioAccess.checkAsyncScope(src);
+        return super.write(src);
     }
 }

@@ -16,16 +16,14 @@ final class AsynchronousFileChannelHook extends AsynchronousFileChannelBase {
                          long position,
                          A attachment,
                          CompletionHandler<Integer, ? super A> handler) {
-        try (var ignored1 = JavaNioAccess.lockScope(dst, true)) {
-            super.read(dst, position, attachment, handler);
-        }
+        JavaNioAccess.checkAsyncScope(dst);
+        super.read(dst, position, attachment, handler);
     }
 
     @Override
     public Future<Integer> read(ByteBuffer dst, long position) {
-        try (var ignored1 = JavaNioAccess.lockScope(dst, true)) {
-            return super.read(dst, position);
-        }
+        JavaNioAccess.checkAsyncScope(dst);
+        return super.read(dst, position);
     }
 
     @Override
@@ -33,15 +31,13 @@ final class AsynchronousFileChannelHook extends AsynchronousFileChannelBase {
                           long position,
                           A attachment,
                           CompletionHandler<Integer, ? super A> handler) {
-        try (var ignored1 = JavaNioAccess.lockScope(src, true)) {
-            super.write(src, position, attachment, handler);
-        }
+        JavaNioAccess.checkAsyncScope(src);
+        super.write(src, position, attachment, handler);
     }
 
     @Override
     public Future<Integer> write(ByteBuffer src, long position) {
-        try (var ignored1 = JavaNioAccess.lockScope(src, true)) {
-            return super.write(src, position);
-        }
+        JavaNioAccess.checkAsyncScope(src);
+        return super.write(src, position);
     }
 }
