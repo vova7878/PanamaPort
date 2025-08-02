@@ -13,28 +13,64 @@ import java.util.concurrent.TimeUnit;
 @DoNotObfuscate
 final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase {
     @Override
-    public <V extends Number, A> Future<V> implRead(boolean isScatteringRead,
-                                                    ByteBuffer dst,
-                                                    ByteBuffer[] dsts,
-                                                    long timeout,
-                                                    TimeUnit unit,
-                                                    A attachment,
-                                                    CompletionHandler<V, ? super A> handler) {
-        try (var ignored1 = JavaNioAccess.lockScopes(dst, dsts, true)) {
-            return super.implRead(isScatteringRead, dst, dsts, timeout, unit, attachment, handler);
+    public <A> void read(ByteBuffer[] dsts,
+                         int offset,
+                         int length,
+                         long timeout,
+                         TimeUnit unit,
+                         A attachment,
+                         CompletionHandler<Long, ? super A> handler) {
+        try (var ignored1 = JavaNioAccess.lockScopes(dsts, true)) {
+            super.read(dsts, offset, length, timeout, unit, attachment, handler);
         }
     }
 
     @Override
-    public <V extends Number, A> Future<V> implWrite(boolean isGatheringWrite,
-                                                     ByteBuffer src,
-                                                     ByteBuffer[] srcs,
-                                                     long timeout,
-                                                     TimeUnit unit,
-                                                     A attachment,
-                                                     CompletionHandler<V, ? super A> handler) {
-        try (var ignored1 = JavaNioAccess.lockScopes(src, srcs, true)) {
-            return super.implWrite(isGatheringWrite, src, srcs, timeout, unit, attachment, handler);
+    public <A> void read(ByteBuffer dst,
+                         long timeout,
+                         TimeUnit unit,
+                         A attachment,
+                         CompletionHandler<Integer, ? super A> handler) {
+        try (var ignored1 = JavaNioAccess.lockScope(dst, true)) {
+            super.read(dst, timeout, unit, attachment, handler);
+        }
+    }
+
+    @Override
+    public Future<Integer> read(ByteBuffer dst) {
+        try (var ignored1 = JavaNioAccess.lockScope(dst, true)) {
+            return super.read(dst);
+        }
+    }
+
+    @Override
+    public <A> void write(ByteBuffer[] srcs,
+                          int offset,
+                          int length,
+                          long timeout,
+                          TimeUnit unit,
+                          A attachment,
+                          CompletionHandler<Long, ? super A> handler) {
+        try (var ignored1 = JavaNioAccess.lockScopes(srcs, true)) {
+            super.write(srcs, offset, length, timeout, unit, attachment, handler);
+        }
+    }
+
+    @Override
+    public <A> void write(ByteBuffer src,
+                          long timeout,
+                          TimeUnit unit,
+                          A attachment,
+                          CompletionHandler<Integer, ? super A> handler) {
+        try (var ignored1 = JavaNioAccess.lockScope(src, true)) {
+            super.write(src, timeout, unit, attachment, handler);
+        }
+    }
+
+    @Override
+    public Future<Integer> write(ByteBuffer src) {
+        try (var ignored1 = JavaNioAccess.lockScope(src, true)) {
+            return super.write(src);
         }
     }
 }

@@ -12,22 +12,36 @@ import java.util.concurrent.Future;
 @DoNotObfuscate
 final class AsynchronousFileChannelHook extends AsynchronousFileChannelBase {
     @Override
-    public <A> Future<Integer> implRead(ByteBuffer dst,
-                                        long position,
-                                        A attachment,
-                                        CompletionHandler<Integer, ? super A> handler) {
+    public <A> void read(ByteBuffer dst,
+                         long position,
+                         A attachment,
+                         CompletionHandler<Integer, ? super A> handler) {
         try (var ignored1 = JavaNioAccess.lockScope(dst, true)) {
-            return super.implRead(dst, position, attachment, handler);
+            super.read(dst, position, attachment, handler);
         }
     }
 
     @Override
-    public <A> Future<Integer> implWrite(ByteBuffer src,
-                                         long position,
-                                         A attachment,
-                                         CompletionHandler<Integer, ? super A> handler) {
+    public Future<Integer> read(ByteBuffer dst, long position) {
+        try (var ignored1 = JavaNioAccess.lockScope(dst, true)) {
+            return super.read(dst, position);
+        }
+    }
+
+    @Override
+    public <A> void write(ByteBuffer src,
+                          long position,
+                          A attachment,
+                          CompletionHandler<Integer, ? super A> handler) {
         try (var ignored1 = JavaNioAccess.lockScope(src, true)) {
-            return super.implWrite(src, position, attachment, handler);
+            super.write(src, position, attachment, handler);
+        }
+    }
+
+    @Override
+    public Future<Integer> write(ByteBuffer src, long position) {
+        try (var ignored1 = JavaNioAccess.lockScope(src, true)) {
+            return super.write(src, position);
         }
     }
 }

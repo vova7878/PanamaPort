@@ -49,7 +49,6 @@ import com.v7878.dex.immutable.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.ApiSensitive;
-import com.v7878.unsafe.ArtMethodUtils;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.Utils.FineClosable;
@@ -71,10 +70,8 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
-import java.nio.channels.CompletionHandler;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -153,11 +150,6 @@ public class JavaNioAccess {
     // TODO: simpify
     static {
         Method attachment_method;
-
-        Method read_file_method;
-        Method write_file_method;
-        Method read_socket_method;
-        Method write_socket_method;
 
         String nio_direct_buf_name = "java.nio.DirectByteBuffer";
         TypeId nio_direct_buf_id = TypeId.ofName(nio_direct_buf_name);
@@ -265,32 +257,30 @@ public class JavaNioAccess {
         {
             makeClassInheritable(nio_file_channel_class);
 
-            Method[] methods = getHiddenVirtualMethods(nio_file_channel_class);
-            for (Method method : methods) {
-                makeMethodInheritable(method);
-                makeExecutablePublicApi(method);
+            Class<?> clazz = nio_file_channel_class;
+            while (clazz != null && clazz != Object.class) {
+                var methods = getHiddenVirtualMethods(clazz);
+                for (Method method : methods) {
+                    makeMethodInheritable(method);
+                    makeExecutablePublicApi(method);
+                }
+                clazz = clazz.getSuperclass();
             }
-            read_file_method = searchMethod(methods, "implRead",
-                    ByteBuffer.class, long.class, Object.class, CompletionHandler.class);
-            write_file_method = searchMethod(methods, "implWrite",
-                    ByteBuffer.class, long.class, Object.class, CompletionHandler.class);
         }
 
         Class<?> nio_socket_channel_class = nothrows_run(() -> Class.forName(nio_socket_channel_name));
         {
             makeClassInheritable(nio_socket_channel_class);
 
-            Method[] methods = getHiddenVirtualMethods(nio_socket_channel_class);
-            for (Method method : methods) {
-                makeMethodInheritable(method);
-                makeExecutablePublicApi(method);
+            Class<?> clazz = nio_socket_channel_class;
+            while (clazz != null && clazz != Object.class) {
+                var methods = getHiddenVirtualMethods(clazz);
+                for (Method method : methods) {
+                    makeMethodInheritable(method);
+                    makeExecutablePublicApi(method);
+                }
+                clazz = clazz.getSuperclass();
             }
-            read_socket_method = searchMethod(methods, "implRead",
-                    boolean.class, ByteBuffer.class, ByteBuffer[].class, long.class,
-                    TimeUnit.class, Object.class, CompletionHandler.class);
-            write_socket_method = searchMethod(methods, "implWrite",
-                    boolean.class, ByteBuffer.class, ByteBuffer[].class, long.class,
-                    TimeUnit.class, Object.class, CompletionHandler.class);
         }
 
         String direct_buf_name = "com.v7878.unsafe.DirectByteBuffer";
@@ -423,24 +413,18 @@ public class JavaNioAccess {
         loadClass(dex, socket_channel_name, loader);
 
         {
-            int index = ArtMethodUtils.getDispatchTableIndex(read_file_method);
-            VM.setEmbeddedVTableEntry(nio_file_channel_class, index,
-                    VM.getEmbeddedVTableEntry(Helper.getFileChannelHook(), index));
+            int vtable_size = VM.getEmbeddedVTableLength(nio_file_channel_class);
+            for (int i = 0; i < vtable_size; i++) {
+                VM.setEmbeddedVTableEntry(nio_file_channel_class, i,
+                        VM.getEmbeddedVTableEntry(Helper.getFileChannelHook(), i));
+            }
         }
         {
-            int index = ArtMethodUtils.getDispatchTableIndex(write_file_method);
-            VM.setEmbeddedVTableEntry(nio_file_channel_class, index,
-                    VM.getEmbeddedVTableEntry(Helper.getFileChannelHook(), index));
-        }
-        {
-            int index = ArtMethodUtils.getDispatchTableIndex(read_socket_method);
-            VM.setEmbeddedVTableEntry(nio_socket_channel_class, index,
-                    VM.getEmbeddedVTableEntry(Helper.getSocketChannelHook(), index));
-        }
-        {
-            int index = ArtMethodUtils.getDispatchTableIndex(write_socket_method);
-            VM.setEmbeddedVTableEntry(nio_socket_channel_class, index,
-                    VM.getEmbeddedVTableEntry(Helper.getSocketChannelHook(), index));
+            int vtable_size = VM.getEmbeddedVTableLength(nio_socket_channel_class);
+            for (int i = 0; i < vtable_size; i++) {
+                VM.setEmbeddedVTableEntry(nio_socket_channel_class, i,
+                        VM.getEmbeddedVTableEntry(Helper.getSocketChannelHook(), i));
+            }
         }
     }
 
