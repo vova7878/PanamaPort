@@ -2,12 +2,23 @@ package com.v7878.unsafe;
 
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
+import static com.v7878.unsafe.ArtFieldUtils.makeFieldNonFinal;
+import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
+import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublicApi;
+import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
+import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicApi;
+import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
 import static com.v7878.unsafe.ArtModifiers.kAccSkipAccessChecks;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.fieldOffset;
+import static com.v7878.unsafe.Reflection.getHiddenExecutables;
+import static com.v7878.unsafe.Reflection.getHiddenFields;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
+import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -133,14 +144,16 @@ public class ClassUtils {
         }
     }
 
-    private static final long CLASS_STATUS_OFFSET = fieldOffset(
-            getHiddenInstanceField(Class.class, "status"));
-    private static final long CLASS_FLAGS_OFFSET = fieldOffset(
-            getHiddenInstanceField(Class.class, "accessFlags"));
+    private static class Helper {
+        static final long CLASS_STATUS_OFFSET = fieldOffset(
+                getHiddenInstanceField(Class.class, "status"));
+        static final long CLASS_FLAGS_OFFSET = fieldOffset(
+                getHiddenInstanceField(Class.class, "accessFlags"));
+    }
 
     @ApiSensitive
     public static int getRawClassStatus(Class<?> clazz) {
-        int value = AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), CLASS_STATUS_OFFSET);
+        int value = AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Helper.CLASS_STATUS_OFFSET);
         return ART_SDK_INT <= 27 ? value : (value >>> 32 - 4);
     }
 
@@ -153,10 +166,10 @@ public class ClassUtils {
     public static void setRawClassStatus(Class<?> clazz, int status) {
         Objects.requireNonNull(clazz);
         if (ART_SDK_INT > 27) {
-            int value = AndroidUnsafe.getIntO(clazz, CLASS_STATUS_OFFSET);
+            int value = AndroidUnsafe.getIntO(clazz, Helper.CLASS_STATUS_OFFSET);
             status = (value & ~0 >>> 4) | (status << 32 - 4);
         }
-        AndroidUnsafe.putIntO(clazz, CLASS_STATUS_OFFSET, status);
+        AndroidUnsafe.putIntO(clazz, Helper.CLASS_STATUS_OFFSET, status);
         fullFence();
     }
 
@@ -166,30 +179,30 @@ public class ClassUtils {
     }
 
     public static int getClassFlags(Class<?> clazz) {
-        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), CLASS_FLAGS_OFFSET);
+        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Helper.CLASS_FLAGS_OFFSET);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setClassFlags(Class<?> clazz, int flags) {
-        AndroidUnsafe.putIntO(Objects.requireNonNull(clazz), CLASS_FLAGS_OFFSET, flags);
+        AndroidUnsafe.putIntO(Objects.requireNonNull(clazz), Helper.CLASS_FLAGS_OFFSET, flags);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeClassFlags(Class<?> clazz, int remove_flags, int add_flags) {
         Objects.requireNonNull(clazz);
-        int flags = AndroidUnsafe.getIntO(clazz, CLASS_FLAGS_OFFSET);
+        int flags = AndroidUnsafe.getIntO(clazz, Helper.CLASS_FLAGS_OFFSET);
         flags &= ~remove_flags;
         flags |= add_flags;
-        AndroidUnsafe.putIntO(clazz, CLASS_FLAGS_OFFSET, flags);
+        AndroidUnsafe.putIntO(clazz, Helper.CLASS_FLAGS_OFFSET, flags);
         fullFence();
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeClassFlags(Class<?> clazz, IntUnaryOperator filter) {
         Objects.requireNonNull(clazz);
-        int flags = AndroidUnsafe.getIntO(clazz, CLASS_FLAGS_OFFSET);
+        int flags = AndroidUnsafe.getIntO(clazz, Helper.CLASS_FLAGS_OFFSET);
         flags = filter.applyAsInt(flags);
-        AndroidUnsafe.putIntO(clazz, CLASS_FLAGS_OFFSET, flags);
+        AndroidUnsafe.putIntO(clazz, Helper.CLASS_FLAGS_OFFSET, flags);
         fullFence();
     }
 
@@ -242,5 +255,59 @@ public class ClassUtils {
                 });
             }
         }
+    }
+
+    public static Class<?> forName(String name, boolean initialize, ClassLoader loader) {
+        return nothrows_run(() -> Class.forName(name, initialize, loader));
+    }
+
+    public static Class<?> forName(String name, ClassLoader loader) {
+        return forName(name, false, loader);
+    }
+
+    private static ClassLoader getClassLoader(Class<?> caller) {
+        if (caller == null) {
+            return null;
+        }
+        return caller.getClassLoader();
+    }
+
+    public static Class<?> forName(String name) {
+        return forName(name, false, getClassLoader(Stack.getStackClass1()));
+    }
+
+    public static Class<?> sysClass(String name) {
+        return forName(name, false, null);
+    }
+
+    public static void openClass(Class<?> clazz, boolean unfinal_fields) {
+        makeClassInheritable(clazz);
+
+        var executables = getHiddenExecutables(clazz);
+        for (var executable : executables) {
+            int flags = executable.getModifiers();
+            if (executable instanceof Constructor<?> || Modifier.isStatic(flags)) {
+                makeExecutablePublic(executable);
+            } else if (!Modifier.isPrivate(flags)) {
+                makeMethodInheritable((Method) executable);
+            } else {
+                // private non-static method is direct. Only constructors have the same call type,
+                // so you can't change modifiers without changing the call type
+            }
+            makeExecutablePublicApi(executable);
+        }
+
+        var fields = getHiddenFields(clazz);
+        for (var field : fields) {
+            makeFieldPublic(field);
+            makeFieldPublicApi(field);
+            if (unfinal_fields) {
+                makeFieldNonFinal(field);
+            }
+        }
+    }
+
+    public static void openClass(Class<?> clazz) {
+        openClass(clazz, false);
     }
 }

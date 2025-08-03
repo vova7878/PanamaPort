@@ -12,7 +12,6 @@ import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceFields;
 import static com.v7878.unsafe.Utils.assertEq;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import com.v7878.dex.DexIO;
@@ -37,8 +36,8 @@ import java.util.Objects;
 import dalvik.system.DexFile;
 
 public final class EmulatedStackFrame {
-    static final Class<?> ESF_CLASS = nothrows_run(() ->
-            Class.forName("dalvik.system.EmulatedStackFrame"));
+    static final Class<?> ESF_CLASS =
+            ClassUtils.sysClass("dalvik.system.EmulatedStackFrame");
     private static final AccessI ACCESS;
 
     @DoNotShrink

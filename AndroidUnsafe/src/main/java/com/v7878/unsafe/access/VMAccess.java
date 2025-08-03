@@ -6,13 +6,13 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.ClassUtils;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 
 public class VMAccess {
-    private static final Class<?> VM_CLASS = nothrows_run(() ->
-            Class.forName("dalvik.system.VMRuntime"));
+    private static final Class<?> VM_CLASS = ClassUtils.sysClass("dalvik.system.VMRuntime");
     private static final Method[] methods = getHiddenMethods(VM_CLASS);
 
     private static Object getInstance() {

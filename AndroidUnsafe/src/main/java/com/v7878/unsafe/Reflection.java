@@ -313,8 +313,8 @@ public class Reflection {
     }
 
     @SuppressWarnings("unchecked")
-    private static final Class<MethodHandle> MethodHandleImplClass = nothrows_run(() ->
-            (Class<MethodHandle>) Class.forName("java.lang.invoke.MethodHandleImpl"));
+    private static final Class<MethodHandle> MethodHandleImplClass =
+            (Class<MethodHandle>) ClassUtils.sysClass("java.lang.invoke.MethodHandleImpl");
 
     public static final long ART_METHOD_SIZE;
     public static final long ART_METHOD_PADDING;

@@ -12,7 +12,6 @@ import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceFields;
 import static com.v7878.unsafe.Utils.DEBUG_BUILD;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.getSize;
 
 import com.v7878.dex.DexIO;
@@ -38,8 +37,8 @@ import dalvik.system.DexFile;
 
 @ApiSensitive
 public class MethodTypeHacks {
-    private static final Class<?> INVOKE_FORM = nothrows_run(
-            () -> Class.forName("java.lang.invoke.MethodTypeForm"));
+    private static final Class<?> INVOKE_FORM =
+            ClassUtils.sysClass("java.lang.invoke.MethodTypeForm");
     private static final Class<MethodTypeForm0> FORM_IMPL;
 
     @DoNotShrinkType

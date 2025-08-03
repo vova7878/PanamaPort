@@ -63,8 +63,8 @@ public class Transformers {
     private static final InvokerI invoker;
 
     static {
-        Class<?> invoke_transformer = nothrows_run(() -> Class.forName(
-                "java.lang.invoke.Transformers$Transformer"));
+        Class<?> invoke_transformer = ClassUtils.sysClass(
+                "java.lang.invoke.Transformers$Transformer");
         TypeId invoke_transformer_id = TypeId.of(invoke_transformer);
 
         TypeId mh = TypeId.of(MethodHandle.class);

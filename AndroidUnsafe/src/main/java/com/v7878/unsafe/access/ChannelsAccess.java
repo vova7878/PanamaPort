@@ -8,6 +8,7 @@ import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.ClassUtils;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -43,8 +44,7 @@ public class ChannelsAccess {
 
     private static Class<?> fileChannelClass() {
         class Holder {
-            static final Class<?> CLASS = nothrows_run(() ->
-                    Class.forName("sun.nio.ch.FileChannelImpl"));
+            static final Class<?> CLASS = ClassUtils.sysClass("sun.nio.ch.FileChannelImpl");
         }
         return Holder.CLASS;
     }
@@ -110,8 +110,7 @@ public class ChannelsAccess {
 
     private static Class<?> threadSetClass() {
         class Holder {
-            static final Class<?> CLASS = nothrows_run(() ->
-                    Class.forName("sun.nio.ch.NativeThreadSet"));
+            static final Class<?> CLASS = ClassUtils.sysClass("sun.nio.ch.NativeThreadSet");
         }
         return Holder.CLASS;
     }

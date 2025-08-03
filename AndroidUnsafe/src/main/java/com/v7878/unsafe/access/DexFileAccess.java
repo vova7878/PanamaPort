@@ -5,7 +5,7 @@ import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
-import com.v7878.unsafe.DexFileUtils;
+import com.v7878.unsafe.ClassUtils;
 
 import java.lang.invoke.MethodHandle;
 import java.nio.ByteBuffer;
@@ -18,8 +18,8 @@ public class DexFileAccess {
             static final MethodHandle handle;
 
             static {
-                Class<?> elements = DexFileUtils.forName(
-                        "[Ldalvik.system.DexPathList$Element;", null);
+                Class<?> elements = ClassUtils.sysClass(
+                        "[Ldalvik.system.DexPathList$Element;");
                 handle = unreflect(getHiddenConstructor(DexFile.class,
                         ByteBuffer[].class, ClassLoader.class, elements));
             }
@@ -43,8 +43,8 @@ public class DexFileAccess {
             static final MethodHandle handle;
 
             static {
-                Class<?> elements = DexFileUtils.forName(
-                        "[Ldalvik.system.DexPathList$Element;", null);
+                Class<?> elements = ClassUtils.sysClass(
+                        "[Ldalvik.system.DexPathList$Element;");
                 handle = unreflect(getHiddenMethod(DexFile.class, "openInMemoryDexFiles",
                         ByteBuffer[].class, ClassLoader.class, elements));
             }

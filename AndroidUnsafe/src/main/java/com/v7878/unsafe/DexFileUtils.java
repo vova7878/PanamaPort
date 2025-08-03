@@ -9,7 +9,6 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
@@ -161,8 +160,8 @@ public class DexFileUtils {
         default -> throw unsupportedSDK(ART_SDK_INT);
     };
 
-    private static final long dexFileOffset = fieldOffset(nothrows_run(() ->
-            getHiddenInstanceField(Class.forName("java.lang.DexCache"), "dexFile")));
+    private static final long dexFileOffset = fieldOffset(getHiddenInstanceField(
+            ClassUtils.sysClass("java.lang.DexCache"), "dexFile"));
 
     public static Object getDexCache(Class<?> clazz) {
         class Holder {
@@ -295,10 +294,6 @@ public class DexFileUtils {
             return;
         }
         setTrusted(getDexFileStruct(clazz));
-    }
-
-    public static Class<?> forName(String name, ClassLoader loader) {
-        return nothrows_run(() -> Class.forName(name, false, loader));
     }
 
     public static Class<?> loadClass(DexFile dex, String name, ClassLoader loader) {

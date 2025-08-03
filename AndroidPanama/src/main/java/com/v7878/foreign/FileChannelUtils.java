@@ -9,6 +9,7 @@ import android.system.ErrnoException;
 import android.system.Os;
 import android.system.OsConstants;
 
+import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.access.ChannelsAccess;
 import com.v7878.unsafe.access.ChannelsAccess.NativeThreadSet;
 import com.v7878.unsafe.access.JavaForeignAccess;
@@ -267,8 +268,7 @@ public final class FileChannelUtils {
 
     private static Class<?> fileDispatcherClass() {
         class Holder {
-            static final Class<?> CLASS = nothrows_run(() ->
-                    Class.forName("sun.nio.ch.FileDispatcherImpl"));
+            static final Class<?> CLASS = ClassUtils.sysClass("sun.nio.ch.FileDispatcherImpl");
         }
         return Holder.CLASS;
     }

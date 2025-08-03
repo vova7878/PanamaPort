@@ -24,6 +24,7 @@ import com.v7878.dex.immutable.FieldId;
 import com.v7878.dex.immutable.TypeId;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.VM;
 
@@ -227,8 +228,7 @@ public class InvokeAccess {
 
     public static Member getMemberInternal(MethodHandle target) {
         class Holder {
-            static final Class<?> mhi = nothrows_run(() ->
-                    Class.forName("java.lang.invoke.MethodHandleImpl"));
+            static final Class<?> mhi = ClassUtils.sysClass("java.lang.invoke.MethodHandleImpl");
             static final MethodHandle getMemberInternal = nothrows_run(() ->
                     unreflect(getHiddenMethod(mhi, "getMemberInternal")));
         }
