@@ -275,13 +275,13 @@ public class VM {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void copyTables(Class<?> from, Class<?> to) {
-        int vtable_size = VM.getEmbeddedVTableLength(to);
+        int vtable_size = getEmbeddedVTableLength(to);
         for (int i = 0; i < vtable_size; i++) {
-            VM.setEmbeddedVTableEntry(to, i, VM.getEmbeddedVTableEntry(from, i));
+            setEmbeddedVTableEntry(to, i, getEmbeddedVTableEntry(from, i));
         }
-        VM.setVTable(to, VM.getVTable(from));
-        VM.setIFTable(to, VM.getIFTable(from));
-        VM.setIMTable(to, VM.getIMTable(from));
+        setVTable(to, getVTable(from));
+        setIFTable(to, getIFTable(from));
+        setIMTable(to, getIMTable(from));
     }
 
     public static boolean isCompressedString(String s) {
