@@ -144,7 +144,7 @@ public class ClassUtils {
         }
     }
 
-    private static class Helper {
+    private static class Holder {
         static final long CLASS_STATUS_OFFSET = fieldOffset(
                 getHiddenInstanceField(Class.class, "status"));
         static final long CLASS_FLAGS_OFFSET = fieldOffset(
@@ -153,7 +153,7 @@ public class ClassUtils {
 
     @ApiSensitive
     public static int getRawClassStatus(Class<?> clazz) {
-        int value = AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Helper.CLASS_STATUS_OFFSET);
+        int value = AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.CLASS_STATUS_OFFSET);
         return ART_SDK_INT <= 27 ? value : (value >>> 32 - 4);
     }
 
@@ -166,10 +166,10 @@ public class ClassUtils {
     public static void setRawClassStatus(Class<?> clazz, int status) {
         Objects.requireNonNull(clazz);
         if (ART_SDK_INT > 27) {
-            int value = AndroidUnsafe.getIntO(clazz, Helper.CLASS_STATUS_OFFSET);
+            int value = AndroidUnsafe.getIntO(clazz, Holder.CLASS_STATUS_OFFSET);
             status = (value & ~0 >>> 4) | (status << 32 - 4);
         }
-        AndroidUnsafe.putIntO(clazz, Helper.CLASS_STATUS_OFFSET, status);
+        AndroidUnsafe.putIntO(clazz, Holder.CLASS_STATUS_OFFSET, status);
         fullFence();
     }
 
@@ -179,30 +179,30 @@ public class ClassUtils {
     }
 
     public static int getClassFlags(Class<?> clazz) {
-        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Helper.CLASS_FLAGS_OFFSET);
+        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.CLASS_FLAGS_OFFSET);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setClassFlags(Class<?> clazz, int flags) {
-        AndroidUnsafe.putIntO(Objects.requireNonNull(clazz), Helper.CLASS_FLAGS_OFFSET, flags);
+        AndroidUnsafe.putIntO(Objects.requireNonNull(clazz), Holder.CLASS_FLAGS_OFFSET, flags);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeClassFlags(Class<?> clazz, int remove_flags, int add_flags) {
         Objects.requireNonNull(clazz);
-        int flags = AndroidUnsafe.getIntO(clazz, Helper.CLASS_FLAGS_OFFSET);
+        int flags = AndroidUnsafe.getIntO(clazz, Holder.CLASS_FLAGS_OFFSET);
         flags &= ~remove_flags;
         flags |= add_flags;
-        AndroidUnsafe.putIntO(clazz, Helper.CLASS_FLAGS_OFFSET, flags);
+        AndroidUnsafe.putIntO(clazz, Holder.CLASS_FLAGS_OFFSET, flags);
         fullFence();
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void changeClassFlags(Class<?> clazz, IntUnaryOperator filter) {
         Objects.requireNonNull(clazz);
-        int flags = AndroidUnsafe.getIntO(clazz, Helper.CLASS_FLAGS_OFFSET);
+        int flags = AndroidUnsafe.getIntO(clazz, Holder.CLASS_FLAGS_OFFSET);
         flags = filter.applyAsInt(flags);
-        AndroidUnsafe.putIntO(clazz, Helper.CLASS_FLAGS_OFFSET, flags);
+        AndroidUnsafe.putIntO(clazz, Holder.CLASS_FLAGS_OFFSET, flags);
         fullFence();
     }
 
