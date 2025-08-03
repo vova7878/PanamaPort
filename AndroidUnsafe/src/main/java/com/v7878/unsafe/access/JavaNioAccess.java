@@ -18,25 +18,15 @@ import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.putObject;
-import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
-import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublicApi;
-import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
-import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicApi;
-import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.ClassUtils.makeClassInheritable;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getHiddenConstructors;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceFields;
-import static com.v7878.unsafe.Reflection.getHiddenMethods;
-import static com.v7878.unsafe.Reflection.getHiddenVirtualMethods;
+import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 
 import com.v7878.dex.DexIO;
@@ -49,6 +39,7 @@ import com.v7878.dex.immutable.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.ApiSensitive;
+import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.Utils.FineClosable;
@@ -57,10 +48,7 @@ import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
 
 import java.io.FileDescriptor;
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -167,129 +155,40 @@ public class JavaNioAccess {
         String nio_heap_buf_name = "java.nio.HeapByteBuffer";
         TypeId nio_heap_buf_id = TypeId.ofName(nio_heap_buf_name);
 
+        Class<?> nio_mem_ref_class = ClassUtils.sysClass(nio_mem_ref_name);
+        ClassUtils.openClass(nio_mem_ref_class);
+
+        Class<?> nio_direct_buf_class = ClassUtils.sysClass(nio_direct_buf_name);
+        ClassUtils.openClass(nio_direct_buf_class);
+        attachment_method = getHiddenMethod(nio_direct_buf_class, "attachment");
+        attachment = unreflect(attachment_method);
+
+        Class<?> nio_heap_buf_class = ClassUtils.sysClass(nio_heap_buf_name);
+        ClassUtils.openClass(nio_heap_buf_class);
+
+        for (Class<?> clazz = MappedByteBuffer.class;
+             clazz != null && clazz != Object.class;
+             clazz = clazz.getSuperclass()) {
+            ClassUtils.openClass(clazz);
+        }
+
         String nio_file_channel_name = "sun.nio.ch.SimpleAsynchronousFileChannelImpl";
         TypeId nio_file_channel_id = TypeId.ofName(nio_file_channel_name);
         String nio_socket_channel_name = "sun.nio.ch.UnixAsynchronousSocketChannelImpl";
         TypeId nio_socket_channel_id = TypeId.ofName(nio_socket_channel_name);
 
-        Class<?> nio_mem_ref_class = nothrows_run(() -> Class.forName(nio_mem_ref_name));
-        {
-            makeClassInheritable(nio_mem_ref_class);
-
-            Method[] methods = getHiddenMethods(nio_mem_ref_class);
-            for (Method method : methods) {
-                int flags = method.getModifiers();
-                if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
-                    makeMethodInheritable(method);
-                }
-                makeExecutablePublicApi(method);
-            }
-
-            Constructor<?>[] constructors = getHiddenConstructors(nio_mem_ref_class);
-            for (Constructor<?> constructor : constructors) {
-                makeExecutablePublic(constructor);
-                makeExecutablePublicApi(constructor);
-            }
-
-            Field[] fields = getHiddenInstanceFields(nio_mem_ref_class);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-                makeFieldPublicApi(field);
-            }
+        Class<?> nio_file_channel_class = ClassUtils.sysClass(nio_file_channel_name);
+        for (Class<?> clazz = nio_file_channel_class;
+             clazz != null && clazz != Object.class;
+             clazz = clazz.getSuperclass()) {
+            ClassUtils.openClass(clazz);
         }
 
-        Class<?> nio_direct_buf_class = nothrows_run(() -> Class.forName(nio_direct_buf_name));
-        {
-            Method[] methods = getHiddenMethods(nio_direct_buf_class);
-            for (Method method : methods) {
-                int flags = method.getModifiers();
-                if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
-                    makeMethodInheritable(method);
-                }
-                makeExecutablePublicApi(method);
-            }
-
-            attachment_method = searchMethod(methods, "attachment");
-            attachment = unreflect(attachment_method);
-
-            Constructor<?>[] constructors = getHiddenConstructors(nio_direct_buf_class);
-            for (Constructor<?> constructor : constructors) {
-                makeExecutablePublic(constructor);
-                makeExecutablePublicApi(constructor);
-            }
-
-            Field[] fields = getHiddenInstanceFields(nio_direct_buf_class);
-            for (Field field : fields) {
-                makeFieldPublic(field);
-                makeFieldPublicApi(field);
-            }
-        }
-
-        Class<?> nio_heap_buf_class = nothrows_run(() -> Class.forName(nio_heap_buf_name));
-        {
-            makeClassInheritable(nio_heap_buf_class);
-
-            Method[] methods = getHiddenMethods(nio_heap_buf_class);
-            for (Method method : methods) {
-                int flags = method.getModifiers();
-                if (!Modifier.isPrivate(flags) && !Modifier.isStatic(flags)) {
-                    makeMethodInheritable(method);
-                }
-                makeExecutablePublicApi(method);
-            }
-
-            Constructor<?>[] constructors = getHiddenConstructors(nio_heap_buf_class);
-            for (Constructor<?> constructor : constructors) {
-                makeExecutablePublic(constructor);
-                makeExecutablePublicApi(constructor);
-            }
-        }
-
-        {
-            Class<?> clazz = MappedByteBuffer.class;
-            while (clazz != null && clazz != Object.class) {
-                var methods = getHiddenVirtualMethods(clazz);
-                for (Method method : methods) {
-                    makeMethodInheritable(method);
-                    makeExecutablePublicApi(method);
-                }
-                var fields = getHiddenInstanceFields(clazz);
-                for (Field field : fields) {
-                    makeFieldPublic(field);
-                    makeFieldPublicApi(field);
-                }
-                clazz = clazz.getSuperclass();
-            }
-        }
-
-        Class<?> nio_file_channel_class = nothrows_run(() -> Class.forName(nio_file_channel_name));
-        {
-            makeClassInheritable(nio_file_channel_class);
-
-            Class<?> clazz = nio_file_channel_class;
-            while (clazz != null && clazz != Object.class) {
-                var methods = getHiddenVirtualMethods(clazz);
-                for (Method method : methods) {
-                    makeMethodInheritable(method);
-                    makeExecutablePublicApi(method);
-                }
-                clazz = clazz.getSuperclass();
-            }
-        }
-
-        Class<?> nio_socket_channel_class = nothrows_run(() -> Class.forName(nio_socket_channel_name));
-        {
-            makeClassInheritable(nio_socket_channel_class);
-
-            Class<?> clazz = nio_socket_channel_class;
-            while (clazz != null && clazz != Object.class) {
-                var methods = getHiddenVirtualMethods(clazz);
-                for (Method method : methods) {
-                    makeMethodInheritable(method);
-                    makeExecutablePublicApi(method);
-                }
-                clazz = clazz.getSuperclass();
-            }
+        Class<?> nio_socket_channel_class = ClassUtils.sysClass(nio_socket_channel_name);
+        for (Class<?> clazz = nio_socket_channel_class;
+             clazz != null && clazz != Object.class;
+             clazz = clazz.getSuperclass()) {
+            ClassUtils.openClass(clazz);
         }
 
         String direct_buf_name = "com.v7878.unsafe.DirectByteBuffer";
@@ -298,11 +197,6 @@ public class JavaNioAccess {
         TypeId mem_ref_id = TypeId.ofName(mem_ref_name);
         String heap_buf_name = "com.v7878.unsafe.HeapByteBuffer";
         TypeId heap_buf_id = TypeId.ofName(heap_buf_name);
-
-        String file_channel_name = "com.v7878.unsafe.AsynchronousFileChannelBase";
-        TypeId file_channel_id = TypeId.ofName(file_channel_name);
-        String socket_channel_name = "com.v7878.unsafe.AsynchronousSocketChannelBase";
-        TypeId socket_channel_id = TypeId.ofName(socket_channel_name);
 
         FieldId obo = FieldId.of(mem_ref_id, "originalBufferObject", TypeId.OBJECT);
 
@@ -398,6 +292,11 @@ public class JavaNioAccess {
                 )
         );
 
+        String file_channel_name = "com.v7878.unsafe.AsynchronousFileChannelBase";
+        TypeId file_channel_id = TypeId.ofName(file_channel_name);
+        String socket_channel_name = "com.v7878.unsafe.AsynchronousSocketChannelBase";
+        TypeId socket_channel_id = TypeId.ofName(socket_channel_name);
+
         ClassDef file_channel_def = ClassBuilder.build(file_channel_id, cb -> cb
                 .withSuperClass(nio_file_channel_id)
                 .withFlags(ACC_PUBLIC)
@@ -455,7 +354,7 @@ public class JavaNioAccess {
     private static final Set<Class<?>> BUFFER_VIEWS = Stream
             .of("Char", "Short", "Int", "Float", "Long", "Double")
             .map(name -> String.format("java.nio.ByteBufferAs%sBuffer", name))
-            .map(name -> nothrows_run(() -> Class.forName(name)))
+            .map(ClassUtils::sysClass)
             .collect(Collectors.toSet());
 
     private static boolean isBufferView(Buffer buffer) {
