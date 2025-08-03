@@ -6,12 +6,23 @@ import com.v7878.unsafe.AsynchronousSocketChannelBase;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
+import java.util.Objects;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 @DoNotShrink
 @DoNotObfuscate
 final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase {
+    private static ByteBuffer[] subsequence(ByteBuffer[] bs, int offset, int length) {
+        Objects.checkFromIndexSize(offset, length, bs.length);
+        if ((offset == 0) && (length == bs.length)) {
+            return bs;
+        }
+        ByteBuffer[] bs2 = new ByteBuffer[length];
+        System.arraycopy(bs, offset, bs2, 0, length);
+        return bs2;
+    }
+
     @Override
     public <A> void read(ByteBuffer[] dsts,
                          int offset,
@@ -20,8 +31,9 @@ final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase 
                          TimeUnit unit,
                          A attachment,
                          CompletionHandler<Long, ? super A> handler) {
+        dsts = subsequence(dsts, offset, length);
         JavaNioAccess.checkAsyncScope(dsts);
-        super.read(dsts, offset, length, timeout, unit, attachment, handler);
+        super.read(dsts, 0, dsts.length, timeout, unit, attachment, handler);
     }
 
     @Override
@@ -48,8 +60,9 @@ final class AsynchronousSocketChannelHook extends AsynchronousSocketChannelBase 
                           TimeUnit unit,
                           A attachment,
                           CompletionHandler<Long, ? super A> handler) {
+        srcs = subsequence(srcs, offset, length);
         JavaNioAccess.checkAsyncScope(srcs);
-        super.write(srcs, offset, length, timeout, unit, attachment, handler);
+        super.write(srcs, 0, srcs.length, timeout, unit, attachment, handler);
     }
 
     @Override
