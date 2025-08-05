@@ -199,13 +199,15 @@ public class BulkLinker {
     private record SymbolInfo(String name, MapType ret, MapType[] args, SymbolSource source,
                               CallType call_type, boolean requireNativeStub) {
 
-        static SymbolInfo of(String name, CallType call_type, SymbolSource source,
-                             MapType ret, MapType... args) {
-            Objects.requireNonNull(name);
-            Objects.requireNonNull(ret);
-            Objects.requireNonNull(args);
+        static SymbolInfo of(Method method, CallSignature signature, SymbolSource source) {
+            Objects.requireNonNull(method);
+            Objects.requireNonNull(signature);
             Objects.requireNonNull(source);
-            Objects.requireNonNull(call_type);
+
+            CallType call_type = signature.type();
+            MapType ret = signature.ret();
+            MapType[] args = signature.args();
+
             if (call_type.replaceThis && (args.length < 1 || args[0] != MapType.OBJECT)) {
                 throw new IllegalArgumentException(String.format(
                         "Call type %s requires first object parameter", call_type));
@@ -226,7 +228,10 @@ public class BulkLinker {
             }
             boolean requireNativeStub = call_type.requireNativeStub || ret.requireNativeStub
                     || Arrays.stream(args).anyMatch(arg -> arg.requireNativeStub);
-            return new SymbolInfo(name, ret, args.clone(), source, call_type, requireNativeStub);
+
+            var out = new SymbolInfo(method.getName(), ret, args, source, call_type, requireNativeStub);
+            out.checkImplSignature(method);
+            return out;
         }
 
         ProtoId stubProto() {
@@ -791,11 +796,11 @@ public class BulkLinker {
 
         Map<Class<?>, Method[]> cached_methods = new HashMap<>();
         Map<Class<?>, Field[]> cached_fields = new HashMap<>();
-        Method[] clazz_methods = getDeclaredMethods(clazz);
-        cached_methods.put(clazz, clazz_methods);
-        List<SymbolInfo> infos = new ArrayList<>(clazz_methods.length);
+        Method[] sketch_methods = getDeclaredMethods(clazz);
+        cached_methods.put(clazz, sketch_methods);
+        List<SymbolInfo> infos = new ArrayList<>(sketch_methods.length);
 
-        for (Method method : clazz_methods) {
+        for (Method method : sketch_methods) {
             CallSignature[] signatures = method.getDeclaredAnnotationsByType(CallSignature.class);
             CallSignature signature = getSignature(signatures);
 
@@ -820,9 +825,7 @@ public class BulkLinker {
                 throw new IllegalStateException("Could not find source for method " + method);
             }
 
-            var info = SymbolInfo.of(method.getName(), signature.type(), source, signature.ret(), signature.args());
-            info.checkImplSignature(method);
-            infos.add(info);
+            infos.add(SymbolInfo.of(method, signature, source));
         }
 
         return processSymbols(arena, clazz, loader, infos.toArray(new SymbolInfo[0]));
