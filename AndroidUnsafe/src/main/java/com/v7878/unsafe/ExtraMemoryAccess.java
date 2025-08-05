@@ -133,8 +133,8 @@ public class ExtraMemoryAccess {
         //TODO: poisoning = TRUE
         abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        static final EarlyNative INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, EarlyNative.class, name -> Optional.empty()));
+        static final EarlyNative INSTANCE = BulkLinker.generateImpl(SCOPE,
+                EarlyNative.class, name -> Optional.empty());
     }
 
     // TODO: should be package-private
@@ -1033,8 +1033,7 @@ public class ExtraMemoryAccess {
             return gen_atomic_compare_and_exchange("atomic_compare_and_set_long", LLVMTypes::int64_t, false);
         }
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class);
     }
 
     public static void setMemory(Object base, long offset, long bytes, byte value) {

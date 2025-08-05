@@ -18,7 +18,6 @@ import com.v7878.llvm.Types.LLVMMemoryBufferRef;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
@@ -226,8 +225,7 @@ public final class ObjectFile {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long LLVMGetRelocationValueString(long RI);
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, LLVM));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class, LLVM);
     }
 
     // ObjectFile creation

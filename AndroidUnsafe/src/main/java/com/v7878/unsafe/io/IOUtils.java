@@ -19,7 +19,6 @@ import com.v7878.foreign.SymbolLookup;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.JavaForeignAccess;
@@ -102,8 +101,7 @@ public class IOUtils {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
         abstract int madvise(long address, long length, int advice);
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, CUTILS));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class, CUTILS);
     }
 
     public static void ashmem_valid(FileDescriptor fd) throws ErrnoException {

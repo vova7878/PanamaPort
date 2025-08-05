@@ -15,7 +15,6 @@ import com.v7878.llvm.Types.LLVMPassManagerRef;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
@@ -102,8 +101,7 @@ public final class PassManagerBuilder {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD, BOOL_AS_INT, BOOL_AS_INT})
         abstract void LLVMPassManagerBuilderPopulateLTOPassManager(long PMB, long PM, boolean Internalize, boolean RunInliner);
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, LLVM));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class, LLVM);
     }
 
     public static LLVMPassManagerBuilderRef LLVMPassManagerBuilderCreate() {

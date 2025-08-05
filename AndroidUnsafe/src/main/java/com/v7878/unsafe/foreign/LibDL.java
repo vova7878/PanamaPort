@@ -156,8 +156,8 @@ public class LibDL {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract int dladdr(long addr, long info);
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, unused -> Optional.empty()));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE,
+                Native.class, unused -> Optional.empty());
     }
 
     // TODO: refactor?

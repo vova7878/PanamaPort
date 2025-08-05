@@ -26,7 +26,6 @@ import com.v7878.llvm.Types.AddressValue;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
@@ -240,8 +239,7 @@ public final class Target {
         @CallSignature(type = CRITICAL, ret = LONG, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
         abstract long LLVMOffsetOfElement(long TD, long StructTy, int Element);
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, LLVM));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class, LLVM);
     }
 
     public static void LLVMInitializeNativeTargetInfo() {

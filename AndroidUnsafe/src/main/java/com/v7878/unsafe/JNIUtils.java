@@ -354,8 +354,7 @@ public class JNIUtils {
         @CallSignature(type = FAST_STATIC, ret = LONG_AS_WORD, args = {})
         abstract long current();
 
-        static final ENV INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, ENV.class));
+        static final ENV INSTANCE = BulkLinker.generateImpl(SCOPE, ENV.class);
     }
 
     public static long getCurrentEnvPtr() {
@@ -411,8 +410,8 @@ public class JNIUtils {
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract int get_java_vm(long env, long jvm);
 
-        static final JVM INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, JVM.class, getJNINativeInterfaceLookup()));
+        static final JVM INSTANCE = BulkLinker.generateImpl(SCOPE,
+                JVM.class, getJNINativeInterfaceLookup());
     }
 
     public static MemorySegment getJavaVM() {
@@ -550,8 +549,8 @@ public class JNIUtils {
 
         // TODO: GetObjectRefType
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, ART.or(getJNINativeInterfaceLookup())));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE,
+                Native.class, ART.or(getJNINativeInterfaceLookup()));
     }
 
     public static long NewLocalRef(Object obj) {

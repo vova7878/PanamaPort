@@ -10,7 +10,6 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
@@ -37,8 +36,7 @@ public class PThread {
         @CallSignature(type = CRITICAL, ret = INT, args = {INT, LONG_AS_WORD})
         abstract int pthread_setspecific(int key, long value);
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class);
     }
 
     public static int pthread_key_create(long destructor) {

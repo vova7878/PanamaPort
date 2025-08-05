@@ -26,7 +26,6 @@ import com.v7878.invoke.VarHandle;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
@@ -249,8 +248,7 @@ public class LibDLExt {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD})
         abstract long get_exported_namespace(long name);
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, DLEXT));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class, DLEXT);
     }
 
     public static void update_LD_LIBRARY_PATH(String ld_library_path) {

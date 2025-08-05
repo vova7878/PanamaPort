@@ -12,7 +12,6 @@ import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
@@ -37,8 +36,7 @@ public final class Linker {
         @CallSignature(type = CRITICAL, ret = BOOL_AS_INT, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract boolean LLVMLinkModules2(long Dest, long Src);
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, LLVM));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class, LLVM);
     }
 
     /**

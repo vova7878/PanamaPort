@@ -75,6 +75,7 @@ import com.v7878.llvm.Types.LLVMTypeRef;
 import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
+import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DangerLevel;
@@ -769,15 +770,15 @@ public class BulkLinker {
         return null;
     }
 
-    public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz) {
-        return processSymbols(arena, clazz, RawNativeLibraries.DEFAULT_LOOKUP);
+    public static <T> Class<T> generateImplClass(Arena arena, Class<T> clazz) {
+        return generateImplClass(arena, clazz, RawNativeLibraries.DEFAULT_LOOKUP);
     }
 
-    public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz, SymbolLookup lookup) {
-        return processSymbols(arena, clazz, clazz.getClassLoader(), lookup);
+    public static <T> Class<T> generateImplClass(Arena arena, Class<T> clazz, SymbolLookup lookup) {
+        return generateImplClass(arena, clazz, clazz.getClassLoader(), lookup);
     }
 
-    public static <T> Class<T> processSymbols(Arena arena, Class<T> clazz, ClassLoader loader, SymbolLookup lookup) {
+    public static <T> Class<T> generateImplClass(Arena arena, Class<T> clazz, ClassLoader loader, SymbolLookup lookup) {
         Objects.requireNonNull(arena);
         Objects.requireNonNull(clazz);
         Objects.requireNonNull(loader);
@@ -825,5 +826,17 @@ public class BulkLinker {
         }
 
         return processSymbols(arena, clazz, loader, infos.toArray(new SymbolInfo[0]));
+    }
+
+    public static <T> T generateImpl(Arena arena, Class<T> clazz) {
+        return AndroidUnsafe.allocateInstance(generateImplClass(arena, clazz));
+    }
+
+    public static <T> T generateImpl(Arena arena, Class<T> clazz, SymbolLookup lookup) {
+        return AndroidUnsafe.allocateInstance(generateImplClass(arena, clazz, lookup));
+    }
+
+    public static <T> T generateImpl(Arena arena, Class<T> clazz, ClassLoader loader, SymbolLookup lookup) {
+        return AndroidUnsafe.allocateInstance(generateImplClass(arena, clazz, loader, lookup));
     }
 }

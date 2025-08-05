@@ -24,7 +24,6 @@ import com.v7878.foreign.MemorySegment;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.cpp_std.map;
@@ -135,8 +134,7 @@ public class JniLibraries {
         @CallSignature(type = NATIVE_STATIC_OMIT_ENV, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void ExclusiveUnlock(long mutex, long thread);
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class, ART));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class, ART);
     }
 
     @SuppressWarnings("SameParameterValue")

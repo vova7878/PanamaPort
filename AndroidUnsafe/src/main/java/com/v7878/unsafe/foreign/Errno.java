@@ -11,7 +11,6 @@ import com.v7878.foreign.Arena;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
 
@@ -26,8 +25,7 @@ public class Errno {
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {})
         abstract long __errno();
 
-        static final Native INSTANCE = AndroidUnsafe.allocateInstance(
-                BulkLinker.processSymbols(SCOPE, Native.class));
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class);
     }
 
     public static long __errno() {
