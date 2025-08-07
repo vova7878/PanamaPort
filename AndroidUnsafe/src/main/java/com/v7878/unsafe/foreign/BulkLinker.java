@@ -593,6 +593,7 @@ public class BulkLinker {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(METHOD)
+    @Repeatable(CallSignatures.class)
     @DoNotShrink
     @DoNotShrinkType
     public @interface CallSignature {
@@ -613,27 +614,15 @@ public class BulkLinker {
         CallSignature[] value();
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private static boolean contains(int[] array, int value) {
-        for (int j : array) if (j == value) return true;
-        return false;
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private static <T> boolean contains(T[] array, T value) {
-        for (T j : array) if (j == value) return true;
-        return false;
-    }
-
     private static boolean checkPoisoning(Tristate poisoning) {
         return poisoning == Tristate.NO_MATTER ||
                 ((poisoning == Tristate.TRUE) == VM.isPoisonReferences());
     }
 
     private static boolean checkConditions(Conditions cond) {
-        return contains(cond.arch(), CURRENT_INSTRUCTION_SET) &&
-                contains(cond.api(), CORRECT_SDK_INT) &&
-                contains(cond.art_api(), ART_SDK_INT) &&
+        return Utils.contains(cond.arch(), CURRENT_INSTRUCTION_SET) &&
+                Utils.contains(cond.api(), CORRECT_SDK_INT) &&
+                Utils.contains(cond.art_api(), ART_SDK_INT) &&
                 checkPoisoning(cond.poisoning());
     }
 

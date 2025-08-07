@@ -7,6 +7,7 @@ import static com.v7878.unsafe.Stack.getStackClass1;
 import android.annotation.SuppressLint;
 import android.util.Log;
 
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.r8.annotations.AlwaysInline;
@@ -23,11 +24,10 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,7 +85,7 @@ public class Utils {
             return false;
         }
         for (int i = 0; i < a1.length; i++) {
-            if (a1[i] != a2[i]) {
+            if (!Objects.equals(a1[i], a2[i])) {
                 return false;
             }
         }
@@ -105,58 +105,105 @@ public class Utils {
         return searchField(fields, name, true);
     }
 
-    private static String methodToString(String name, Class<?>[] argTypes) {
-        return name + ((argTypes == null || argTypes.length == 0)
-                ? "()" : Arrays.stream(argTypes)
+    private static String methodToString(String name, Class<?>[] params) {
+        return name + ((params == null || params.length == 0)
+                ? "()" : Arrays.stream(params)
                 .map(c -> c == null ? "null" : c.getName())
                 .collect(Collectors.joining(",", "(", ")")));
     }
 
+    private static String methodToString(String name, String[] params) {
+        return name + ((params == null || params.length == 0)
+                ? "()" : Arrays.stream(params)
+                .collect(Collectors.joining(",", "(", ")")));
+    }
+
     public static Method searchMethod(Method[] methods, String name,
-                                      boolean thw, Class<?>... parameterTypes) {
+                                      boolean thw, Class<?>... params) {
         for (Method m : methods) {
             if (m.getName().equals(name) && arrayContentsEq(
-                    parameterTypes, m.getParameterTypes())) {
+                    params, m.getParameterTypes())) {
                 return m;
             }
         }
         return thw ? AndroidUnsafe.throwException(
-                new NoSuchMethodException(methodToString(name, parameterTypes))) : null;
+                new NoSuchMethodException(methodToString(name, params))) : null;
     }
 
-    public static Method searchMethod(Method[] methods, String name, Class<?>... parameterTypes) {
-        return searchMethod(methods, name, true, parameterTypes);
+    public static Method searchMethod(Method[] methods, String name, Class<?>... params) {
+        return searchMethod(methods, name, true, params);
     }
 
     public static <T> Constructor<T> searchConstructor(
-            Constructor<T>[] constructors, boolean thw, Class<?>... parameterTypes) {
+            Constructor<T>[] constructors, boolean thw, Class<?>... params) {
         for (Constructor<T> c : constructors) {
-            if (arrayContentsEq(parameterTypes, c.getParameterTypes())) {
+            if (arrayContentsEq(params, c.getParameterTypes())) {
                 return c;
             }
         }
         return thw ? AndroidUnsafe.throwException(
-                new NoSuchMethodException(methodToString("<init>", parameterTypes))) : null;
+                new NoSuchMethodException(methodToString("<init>", params))) : null;
     }
 
     public static <T> Constructor<T> searchConstructor(
-            Constructor<T>[] constructors, Class<?>... parameterTypes) {
-        return searchConstructor(constructors, true, parameterTypes);
+            Constructor<T>[] constructors, Class<?>... params) {
+        return searchConstructor(constructors, true, params);
     }
 
-    public static MethodType methodTypeOf(Executable target) {
-        List<Class<?>> args = new ArrayList<>(List.of(target.getParameterTypes()));
-        Class<?> ret;
-        if (target instanceof Method method) {
-            if (!Modifier.isStatic(method.getModifiers())) {
-                args.add(0, method.getDeclaringClass());
-            }
-            ret = method.getReturnType();
-        } else {
-            // constructor
-            ret = target.getDeclaringClass();
+    public static String getExecutableName(Executable ex) {
+        if (ex instanceof Method m) {
+            return m.getName();
         }
-        return MethodType.methodType(ret, args);
+        assert ex instanceof Constructor<?>;
+        return Modifier.isStatic(ex.getModifiers()) ? "<clinit>" : "<init>";
+    }
+
+    public static Executable searchExecutable(
+            Executable[] executables, String name, boolean thw, String... params) {
+        for (var ex : executables) {
+            if (getExecutableName(ex).equals(name) && arrayContentsEq(
+                    Stream.of(params).map(TypeId::ofName).toArray(TypeId[]::new),
+                    Stream.of(ex.getParameterTypes()).map(TypeId::of).toArray(TypeId[]::new))) {
+                return ex;
+            }
+        }
+        return thw ? AndroidUnsafe.throwException(
+                new NoSuchMethodException(methodToString(name, params))) : null;
+    }
+
+    public static Executable searchExecutable(
+            Executable[] executables, String name, String... params) {
+        return searchExecutable(executables, name, true, params);
+    }
+
+
+    private static final Random random = new Random();
+
+    public static boolean checkClassExists(ClassLoader loader, String name) {
+        try {
+            Class.forName(name, false, loader);
+            return true;
+        } catch (ClassNotFoundException th) {
+            return false;
+        }
+    }
+
+    public static String generateClassName(ClassLoader loader, String base) {
+        String name = null;
+        while (name == null || checkClassExists(loader, name)) {
+            name = String.format("%s_%016X", base, random.nextLong());
+        }
+        return name;
+    }
+
+    public static boolean contains(int[] array, int value) {
+        for (int j : array) if (j == value) return true;
+        return false;
+    }
+
+    public static <T> boolean contains(T[] array, T value) {
+        for (T j : array) if (j == value) return true;
+        return false;
     }
 
     @AlwaysInline
