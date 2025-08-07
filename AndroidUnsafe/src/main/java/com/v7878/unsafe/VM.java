@@ -13,13 +13,14 @@ import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
-import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.fillArray;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccess;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
 import static com.v7878.unsafe.misc.Math.isSigned32Bit;
 import static com.v7878.unsafe.misc.Math.roundUpU;
 import static com.v7878.unsafe.misc.Math.roundUpUL;
@@ -28,11 +29,13 @@ import android.annotation.TargetApi;
 import android.os.Build;
 
 import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
+import com.v7878.unsafe.access.AccessLinker;
 import com.v7878.unsafe.access.VMAccess;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
 
@@ -64,6 +67,36 @@ public class VM {
         public int hash;
     }
 
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class AccessI {
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "java.lang.Object", name = "shadow$_klass_")
+        abstract void shadow$_klass_(Object instance, Class<?> value);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.Class", name = "vtable")
+        abstract Object vtable(Class<?> instance);
+
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "java.lang.Class", name = "vtable")
+        abstract void vtable(Class<?> instance, Object value);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.Class", name = "ifTable")
+        abstract Object[] ifTable(Class<?> instance);
+
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "java.lang.Class", name = "ifTable")
+        abstract void ifTable(Class<?> instance, Object[] value);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.Class", name = "dexClassDefIndex")
+        abstract int dexClassDefIndex(Class<?> instance);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.Class", name = "objectSize")
+        abstract int objectSize(Class<?> instance);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.Class", name = "classSize")
+        abstract int classSize(Class<?> instance);
+
+        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+    }
+
     public static final int OBJECT_ALIGNMENT_SHIFT = 3;
     public static final int OBJECT_ALIGNMENT = 1 << OBJECT_ALIGNMENT_SHIFT;
     public static final int OBJECT_INSTANCE_SIZE = objectSizeField(Object.class);
@@ -79,24 +112,9 @@ public class VM {
         check(OBJECT_INSTANCE_SIZE == 8, AssertionError::new);
     }
 
-    public static Field getShadowKlassField() {
-        class Holder {
-            static final Field shadow$_klass_ = getHiddenInstanceField(
-                    Object.class, "shadow$_klass_");
-        }
-        return Holder.shadow$_klass_;
-    }
-
-    public static Field getShadowMonitorField() {
-        class Holder {
-            static final Field shadow$_monitor_ = getHiddenInstanceField(
-                    Object.class, "shadow$_monitor_");
-        }
-        return Holder.shadow$_monitor_;
-    }
-
     @SuppressWarnings("unchecked")
     public static <T> T internalClone(T obj) {
+        // TODO: move to AccessI
         class Holder {
             static final MethodHandle internalClone = unreflectDirect(
                     getHiddenMethod(Object.class, "internalClone"));
@@ -107,15 +125,7 @@ public class VM {
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     @SuppressWarnings("unchecked")
     public static <T> T setObjectClass(Object obj, Class<T> clazz) {
-        Objects.requireNonNull(obj);
-        class Holder {
-            static final long shadow$_klass_offset;
-
-            static {
-                shadow$_klass_offset = fieldOffset(getShadowKlassField());
-            }
-        }
-        AndroidUnsafe.putObject(obj, Holder.shadow$_klass_offset, clazz);
+        AccessI.INSTANCE.shadow$_klass_(obj, clazz);
         return (T) obj;
     }
 
@@ -185,27 +195,15 @@ public class VM {
     }
 
     public static int getDexClassDefIndex(Class<?> clazz) {
-        class Holder {
-            static final long DEX_CLASS_DEF_INDEX = fieldOffset(
-                    getHiddenInstanceField(Class.class, "dexClassDefIndex"));
-        }
-        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.DEX_CLASS_DEF_INDEX);
+        return AccessI.INSTANCE.dexClassDefIndex(clazz);
     }
 
     public static int objectSizeField(Class<?> clazz) {
-        class Holder {
-            static final long OBJECT_SIZE = fieldOffset(
-                    getHiddenInstanceField(Class.class, "objectSize"));
-        }
-        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.OBJECT_SIZE);
+        return AccessI.INSTANCE.objectSize(clazz);
     }
 
     public static int classSizeField(Class<?> clazz) {
-        class Holder {
-            static final long CLASS_SIZE = fieldOffset(
-                    getHiddenInstanceField(Class.class, "classSize"));
-        }
-        return AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.CLASS_SIZE);
+        return AccessI.INSTANCE.classSize(clazz);
     }
 
     public static int emptyClassSize() {
@@ -255,22 +253,22 @@ public class VM {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static /* PointerArray */ Object getVTable(Class<?> clazz) {
-        return Reflection.getVTable(clazz);
+        return AccessI.INSTANCE.vtable(clazz);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setVTable(Class<?> clazz, Object /* PointerArray */ vtable) {
-        Reflection.setVTable(clazz, vtable);
+        AccessI.INSTANCE.vtable(clazz, vtable);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static /* IfTable */ Object[] getIFTable(Class<?> clazz) {
-        return Reflection.getIFTable(clazz);
+        return AccessI.INSTANCE.ifTable(clazz);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setIFTable(Class<?> clazz, Object[] /* IfTable */ ifTable) {
-        Reflection.setIFTable(clazz, ifTable);
+        AccessI.INSTANCE.ifTable(clazz, ifTable);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)

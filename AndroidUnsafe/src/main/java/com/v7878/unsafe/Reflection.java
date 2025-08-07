@@ -71,30 +71,6 @@ public class Reflection {
             public short virtualMethodsOffset;
         }
 
-        public static Object getVTable(Class<?> clazz) {
-            var mirror = new ClassMirror[1];
-            fillArray(mirror, clazz);
-            return mirror[0].vtable;
-        }
-
-        public static void setVTable(Class<?> clazz, Object vtable) {
-            var mirror = new ClassMirror[1];
-            fillArray(mirror, clazz);
-            mirror[0].vtable = vtable;
-        }
-
-        public static Object[] getIFTable(Class<?> clazz) {
-            var mirror = new ClassMirror[1];
-            fillArray(mirror, clazz);
-            return mirror[0].ifTable;
-        }
-
-        public static void setIFTable(Class<?> clazz, Object[] ifTable) {
-            var mirror = new ClassMirror[1];
-            fillArray(mirror, clazz);
-            mirror[0].ifTable = ifTable;
-        }
-
         public static long getMethods(Class<?> clazz) {
             var mirror = new ClassMirror[1];
             fillArray(mirror, clazz);
@@ -152,30 +128,6 @@ public class Reflection {
             public int status;
             public short copiedMethodsOffset;
             public short virtualMethodsOffset;
-        }
-
-        public static Object getVTable(Class<?> clazz) {
-            var mirror = new ClassMirror[1];
-            fillArray(mirror, clazz);
-            return mirror[0].vtable;
-        }
-
-        public static void setVTable(Class<?> clazz, Object vtable) {
-            var mirror = new ClassMirror[1];
-            fillArray(mirror, clazz);
-            mirror[0].vtable = vtable;
-        }
-
-        public static Object[] getIFTable(Class<?> clazz) {
-            var mirror = new ClassMirror[1];
-            fillArray(mirror, clazz);
-            return mirror[0].ifTable;
-        }
-
-        public static void setIFTable(Class<?> clazz, Object[] ifTable) {
-            var mirror = new ClassMirror[1];
-            fillArray(mirror, clazz);
-            mirror[0].ifTable = ifTable;
         }
 
         public static long getMethods(Class<?> clazz) {
@@ -402,38 +354,6 @@ public class Reflection {
         Field tmp = MethodHandles.reflectAs(Field.class, impl);
         setAccessible(tmp, true);
         return tmp;
-    }
-
-    static Object getVTable(Class<?> clazz) {
-        if (ART_SDK_INT >= 36) {
-            return Utils_16.getVTable(clazz);
-        } else {
-            return Utils_8_15.getVTable(clazz);
-        }
-    }
-
-    static void setVTable(Class<?> clazz, Object vtable) {
-        if (ART_SDK_INT >= 36) {
-            Utils_16.setVTable(clazz, vtable);
-        } else {
-            Utils_8_15.setVTable(clazz, vtable);
-        }
-    }
-
-    static Object[] getIFTable(Class<?> clazz) {
-        if (ART_SDK_INT >= 36) {
-            return Utils_16.getIFTable(clazz);
-        } else {
-            return Utils_8_15.getIFTable(clazz);
-        }
-    }
-
-    static void setIFTable(Class<?> clazz, Object[] ifTable) {
-        if (ART_SDK_INT >= 36) {
-            Utils_16.setIFTable(clazz, ifTable);
-        } else {
-            Utils_8_15.setIFTable(clazz, ifTable);
-        }
     }
 
     @SuppressWarnings("SameParameterValue")
