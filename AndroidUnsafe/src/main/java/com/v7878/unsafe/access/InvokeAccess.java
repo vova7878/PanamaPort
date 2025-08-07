@@ -1,35 +1,21 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.dex.DexConstants.ACC_FINAL;
-import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
-import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
-import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
-import static com.v7878.unsafe.ArtFieldUtils.makeFieldNonFinal;
-import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.DexFileUtils.loadClass;
-import static com.v7878.unsafe.DexFileUtils.openDexFile;
-import static com.v7878.unsafe.DexFileUtils.setTrusted;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
-import static com.v7878.unsafe.Reflection.getHiddenMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.STATIC;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.VIRTUAL;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
 
-import com.v7878.dex.DexIO;
-import com.v7878.dex.builder.ClassBuilder;
-import com.v7878.dex.immutable.ClassDef;
-import com.v7878.dex.immutable.Dex;
-import com.v7878.dex.immutable.FieldId;
-import com.v7878.dex.immutable.TypeId;
-import com.v7878.r8.annotations.DoNotObfuscate;
-import com.v7878.r8.annotations.DoNotShrink;
-import com.v7878.unsafe.ClassUtils;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrinkType;
+import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.VM;
+import com.v7878.unsafe.access.AccessLinker.Conditions;
+import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
+import com.v7878.unsafe.access.AccessLinker.FieldAccess;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -37,203 +23,84 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
-import dalvik.system.DexFile;
-
 public class InvokeAccess {
-    private static final AccessI ACCESS;
-
-    @DoNotShrink
-    @DoNotObfuscate
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class AccessI {
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.invoke.MethodHandle", name = "type")
         abstract MethodType realType(MethodHandle handle);
 
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "java.lang.invoke.MethodHandle", name = "type")
         abstract void realType(MethodHandle handle, MethodType type);
 
+        @ApiSensitive
+        @FieldAccess(conditions = @Conditions(art_api = {26, 27, 28, 29, 30, 31, 32}),
+                kind = INSTANCE_GETTER, klass = "java.lang.invoke.MethodHandle", name = "nominalType")
         abstract MethodType nominalType(MethodHandle handle);
 
+        @ApiSensitive
+        @FieldAccess(conditions = @Conditions(art_api = {26, 27, 28, 29, 30, 31, 32}),
+                kind = INSTANCE_SETTER, klass = "java.lang.invoke.MethodHandle", name = "nominalType")
         abstract void nominalType(MethodHandle handle, MethodType type);
 
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.invoke.MethodType", name = "ptypes")
         abstract Class<?>[] ptypes(MethodType type);
-    }
 
-    static {
-        TypeId mh = TypeId.of(MethodHandle.class);
-        TypeId mt = TypeId.of(MethodType.class);
+        @ExecutableAccess(kind = VIRTUAL, klass = "java.lang.invoke.MethodType",
+                name = "isConvertibleTo", args = {"java.lang.invoke.MethodType"})
+        abstract boolean isConvertibleTo(MethodType from, MethodType to);
 
-        String access_name = InvokeAccess.class.getName() + "$Access";
-        TypeId access_id = TypeId.ofName(access_name);
+        @ExecutableAccess(kind = VIRTUAL, klass = "java.lang.invoke.MethodType",
+                name = "explicitCastEquivalentToAsType", args = {"java.lang.invoke.MethodType"})
+        abstract boolean explicitCastEquivalentToAsType(MethodType from, MethodType to);
 
-        // public final class Access extends AccessI {
-        //     <...>
-        // }
-        ClassDef access_def = ClassBuilder.build(access_id, cb -> cb
-                .withSuperClass(TypeId.of(AccessI.class))
-                .withFlags(ACC_PUBLIC | ACC_FINAL)
-                .commit(cb2 -> {
-                    FieldId type_id;
-                    {
-                        Field type = getHiddenInstanceField(MethodHandle.class, "type");
-                        makeFieldPublic(type);
-                        makeFieldNonFinal(type);
-                        type_id = FieldId.of(type);
-                    }
-                    // public MethodType realType(MethodHandle handle) {
-                    //     return handle.type;
-                    // }
-                    cb2.withMethod(mb -> mb
-                            .withFlags(ACC_PUBLIC | ACC_FINAL)
-                            .withName("realType")
-                            .withReturnType(mt)
-                            .withParameterTypes(mh)
-                            .withCode(0, ib -> ib
-                                    .generate_lines()
-                                    .iop(GET_OBJECT, ib.p(0), ib.p(0), type_id)
-                                    .return_object(ib.p(0))
-                            )
-                    );
-                    // public void realType(MethodHandle handle, MethodType type) {
-                    //     handle.type = type;
-                    // }
-                    cb2.withMethod(mb -> mb
-                            .withFlags(ACC_PUBLIC | ACC_FINAL)
-                            .withName("realType")
-                            .withReturnType(TypeId.V)
-                            .withParameterTypes(mh, mt)
-                            .withCode(0, ib -> ib
-                                    .generate_lines()
-                                    .iop(PUT_OBJECT, ib.p(1), ib.p(0), type_id)
-                                    .return_void()
-                            )
-                    );
-                })
-                .if_(ART_SDK_INT <= 32, cb2 -> {
-                            FieldId nominal_type_id;
-                            {
-                                Field nominal_type = getHiddenInstanceField(MethodHandle.class, "nominalType");
-                                makeFieldPublic(nominal_type);
-                                makeFieldNonFinal(nominal_type);
-                                nominal_type_id = FieldId.of(nominal_type);
-                            }
-                            // public MethodType nominalType(MethodHandle handle) {
-                            //     return handle.nominalType;
-                            // }
-                            cb2.withMethod(mb -> mb
-                                    .withFlags(ACC_PUBLIC | ACC_FINAL)
-                                    .withName("nominalType")
-                                    .withReturnType(mt)
-                                    .withParameterTypes(mh)
-                                    .withCode(0, ib -> ib
-                                            .generate_lines()
-                                            .iop(GET_OBJECT, ib.p(0), ib.p(0), nominal_type_id)
-                                            .return_object(ib.p(0))
-                                    )
-                            );
-                            // public void nominalType(MethodHandle handle, MethodType type) {
-                            //     handle.nominalType = type;
-                            // }
-                            cb2.withMethod(mb -> mb
-                                    .withFlags(ACC_PUBLIC | ACC_FINAL)
-                                    .withName("nominalType")
-                                    .withReturnType(TypeId.V)
-                                    .withParameterTypes(mh, mt)
-                                    .withCode(0, ib -> ib
-                                            .generate_lines()
-                                            .iop(PUT_OBJECT, ib.p(1), ib.p(0), nominal_type_id)
-                                            .return_void()
-                                    )
-                            );
-                        }
-                )
-                .commit(cb2 -> {
-                    FieldId ptypes_id;
-                    {
-                        Field ptypes = getHiddenInstanceField(MethodType.class, "ptypes");
-                        makeFieldPublic(ptypes);
-                        ptypes_id = FieldId.of(ptypes);
-                    }
-                    // public Class<?>[] ptypes(MethodType type) {
-                    //     return type.ptypes;
-                    // }
-                    cb2.withMethod(mb -> mb
-                            .withFlags(ACC_PUBLIC | ACC_FINAL)
-                            .withName("ptypes")
-                            .withReturnType(TypeId.of(Class[].class))
-                            .withParameterTypes(mt)
-                            .withCode(0, ib -> ib
-                                    .generate_lines()
-                                    .iop(GET_OBJECT, ib.p(0), ib.p(0), ptypes_id)
-                                    .return_object(ib.p(0))
-                            )
-                    );
-                })
-        );
+        @ExecutableAccess(kind = STATIC, klass = "java.lang.invoke.MethodHandles",
+                name = "getMethodHandleImpl", args = {"java.lang.invoke.MethodHandle"})
+        abstract MethodHandle getMethodHandleImpl(MethodHandle handle);
 
-        DexFile dex = openDexFile(DexIO.write(Dex.of(access_def)));
-        setTrusted(dex);
+        @ExecutableAccess(kind = VIRTUAL, klass = "java.lang.invoke.MethodHandleImpl",
+                name = "getMemberInternal", args = {})
+        abstract Member getMemberInternal(MethodHandle handle);
 
-        ClassLoader loader = InvokeAccess.class.getClassLoader();
-
-        Class<?> invoker_class = loadClass(dex, access_name, loader);
-        ACCESS = (AccessI) allocateInstance(invoker_class);
+        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
     public static MethodType realType(MethodHandle handle) {
-        return ACCESS.realType(handle);
+        return AccessI.INSTANCE.realType(handle);
     }
 
     public static MethodType nominalType(MethodHandle handle) {
         if (ART_SDK_INT >= 33) {
             throw new UnsupportedOperationException();
         }
-        return ACCESS.nominalType(handle);
+        return AccessI.INSTANCE.nominalType(handle);
     }
 
     public static void setRealType(MethodHandle handle, MethodType type) {
-        ACCESS.realType(handle, type);
+        AccessI.INSTANCE.realType(handle, type);
     }
 
     public static void setNominalType(MethodHandle handle, MethodType type) {
         if (ART_SDK_INT >= 33) {
             throw new UnsupportedOperationException();
         }
-        ACCESS.nominalType(handle, type);
+        AccessI.INSTANCE.nominalType(handle, type);
     }
 
     public static boolean isConvertibleTo(MethodType from, MethodType to) {
-        class Holder {
-            static final MethodHandle isConvertibleTo = nothrows_run(() -> unreflect(
-                    getHiddenMethod(MethodType.class, "isConvertibleTo", MethodType.class)));
-        }
-        // TODO: move to AccessI
-        return nothrows_run(() -> (boolean) Holder.isConvertibleTo.invokeExact(from, to));
+        return AccessI.INSTANCE.isConvertibleTo(from, to);
     }
 
     public static boolean explicitCastEquivalentToAsType(MethodType from, MethodType to) {
-        class Holder {
-            static final MethodHandle explicitCastEquivalentToAsType = nothrows_run(() -> unreflect(
-                    getHiddenMethod(MethodType.class, "explicitCastEquivalentToAsType", MethodType.class)));
-        }
-        // TODO: move to AccessI
-        return nothrows_run(() -> (boolean) Holder.explicitCastEquivalentToAsType.invokeExact(from, to));
+        return AccessI.INSTANCE.explicitCastEquivalentToAsType(from, to);
     }
 
     public static MethodHandle getMethodHandleImpl(MethodHandle target) {
-        class Holder {
-            static final MethodHandle getMethodHandleImpl = nothrows_run(() -> unreflect(
-                    getHiddenMethod(MethodHandles.class, "getMethodHandleImpl", MethodHandle.class)));
-        }
-        // TODO: move to AccessI
-        return nothrows_run(() -> (MethodHandle) Holder.getMethodHandleImpl.invoke(target));
+        return AccessI.INSTANCE.getMethodHandleImpl(target);
     }
 
     public static Member getMemberInternal(MethodHandle target) {
-        class Holder {
-            static final Class<?> mhi = ClassUtils.sysClass("java.lang.invoke.MethodHandleImpl");
-            static final MethodHandle getMemberInternal = nothrows_run(() ->
-                    unreflect(getHiddenMethod(mhi, "getMemberInternal")));
-        }
-        // TODO: move to AccessI
-        return nothrows_run(() -> (Member) Holder.getMemberInternal.invoke(target));
+        return AccessI.INSTANCE.getMemberInternal(target);
     }
 
     public static Member getMemberOrNull(MethodHandle target) {
@@ -267,7 +134,7 @@ public class InvokeAccess {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static Class<?>[] ptypes(MethodType type) {
-        return ACCESS.ptypes(type);
+        return AccessI.INSTANCE.ptypes(type);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
