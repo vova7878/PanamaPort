@@ -1,163 +1,102 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.Reflection.getHiddenMethods;
-import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.STATIC;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.VIRTUAL;
 
-import com.v7878.unsafe.AndroidUnsafe;
-import com.v7878.unsafe.ClassUtils;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Method;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrinkType;
+import com.v7878.unsafe.ApiSensitive;
+import com.v7878.unsafe.access.AccessLinker.Conditions;
 
 public class VMAccess {
-    private static final Class<?> VM_CLASS = ClassUtils.sysClass("dalvik.system.VMRuntime");
-    private static final Method[] methods = getHiddenMethods(VM_CLASS);
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class AccessI {
+        @ExecutableAccess(kind = STATIC, klass = "dalvik.system.VMRuntime", name = "getRuntime", args = {})
+        abstract Object getRuntime();
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "dalvik.system.VMRuntime", name = "properties", args = {})
+        abstract String[] properties(Object instance);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "dalvik.system.VMRuntime", name = "bootClassPath", args = {})
+        abstract String bootClassPath(Object instance);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "dalvik.system.VMRuntime", name = "classPath", args = {})
+        abstract String classPath(Object instance);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "dalvik.system.VMRuntime", name = "vmLibrary", args = {})
+        abstract String vmLibrary(Object instance);
+
+        @ExecutableAccess(kind = STATIC, klass = "dalvik.system.VMRuntime", name = "getCurrentInstructionSet", args = {})
+        abstract String getCurrentInstructionSet();
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "dalvik.system.VMRuntime", name = "isCheckJniEnabled", args = {})
+        abstract boolean isCheckJniEnabled(Object instance);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "dalvik.system.VMRuntime", name = "isNativeDebuggable", args = {})
+        abstract boolean isNativeDebuggable(Object instance);
+
+        @ApiSensitive
+        @ExecutableAccess(conditions = @Conditions(art_api = {28, 29, 30, 31, 32, 33, 34, 35, 36}),
+                kind = VIRTUAL, klass = "dalvik.system.VMRuntime", name = "isJavaDebuggable", args = {})
+        abstract boolean isJavaDebuggable(Object instance);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "dalvik.system.VMRuntime",
+                name = "newNonMovableArray", args = {"java.lang.Class", "int"})
+        abstract Object newNonMovableArray(Object instance, Class<?> componentType, int length);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "dalvik.system.VMRuntime",
+                name = "addressOf", args = {"java.lang.Object"})
+        abstract long addressOf(Object instance, Object array);
+
+        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+    }
 
     private static Object getInstance() {
         class Holder {
-            static final Object vm;
-
-            static {
-                vm = AndroidUnsafe.allocateInstance(VM_CLASS);
-            }
+            static final Object vm = AccessI.INSTANCE.getRuntime();
         }
         return Holder.vm;
     }
 
     public static String[] properties() {
-        class Holder {
-            static final String[] properties;
-
-            static {
-                MethodHandle mh_properties = unreflect(
-                        searchMethod(methods, "properties"));
-                properties = nothrows_run(() ->
-                        (String[]) mh_properties.invoke(getInstance()));
-            }
-        }
-        return Holder.properties.clone();
+        return AccessI.INSTANCE.properties(getInstance());
     }
 
     public static String bootClassPath() {
-        class Holder {
-            static final String boot_class_path;
-
-            static {
-                MethodHandle bootClassPath = unreflect(
-                        searchMethod(methods, "bootClassPath"));
-                boot_class_path = nothrows_run(() ->
-                        (String) bootClassPath.invoke(getInstance()));
-            }
-        }
-        return Holder.boot_class_path;
+        return AccessI.INSTANCE.bootClassPath(getInstance());
     }
 
     public static String classPath() {
-        class Holder {
-            static final String class_path;
-
-            static {
-                MethodHandle classPath = unreflect(
-                        searchMethod(methods, "classPath"));
-                class_path = nothrows_run(() ->
-                        (String) classPath.invoke(getInstance()));
-            }
-        }
-        return Holder.class_path;
+        return AccessI.INSTANCE.classPath(getInstance());
     }
 
     public static String vmLibrary() {
-        class Holder {
-            static final String lib;
-
-            static {
-                MethodHandle vmLibrary = unreflect(
-                        searchMethod(methods, "vmLibrary"));
-                lib = nothrows_run(() -> (String) vmLibrary.invoke(getInstance()));
-            }
-        }
-        return Holder.lib;
+        return AccessI.INSTANCE.vmLibrary(getInstance());
     }
 
     public static String getCurrentInstructionSet() {
-        class Holder {
-            static final String instruction_set;
-
-            static {
-                MethodHandle getCurrentInstructionSet = unreflect(
-                        searchMethod(methods, "getCurrentInstructionSet"));
-                instruction_set = nothrows_run(() -> (String) getCurrentInstructionSet.invoke());
-            }
-        }
-        return Holder.instruction_set;
+        return AccessI.INSTANCE.getCurrentInstructionSet();
     }
 
     public static boolean isCheckJniEnabled() {
-        class Holder {
-            static final boolean check_jni;
-
-            static {
-                MethodHandle isNativeDebuggable = unreflect(
-                        searchMethod(methods, "isCheckJniEnabled"));
-                check_jni = nothrows_run(() ->
-                        (boolean) isNativeDebuggable.invoke(getInstance()));
-            }
-        }
-        return Holder.check_jni;
+        return AccessI.INSTANCE.isCheckJniEnabled(getInstance());
     }
 
     public static boolean isNativeDebuggable() {
-        class Holder {
-            static final boolean debuggable;
-
-            static {
-                MethodHandle isNativeDebuggable = unreflect(
-                        searchMethod(methods, "isNativeDebuggable"));
-                debuggable = nothrows_run(() ->
-                        (boolean) isNativeDebuggable.invoke(getInstance()));
-            }
-        }
-        return Holder.debuggable;
+        return AccessI.INSTANCE.isNativeDebuggable(getInstance());
     }
 
     public static boolean isJavaDebuggable() {
-        class Holder {
-            static final boolean debuggable;
-
-            static {
-                MethodHandle isJavaDebuggable = unreflect(
-                        searchMethod(methods, "isJavaDebuggable"));
-                debuggable = nothrows_run(() ->
-                        (boolean) isJavaDebuggable.invoke(getInstance()));
-            }
-        }
-        return Holder.debuggable;
+        return AccessI.INSTANCE.isJavaDebuggable(getInstance());
     }
 
     public static Object newNonMovableArray(Class<?> componentType, int length) {
-        class Holder {
-            static final MethodHandle new_array;
-
-            static {
-                new_array = unreflect(searchMethod(methods,
-                        "newNonMovableArray", Class.class, int.class));
-            }
-        }
-        return nothrows_run(() -> Holder.new_array
-                .invoke(getInstance(), componentType, length));
+        return AccessI.INSTANCE.newNonMovableArray(getInstance(), componentType, length);
     }
 
     public static long addressOf(Object array) {
-        class Holder {
-            static final MethodHandle address_of;
-
-            static {
-                address_of = unreflect(searchMethod(
-                        methods, "addressOf", Object.class));
-            }
-        }
-        return nothrows_run(() -> (long) Holder.address_of.invoke(getInstance(), array));
+        return AccessI.INSTANCE.addressOf(getInstance(), array);
     }
 }
