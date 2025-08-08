@@ -261,7 +261,7 @@ public class AccessLinker {
                         var ret_shorty = sketch_proto.getReturnType().getShorty();
                         switch (kind) {
                             case STATIC -> {
-                                ib.invoke_range(STATIC, target, ins, ib.p(0));
+                                ib.invoke_range(STATIC, target, ins, ins == 0 ? 0 : ib.p(0));
                                 ib.move_result_shorty(ret_shorty, ib.l(0));
                                 ib.return_shorty(ret_shorty, ib.l(0));
                             }
