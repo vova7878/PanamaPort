@@ -31,6 +31,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.IntPredicate;
 import java.util.stream.Stream;
 
 public class Reflection {
@@ -357,33 +358,48 @@ public class Reflection {
         return tmp;
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private static Field[] getFields0(long fields, int begin, int count) {
+    private static Field[] getFields0(long fields, int begin, int count, IntPredicate filter) {
         Field[] out = new Field[count];
         if (out.length == 0) {
             return out;
         }
+
         MethodHandle impl = allocateInstance(MethodHandleImplClass);
         var mirror = new MethodHandleImplMirror[1];
         fillArray(mirror, impl);
+        mirror[0].handleKind = Integer.MAX_VALUE;
+
+        int array_count = 0;
         for (int i = 0; i < count; i++) {
             int index = begin + i;
-            mirror[0].artFieldOrMethod = fields + ART_FIELD_PADDING + ART_FIELD_SIZE * index;
+            long art_field = fields + ART_FIELD_PADDING + ART_FIELD_SIZE * index;
+            if (!filter.test(ArtFieldUtils.getFieldFlags(art_field))) {
+                continue;
+            }
+            mirror[0].artFieldOrMethod = art_field;
             mirror[0].info = null;
-            mirror[0].handleKind = Integer.MAX_VALUE;
             Field tmp = MethodHandles.reflectAs(Field.class, impl);
             setAccessible(tmp, true);
-            out[i] = tmp;
+            out[array_count++] = tmp;
         }
-        return out;
+        return Arrays.copyOf(out, array_count);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    @AlwaysInline
+    private static Field[] getFields0(long fields, int begin, int count) {
+        return getFields0(fields, begin, count, unused -> true);
     }
 
     public static Field[] getHiddenInstanceFields(Class<?> clazz) {
         if (ART_SDK_INT >= 36) {
-            // TODO
-            return Arrays.stream(getHiddenFields(clazz))
-                    .filter((field) -> !Modifier.isStatic(field.getModifiers()))
-                    .toArray(Field[]::new);
+            long fields = Utils_16.getFields(clazz);
+            if (fields == 0) {
+                return new Field[0];
+            }
+            int count = getIntN(fields);
+            return getFields0(fields, 0, count,
+                    flags -> !Modifier.isStatic(flags));
         } else {
             long fields = Utils_8_15.getInstanceFields(clazz);
             if (fields == 0) {
@@ -400,10 +416,12 @@ public class Reflection {
 
     public static Field[] getHiddenStaticFields(Class<?> clazz) {
         if (ART_SDK_INT >= 36) {
-            // TODO
-            return Arrays.stream(getHiddenFields(clazz))
-                    .filter((field) -> Modifier.isStatic(field.getModifiers()))
-                    .toArray(Field[]::new);
+            long fields = Utils_16.getFields(clazz);
+            if (fields == 0) {
+                return new Field[0];
+            }
+            int count = getIntN(fields);
+            return getFields0(fields, 0, count, Modifier::isStatic);
         } else {
             long fields = Utils_8_15.getStaticFields(clazz);
             if (fields == 0) {
@@ -420,6 +438,7 @@ public class Reflection {
 
     public static Field[] getHiddenFields(Class<?> clazz) {
         if (ART_SDK_INT >= 36) {
+            // Note: sorted alphabetically
             long fields = Utils_16.getFields(clazz);
             if (fields == 0) {
                 return new Field[0];
@@ -623,17 +642,15 @@ public class Reflection {
     }
 
     @AlwaysInline
-    public static MethodHandle unreflect(Method m) {
-        setAccessible(m, true);
-        var handle = nothrows_run(() -> MethodHandles.publicLookup().unreflect(m));
-        initHandle(handle);
-        return handle;
-    }
-
-    @AlwaysInline
-    public static MethodHandle unreflect(Constructor<?> c) {
-        setAccessible(c, true);
-        var handle = nothrows_run(() -> MethodHandles.publicLookup().unreflectConstructor(c));
+    public static MethodHandle unreflect(Executable ex) {
+        setAccessible(ex, true);
+        MethodHandle handle;
+        if (ex instanceof Method m) {
+            handle = nothrows_run(() -> MethodHandles.publicLookup().unreflect(m));
+        } else {
+            var c = (Constructor<?>) ex;
+            handle = nothrows_run(() -> MethodHandles.publicLookup().unreflectConstructor(c));
+        }
         initHandle(handle);
         return handle;
     }
