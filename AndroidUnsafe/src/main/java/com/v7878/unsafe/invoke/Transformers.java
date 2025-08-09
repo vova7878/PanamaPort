@@ -41,6 +41,7 @@ import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils;
+import com.v7878.unsafe.access.InvokeAccess;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -436,10 +437,9 @@ public class Transformers {
     @ApiSensitive
     private static MethodHandle makeTransformer(
             MethodType fixed, TransformerImpl impl, boolean variadic) {
-        final int INVOKE_CALLSITE_TRANSFORM_26_32 = 6;
-        final int INVOKE_TRANSFORM_26_36 = 5;
         int kind = variadic && ART_SDK_INT < 33 ?
-                INVOKE_CALLSITE_TRANSFORM_26_32 : INVOKE_TRANSFORM_26_36;
+                InvokeAccess.kindInvokeCallsiteTransform() :
+                InvokeAccess.kindInvokeTransform();
         return nothrows_run(() -> (MethodHandle) new_transformer.invoke(fixed, kind, impl));
     }
 

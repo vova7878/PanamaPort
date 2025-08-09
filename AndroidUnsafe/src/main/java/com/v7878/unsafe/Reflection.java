@@ -645,7 +645,7 @@ public class Reflection {
         }
 
         MethodHandle out = unreflect(m);
-        InvokeAccess.setMethodHandleKind(out, /*INVOKE_DIRECT*/ 2);
+        InvokeAccess.setMethodHandleKind(out, InvokeAccess.kindInvokeDirect());
 
         initHandle(out);
         return out;

@@ -5,6 +5,7 @@ import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.STATIC;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.VIRTUAL;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.STATIC_GETTER;
 
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrinkType;
@@ -147,6 +148,109 @@ public class InvokeAccess {
     public static MethodHandle duplicateHandle(MethodHandle handle) {
         Objects.requireNonNull(handle);
         return VM.internalClone(handle);
+    }
+
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class HandleKindI {
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VIRTUAL")
+        abstract int INVOKE_VIRTUAL();
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_SUPER")
+        abstract int INVOKE_SUPER();
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_DIRECT")
+        abstract int INVOKE_DIRECT();
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_STATIC")
+        abstract int INVOKE_STATIC();
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_INTERFACE")
+        abstract int INVOKE_INTERFACE();
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_TRANSFORM")
+        abstract int INVOKE_TRANSFORM();
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "IGET")
+        abstract int IGET();
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "IPUT")
+        abstract int IPUT();
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "SGET")
+        abstract int SGET();
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "SPUT")
+        abstract int SPUT();
+
+        @ApiSensitive
+        @FieldAccess(conditions = @Conditions(art_api = {26, 27, 28, 29, 30, 31, 32}),
+                kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_CALLSITE_TRANSFORM")
+        abstract int INVOKE_CALLSITE_TRANSFORM();
+
+        @ApiSensitive
+        @FieldAccess(conditions = @Conditions(art_api = {28, 29, 30, 31, 32, 33, 34, 35, 36}),
+                kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VAR_HANDLE")
+        abstract int INVOKE_VAR_HANDLE();
+
+        @ApiSensitive
+        @FieldAccess(conditions = @Conditions(art_api = {28, 29, 30, 31, 32, 33, 34, 35, 36}),
+                kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VAR_HANDLE_EXACT")
+        abstract int INVOKE_VAR_HANDLE_EXACT();
+
+        public static final HandleKindI INSTANCE = AccessLinker.generateImpl(HandleKindI.class);
+    }
+
+    public static int kindInvokeVirtual() {
+        return HandleKindI.INSTANCE.INVOKE_VIRTUAL();
+    }
+
+    public static int kindInvokeSuper() {
+        return HandleKindI.INSTANCE.INVOKE_SUPER();
+    }
+
+    public static int kindInvokeDirect() {
+        return HandleKindI.INSTANCE.INVOKE_DIRECT();
+    }
+
+    public static int kindInvokeStatic() {
+        return HandleKindI.INSTANCE.INVOKE_STATIC();
+    }
+
+    public static int kindInvokeInterface() {
+        return HandleKindI.INSTANCE.INVOKE_INTERFACE();
+    }
+
+    public static int kindInvokeTransform() {
+        return HandleKindI.INSTANCE.INVOKE_TRANSFORM();
+    }
+
+    public static int kindIGet() {
+        return HandleKindI.INSTANCE.IGET();
+    }
+
+    public static int kindIPut() {
+        return HandleKindI.INSTANCE.IPUT();
+    }
+
+    public static int kindSGet() {
+        return HandleKindI.INSTANCE.SGET();
+    }
+
+    public static int kindSPut() {
+        return HandleKindI.INSTANCE.SPUT();
+    }
+
+    public static int kindInvokeCallsiteTransform() {
+        return HandleKindI.INSTANCE.INVOKE_CALLSITE_TRANSFORM();
+    }
+
+    public static int kindInvokeVarHandle() {
+        return HandleKindI.INSTANCE.INVOKE_VAR_HANDLE();
+    }
+
+    public static int kindInvokeVarHandleExact() {
+        return HandleKindI.INSTANCE.INVOKE_VAR_HANDLE_EXACT();
     }
 
     public static int getMethodHandleKind(MethodHandle handle) {
