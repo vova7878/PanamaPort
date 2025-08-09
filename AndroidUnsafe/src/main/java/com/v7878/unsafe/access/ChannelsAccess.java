@@ -9,7 +9,6 @@ import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.STATIC_GETTER
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.ApiSensitive;
-import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.access.AccessLinker.Conditions;
 import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
 import com.v7878.unsafe.access.AccessLinker.FieldAccess;
@@ -129,13 +128,6 @@ public class ChannelsAccess {
     public static FileDescriptor getFD(FileChannel channel) {
         // TODO: check channel is FileChannelImpl instance
         return AccessI.INSTANCE.getFD(channel);
-    }
-
-    private static Class<?> threadSetClass() {
-        class Holder {
-            static final Class<?> CLASS = ClassUtils.sysClass("sun.nio.ch.NativeThreadSet");
-        }
-        return Holder.CLASS;
     }
 
     public interface NativeThreadSet {
