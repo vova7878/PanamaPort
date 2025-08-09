@@ -57,12 +57,15 @@ import java.util.Objects;
 import dalvik.system.DexFile;
 
 public class AccessLinker {
+    // TODO: ClassAccess (instanceof, checkcast, new_instance)
+
     public enum ExecutableAccessKind {
         VIRTUAL, INTERFACE, STATIC,
         // just call constructor for an existing object or create a new instance first
         INVOKE_CONSTRUCTOR, NEW_INSTANCE,
         // NOTE: invoke-direct access is impossible except for constructors
         // TODO: DIRECT_AS_VIRTUAL (As a workaround for invoke-direct)
+        // TODO: invoke-polymorphic?
     }
 
     @DoNotShrink
@@ -326,6 +329,7 @@ public class AccessLinker {
                     "Interfaces and final classes are not allowed" + clazz);
         }
 
+        // TODO: cached_classes?
         var cached_executables = new HashMap<Class<?>, Executable[]>();
         var cached_fields = new HashMap<Class<?>, Field[]>();
 

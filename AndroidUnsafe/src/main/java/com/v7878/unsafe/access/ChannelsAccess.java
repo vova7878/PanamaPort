@@ -1,111 +1,134 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getHiddenField;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
-import static com.v7878.unsafe.Reflection.getHiddenMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.STATIC;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.VIRTUAL;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.STATIC_GETTER;
 
-import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrinkType;
+import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils;
+import com.v7878.unsafe.access.AccessLinker.Conditions;
+import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
+import com.v7878.unsafe.access.AccessLinker.FieldAccess;
+import com.v7878.unsafe.io.IOUtils;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.lang.invoke.MethodHandle;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.util.Objects;
 
 public class ChannelsAccess {
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class AccessI {
+        @ExecutableAccess(kind = VIRTUAL, klass = "java.nio.channels.spi.AbstractInterruptibleChannel",
+                name = "begin", args = {})
+        abstract void begin(AbstractInterruptibleChannel instance);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "java.nio.channels.spi.AbstractInterruptibleChannel",
+                name = "end", args = {"boolean"})
+        abstract void end(AbstractInterruptibleChannel instance, boolean completed);
+
+        @FieldAccess(kind = STATIC_GETTER, klass = "sun.nio.ch.FileChannelImpl",
+                name = "allocationGranularity")
+        abstract long allocationGranularity();
+
+        @ApiSensitive
+        @ExecutableAccess(conditions = @Conditions(art_api = {26, 26, 27, 28, 29, 30, 31, 32, 33, 34}),
+                kind = STATIC, klass = "sun.nio.ch.FileChannelImpl",
+                name = "open", args = {"java.io.FileDescriptor", "java.lang.String",
+                "boolean", "boolean", "boolean", "java.lang.Object"})
+        abstract FileChannel openFileChannel(FileDescriptor fd, String path, boolean readable,
+                                             boolean writable, boolean append, Object parent);
+
+        @ApiSensitive
+        @ExecutableAccess(conditions = @Conditions(art_api = {35, 36}),
+                kind = STATIC, klass = "sun.nio.ch.FileChannelImpl",
+                name = "open", args = {"java.io.FileDescriptor", "java.lang.String",
+                "boolean", "boolean", "java.lang.Object"})
+        abstract FileChannel openFileChannel(FileDescriptor fd, String path, boolean readable,
+                                             boolean writable, Object parent);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "sun.nio.ch.FileChannelImpl", name = "readable")
+        abstract boolean readable(FileChannel instance);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "sun.nio.ch.FileChannelImpl", name = "writable")
+        abstract boolean writable(FileChannel instance);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "sun.nio.ch.FileChannelImpl", name = "positionLock")
+        abstract Object positionLock(FileChannel instance);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "sun.nio.ch.FileChannelImpl", name = "fd")
+        abstract FileDescriptor getFD(FileChannel instance);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "sun.nio.ch.FileChannelImpl", name = "threads")
+        abstract Object threads(FileChannel instance);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "sun.nio.ch.NativeThreadSet", name = "add", args = {})
+        abstract int add(Object instance);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "sun.nio.ch.NativeThreadSet", name = "remove", args = {"int"})
+        abstract void remove(Object instance, int n);
+
+        @ExecutableAccess(kind = VIRTUAL, klass = "sun.nio.ch.NativeThreadSet", name = "signalAndWait", args = {})
+        abstract void signalAndWait(Object instance);
+
+        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+    }
+
     public static void ensureOpen(FileChannel channel) throws IOException {
         Objects.requireNonNull(channel);
         if (!channel.isOpen()) throw new ClosedChannelException();
     }
 
     public static void begin(AbstractInterruptibleChannel channel) {
-        class Holder {
-            static final MethodHandle BEGIN = unreflect(getHiddenMethod(
-                    AbstractInterruptibleChannel.class, "begin"));
-        }
-        Objects.requireNonNull(channel);
-        nothrows_run(() -> Holder.BEGIN.invoke(channel));
+        AccessI.INSTANCE.begin(channel);
     }
 
     public static void end(AbstractInterruptibleChannel channel, boolean completed) {
-        class Holder {
-            static final MethodHandle END = unreflect(getHiddenMethod(
-                    AbstractInterruptibleChannel.class, "end", boolean.class));
-        }
-        Objects.requireNonNull(channel);
-        nothrows_run(() -> Holder.END.invoke(channel, completed));
-    }
-
-    private static Class<?> fileChannelClass() {
-        class Holder {
-            static final Class<?> CLASS = ClassUtils.sysClass("sun.nio.ch.FileChannelImpl");
-        }
-        return Holder.CLASS;
+        AccessI.INSTANCE.end(channel, completed);
     }
 
     public static long allocationGranularity() {
         class Holder {
-            static final long OFFSET = fieldOffset(getHiddenField(
-                    fileChannelClass(), "allocationGranularity"));
-            static final long VALUE = AndroidUnsafe.getLongO(fileChannelClass(), OFFSET);
+            static final long VALUE = AccessI.INSTANCE.allocationGranularity();
         }
         return Holder.VALUE;
     }
 
-    public static FileChannel openFileChannel(FileDescriptor fd, String path,
-                                              boolean readable, boolean writable,
-                                              boolean append, Object parent) {
-        class Holder {
-            static final MethodHandle OPEN = unreflect(
-                    getHiddenMethod(fileChannelClass(), "open",
-                            FileDescriptor.class, String.class, boolean.class,
-                            boolean.class, boolean.class, Object.class));
+    public static FileChannel openFileChannel(
+            FileDescriptor fd, String path, boolean readable, boolean writable, Object parent) {
+        if (CORRECT_SDK_INT >= 35) {
+            return AccessI.INSTANCE.openFileChannel(fd, path, readable, writable, parent);
+        } else {
+            boolean append = IOUtils.getAppendFlag(fd);
+            return AccessI.INSTANCE.openFileChannel(fd, path, readable, writable, append, parent);
         }
-        return nothrows_run(() -> (FileChannel) Holder.OPEN
-                .invokeExact(fd, path, readable, writable, append, parent));
     }
 
-
     public static boolean isReadable(FileChannel channel) {
-        class Holder {
-            static final long OFFSET = fieldOffset(getHiddenInstanceField(
-                    fileChannelClass(), "readable"));
-        }
-        Objects.requireNonNull(channel);
-        return AndroidUnsafe.getBooleanO(channel, Holder.OFFSET);
+        // TODO: check channel is FileChannelImpl instance
+        return AccessI.INSTANCE.readable(channel);
     }
 
     public static boolean isWritable(FileChannel channel) {
-        class Holder {
-            static final long OFFSET = fieldOffset(getHiddenInstanceField(
-                    fileChannelClass(), "writable"));
-        }
-        Objects.requireNonNull(channel);
-        return AndroidUnsafe.getBooleanO(channel, Holder.OFFSET);
+        // TODO: check channel is FileChannelImpl instance
+        return AccessI.INSTANCE.writable(channel);
     }
 
     public static Object positionLock(FileChannel channel) {
-        class Holder {
-            static final long OFFSET = fieldOffset(getHiddenInstanceField(
-                    fileChannelClass(), "positionLock"));
-        }
-        Objects.requireNonNull(channel);
-        return AndroidUnsafe.getObject(channel, Holder.OFFSET);
+        // TODO: check channel is FileChannelImpl instance
+        return AccessI.INSTANCE.positionLock(channel);
     }
 
     public static FileDescriptor getFD(FileChannel channel) {
-        class Holder {
-            static final long OFFSET = fieldOffset(getHiddenInstanceField(
-                    fileChannelClass(), "fd"));
-        }
-        Objects.requireNonNull(channel);
-        return (FileDescriptor) AndroidUnsafe.getObject(channel, Holder.OFFSET);
+        // TODO: check channel is FileChannelImpl instance
+        return AccessI.INSTANCE.getFD(channel);
     }
 
     private static Class<?> threadSetClass() {
@@ -119,6 +142,8 @@ public class ChannelsAccess {
         int add();
 
         void remove(int i);
+
+        void signalAndWait();
     }
 
     @SuppressWarnings("ClassCanBeRecord")
@@ -130,28 +155,20 @@ public class ChannelsAccess {
         }
 
         public int add() {
-            class Holder {
-                static final MethodHandle ADD = unreflect(
-                        getHiddenMethod(threadSetClass(), "add"));
-            }
-            return nothrows_run(() -> (int) Holder.ADD.invoke(instance));
+            return AccessI.INSTANCE.add(instance);
         }
 
         public void remove(int i) {
-            class Holder {
-                static final MethodHandle REMOVE = unreflect(getHiddenMethod(
-                        threadSetClass(), "remove", int.class));
-            }
-            nothrows_run(() -> Holder.REMOVE.invoke(instance, i));
+            AccessI.INSTANCE.remove(instance, i);
+        }
+
+        public void signalAndWait() {
+            AccessI.INSTANCE.signalAndWait(instance);
         }
     }
 
     public static NativeThreadSet getThreadSet(FileChannel channel) {
-        class Holder {
-            static final long OFFSET = fieldOffset(getHiddenInstanceField(
-                    fileChannelClass(), "threads"));
-        }
-        Objects.requireNonNull(channel);
-        return new NativeThreadSetImpl(AndroidUnsafe.getObject(channel, Holder.OFFSET));
+        // TODO: check channel is FileChannelImpl instance
+        return new NativeThreadSetImpl(AccessI.INSTANCE.threads(channel));
     }
 }

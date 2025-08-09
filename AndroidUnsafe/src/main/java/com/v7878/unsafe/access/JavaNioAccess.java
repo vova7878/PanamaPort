@@ -441,6 +441,7 @@ public class JavaNioAccess {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     private static long getBufferAddress(Buffer buffer) {
+        // TODO: move to AccessI
         class Holder {
             static final long OFFSET = fieldOffset(
                     getHiddenInstanceField(Buffer.class, "address"));
@@ -518,6 +519,7 @@ public class JavaNioAccess {
         return offset + getBufferOffset(buffer);
     }
 
+    // TODO: move to AccessI
     private static final long FD_OFFSET = fieldOffset(
             getHiddenInstanceField(MappedByteBuffer.class, "fd"));
 

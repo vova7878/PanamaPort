@@ -62,6 +62,12 @@ public class InvokeAccess {
                 name = "getMemberInternal", args = {})
         abstract Member getMemberInternal(MethodHandle handle);
 
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.invoke.MethodHandle", name = "handleKind")
+        abstract int handleKind(MethodHandle handle);
+
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "java.lang.invoke.MethodHandle", name = "handleKind")
+        abstract void handleKind(MethodHandle handle, int kind);
+
         public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
@@ -141,5 +147,14 @@ public class InvokeAccess {
     public static MethodHandle duplicateHandle(MethodHandle handle) {
         Objects.requireNonNull(handle);
         return VM.internalClone(handle);
+    }
+
+    public static int getMethodHandleKind(MethodHandle handle) {
+        return AccessI.INSTANCE.handleKind(handle);
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setMethodHandleKind(MethodHandle handle, int kind) {
+        AccessI.INSTANCE.handleKind(handle, kind);
     }
 }

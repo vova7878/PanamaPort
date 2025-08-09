@@ -1,15 +1,16 @@
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.Reflection.getHiddenMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.STATIC;
 
 import android.system.ErrnoException;
 import android.system.Os;
 import android.system.OsConstants;
 
-import com.v7878.unsafe.ClassUtils;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrinkType;
+import com.v7878.unsafe.access.AccessLinker;
+import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
 import com.v7878.unsafe.access.ChannelsAccess;
 import com.v7878.unsafe.access.ChannelsAccess.NativeThreadSet;
 import com.v7878.unsafe.access.JavaForeignAccess;
@@ -18,7 +19,6 @@ import com.v7878.unsafe.io.IOUtils;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.lang.invoke.MethodHandle;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.channels.NonReadableChannelException;
@@ -266,29 +266,25 @@ public final class FileChannelUtils {
         }
     }
 
-    private static Class<?> fileDispatcherClass() {
-        class Holder {
-            static final Class<?> CLASS = ClassUtils.sysClass("sun.nio.ch.FileDispatcherImpl");
-        }
-        return Holder.CLASS;
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class AccessI {
+        @ExecutableAccess(kind = STATIC, klass = "sun.nio.ch.FileDispatcherImpl",
+                name = "truncate0", args = {"java.io.FileDescriptor", "long"})
+        abstract int truncate0(FileDescriptor fd, long size) throws IOException;
+
+        @ExecutableAccess(kind = STATIC, klass = "sun.nio.ch.FileDispatcherImpl",
+                name = "size0", args = {"java.io.FileDescriptor"})
+        abstract long size0(FileDescriptor fd) throws IOException;
+
+        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
-    @SuppressWarnings("RedundantThrows")
     private static int truncate0(FileDescriptor fd, long size) throws IOException {
-        class Holder {
-            static final MethodHandle TRUNCATE = unreflect(getHiddenMethod(
-                    fileDispatcherClass(), "truncate0",
-                    FileDescriptor.class, long.class));
-        }
-        return nothrows_run(() -> (int) Holder.TRUNCATE.invokeExact(fd, size));
+        return AccessI.INSTANCE.truncate0(fd, size);
     }
 
-    @SuppressWarnings("RedundantThrows")
     private static long size0(FileDescriptor fd) throws IOException {
-        class Holder {
-            static final MethodHandle SIZE = unreflect(getHiddenMethod(
-                    fileDispatcherClass(), "size0", FileDescriptor.class));
-        }
-        return nothrows_run(() -> (long) Holder.SIZE.invokeExact(fd));
+        return AccessI.INSTANCE.size0(fd);
     }
 }

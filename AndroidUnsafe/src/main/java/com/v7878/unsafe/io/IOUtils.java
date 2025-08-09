@@ -1,10 +1,13 @@
 package com.v7878.unsafe.io;
 
-import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
-import static com.v7878.unsafe.AndroidUnsafe.getIntO;
-import static com.v7878.unsafe.AndroidUnsafe.putIntO;
-import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
+import static android.system.OsConstants.EINTR;
+import static android.system.OsConstants.F_GETFL;
+import static android.system.OsConstants.O_APPEND;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.NEW_INSTANCE;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccess;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -21,6 +24,7 @@ import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.Utils.FineClosable;
+import com.v7878.unsafe.access.AccessLinker;
 import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.access.JavaNioAccess.UnmapperProxy;
 import com.v7878.unsafe.foreign.BulkLinker;
@@ -30,26 +34,58 @@ import com.v7878.unsafe.foreign.Errno;
 
 import java.io.FileDescriptor;
 import java.util.Objects;
+import java.util.function.IntSupplier;
 
 public class IOUtils {
-    private static final int file_descriptor_offset =
-            fieldOffset(getHiddenInstanceField(FileDescriptor.class, "descriptor"));
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class AccessI {
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.io.FileDescriptor", name = "descriptor")
+        abstract int descriptor(FileDescriptor instance);
+
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "java.io.FileDescriptor", name = "descriptor")
+        abstract void descriptor(FileDescriptor instance, int value);
+
+        @ExecutableAccess(kind = NEW_INSTANCE, klass = "java.io.FileDescriptor",
+                name = "<init>", args = {"int"})
+        abstract FileDescriptor newFileDescriptor(int value);
+
+        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private static int tempFailureRetry(String functionName, IntSupplier impl) throws ErrnoException {
+        int rc;
+        int errno = 0;
+        do {
+            rc = impl.getAsInt();
+        } while (rc == -1 && (errno = Errno.errno()) == EINTR);
+        if (rc == -1) {
+            throw new ErrnoException(functionName, errno);
+        }
+        return rc;
+    }
 
     public static int getDescriptorValue(FileDescriptor fd) {
-        Objects.requireNonNull(fd);
-        return getIntO(fd, file_descriptor_offset);
+        return AccessI.INSTANCE.descriptor(fd);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setDescriptorValue(FileDescriptor fd, int value) {
-        Objects.requireNonNull(fd);
-        putIntO(fd, file_descriptor_offset, value);
+        AccessI.INSTANCE.descriptor(fd, value);
     }
 
     public static FileDescriptor newFileDescriptor(int value) {
-        FileDescriptor out = allocateInstance(FileDescriptor.class);
-        setDescriptorValue(out, value);
-        return out;
+        return AccessI.INSTANCE.newFileDescriptor(value);
+    }
+
+    public static boolean getAppendFlag(FileDescriptor fd) {
+        try {
+            int flags = fcntl_void(fd, F_GETFL);
+            return (flags & O_APPEND) != 0;
+        } catch (ErrnoException e) {
+            return false;
+        }
     }
 
     public record ScopedFD(FileDescriptor value) implements FineClosable {
@@ -100,6 +136,14 @@ public class IOUtils {
         @LibrarySymbol(name = "madvise")
         @CallSignature(type = CRITICAL, ret = INT, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
         abstract int madvise(long address, long length, int advice);
+
+        @LibrarySymbol(name = "fcntl")
+        @CallSignature(type = CRITICAL, ret = INT, args = {INT, INT, INT})
+        abstract int fcntl_arg(int fd, int cmd, int arg);
+
+        @LibrarySymbol(name = "fcntl")
+        @CallSignature(type = CRITICAL, ret = INT, args = {INT, INT})
+        abstract int fcntl_void(int fd, int cmd);
 
         static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class, CUTILS);
     }
@@ -163,6 +207,16 @@ public class IOUtils {
         if (value < 0) {
             throw new ErrnoException("mprotect", Errno.errno());
         }
+    }
+
+    public static int fcntl_arg(FileDescriptor fd, int cmd, int arg) throws ErrnoException {
+        int fd_int = getDescriptorValue(fd);
+        return tempFailureRetry("fcntl", () -> Native.INSTANCE.fcntl_arg(fd_int, cmd, arg));
+    }
+
+    public static int fcntl_void(FileDescriptor fd, int cmd) throws ErrnoException {
+        int fd_int = getDescriptorValue(fd);
+        return tempFailureRetry("fcntl", () -> Native.INSTANCE.fcntl_void(fd_int, cmd));
     }
 
     public static final int MADV_NORMAL = 0;

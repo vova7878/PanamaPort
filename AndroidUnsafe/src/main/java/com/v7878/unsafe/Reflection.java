@@ -16,6 +16,7 @@ import static com.v7878.unsafe.Utils.searchMethod;
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.unsafe.access.InvokeAccess;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -563,13 +564,9 @@ public class Reflection {
     }
 
     public static Method[] getDeclaredMethods(Class<?> clazz) {
-        try {
-            var out = clazz.getDeclaredMethods();
-            Stream.of(out).forEach(value -> setAccessible(value, true));
-            return out;
-        } catch (Throwable th) {
-            return AndroidUnsafe.throwException(th);
-        }
+        var out = clazz.getDeclaredMethods();
+        Stream.of(out).forEach(value -> setAccessible(value, true));
+        return out;
     }
 
     public static Method getDeclaredMethod(Class<?> clazz, String name, Class<?>... params) {
@@ -583,13 +580,9 @@ public class Reflection {
     }
 
     public static Constructor<?>[] getDeclaredConstructors(Class<?> clazz) {
-        try {
-            var out = clazz.getDeclaredConstructors();
-            Stream.of(out).forEach(value -> setAccessible(value, true));
-            return out;
-        } catch (Throwable th) {
-            return AndroidUnsafe.throwException(th);
-        }
+        var out = clazz.getDeclaredConstructors();
+        Stream.of(out).forEach(value -> setAccessible(value, true));
+        return out;
     }
 
     public static <T> Constructor<T> getDeclaredConstructor(Class<T> clazz, Class<?>... params) {
@@ -603,13 +596,9 @@ public class Reflection {
     }
 
     public static Field[] getDeclaredFields(Class<?> clazz) {
-        try {
-            var out = clazz.getDeclaredFields();
-            Stream.of(out).forEach(value -> setAccessible(value, true));
-            return out;
-        } catch (Throwable th) {
-            return AndroidUnsafe.throwException(th);
-        }
+        var out = clazz.getDeclaredFields();
+        Stream.of(out).forEach(value -> setAccessible(value, true));
+        return out;
     }
 
     public static Field getDeclaredField(Class<?> clazz, String name) {
@@ -621,6 +610,8 @@ public class Reflection {
             return AndroidUnsafe.throwException(th);
         }
     }
+
+    // TODO: findFieldOffset(Class, String name)
 
     public static void initHandle(MethodHandle handle) {
         Objects.requireNonNull(handle);
@@ -654,18 +645,9 @@ public class Reflection {
         }
 
         MethodHandle out = unreflect(m);
-        setMethodHandleKind(out, /*INVOKE_DIRECT*/ 2);
+        InvokeAccess.setMethodHandleKind(out, /*INVOKE_DIRECT*/ 2);
 
         initHandle(out);
         return out;
-    }
-
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
-    @AlwaysInline
-    // TODO: move to InvokeAccess
-    public static void setMethodHandleKind(MethodHandle handle, int kind) {
-        var mirror = new MethodHandleMirror[1];
-        fillArray(mirror, handle);
-        mirror[0].handleKind = kind;
     }
 }

@@ -28,17 +28,12 @@ class MappedMemoryUtils {
         long offset = mappingOffset(address);
         address -= offset;
         length += offset;
-        long pc = pageCount(length);
-        if (ART_SDK_INT < 35) {
-            return isLoaded0_before35(address, length, (int) pc);
-        } else {
-            return isLoaded0_after35(address, length, pc);
-        }
+
+        return isLoaded0(address, length, pageCount(length));
     }
 
     // not used, but a potential target for a store, see load() for details.
     @DoNotShrink
-    //TODO: check if keep rules work correctly
     private static byte unused;
 
     static void load(long address, long length) {
@@ -100,6 +95,16 @@ class MappedMemoryUtils {
     private static void unload0(long address, long length) {
         nothrows_run(() -> madvise(address, length, MADV_DONTNEED));
     }
+
+    private static boolean isLoaded0(long address, long length, long pageCount) {
+        if (ART_SDK_INT < 35) {
+            return isLoaded0_before35(address, length, (int) pageCount);
+        } else {
+            return isLoaded0_after35(address, length, pageCount);
+        }
+    }
+
+    // TODO: make AccessI class
 
     @DoNotShrink
     @DoNotObfuscate
