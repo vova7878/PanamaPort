@@ -138,21 +138,12 @@ public final class EmulatedStackFrame {
     }
 
     @AlwaysInline
-    private static void checkAssignable(char expected, char actual) {
+    private static char checkAssignable(char expected, char actual) {
         if (expected == actual) {
-            return;
+            return expected;
         }
         throw new IllegalArgumentException(String.format(
                 "Incorrect shorty: %s, expected: %s", actual, expected));
-    }
-
-    @AlwaysInline
-    private static void checkAssignable(Class<?> expected, Class<?> actual) {
-        if (expected == actual) {
-            return;
-        }
-        throw new IllegalArgumentException(String.format(
-                "Incorrect type: %s, expected: %s", actual, expected));
     }
 
     @DoNotShrink
@@ -250,59 +241,38 @@ public final class EmulatedStackFrame {
         int ref_count = assertEq(reader.referencesOffsets[reader_start_idx + count] - reader_ref_start,
                 writer.referencesOffsets[writer_start_idx + count] - writer_ref_start);
 
-        System.arraycopy(reader.frame.primitives(), reader_frame_start,
-                writer.frame.primitives(), writer_frame_start, frame_count);
-        System.arraycopy(reader.frame.references(), reader_ref_start,
-                writer.frame.references(), writer_ref_start, ref_count);
-    }
-
-    public static void copyReturnValue(EmulatedStackFrame src, EmulatedStackFrame dst) {
-        final Class<?> returnType = src.type().erase().returnType();
-        checkAssignable(dst.type().erase().returnType(), returnType);
-        if (returnType.isPrimitive()) {
-            byte[] this_primitives = src.primitives();
-            byte[] other_primitives = dst.primitives();
-            int size = getSize(returnType);
-            System.arraycopy(this_primitives, this_primitives.length - size,
-                    other_primitives, other_primitives.length - size, size);
-        } else {
-            Object[] this_references = src.references();
-            Object[] other_references = dst.references();
-            other_references[other_references.length - 1]
-                    = this_references[this_references.length - 1];
-        }
+        System.arraycopy(reader.primitives, reader_frame_start,
+                writer.primitives, writer_frame_start, frame_count);
+        System.arraycopy(reader.references, reader_ref_start,
+                writer.references, writer_ref_start, ref_count);
     }
 
     public static void copyNextValue(RelativeStackFrameAccessor reader,
                                      RelativeStackFrameAccessor writer) {
-        switch (reader.currentShorty()) {
-            case 'L' -> writer.putNextReference(reader.nextReference());
-            case 'Z' -> writer.putNextBoolean(reader.nextBoolean());
-            case 'B' -> writer.putNextByte(reader.nextByte());
-            case 'C' -> writer.putNextChar(reader.nextChar());
-            case 'S' -> writer.putNextShort(reader.nextShort());
-            case 'I' -> writer.putNextInt(reader.nextInt());
-            case 'J' -> writer.putNextLong(reader.nextLong());
-            case 'F' -> writer.putNextFloat(reader.nextFloat());
-            case 'D' -> writer.putNextDouble(reader.nextDouble());
+        switch (checkAssignable(reader.currentShorty(), writer.currentShorty())) {
+            case 'L' -> writer.putNextRSLOT(reader.getNextRSLOT());
+            case 'Z', 'B', 'C', 'S', 'I', 'F' -> writer.putNextSSLOT(reader.getNextSSLOT());
+            case 'J', 'D' -> writer.putNextDSLOT(reader.getNextDSLOT());
             default -> throw shouldNotReachHere();
         }
     }
 
     public static void copyValue(StackFrameAccessor reader, int reader_idx,
                                  StackFrameAccessor writer, int writer_idx) {
-        switch (reader.getArgumentShorty(reader_idx)) {
-            case 'L' -> writer.setReference(writer_idx, reader.getReference(reader_idx));
-            case 'Z' -> writer.setBoolean(writer_idx, reader.getBoolean(reader_idx));
-            case 'B' -> writer.setByte(writer_idx, reader.getByte(reader_idx));
-            case 'C' -> writer.setChar(writer_idx, reader.getChar(reader_idx));
-            case 'S' -> writer.setShort(writer_idx, reader.getShort(reader_idx));
-            case 'I' -> writer.setInt(writer_idx, reader.getInt(reader_idx));
-            case 'J' -> writer.setLong(writer_idx, reader.getLong(reader_idx));
-            case 'F' -> writer.setFloat(writer_idx, reader.getFloat(reader_idx));
-            case 'D' -> writer.setDouble(writer_idx, reader.getDouble(reader_idx));
+        switch (checkAssignable(reader.getArgumentShorty(reader_idx),
+                writer.getArgumentShorty(writer_idx))) {
+            case 'V' -> { /* nop */ }
+            case 'L' -> writer.putRSLOT(writer_idx, reader.getRSLOT(reader_idx));
+            case 'Z', 'B', 'C', 'S', 'I', 'F' ->
+                    writer.putSSLOT(writer_idx, reader.getSSLOT(reader_idx));
+            case 'J', 'D' -> writer.putDSLOT(writer_idx, reader.getDSLOT(reader_idx));
             default -> throw shouldNotReachHere();
         }
+    }
+
+    @AlwaysInline
+    public static void copyReturnValue(StackFrameAccessor reader, StackFrameAccessor writer) {
+        copyValue(reader, RETURN_VALUE_IDX, writer, RETURN_VALUE_IDX);
     }
 
     public static sealed class StackFrameAccessor permits RelativeStackFrameAccessor {
@@ -323,11 +293,13 @@ public final class EmulatedStackFrame {
             primitives = stackFrame.primitives();
             references = stackFrame.references();
 
-            MethodTypeForm form = MethodTypeHacks.getForm(stackFrame.type());
-            rshorty = form.rshorty();
-            argCount = rshorty.length() - 1;
+            MethodType type = stackFrame.type();
+            argCount = type.parameterCount();
+
+            MethodTypeForm form = MethodTypeHacks.getForm(type);
             primitivesOffsets = form.primitivesOffsets();
             referencesOffsets = form.referencesOffsets();
+            rshorty = form.rshorty();
         }
 
         @AlwaysInline
@@ -375,12 +347,17 @@ public final class EmulatedStackFrame {
         }
 
         @AlwaysInline
-        protected void putSSLOT(int offset, int value) {
+        void putSSLOTRaw(int offset, int value) {
             AndroidUnsafe.putIntO(primitives, BASE + offset, value);
         }
 
         @AlwaysInline
-        protected void putDSLOT(int offset, long value) {
+        void putSSLOT(int index, int value) {
+            putSSLOTRaw(toPrimitivesOffset(index), value);
+        }
+
+        @AlwaysInline
+        void putDSLOTRaw(int offset, long value) {
             long array_offset = BASE + offset;
             if ((array_offset & 0x7) == 0) {
                 AndroidUnsafe.putLongO(primitives, array_offset, value);
@@ -392,17 +369,32 @@ public final class EmulatedStackFrame {
         }
 
         @AlwaysInline
-        protected void putRef(int index, Object value) {
-            references[index] = value;
+        void putDSLOT(int index, long value) {
+            putDSLOTRaw(toPrimitivesOffset(index), value);
         }
 
         @AlwaysInline
-        protected int getSSLOT(int offset) {
+        void putRSLOTRaw(int offset, Object value) {
+            references[offset] = value;
+        }
+
+        @AlwaysInline
+        void putRSLOT(int index, Object value) {
+            putRSLOTRaw(toReferencesOffset(index), value);
+        }
+
+        @AlwaysInline
+        int getSSLOTRaw(int offset) {
             return AndroidUnsafe.getIntO(primitives, BASE + offset);
         }
 
         @AlwaysInline
-        protected long getDSLOT(int offset) {
+        int getSSLOT(int index) {
+            return getSSLOTRaw(toPrimitivesOffset(index));
+        }
+
+        @AlwaysInline
+        long getDSLOTRaw(int offset) {
             long array_offset = BASE + offset;
             if ((array_offset & 0x7) == 0) {
                 return AndroidUnsafe.getLongO(primitives, array_offset);
@@ -415,131 +407,139 @@ public final class EmulatedStackFrame {
         }
 
         @AlwaysInline
+        long getDSLOT(int index) {
+            return getDSLOTRaw(toPrimitivesOffset(index));
+        }
+
+        @AlwaysInline
         @SuppressWarnings("unchecked")
-        protected <T> T getRef(int index) {
-            return (T) references[index];
+        <T> T getRSLOTRaw(int offset) {
+            return (T) references[offset];
+        }
+
+        @AlwaysInline
+        <T> T getRSLOT(int index) {
+            return getRSLOTRaw(toReferencesOffset(index));
         }
 
         public void setBoolean(int index, boolean value) {
             checkWriteType(index, 'Z');
-            putSSLOT(toPrimitivesOffset(index), value ? 1 : 0);
+            putSSLOT(index, value ? 1 : 0);
         }
 
         public void setByte(int index, byte value) {
             checkWriteType(index, 'B');
-            putSSLOT(toPrimitivesOffset(index), value);
+            putSSLOT(index, value);
         }
 
         public void setChar(int index, char value) {
             checkWriteType(index, 'C');
-            putSSLOT(toPrimitivesOffset(index), value);
+            putSSLOT(index, value);
         }
 
         public void setShort(int index, short value) {
             checkWriteType(index, 'S');
-            putSSLOT(toPrimitivesOffset(index), value);
+            putSSLOT(index, value);
         }
 
         public void setInt(int index, int value) {
             checkWriteType(index, 'I');
-            putSSLOT(toPrimitivesOffset(index), value);
+            putSSLOT(index, value);
         }
 
         public void setFloat(int index, float value) {
             checkWriteType(index, 'F');
-            putSSLOT(toPrimitivesOffset(index), Float.floatToRawIntBits(value));
+            putSSLOT(index, Float.floatToRawIntBits(value));
         }
 
         public void setLong(int index, long value) {
             checkWriteType(index, 'J');
-            putDSLOT(toPrimitivesOffset(index), value);
+            putDSLOT(index, value);
         }
 
         public void setDouble(int index, double value) {
             checkWriteType(index, 'D');
-            putDSLOT(toPrimitivesOffset(index), Double.doubleToRawLongBits(value));
+            putDSLOT(index, Double.doubleToRawLongBits(value));
         }
 
         public void setReference(int index, Object value) {
             checkWriteType(index, 'L');
-            putRef(toReferencesOffset(index), value);
+            putRSLOT(index, value);
         }
 
         public void setValue(int index, Object value) {
             switch (getArgumentShorty(index)) {
                 case 'V' -> { /* nop */ }
-                case 'L' -> putRef(toReferencesOffset(index), value);
-                case 'Z' -> putSSLOT(toPrimitivesOffset(index), (boolean) value ? 1 : 0);
-                case 'B' -> putSSLOT(toPrimitivesOffset(index), (byte) value);
-                case 'C' -> putSSLOT(toPrimitivesOffset(index), (char) value);
-                case 'S' -> putSSLOT(toPrimitivesOffset(index), (short) value);
-                case 'I' -> putSSLOT(toPrimitivesOffset(index), (int) value);
-                case 'F' -> putSSLOT(toPrimitivesOffset(index),
-                        Float.floatToRawIntBits((float) value));
-                case 'J' -> putDSLOT(toPrimitivesOffset(index), (long) value);
-                case 'D' -> putDSLOT(toPrimitivesOffset(index),
-                        Double.doubleToRawLongBits((double) value));
+                case 'L' -> putRSLOT(index, value);
+                case 'Z' -> putSSLOT(index, (boolean) value ? 1 : 0);
+                case 'B' -> putSSLOT(index, (byte) value);
+                case 'C' -> putSSLOT(index, (char) value);
+                case 'S' -> putSSLOT(index, (short) value);
+                case 'I' -> putSSLOT(index, (int) value);
+                case 'F' -> putSSLOT(index, Float.floatToRawIntBits((float) value));
+                case 'J' -> putDSLOT(index, (long) value);
+                case 'D' -> putDSLOT(index, Double.doubleToRawLongBits((double) value));
                 default -> throw shouldNotReachHere();
             }
         }
 
         public boolean getBoolean(int index) {
             checkReadType(index, 'Z');
-            return getSSLOT(toPrimitivesOffset(index)) != 0;
+            return getSSLOT(index) != 0;
         }
 
         public byte getByte(int index) {
             checkReadType(index, 'B');
-            return (byte) getSSLOT(toPrimitivesOffset(index));
+            return (byte) getSSLOT(index);
         }
 
         public char getChar(int index) {
             checkReadType(index, 'C');
-            return (char) getSSLOT(toPrimitivesOffset(index));
+            return (char) getSSLOT(index);
         }
 
         public short getShort(int index) {
             checkReadType(index, 'S');
-            return (short) getSSLOT(toPrimitivesOffset(index));
+            return (short) getSSLOT(index);
         }
 
         public int getInt(int index) {
             checkReadType(index, 'I');
-            return getSSLOT(toPrimitivesOffset(index));
+            return getSSLOT(index);
         }
 
         public float getFloat(int index) {
             checkReadType(index, 'F');
-            return Float.intBitsToFloat(getSSLOT(toPrimitivesOffset(index)));
+            return Float.intBitsToFloat(getSSLOT(index));
         }
 
         public long getLong(int index) {
             checkReadType(index, 'J');
-            return getDSLOT(toPrimitivesOffset(index));
+            return getDSLOT(index);
         }
 
         public double getDouble(int index) {
             checkReadType(index, 'D');
-            return Double.longBitsToDouble(getDSLOT(toPrimitivesOffset(index)));
+            return Double.longBitsToDouble(getDSLOT(index));
         }
 
         public <T> T getReference(int index) {
             checkReadType(index, 'L');
-            return getRef(toReferencesOffset(index));
+            return getRSLOT(index);
         }
 
         public Object getValue(int index) {
             return switch (getArgumentShorty(index)) {
                 case 'V' -> null;
-                case 'L' -> getRef(toReferencesOffset(index));
-                case 'Z' -> getSSLOT(toPrimitivesOffset(index)) != 0;
-                case 'B' -> (byte) getSSLOT(toPrimitivesOffset(index));
-                case 'C' -> (char) getSSLOT(toPrimitivesOffset(index));
-                case 'S' -> (short) getSSLOT(toPrimitivesOffset(index));
-                case 'I' -> getSSLOT(toPrimitivesOffset(index));
-                case 'F' -> Float.intBitsToFloat(getSSLOT(toPrimitivesOffset(index)));
-                case 'J' -> getDSLOT(toPrimitivesOffset(index));
-                case 'D' -> Double.longBitsToDouble(getDSLOT(toPrimitivesOffset(index)));
+                case 'L' -> getRSLOT(index);
+                case 'Z' -> getSSLOT(index) != 0;
+                case 'B' -> (byte) getSSLOT(index);
+                case 'C' -> (char) getSSLOT(index);
+                case 'S' -> (short) getSSLOT(index);
+                case 'I' -> getSSLOT(index);
+                case 'F' -> Float.intBitsToFloat(getSSLOT(index));
+                case 'J' -> getDSLOT(index);
+                case 'D' -> Double.longBitsToDouble(getDSLOT(index));
                 default -> throw shouldNotReachHere();
             };
         }
@@ -563,18 +563,18 @@ public final class EmulatedStackFrame {
         }
 
         @AlwaysInline
-        public int currentShorty() {
+        public char currentShorty() {
             return getArgumentShorty(argumentIdx);
         }
 
         @AlwaysInline
         private void checkWriteType(char expected) {
-            checkAssignable(getArgumentShorty(argumentIdx), expected);
+            checkAssignable(currentShorty(), expected);
         }
 
         @AlwaysInline
         private void checkReadType(char expected) {
-            checkAssignable(expected, getArgumentShorty(argumentIdx));
+            checkAssignable(expected, currentShorty());
         }
 
         public RelativeStackFrameAccessor moveTo(int index) {
@@ -593,28 +593,28 @@ public final class EmulatedStackFrame {
 
         @AlwaysInline
         private void putNextSSLOT(int value) {
-            putSSLOT(currentPrimitive, value);
+            putSSLOTRaw(currentPrimitive, value);
             argumentIdx++;
             currentPrimitive += SREG;
         }
 
         @AlwaysInline
         private void putNextDSLOT(long value) {
-            putDSLOT(currentPrimitive, value);
+            putDSLOTRaw(currentPrimitive, value);
             argumentIdx++;
             currentPrimitive += DREG;
         }
 
         @AlwaysInline
-        private void putNextRef(Object value) {
-            putRef(currentReference, value);
+        private void putNextRSLOT(Object value) {
+            putRSLOTRaw(currentReference, value);
             argumentIdx++;
             currentReference++;
         }
 
         @AlwaysInline
         private int getNextSSLOT() {
-            int value = getSSLOT(currentPrimitive);
+            int value = getSSLOTRaw(currentPrimitive);
             argumentIdx++;
             currentPrimitive += SREG;
             return value;
@@ -622,15 +622,15 @@ public final class EmulatedStackFrame {
 
         @AlwaysInline
         private long getNextDSLOT() {
-            long value = getDSLOT(currentPrimitive);
+            long value = getDSLOTRaw(currentPrimitive);
             argumentIdx++;
             currentPrimitive += DREG;
             return value;
         }
 
         @AlwaysInline
-        private <T> T getNextRef() {
-            T value = getRef(currentReference);
+        private <T> T getNextRSLOT() {
+            T value = getRSLOTRaw(currentReference);
             argumentIdx++;
             currentReference++;
             return value;
@@ -678,13 +678,13 @@ public final class EmulatedStackFrame {
 
         public void putNextReference(Object value) {
             checkWriteType('L');
-            putNextRef(value);
+            putNextRSLOT(value);
         }
 
         public void putNextValue(Object value) {
-            switch (getArgumentShorty(argumentIdx)) {
+            switch (currentShorty()) {
                 case 'V' -> argumentIdx++;
-                case 'L' -> putNextRef(value);
+                case 'L' -> putNextRSLOT(value);
                 case 'Z' -> putNextSSLOT((boolean) value ? 1 : 0);
                 case 'B' -> putNextSSLOT((byte) value);
                 case 'C' -> putNextSSLOT((char) value);
@@ -739,16 +739,16 @@ public final class EmulatedStackFrame {
 
         public <T> T nextReference() {
             checkReadType('L');
-            return getNextRef();
+            return getNextRSLOT();
         }
 
         public Object nextValue() {
-            return switch (getArgumentShorty(argumentIdx)) {
+            return switch (currentShorty()) {
                 case 'V' -> {
                     argumentIdx++;
                     yield null;
                 }
-                case 'L' -> getNextRef();
+                case 'L' -> getNextRSLOT();
                 case 'Z' -> getNextSSLOT() != 0;
                 case 'B' -> (byte) getNextSSLOT();
                 case 'C' -> (char) getNextSSLOT();

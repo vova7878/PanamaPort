@@ -76,7 +76,7 @@ public class MethodHandlesFixes {
 
             // Invoke the target.
             invokeExactWithFrameNoChecks(target, targetFrame);
-            EmulatedStackFrame.copyReturnValue(targetFrame, stackFrame);
+            EmulatedStackFrame.copyReturnValue(target_accessor, this_accessor);
         }
     }
 
@@ -145,7 +145,7 @@ public class MethodHandlesFixes {
             } else {
                 Transformers.invokeWithFrame(target, targetFrame);
             }
-            EmulatedStackFrame.copyReturnValue(targetFrame, stackFrame);
+            EmulatedStackFrame.copyReturnValue(targetAccessor, thisAccessor);
         }
     }
 
@@ -560,7 +560,8 @@ public class MethodHandlesFixes {
                 EmulatedStackFrame.copyValue(reader, reorder[i], writer, i);
             }
             invokeExactWithFrameNoChecks(target, calleeFrame);
-            EmulatedStackFrame.copyReturnValue(calleeFrame, stackFrame);
+            // copy from writer to reader as this is return value
+            EmulatedStackFrame.copyReturnValue(writer, reader);
         }
     }
 
@@ -970,7 +971,7 @@ public class MethodHandlesFixes {
 
             // Invoke the collector and copy its return value back to the original frame.
             invokeExactWithFrameNoChecks(collector, collectorFrame);
-            EmulatedStackFrame.copyReturnValue(collectorFrame, stackFrame);
+            EmulatedStackFrame.copyReturnValue(collector_accessor, this_accessor);
         }
     }
 
