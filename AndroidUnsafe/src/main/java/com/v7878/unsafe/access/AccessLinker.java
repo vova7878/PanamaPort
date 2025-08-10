@@ -72,15 +72,21 @@ public class AccessLinker {
     @DoNotShrinkType
     public @interface Conditions {
         @ApiSensitive
-        int[] api() default {26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36};
+        int min_api() default 0;
 
         @ApiSensitive
-        int[] art_api() default {26, 27, 28, 29, 30, 31 /*, 32 - doesn`t exist */, 33, 34, 35, 36};
+        int max_api() default Integer.MAX_VALUE;
+
+        @ApiSensitive
+        int min_art() default 0;
+
+        @ApiSensitive
+        int max_art() default Integer.MAX_VALUE;
     }
 
     private static boolean checkConditions(Conditions cond) {
-        return Utils.contains(cond.api(), CORRECT_SDK_INT) &&
-                Utils.contains(cond.art_api(), ART_SDK_INT);
+        return (cond.min_api() <= CORRECT_SDK_INT && cond.max_api() >= CORRECT_SDK_INT) &&
+                (cond.min_art() <= ART_SDK_INT && cond.max_art() >= ART_SDK_INT);
     }
 
     @Retention(RetentionPolicy.RUNTIME)

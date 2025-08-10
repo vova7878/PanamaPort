@@ -196,11 +196,6 @@ public class Utils {
         return name;
     }
 
-    public static boolean contains(int[] array, int value) {
-        for (int j : array) if (j == value) return true;
-        return false;
-    }
-
     public static <T> boolean contains(T[] array, T value) {
         for (T j : array) if (j == value) return true;
         return false;

@@ -521,10 +521,16 @@ public class BulkLinker {
         InstructionSet[] arch() default {ARM, ARM64, X86, X86_64, RISCV64};
 
         @ApiSensitive
-        int[] api() default {26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36};
+        int min_api() default 0;
 
         @ApiSensitive
-        int[] art_api() default {26, 27, 28, 29, 30, 31 /*, 32 - doesn`t exist */, 33, 34, 35, 36};
+        int max_api() default Integer.MAX_VALUE;
+
+        @ApiSensitive
+        int min_art() default 0;
+
+        @ApiSensitive
+        int max_art() default Integer.MAX_VALUE;
 
         Tristate poisoning() default Tristate.NO_MATTER;
     }
@@ -614,15 +620,15 @@ public class BulkLinker {
         CallSignature[] value();
     }
 
-    private static boolean checkPoisoning(Tristate poisoning) {
-        return poisoning == Tristate.NO_MATTER ||
-                ((poisoning == Tristate.TRUE) == VM.isPoisonReferences());
+    private static boolean checkPoisoning(BulkLinker.Tristate poisoning) {
+        return poisoning == BulkLinker.Tristate.NO_MATTER ||
+                ((poisoning == BulkLinker.Tristate.TRUE) == VM.isPoisonReferences());
     }
 
-    private static boolean checkConditions(Conditions cond) {
+    private static boolean checkConditions(BulkLinker.Conditions cond) {
         return Utils.contains(cond.arch(), CURRENT_INSTRUCTION_SET) &&
-                Utils.contains(cond.api(), CORRECT_SDK_INT) &&
-                Utils.contains(cond.art_api(), ART_SDK_INT) &&
+                (cond.min_api() <= CORRECT_SDK_INT && cond.max_api() >= CORRECT_SDK_INT) &&
+                (cond.min_art() <= ART_SDK_INT && cond.max_art() >= ART_SDK_INT) &&
                 checkPoisoning(cond.poisoning());
     }
 

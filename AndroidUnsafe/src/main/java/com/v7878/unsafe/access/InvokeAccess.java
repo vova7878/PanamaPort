@@ -35,12 +35,12 @@ public class InvokeAccess {
         abstract void realType(MethodHandle handle, MethodType type);
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(art_api = {26, 27, 28, 29, 30, 31, 32}),
+        @FieldAccess(conditions = @Conditions(max_art = 32),
                 kind = INSTANCE_GETTER, klass = "java.lang.invoke.MethodHandle", name = "nominalType")
         abstract MethodType nominalType(MethodHandle handle);
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(art_api = {26, 27, 28, 29, 30, 31, 32}),
+        @FieldAccess(conditions = @Conditions(max_art = 32),
                 kind = INSTANCE_SETTER, klass = "java.lang.invoke.MethodHandle", name = "nominalType")
         abstract void nominalType(MethodHandle handle, MethodType type);
 
@@ -184,17 +184,17 @@ public class InvokeAccess {
         abstract int SPUT();
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(art_api = {26, 27, 28, 29, 30, 31, 32}),
+        @FieldAccess(conditions = @Conditions(max_art = 32),
                 kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_CALLSITE_TRANSFORM")
         abstract int INVOKE_CALLSITE_TRANSFORM();
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(art_api = {28, 29, 30, 31, 32, 33, 34, 35, 36}),
+        @FieldAccess(conditions = @Conditions(min_art = 28),
                 kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VAR_HANDLE")
         abstract int INVOKE_VAR_HANDLE();
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(art_api = {28, 29, 30, 31, 32, 33, 34, 35, 36}),
+        @FieldAccess(conditions = @Conditions(min_art = 28),
                 kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VAR_HANDLE_EXACT")
         abstract int INVOKE_VAR_HANDLE_EXACT();
 
