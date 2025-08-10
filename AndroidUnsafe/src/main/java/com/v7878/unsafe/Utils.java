@@ -176,9 +176,6 @@ public class Utils {
         return searchExecutable(executables, name, true, params);
     }
 
-
-    private static final Random random = new Random();
-
     public static boolean checkClassExists(ClassLoader loader, String name) {
         try {
             Class.forName(name, false, loader);
@@ -189,9 +186,12 @@ public class Utils {
     }
 
     public static String generateClassName(ClassLoader loader, String base) {
+        class Holder {
+            static final Random RANDOM = new Random();
+        }
         String name = null;
         while (name == null || checkClassExists(loader, name)) {
-            name = String.format("%s_%016X", base, random.nextLong());
+            name = String.format("%s_%016X", base, Holder.RANDOM.nextLong());
         }
         return name;
     }
@@ -202,24 +202,15 @@ public class Utils {
     }
 
     @AlwaysInline
-    public static int assertEq(int a, int b) {
-        if (a == b) {
-            return a;
-        }
-        throw new IllegalArgumentException("a(" + a + ") != b(" + b + ")");
-    }
-
-    @AlwaysInline
-    public static long assertEq(long a, long b) {
-        if (a == b) {
-            return a;
-        }
-        throw new IllegalArgumentException("a(" + a + ") != b(" + b + ")");
-    }
-
-    @AlwaysInline
     public static <T extends Throwable> void check(boolean value, Supplier<T> th) {
         if (!value) {
+            AndroidUnsafe.throwException(th.get());
+        }
+    }
+
+    @AlwaysInline
+    public static <T extends Throwable> void dcheck(boolean value, Supplier<T> th) {
+        if (!DEBUG_BUILD && !value) {
             AndroidUnsafe.throwException(th.get());
         }
     }

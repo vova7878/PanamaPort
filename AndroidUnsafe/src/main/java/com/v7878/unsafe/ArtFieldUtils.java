@@ -9,7 +9,7 @@ import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.ART_FIELD_SIZE;
 import static com.v7878.unsafe.Reflection.getArtField;
-import static com.v7878.unsafe.Utils.check;
+import static com.v7878.unsafe.Utils.dcheck;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
@@ -38,7 +38,7 @@ public class ArtFieldUtils {
         } else {
             throw unsupportedSDK(ART_SDK_INT);
         }
-        check(ARTFIELD_LAYOUT.byteSize() == ART_FIELD_SIZE, AssertionError::new);
+        dcheck(ARTFIELD_LAYOUT.byteSize() == ART_FIELD_SIZE, AssertionError::new);
     }
 
     public static MemorySegment getArtFieldSegment(Field f) {

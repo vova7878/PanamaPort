@@ -19,7 +19,7 @@ import static com.v7878.unsafe.ArtModifiers.kAccPreCompiled;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.Reflection.ART_METHOD_SIZE;
 import static com.v7878.unsafe.Reflection.getArtMethod;
-import static com.v7878.unsafe.Utils.check;
+import static com.v7878.unsafe.Utils.dcheck;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
@@ -104,7 +104,7 @@ public class ArtMethodUtils {
     };
 
     static {
-        check(ARTMETHOD_LAYOUT.byteSize() == ART_METHOD_SIZE, AssertionError::new);
+        dcheck(ARTMETHOD_LAYOUT.byteSize() == ART_METHOD_SIZE, AssertionError::new);
     }
 
     public static MemorySegment getArtMethodSegment(Executable ex) {

@@ -17,6 +17,7 @@ import static com.v7878.unsafe.Reflection.fillArray;
 import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.check;
+import static com.v7878.unsafe.Utils.dcheck;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccess;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
@@ -107,9 +108,11 @@ public class VM {
     public static final int STRING_HEADER_SIZE = objectSizeField(StringMirror.class);
 
     static {
-        check(ARRAY_OBJECT_INDEX_SCALE == OBJECT_FIELD_SIZE, AssertionError::new);
-        check(ARRAY_INT_BASE_OFFSET == 12, AssertionError::new);
-        check(OBJECT_INSTANCE_SIZE == 8, AssertionError::new);
+        //noinspection ConstantValue
+        dcheck(ARRAY_OBJECT_INDEX_SCALE == OBJECT_FIELD_SIZE, AssertionError::new);
+        //noinspection ConstantValue
+        dcheck(ARRAY_INT_BASE_OFFSET == 12, AssertionError::new);
+        dcheck(OBJECT_INSTANCE_SIZE == 8, AssertionError::new);
     }
 
     @SuppressWarnings("unchecked")

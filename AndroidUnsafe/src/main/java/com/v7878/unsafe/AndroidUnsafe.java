@@ -1,6 +1,7 @@
 package com.v7878.unsafe;
 
 import static com.v7878.unsafe.Utils.check;
+import static com.v7878.unsafe.Utils.dcheck;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.misc.Math.convEndian16;
 import static com.v7878.unsafe.misc.Math.convEndian32;
@@ -24,9 +25,9 @@ public class AndroidUnsafe {
     public static final boolean IS_BIG_ENDIAN = false;
 
     static {
-        check((ADDRESS_SIZE == 4) || (ADDRESS_SIZE == 8), AssertionError::new);
+        dcheck((ADDRESS_SIZE == 4) || (ADDRESS_SIZE == 8), AssertionError::new);
         // Note: Android is always little-endian
-        check(ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN), AssertionError::new);
+        dcheck(ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN), AssertionError::new);
     }
 
     @NoSideEffects
@@ -42,42 +43,42 @@ public class AndroidUnsafe {
     }
 
     @NoSideEffects
-    public static final long ARRAY_BOOLEAN_BASE_OFFSET = arrayBaseOffset(boolean[].class);
+    public static final long ARRAY_BOOLEAN_BASE_OFFSET = 12; // arrayBaseOffset(boolean[].class);
     @NoSideEffects
-    public static final long ARRAY_BYTE_BASE_OFFSET = arrayBaseOffset(byte[].class);
+    public static final long ARRAY_BYTE_BASE_OFFSET = 12; // arrayBaseOffset(byte[].class);
     @NoSideEffects
-    public static final long ARRAY_SHORT_BASE_OFFSET = arrayBaseOffset(short[].class);
+    public static final long ARRAY_SHORT_BASE_OFFSET = 12; // arrayBaseOffset(short[].class);
     @NoSideEffects
-    public static final long ARRAY_CHAR_BASE_OFFSET = arrayBaseOffset(char[].class);
+    public static final long ARRAY_CHAR_BASE_OFFSET = 12; // arrayBaseOffset(char[].class);
     @NoSideEffects
-    public static final long ARRAY_INT_BASE_OFFSET = arrayBaseOffset(int[].class);
+    public static final long ARRAY_INT_BASE_OFFSET = 12; // arrayBaseOffset(int[].class);
     @NoSideEffects
-    public static final long ARRAY_LONG_BASE_OFFSET = arrayBaseOffset(long[].class);
+    public static final long ARRAY_LONG_BASE_OFFSET = 16; // arrayBaseOffset(long[].class);
     @NoSideEffects
-    public static final long ARRAY_FLOAT_BASE_OFFSET = arrayBaseOffset(float[].class);
+    public static final long ARRAY_FLOAT_BASE_OFFSET = 12; // arrayBaseOffset(float[].class);
     @NoSideEffects
-    public static final long ARRAY_DOUBLE_BASE_OFFSET = arrayBaseOffset(double[].class);
+    public static final long ARRAY_DOUBLE_BASE_OFFSET = 16; // arrayBaseOffset(double[].class);
     @NoSideEffects
-    public static final long ARRAY_OBJECT_BASE_OFFSET = arrayBaseOffset(Object[].class);
+    public static final long ARRAY_OBJECT_BASE_OFFSET = 12; // arrayBaseOffset(Object[].class);
 
     @NoSideEffects
-    public static final int ARRAY_BOOLEAN_INDEX_SCALE = arrayIndexScale(boolean[].class);
+    public static final int ARRAY_BOOLEAN_INDEX_SCALE = 1; // arrayIndexScale(boolean[].class);
     @NoSideEffects
-    public static final int ARRAY_BYTE_INDEX_SCALE = arrayIndexScale(byte[].class);
+    public static final int ARRAY_BYTE_INDEX_SCALE = 1; // arrayIndexScale(byte[].class);
     @NoSideEffects
-    public static final int ARRAY_SHORT_INDEX_SCALE = arrayIndexScale(short[].class);
+    public static final int ARRAY_SHORT_INDEX_SCALE = 2; // arrayIndexScale(short[].class);
     @NoSideEffects
-    public static final int ARRAY_CHAR_INDEX_SCALE = arrayIndexScale(char[].class);
+    public static final int ARRAY_CHAR_INDEX_SCALE = 2; // arrayIndexScale(char[].class);
     @NoSideEffects
-    public static final int ARRAY_INT_INDEX_SCALE = arrayIndexScale(int[].class);
+    public static final int ARRAY_INT_INDEX_SCALE = 4; // arrayIndexScale(int[].class);
     @NoSideEffects
-    public static final int ARRAY_LONG_INDEX_SCALE = arrayIndexScale(long[].class);
+    public static final int ARRAY_LONG_INDEX_SCALE = 8; // arrayIndexScale(long[].class);
     @NoSideEffects
-    public static final int ARRAY_FLOAT_INDEX_SCALE = arrayIndexScale(float[].class);
+    public static final int ARRAY_FLOAT_INDEX_SCALE = 4; // arrayIndexScale(float[].class);
     @NoSideEffects
-    public static final int ARRAY_DOUBLE_INDEX_SCALE = arrayIndexScale(double[].class);
+    public static final int ARRAY_DOUBLE_INDEX_SCALE = 8; // arrayIndexScale(double[].class);
     @NoSideEffects
-    public static final int ARRAY_OBJECT_INDEX_SCALE = arrayIndexScale(Object[].class);
+    public static final int ARRAY_OBJECT_INDEX_SCALE = 4; // arrayIndexScale(Object[].class);
 
     @AlwaysInline
     public static boolean unalignedAccess() {
