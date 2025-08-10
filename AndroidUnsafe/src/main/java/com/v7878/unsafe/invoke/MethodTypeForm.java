@@ -73,4 +73,8 @@ public interface MethodTypeForm {
         }
         return offsets[i];
     }
+
+    // reverse-shorty, where return type is stored after parameter types
+    @DoNotShrink
+    String rshorty();
 }

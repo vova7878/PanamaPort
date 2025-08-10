@@ -63,8 +63,8 @@ public class MethodHandlesFixes {
             // If return type of collector is not void, we have a return value to copy.
             int target_pos = pos;
             if (rtype(collector_type) != void.class) {
-                EmulatedStackFrame.copyValue(collector_accessor, RETURN_VALUE_IDX,
-                        target_accessor, target_pos, rtype(collector_type));
+                EmulatedStackFrame.copyValue(collector_accessor,
+                        RETURN_VALUE_IDX, target_accessor, target_pos);
                 target_pos++;
             }
 
@@ -101,23 +101,20 @@ public class MethodHandlesFixes {
     }
 
     static class Identity extends AbstractTransformer {
-        private final Class<?> type;
-
-        Identity(Class<?> type) {
-            this.type = type;
+        Identity() {
         }
 
         @Override
         public void transform(MethodHandle ignored, EmulatedStackFrame stack) {
             var accessor = stack.accessor();
-            EmulatedStackFrame.copyValue(accessor, 0, accessor, RETURN_VALUE_IDX, type);
+            EmulatedStackFrame.copyValue(accessor, 0, accessor, RETURN_VALUE_IDX);
         }
     }
 
     // fix for PLATFORM-BUG!
     public static MethodHandle identity(Class<?> type) {
         Objects.requireNonNull(type);
-        return makeTransformer(MethodType.methodType(type, type), new Identity(type));
+        return makeTransformer(MethodType.methodType(type, type), new Identity());
     }
 
     static class Invoker extends AbstractTransformer {
@@ -490,7 +487,7 @@ public class MethodHandlesFixes {
         private static void explicitCast(RelativeStackFrameAccessor reader, Class<?> from,
                                          RelativeStackFrameAccessor writer, Class<?> to) {
             if (from == to) {
-                EmulatedStackFrame.copyNextValue(reader, writer, from);
+                EmulatedStackFrame.copyNextValue(reader, writer);
                 return;
             }
             if (from.isPrimitive()) {
@@ -559,9 +556,8 @@ public class MethodHandlesFixes {
             StackFrameAccessor reader = stackFrame.accessor();
             EmulatedStackFrame calleeFrame = EmulatedStackFrame.create(type);
             StackFrameAccessor writer = calleeFrame.accessor();
-            Class<?>[] ptypes = InvokeAccess.ptypes(type);
             for (int i = 0; i < reorder.length; i++) {
-                EmulatedStackFrame.copyValue(reader, reorder[i], writer, i, ptypes[i]);
+                EmulatedStackFrame.copyValue(reader, reorder[i], writer, i);
             }
             invokeExactWithFrameNoChecks(target, calleeFrame);
             EmulatedStackFrame.copyReturnValue(calleeFrame, stackFrame);
@@ -766,7 +762,7 @@ public class MethodHandlesFixes {
         private void adaptArgument(RelativeStackFrameAccessor reader, Class<?> from,
                                    RelativeStackFrameAccessor writer, Class<?> to) {
             if (from.equals(to)) {
-                EmulatedStackFrame.copyNextValue(reader, writer, from);
+                EmulatedStackFrame.copyNextValue(reader, writer);
                 return;
             }
             if (to.isPrimitive()) {
@@ -969,7 +965,7 @@ public class MethodHandlesFixes {
             // If return type of target is not void, we have a return value to copy.
             if (rtype(target_type) != void.class) {
                 EmulatedStackFrame.copyValue(target_accessor, RETURN_VALUE_IDX,
-                        collector_accessor, collector_count, target_type.returnType());
+                        collector_accessor, collector_count);
             }
 
             // Invoke the collector and copy its return value back to the original frame.

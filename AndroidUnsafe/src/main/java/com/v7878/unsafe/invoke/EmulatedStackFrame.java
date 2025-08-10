@@ -10,7 +10,7 @@ import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceFields;
-import static com.v7878.unsafe.Utils.assertEq;
+import static com.v7878.unsafe.Utils.dcheck;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
@@ -32,7 +32,6 @@ import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.access.AccessLinker;
 import com.v7878.unsafe.access.AccessLinker.FieldAccess;
-import com.v7878.unsafe.access.InvokeAccess;
 
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
@@ -139,12 +138,21 @@ public final class EmulatedStackFrame {
     }
 
     @AlwaysInline
+    private static void checkAssignable(char expected, char actual) {
+        if (expected == actual) {
+            return;
+        }
+        throw new IllegalArgumentException(String.format(
+                "Incorrect shorty: %s, expected: %s", actual, expected));
+    }
+
+    @AlwaysInline
     private static void checkAssignable(Class<?> expected, Class<?> actual) {
         if (expected == actual) {
             return;
         }
-        throw new IllegalArgumentException(
-                String.format("Incorrect type: %s, expected: %s", actual, expected));
+        throw new IllegalArgumentException(String.format(
+                "Incorrect type: %s, expected: %s", actual, expected));
     }
 
     @DoNotShrink
@@ -155,6 +163,7 @@ public final class EmulatedStackFrame {
         return new EmulatedStackFrame(esf);
     }
 
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static EmulatedStackFrame create(MethodType frameType, Object[] references, byte[] stackFrame) {
         Objects.requireNonNull(frameType);
         Objects.requireNonNull(references);
@@ -215,12 +224,18 @@ public final class EmulatedStackFrame {
         return new RelativeStackFrameAccessor(this);
     }
 
+    @AlwaysInline
+    private static int assertEq(int a, int b) {
+        dcheck(a == b, AssertionError::new);
+        return a;
+    }
+
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     // TODO: simplify
     public static void copyArguments(StackFrameAccessor reader, int reader_start_idx,
                                      StackFrameAccessor writer, int writer_start_idx, int count) {
-        Objects.checkFromIndexSize(reader_start_idx, count, reader.ptypes.length);
-        Objects.checkFromIndexSize(writer_start_idx, count, writer.ptypes.length);
+        Objects.checkFromIndexSize(reader_start_idx, count, reader.argCount);
+        Objects.checkFromIndexSize(writer_start_idx, count, writer.argCount);
 
         if (count == 0) return;
 
@@ -259,8 +274,8 @@ public final class EmulatedStackFrame {
     }
 
     public static void copyNextValue(RelativeStackFrameAccessor reader,
-                                     RelativeStackFrameAccessor writer, Class<?> type) {
-        switch (Wrapper.basicTypeChar(type)) {
+                                     RelativeStackFrameAccessor writer) {
+        switch (reader.currentShorty()) {
             case 'L' -> writer.putNextReference(reader.nextReference());
             case 'Z' -> writer.putNextBoolean(reader.nextBoolean());
             case 'B' -> writer.putNextByte(reader.nextByte());
@@ -275,8 +290,8 @@ public final class EmulatedStackFrame {
     }
 
     public static void copyValue(StackFrameAccessor reader, int reader_idx,
-                                 StackFrameAccessor writer, int writer_idx, Class<?> type) {
-        switch (Wrapper.basicTypeChar(type)) {
+                                 StackFrameAccessor writer, int writer_idx) {
+        switch (reader.getArgumentShorty(reader_idx)) {
             case 'L' -> writer.setReference(writer_idx, reader.getReference(reader_idx));
             case 'Z' -> writer.setBoolean(writer_idx, reader.getBoolean(reader_idx));
             case 'B' -> writer.setByte(writer_idx, reader.getByte(reader_idx));
@@ -300,19 +315,17 @@ public final class EmulatedStackFrame {
         final Object[] references;
 
         final EmulatedStackFrame frame;
-        final Class<?>[] ptypes;
-        final Class<?> rtype;
+        final String rshorty;
+        final int argCount;
 
         public StackFrameAccessor(EmulatedStackFrame stackFrame) {
             frame = stackFrame;
             primitives = stackFrame.primitives();
             references = stackFrame.references();
 
-            MethodType type = stackFrame.type().erase();
-            rtype = InvokeAccess.rtype(type);
-            ptypes = InvokeAccess.ptypes(type);
-
-            MethodTypeForm form = MethodTypeHacks.getForm(type);
+            MethodTypeForm form = MethodTypeHacks.getForm(stackFrame.type());
+            rshorty = form.rshorty();
+            argCount = rshorty.length() - 1;
             primitivesOffsets = form.primitivesOffsets();
             referencesOffsets = form.referencesOffsets();
         }
@@ -324,14 +337,15 @@ public final class EmulatedStackFrame {
 
         @AlwaysInline
         protected void checkIndex(int index) {
-            if ((index < 0 || index >= ptypes.length) && (index != RETURN_VALUE_IDX)) {
-                throw new IllegalArgumentException("Invalid argument index: " + index);
+            if ((index >= 0 && index <= argCount) || index == RETURN_VALUE_IDX) {
+                return;
             }
+            throw new IllegalArgumentException("Invalid argument index: " + index);
         }
 
         @AlwaysInline
         protected int toArrayIndex(int index) {
-            return index == RETURN_VALUE_IDX ? ptypes.length : index;
+            return index == RETURN_VALUE_IDX ? argCount : index;
         }
 
         @AlwaysInline
@@ -345,19 +359,19 @@ public final class EmulatedStackFrame {
         }
 
         @AlwaysInline
-        public Class<?> getArgumentType(int index) {
+        public char getArgumentShorty(int index) {
             checkIndex(index);
-            return (index == RETURN_VALUE_IDX) ? rtype : ptypes[index];
+            return rshorty.charAt(index == RETURN_VALUE_IDX ? argCount : index);
         }
 
         @AlwaysInline
-        private void checkWriteType(int index, Class<?> expected) {
-            checkAssignable(getArgumentType(index), expected);
+        private void checkWriteType(int index, char expected) {
+            checkAssignable(getArgumentShorty(index), expected);
         }
 
         @AlwaysInline
-        private void checkReadType(int index, Class<?> expected) {
-            checkAssignable(expected, getArgumentType(index));
+        private void checkReadType(int index, char expected) {
+            checkAssignable(expected, getArgumentShorty(index));
         }
 
         @AlwaysInline
@@ -407,52 +421,52 @@ public final class EmulatedStackFrame {
         }
 
         public void setBoolean(int index, boolean value) {
-            checkWriteType(index, boolean.class);
+            checkWriteType(index, 'Z');
             putSSLOT(toPrimitivesOffset(index), value ? 1 : 0);
         }
 
         public void setByte(int index, byte value) {
-            checkWriteType(index, byte.class);
+            checkWriteType(index, 'B');
             putSSLOT(toPrimitivesOffset(index), value);
         }
 
         public void setChar(int index, char value) {
-            checkWriteType(index, char.class);
+            checkWriteType(index, 'C');
             putSSLOT(toPrimitivesOffset(index), value);
         }
 
         public void setShort(int index, short value) {
-            checkWriteType(index, short.class);
+            checkWriteType(index, 'S');
             putSSLOT(toPrimitivesOffset(index), value);
         }
 
         public void setInt(int index, int value) {
-            checkWriteType(index, int.class);
+            checkWriteType(index, 'I');
             putSSLOT(toPrimitivesOffset(index), value);
         }
 
         public void setFloat(int index, float value) {
-            checkWriteType(index, float.class);
+            checkWriteType(index, 'F');
             putSSLOT(toPrimitivesOffset(index), Float.floatToRawIntBits(value));
         }
 
         public void setLong(int index, long value) {
-            checkWriteType(index, long.class);
+            checkWriteType(index, 'J');
             putDSLOT(toPrimitivesOffset(index), value);
         }
 
         public void setDouble(int index, double value) {
-            checkWriteType(index, double.class);
+            checkWriteType(index, 'D');
             putDSLOT(toPrimitivesOffset(index), Double.doubleToRawLongBits(value));
         }
 
         public void setReference(int index, Object value) {
-            checkWriteType(index, Object.class);
+            checkWriteType(index, 'L');
             putRef(toReferencesOffset(index), value);
         }
 
         public void setValue(int index, Object value) {
-            switch (Wrapper.basicTypeChar(getArgumentType(index))) {
+            switch (getArgumentShorty(index)) {
                 case 'V' -> { /* nop */ }
                 case 'L' -> putRef(toReferencesOffset(index), value);
                 case 'Z' -> putSSLOT(toPrimitivesOffset(index), (boolean) value ? 1 : 0);
@@ -470,52 +484,52 @@ public final class EmulatedStackFrame {
         }
 
         public boolean getBoolean(int index) {
-            checkReadType(index, boolean.class);
+            checkReadType(index, 'Z');
             return getSSLOT(toPrimitivesOffset(index)) != 0;
         }
 
         public byte getByte(int index) {
-            checkReadType(index, byte.class);
+            checkReadType(index, 'B');
             return (byte) getSSLOT(toPrimitivesOffset(index));
         }
 
         public char getChar(int index) {
-            checkReadType(index, char.class);
+            checkReadType(index, 'C');
             return (char) getSSLOT(toPrimitivesOffset(index));
         }
 
         public short getShort(int index) {
-            checkReadType(index, short.class);
+            checkReadType(index, 'S');
             return (short) getSSLOT(toPrimitivesOffset(index));
         }
 
         public int getInt(int index) {
-            checkReadType(index, int.class);
+            checkReadType(index, 'I');
             return getSSLOT(toPrimitivesOffset(index));
         }
 
         public float getFloat(int index) {
-            checkReadType(index, float.class);
+            checkReadType(index, 'F');
             return Float.intBitsToFloat(getSSLOT(toPrimitivesOffset(index)));
         }
 
         public long getLong(int index) {
-            checkReadType(index, long.class);
+            checkReadType(index, 'J');
             return getDSLOT(toPrimitivesOffset(index));
         }
 
         public double getDouble(int index) {
-            checkReadType(index, double.class);
+            checkReadType(index, 'D');
             return Double.longBitsToDouble(getDSLOT(toPrimitivesOffset(index)));
         }
 
         public <T> T getReference(int index) {
-            checkReadType(index, Object.class);
+            checkReadType(index, 'L');
             return getRef(toReferencesOffset(index));
         }
 
         public Object getValue(int index) {
-            return switch (Wrapper.basicTypeChar(getArgumentType(index))) {
+            return switch (getArgumentShorty(index)) {
                 case 'V' -> null;
                 case 'L' -> getRef(toReferencesOffset(index));
                 case 'Z' -> getSSLOT(toPrimitivesOffset(index)) != 0;
@@ -549,13 +563,18 @@ public final class EmulatedStackFrame {
         }
 
         @AlwaysInline
-        private void checkWriteType(Class<?> expected) {
-            checkAssignable(getArgumentType(argumentIdx), expected);
+        public int currentShorty() {
+            return getArgumentShorty(argumentIdx);
         }
 
         @AlwaysInline
-        private void checkReadType(Class<?> expected) {
-            checkAssignable(expected, getArgumentType(argumentIdx));
+        private void checkWriteType(char expected) {
+            checkAssignable(getArgumentShorty(argumentIdx), expected);
+        }
+
+        @AlwaysInline
+        private void checkReadType(char expected) {
+            checkAssignable(expected, getArgumentShorty(argumentIdx));
         }
 
         public RelativeStackFrameAccessor moveTo(int index) {
@@ -567,6 +586,7 @@ public final class EmulatedStackFrame {
             return this;
         }
 
+        @AlwaysInline
         public RelativeStackFrameAccessor moveToReturn() {
             return moveTo(RETURN_VALUE_IDX);
         }
@@ -617,52 +637,52 @@ public final class EmulatedStackFrame {
         }
 
         public void putNextBoolean(boolean value) {
-            checkWriteType(boolean.class);
+            checkWriteType('Z');
             putNextSSLOT(value ? 1 : 0);
         }
 
         public void putNextByte(byte value) {
-            checkWriteType(byte.class);
+            checkWriteType('B');
             putNextSSLOT(value);
         }
 
         public void putNextChar(char value) {
-            checkWriteType(char.class);
+            checkWriteType('C');
             putNextSSLOT(value);
         }
 
         public void putNextShort(short value) {
-            checkWriteType(short.class);
+            checkWriteType('S');
             putNextSSLOT(value);
         }
 
         public void putNextInt(int value) {
-            checkWriteType(int.class);
+            checkWriteType('I');
             putNextSSLOT(value);
         }
 
         public void putNextFloat(float value) {
-            checkWriteType(float.class);
+            checkWriteType('F');
             putNextSSLOT(Float.floatToRawIntBits(value));
         }
 
         public void putNextLong(long value) {
-            checkWriteType(long.class);
+            checkWriteType('J');
             putNextDSLOT(value);
         }
 
         public void putNextDouble(double value) {
-            checkWriteType(double.class);
+            checkWriteType('D');
             putNextDSLOT(Double.doubleToRawLongBits(value));
         }
 
         public void putNextReference(Object value) {
-            checkWriteType(Object.class);
+            checkWriteType('L');
             putNextRef(value);
         }
 
         public void putNextValue(Object value) {
-            switch (Wrapper.basicTypeChar(getArgumentType(argumentIdx))) {
+            switch (getArgumentShorty(argumentIdx)) {
                 case 'V' -> argumentIdx++;
                 case 'L' -> putNextRef(value);
                 case 'Z' -> putNextSSLOT((boolean) value ? 1 : 0);
@@ -678,52 +698,52 @@ public final class EmulatedStackFrame {
         }
 
         public boolean nextBoolean() {
-            checkReadType(boolean.class);
+            checkReadType('Z');
             return getNextSSLOT() != 0;
         }
 
         public byte nextByte() {
-            checkReadType(byte.class);
+            checkReadType('B');
             return (byte) getNextSSLOT();
         }
 
         public char nextChar() {
-            checkReadType(char.class);
+            checkReadType('C');
             return (char) getNextSSLOT();
         }
 
         public short nextShort() {
-            checkReadType(short.class);
+            checkReadType('S');
             return (short) getNextSSLOT();
         }
 
         public int nextInt() {
-            checkReadType(int.class);
+            checkReadType('I');
             return getNextSSLOT();
         }
 
         public float nextFloat() {
-            checkReadType(float.class);
+            checkReadType('F');
             return Float.intBitsToFloat(getNextSSLOT());
         }
 
         public long nextLong() {
-            checkReadType(long.class);
+            checkReadType('J');
             return getNextDSLOT();
         }
 
         public double nextDouble() {
-            checkReadType(double.class);
+            checkReadType('D');
             return Double.longBitsToDouble(getNextDSLOT());
         }
 
         public <T> T nextReference() {
-            checkReadType(Object.class);
+            checkReadType('L');
             return getNextRef();
         }
 
         public Object nextValue() {
-            return switch (Wrapper.basicTypeChar(getArgumentType(argumentIdx))) {
+            return switch (getArgumentShorty(argumentIdx)) {
                 case 'V' -> {
                     argumentIdx++;
                     yield null;

@@ -44,7 +44,7 @@ public class MethodTypeHacks {
     private interface MethodTypeForm0 extends MethodTypeForm {
         @DoNotShrink
         @DoNotObfuscate
-        void init(Object form, int[] primitivesOffsets, int[] referencesOffsets);
+        void init(Object form, int[] primitivesOffsets, int[] referencesOffsets, String rshorty);
     }
 
     static {
@@ -52,12 +52,14 @@ public class MethodTypeHacks {
 
         TypeId mtf = TypeId.of(MethodTypeForm0.class);
         TypeId i_arr = TypeId.of(int[].class);
+        TypeId str = TypeId.of(String.class);
 
         String form_name = MethodTypeForm.class.getName() + "$Impl";
         TypeId form_id = TypeId.ofName(form_name);
 
         FieldId po_field = FieldId.of(form_id, "primitivesOffsets", i_arr);
         FieldId ro_field = FieldId.of(form_id, "referencesOffsets", i_arr);
+        FieldId rs_field = FieldId.of(form_id, "rshorty", str);
 
         ClassDef form_def = ClassBuilder.build(form_id, cb -> cb
                 .withSuperClass(TypeId.of(INVOKE_FORM))
@@ -71,11 +73,15 @@ public class MethodTypeHacks {
                         .of(ro_field)
                         .withFlags(ACC_PRIVATE)
                 )
+                .withField(fb -> fb
+                        .of(rs_field)
+                        .withFlags(ACC_PRIVATE)
+                )
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("init")
                         .withReturnType(TypeId.V)
-                        .withParameterTypes(TypeId.OBJECT, TypeId.I.array(), TypeId.I.array())
+                        .withParameterTypes(TypeId.OBJECT, i_arr, i_arr, str)
                         .withCode(2, ib -> {
                             ib.generate_lines();
                             if (DEBUG_BUILD) {
@@ -83,6 +89,7 @@ public class MethodTypeHacks {
                             }
                             ib.iop(PUT_OBJECT, ib.p(1), ib.this_(), po_field);
                             ib.iop(PUT_OBJECT, ib.p(2), ib.this_(), ro_field);
+                            ib.iop(PUT_OBJECT, ib.p(3), ib.this_(), rs_field);
                             for (var field : getHiddenInstanceFields(INVOKE_FORM)) {
                                 ArtFieldUtils.makeFieldPublic(field);
                                 ArtFieldUtils.makeFieldNonFinal(field);
@@ -113,6 +120,17 @@ public class MethodTypeHacks {
                         .withCode(1, ib -> ib
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), ro_field)
+                                .return_object(ib.l(0))
+                        )
+                )
+                .withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName("rshorty")
+                        .withReturnType(str)
+                        .withParameters()
+                        .withCode(1, ib -> ib
+                                .generate_lines()
+                                .iop(GET_OBJECT, ib.l(0), ib.this_(), rs_field)
                                 .return_object(ib.l(0))
                         )
                 )
@@ -153,6 +171,7 @@ public class MethodTypeHacks {
             Class<?> rtype = InvokeAccess.rtype(type);
             int[] primitivesOffsets = new int[ptypes.length + 2];
             int[] referencesOffsets = new int[ptypes.length + 2];
+            StringBuilder rshorty = new StringBuilder(ptypes.length + 1);
 
             int i = 0;
             int frameOffset = 0;
@@ -167,6 +186,7 @@ public class MethodTypeHacks {
                 }
                 primitivesOffsets[i + 1] = frameOffset;
                 referencesOffsets[i + 1] = referenceOffset;
+                rshorty.append(Wrapper.basicTypeChar(ptype));
             }
 
             if (rtype.isPrimitive()) {
@@ -176,8 +196,9 @@ public class MethodTypeHacks {
             }
             primitivesOffsets[i + 1] = frameOffset;
             referencesOffsets[i + 1] = referenceOffset;
+            rshorty.append(Wrapper.basicTypeChar(rtype));
 
-            new_form.init(old_form, primitivesOffsets, referencesOffsets);
+            new_form.init(old_form, primitivesOffsets, referencesOffsets, rshorty.toString());
         }
 
         AndroidUnsafe.putObject(type, Holder.FORM_OFFSET, new_form);
