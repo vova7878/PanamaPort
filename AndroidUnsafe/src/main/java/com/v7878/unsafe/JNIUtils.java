@@ -11,8 +11,6 @@ import static com.v7878.unsafe.InstructionSet.ARM;
 import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
-import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
@@ -329,8 +327,8 @@ public class JNIUtils {
     public static final AddressLayout JavaVM_LAYOUT
             = ADDRESS.withTargetLayout(JNI_INVOKE_INTERFACE_LAYOUT);
 
-    private static final long nativePeerOffset =
-            fieldOffset(getHiddenInstanceField(Thread.class, "nativePeer"));
+    private static final long nativePeerOffset = Reflection.
+            instanceFieldOffset(Thread.class, "nativePeer");
 
     public static long getRawNativePeer(Thread thread) {
         Objects.requireNonNull(thread);

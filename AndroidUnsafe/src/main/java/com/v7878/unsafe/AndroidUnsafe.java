@@ -12,7 +12,6 @@ import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.sun.unsafe.SunUnsafe;
 
-import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.util.Objects;
 
@@ -160,11 +159,6 @@ public class AndroidUnsafe {
     public static <T> T allocateInstance(Class<T> clazz) {
         //noinspection unchecked
         return (T) nothrows_run(() -> SunUnsafe.allocateInstance(clazz));
-    }
-
-    @AlwaysInline
-    public static long objectFieldOffset(Field field) {
-        return SunUnsafe.objectFieldOffset(field);
     }
 
     @AlwaysInline

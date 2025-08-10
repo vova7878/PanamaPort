@@ -7,8 +7,6 @@ import static com.v7878.foreign.ValueLayout.JAVA_BOOLEAN;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.NATIVE_STATIC_OMIT_ENV;
@@ -26,6 +24,7 @@ import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.JNIUtils;
+import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.cpp_std.map;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.LibrarySymbol;
@@ -171,26 +170,28 @@ public class JniLibraries {
         }
     }
 
-    private static final long NNB_OFFSET = SHARED_LIBRARY
-            .byteOffset(groupElement("needs_native_bridge_"));
-    private static final long CLA_OFFSET = SHARED_LIBRARY
-            .byteOffset(groupElement("class_loader_allocator_"));
-    private static final long HANDLE_OFFSET = SHARED_LIBRARY
-            .byteOffset(groupElement("handle_"));
-
-    private static final long ALLOCATOR_OFFSET = fieldOffset(
-            getHiddenInstanceField(ClassLoader.class, "allocator"));
-
     public static void forEachHandlesInClassLoader(
             ClassLoader loader, Function<MemorySegment, Boolean> consumer) {
+        class Holder {
+            static final long NNB_OFFSET = SHARED_LIBRARY
+                    .byteOffset(groupElement("needs_native_bridge_"));
+            static final long CLA_OFFSET = SHARED_LIBRARY
+                    .byteOffset(groupElement("class_loader_allocator_"));
+            static final long HANDLE_OFFSET = SHARED_LIBRARY
+                    .byteOffset(groupElement("handle_"));
+
+            static final long ALLOCATOR_OFFSET = Reflection.
+                    instanceFieldOffset(ClassLoader.class, "allocator");
+        }
+
         Objects.requireNonNull(loader);
         Objects.requireNonNull(consumer);
 
-        long allocator = getLongO(loader, ALLOCATOR_OFFSET);
+        long allocator = getLongO(loader, Holder.ALLOCATOR_OFFSET);
         forEachLibraries(library -> {
-            if (!library.get(JAVA_BOOLEAN, NNB_OFFSET) &&
-                    library.get(ADDRESS, CLA_OFFSET).nativeAddress() == allocator) {
-                return consumer.apply(library.get(ADDRESS, HANDLE_OFFSET));
+            if (!library.get(JAVA_BOOLEAN, Holder.NNB_OFFSET) &&
+                    library.get(ADDRESS, Holder.CLA_OFFSET).nativeAddress() == allocator) {
+                return consumer.apply(library.get(ADDRESS, Holder.HANDLE_OFFSET));
             }
             // skip
             return false;

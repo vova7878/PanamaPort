@@ -8,8 +8,6 @@ import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
-import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceFields;
 import static com.v7878.unsafe.Utils.DEBUG_BUILD;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.getSize;
@@ -28,6 +26,7 @@ import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ArtFieldUtils;
 import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DexFileUtils;
+import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.access.InvokeAccess;
 
 import java.lang.invoke.MethodType;
@@ -131,12 +130,14 @@ public class MethodTypeHacks {
         }
     }
 
-    private static final int FORM_OFFSET = fieldOffset(
-            getHiddenInstanceField(MethodType.class, "form"));
-
     private static MethodTypeForm0 getForm0(MethodType type) {
+        class Holder {
+            static final long FORM_OFFSET = Reflection.
+                    instanceFieldOffset(MethodType.class, "form");
+        }
+
         Objects.requireNonNull(type);
-        Object old_form = AndroidUnsafe.getObject(type, FORM_OFFSET);
+        Object old_form = AndroidUnsafe.getObject(type, Holder.FORM_OFFSET);
         if (old_form instanceof MethodTypeForm0 mtf) {
             return mtf;
         }
@@ -179,7 +180,7 @@ public class MethodTypeHacks {
             new_form.init(old_form, primitivesOffsets, referencesOffsets);
         }
 
-        AndroidUnsafe.putObject(type, FORM_OFFSET, new_form);
+        AndroidUnsafe.putObject(type, Holder.FORM_OFFSET, new_form);
         return new_form;
     }
 

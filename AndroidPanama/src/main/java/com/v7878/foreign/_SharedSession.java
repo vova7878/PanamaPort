@@ -34,11 +34,10 @@ import static com.v7878.unsafe.AndroidUnsafe.getAndSetObject;
 import static com.v7878.unsafe.AndroidUnsafe.getIntVolatileO;
 import static com.v7878.unsafe.AndroidUnsafe.getObjectVolatile;
 import static com.v7878.unsafe.AndroidUnsafe.putIntVolatileO;
-import static com.v7878.unsafe.Reflection.getDeclaredField;
 
 import android.os.Build;
 
-import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.Reflection;
 
 /**
  * A shared session, which can be shared across multiple threads. Closing a shared session has to ensure that
@@ -50,10 +49,10 @@ import com.v7878.unsafe.AndroidUnsafe;
  * checking the liveness bit upon access can be performed in plain mode, as in the confined case.
  */
 sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession {
-    static final long STATE_OFFSET = AndroidUnsafe.objectFieldOffset(
-            getDeclaredField(_MemorySessionImpl.class, "state"));
-    static final long ACQUIRE_COUNT_OFFSET = AndroidUnsafe.objectFieldOffset(
-            getDeclaredField(_MemorySessionImpl.class, "acquireCount"));
+    static final long STATE_OFFSET = Reflection.instanceFieldOffset(
+            _MemorySessionImpl.class, "state");
+    static final long ACQUIRE_COUNT_OFFSET = Reflection.instanceFieldOffset(
+            _MemorySessionImpl.class, "acquireCount");
     private static final int CLOSED_ACQUIRE_COUNT = -1;
 
     _SharedSession() {
@@ -113,9 +112,8 @@ sealed class _SharedSession extends _MemorySessionImpl permits _ImplicitSession 
      * A shared resource list; this implementation has to handle add vs. add races, as well as add vs. cleanup races.
      */
     static class SharedResourceList extends ResourceList {
-
-        static final long FST_OFFSET = AndroidUnsafe.objectFieldOffset(
-                getDeclaredField(ResourceList.class, "fst"));
+        static final long FST_OFFSET = Reflection.
+                instanceFieldOffset(ResourceList.class, "fst");
 
         @Override
         void add(ResourceCleanup cleanup) {

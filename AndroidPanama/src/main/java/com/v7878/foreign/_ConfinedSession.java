@@ -27,11 +27,10 @@
 
 package com.v7878.foreign;
 
-import static com.v7878.unsafe.Reflection.getDeclaredField;
-
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.Reflection;
 
 /**
  * A confined session, which features an owner thread. The liveness check features an additional
@@ -41,8 +40,8 @@ import com.v7878.unsafe.AndroidUnsafe;
  */
 final class _ConfinedSession extends _MemorySessionImpl {
 
-    static final long ASYNC_RELEASE_COUNT_OFFSET = AndroidUnsafe.objectFieldOffset(
-            getDeclaredField(_ConfinedSession.class, "asyncReleaseCount"));
+    static final long ASYNC_RELEASE_COUNT_OFFSET = Reflection.instanceFieldOffset(
+            _ConfinedSession.class, "asyncReleaseCount");
 
     @DoNotShrink
     @DoNotObfuscate

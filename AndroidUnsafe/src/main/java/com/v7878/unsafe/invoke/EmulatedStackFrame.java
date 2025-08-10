@@ -42,6 +42,7 @@ public final class EmulatedStackFrame {
 
     @DoNotShrink
     @DoNotObfuscate
+    // TODO: use AccessLinker
     private abstract static class AccessI {
         abstract Object create(MethodType type, Object[] references, byte[] stackFrame);
 

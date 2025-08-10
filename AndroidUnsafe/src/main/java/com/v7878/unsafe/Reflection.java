@@ -319,10 +319,10 @@ public class Reflection {
     }
 
     @AlwaysInline
-    public static int fieldOffset(Field f) {
+    public static long fieldOffset(Field f) {
         var mirror = new FieldMirror[1];
         fillArray(mirror, f);
-        return mirror[0].offset;
+        return mirror[0].offset & 0xffffffffL;
     }
 
     @AlwaysInline
@@ -411,7 +411,12 @@ public class Reflection {
     }
 
     public static Field getHiddenInstanceField(Class<?> clazz, String name) {
+        // TODO: use binary search as fields are in alphabetical order
         return searchField(getHiddenInstanceFields(clazz), name);
+    }
+
+    public static long instanceFieldOffset(Class<?> clazz, String name) {
+        return fieldOffset(getHiddenInstanceField(clazz, name));
     }
 
     public static Field[] getHiddenStaticFields(Class<?> clazz) {
@@ -432,8 +437,13 @@ public class Reflection {
         }
     }
 
-    public static Field gethiddenStaticField(Class<?> clazz, String name) {
+    public static Field getHiddenStaticField(Class<?> clazz, String name) {
+        // TODO: use binary search as fields are in alphabetical order
         return searchField(getHiddenStaticFields(clazz), name);
+    }
+
+    public static long staticFieldOffset(Class<?> clazz, String name) {
+        return fieldOffset(getHiddenStaticField(clazz, name));
     }
 
     public static Field[] getHiddenFields(Class<?> clazz) {
@@ -456,7 +466,12 @@ public class Reflection {
     }
 
     public static Field getHiddenField(Class<?> clazz, String name) {
+        // TODO?: use binary search as fields are in alphabetical order
         return searchField(getHiddenFields(clazz), name);
+    }
+
+    public static long fieldOffset(Class<?> clazz, String name) {
+        return fieldOffset(getHiddenField(clazz, name));
     }
 
     // The order is same as in the dex file. There is no such thing for fields
@@ -629,8 +644,6 @@ public class Reflection {
             return AndroidUnsafe.throwException(th);
         }
     }
-
-    // TODO: findFieldOffset(Class, String name)
 
     public static void initHandle(MethodHandle handle) {
         Objects.requireNonNull(handle);

@@ -22,8 +22,6 @@ import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
-import static com.v7878.unsafe.Reflection.fieldOffset;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Reflection.getHiddenMethod;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.nothrows_run;
@@ -41,6 +39,7 @@ import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DangerLevel;
+import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.VM;
@@ -366,7 +365,7 @@ public class JavaNioAccess {
         class Holder {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFER_VIEWS.stream()
-                    .mapToLong(clazz -> fieldOffset(getHiddenInstanceField(clazz, "bb")))
+                    .mapToLong(clazz -> Reflection.instanceFieldOffset(clazz, "bb"))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
         return (ByteBuffer) getObject(buffer, Holder.OFFSET);
@@ -426,7 +425,7 @@ public class JavaNioAccess {
         class Holder {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFERS.stream()
-                    .mapToLong(clazz -> fieldOffset(getHiddenInstanceField(clazz, "hb")))
+                    .mapToLong(clazz -> Reflection.instanceFieldOffset(clazz, "hb"))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
         return getObject(buffer, Holder.OFFSET);
@@ -443,8 +442,8 @@ public class JavaNioAccess {
     private static long getBufferAddress(Buffer buffer) {
         // TODO: move to AccessI
         class Holder {
-            static final long OFFSET = fieldOffset(
-                    getHiddenInstanceField(Buffer.class, "address"));
+            static final long OFFSET = Reflection.instanceFieldOffset(
+                    Buffer.class, "address");
         }
         return getLongO(buffer, Holder.OFFSET);
     }
@@ -454,7 +453,7 @@ public class JavaNioAccess {
         class Holder {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFERS.stream()
-                    .mapToLong(clazz -> fieldOffset(getHiddenInstanceField(clazz, "offset")))
+                    .mapToLong(clazz -> Reflection.instanceFieldOffset(clazz, "offset"))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
         return getIntO(buffer, Holder.OFFSET);
@@ -465,8 +464,8 @@ public class JavaNioAccess {
         class Holder {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFER_VIEWS.stream()
-                    .mapToLong(clazz -> fieldOffset(getHiddenInstanceField(clazz,
-                            ART_SDK_INT >= 35 ? "byteOffset" : "offset")))
+                    .mapToLong(clazz -> Reflection.instanceFieldOffset(
+                            clazz, ART_SDK_INT >= 35 ? "byteOffset" : "offset"))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
         return getIntO(buffer, Holder.OFFSET);
@@ -520,8 +519,8 @@ public class JavaNioAccess {
     }
 
     // TODO: move to AccessI
-    private static final long FD_OFFSET = fieldOffset(
-            getHiddenInstanceField(MappedByteBuffer.class, "fd"));
+    private static final long FD_OFFSET = Reflection.
+            instanceFieldOffset(MappedByteBuffer.class, "fd");
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static FileDescriptor getBufferFD(MappedByteBuffer buffer) {

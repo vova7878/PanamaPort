@@ -10,10 +10,8 @@ import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicApi;
 import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
 import static com.v7878.unsafe.ArtModifiers.kAccSkipAccessChecks;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getHiddenExecutables;
 import static com.v7878.unsafe.Reflection.getHiddenFields;
-import static com.v7878.unsafe.Reflection.getHiddenInstanceField;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.unsupportedSDK;
 
@@ -145,10 +143,10 @@ public class ClassUtils {
     }
 
     private static class Holder {
-        static final long CLASS_STATUS_OFFSET = fieldOffset(
-                getHiddenInstanceField(Class.class, "status"));
-        static final long CLASS_FLAGS_OFFSET = fieldOffset(
-                getHiddenInstanceField(Class.class, "accessFlags"));
+        static final long CLASS_STATUS_OFFSET = Reflection.
+                instanceFieldOffset(Class.class, "status");
+        static final long CLASS_FLAGS_OFFSET = Reflection.
+                instanceFieldOffset(Class.class, "accessFlags");
     }
 
     @ApiSensitive
