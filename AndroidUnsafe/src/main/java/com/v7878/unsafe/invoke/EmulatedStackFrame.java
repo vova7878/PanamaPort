@@ -2,7 +2,6 @@ package com.v7878.unsafe.invoke;
 
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
-import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
@@ -13,6 +12,8 @@ import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceFields;
 import static com.v7878.unsafe.Utils.assertEq;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
 
 import com.v7878.dex.DexIO;
 import com.v7878.dex.builder.ClassBuilder;
@@ -22,11 +23,15 @@ import com.v7878.dex.immutable.FieldId;
 import com.v7878.dex.immutable.TypeId;
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ArtFieldUtils;
 import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DangerLevel;
+import com.v7878.unsafe.access.AccessLinker;
+import com.v7878.unsafe.access.AccessLinker.FieldAccess;
 import com.v7878.unsafe.access.InvokeAccess;
 
 import java.lang.invoke.MethodType;
@@ -36,26 +41,33 @@ import java.util.Objects;
 import dalvik.system.DexFile;
 
 public final class EmulatedStackFrame {
-    static final Class<?> ESF_CLASS =
-            ClassUtils.sysClass("dalvik.system.EmulatedStackFrame");
+    static final Class<?> ESF_CLASS = ClassUtils.sysClass(
+            "dalvik.system.EmulatedStackFrame");
     private static final AccessI ACCESS;
 
-    @DoNotShrink
-    @DoNotObfuscate
-    // TODO: use AccessLinker
+    @DoNotShrinkType
+    @DoNotOptimize
     private abstract static class AccessI {
+        @DoNotShrink
+        @DoNotObfuscate
         abstract Object create(MethodType type, Object[] references, byte[] stackFrame);
 
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "dalvik.system.EmulatedStackFrame", name = "type")
         abstract MethodType type(Object frame);
 
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "dalvik.system.EmulatedStackFrame", name = "type")
         abstract void type(Object frame, MethodType type);
 
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "dalvik.system.EmulatedStackFrame", name = "references")
         abstract Object[] references(Object frame);
 
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "dalvik.system.EmulatedStackFrame", name = "references")
         abstract void references(Object frame, Object[] references);
 
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "dalvik.system.EmulatedStackFrame", name = "stackFrame")
         abstract byte[] primitives(Object frame);
 
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "dalvik.system.EmulatedStackFrame", name = "stackFrame")
         abstract void primitives(Object frame, byte[] primitives);
     }
 
@@ -64,6 +76,8 @@ public final class EmulatedStackFrame {
             ArtFieldUtils.makeFieldPublic(field);
             ArtFieldUtils.makeFieldNonFinal(field);
         }
+
+        Class<?> partial_impl = AccessLinker.generateImplClass(AccessI.class);
 
         TypeId mt = TypeId.of(MethodType.class);
         TypeId esf = TypeId.of(ESF_CLASS);
@@ -77,7 +91,7 @@ public final class EmulatedStackFrame {
         var primitives_id = FieldId.of(esf, "stackFrame", TypeId.B.array());
 
         ClassDef access_def = ClassBuilder.build(access_id, cb -> cb
-                .withSuperClass(TypeId.of(AccessI.class))
+                .withSuperClass(TypeId.of(partial_impl))
                 .withFlags(ACC_PUBLIC | ACC_FINAL)
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
@@ -94,72 +108,6 @@ public final class EmulatedStackFrame {
                             ib.iop(PUT_OBJECT, ib.p(1), ib.this_(), references_id);
                             ib.iop(PUT_OBJECT, ib.p(2), ib.this_(), primitives_id);
                             ib.return_object(ib.this_());
-                        })
-                )
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("type")
-                        .withReturnType(mt)
-                        .withParameterTypes(TypeId.OBJECT)
-                        .withCode(0, ib -> {
-                            ib.generate_lines();
-                            ib.iop(GET_OBJECT, ib.this_(), ib.p(0), type_id);
-                            ib.return_object(ib.this_());
-                        })
-                )
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("type")
-                        .withReturnType(TypeId.V)
-                        .withParameterTypes(TypeId.OBJECT, mt)
-                        .withCode(0, ib -> {
-                            ib.generate_lines();
-                            ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), type_id);
-                            ib.return_void();
-                        })
-                )
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("references")
-                        .withReturnType(TypeId.OBJECT.array())
-                        .withParameterTypes(TypeId.OBJECT)
-                        .withCode(0, ib -> {
-                            ib.generate_lines();
-                            ib.iop(GET_OBJECT, ib.this_(), ib.p(0), references_id);
-                            ib.return_object(ib.this_());
-                        })
-                )
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("references")
-                        .withReturnType(TypeId.V)
-                        .withParameterTypes(TypeId.OBJECT, TypeId.OBJECT.array())
-                        .withCode(0, ib -> {
-                            ib.generate_lines();
-                            ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), references_id);
-                            ib.return_void();
-                        })
-                )
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("primitives")
-                        .withReturnType(TypeId.B.array())
-                        .withParameterTypes(TypeId.OBJECT)
-                        .withCode(0, ib -> {
-                            ib.generate_lines();
-                            ib.iop(GET_OBJECT, ib.this_(), ib.p(0), primitives_id);
-                            ib.return_object(ib.this_());
-                        })
-                )
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("primitives")
-                        .withReturnType(TypeId.V)
-                        .withParameterTypes(TypeId.OBJECT, TypeId.B.array())
-                        .withCode(0, ib -> {
-                            ib.generate_lines();
-                            ib.iop(PUT_OBJECT, ib.p(1), ib.p(0), primitives_id);
-                            ib.return_void();
                         })
                 )
         );

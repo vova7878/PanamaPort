@@ -307,7 +307,7 @@ public class AccessLinker {
 
         ClassDef access_def = ClassBuilder.build(access_id, cb -> {
             cb.withSuperClass(TypeId.of(clazz));
-            cb.withFlags(ACC_PUBLIC | ACC_FINAL);
+            cb.withFlags(ACC_PUBLIC);
             for (var proc : processors) {
                 proc.apply(cb);
             }
