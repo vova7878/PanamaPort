@@ -12,13 +12,14 @@ import static com.v7878.unsafe.ArtFieldUtils.makeFieldNonFinal;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ClassUtils.makeClassPublic;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.searchExecutable;
 import static com.v7878.unsafe.Utils.searchField;
-import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.INVOKE_CONSTRUCTOR;
-import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.NEW_INSTANCE;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.INIT;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.NEW_INIT;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.STATIC_SETTER;
 import static java.lang.annotation.ElementType.METHOD;
@@ -57,17 +58,6 @@ import java.util.Objects;
 import dalvik.system.DexFile;
 
 public class AccessLinker {
-    // TODO: ClassAccess (instanceof, checkcast, new_instance)
-
-    public enum ExecutableAccessKind {
-        VIRTUAL, INTERFACE, STATIC,
-        // just call constructor for an existing object or create a new instance first
-        INVOKE_CONSTRUCTOR, NEW_INSTANCE,
-        // NOTE: invoke-direct access is impossible except for constructors
-        // TODO: DIRECT_AS_VIRTUAL (As a workaround for invoke-direct)
-        // TODO: invoke-polymorphic?
-    }
-
     @DoNotShrink
     @DoNotShrinkType
     public @interface Conditions {
@@ -87,6 +77,49 @@ public class AccessLinker {
     private static boolean checkConditions(Conditions cond) {
         return (cond.min_api() <= CORRECT_SDK_INT && cond.max_api() >= CORRECT_SDK_INT) &&
                 (cond.min_art() <= ART_SDK_INT && cond.max_art() >= ART_SDK_INT);
+    }
+
+    public enum ClassAccessKind {
+        INSTANCE_OF, CHECK_CAST, NEW_INSTANCE,
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @Repeatable(ClassAccesses.class)
+    @DoNotShrink
+    @DoNotShrinkType
+    public @interface ClassAccess {
+        Conditions conditions() default @Conditions();
+
+        ClassAccessKind kind();
+
+        String klass();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(METHOD)
+    @DoNotShrink
+    @DoNotShrinkType
+    public @interface ClassAccesses {
+        ClassAccess[] value();
+    }
+
+    private static ClassAccess getClassAccess(ClassAccess[] annotations) {
+        for (var annotation : annotations) {
+            if (checkConditions(annotation.conditions())) {
+                return annotation;
+            }
+        }
+        return null;
+    }
+
+    public enum ExecutableAccessKind {
+        VIRTUAL, INTERFACE, STATIC,
+        // just call constructor for an existing object or create a new instance first
+        INIT, NEW_INIT,
+        // NOTE: invoke-direct access is impossible except for constructors
+        // TODO: DIRECT_AS_VIRTUAL (As a workaround for invoke-direct)
+        // TODO: invoke-polymorphic?
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -160,16 +193,68 @@ public class AccessLinker {
         return null;
     }
 
-    private sealed interface Processor permits FieldProcessor, ExecutableProcessor {
+    private sealed interface Processor permits ClassProcessor, FieldProcessor, ExecutableProcessor {
         void apply(ClassBuilder builder);
+    }
+
+    private record ClassProcessor(ClassAccessKind kind, TypeId target,
+                                  String sketch_name, ProtoId sketch_proto) implements Processor {
+        static ClassProcessor of(Method sketch, ClassLoader loader, ClassAccess annotation,
+                                 HashMap<String, Class<?>> cached_classes) {
+            var kind = annotation.kind();
+            var target = cached_classes.computeIfAbsent(annotation.klass(),
+                    name -> ClassUtils.forName(name, loader));
+            assert !target.isPrimitive();
+            makeClassPublic(target);
+            var access_shorty = switch (kind) {
+                case INSTANCE_OF -> "ZL";
+                case CHECK_CAST -> "VL";
+                case NEW_INSTANCE -> "L";
+            };
+            var sketch_proto = ProtoId.of(sketch);
+            var sketch_shorty = sketch_proto.computeShorty();
+            if (!access_shorty.equals(sketch_shorty)) {
+                throw new IllegalArgumentException(String.format(
+                        "Shorty mismatch for %s access on class '%s': expected %s but was %s",
+                        kind, target, access_shorty, sketch_shorty));
+            }
+            return new ClassProcessor(kind, TypeId.of(target), sketch.getName(), sketch_proto);
+        }
+
+        @Override
+        public void apply(ClassBuilder cb) {
+            cb.withMethod(mb -> mb
+                    .withFlags(ACC_PUBLIC | ACC_FINAL)
+                    .withName(sketch_name)
+                    .withProto(sketch_proto)
+                    .withCode(1, ib -> {
+                        ib.generate_lines();
+                        switch (kind) {
+                            case INSTANCE_OF -> {
+                                ib.instance_of(ib.l(0), ib.p(0), target);
+                                ib.return_(ib.l(0));
+                            }
+                            case CHECK_CAST -> {
+                                ib.check_cast(ib.p(0), target);
+                                ib.return_void();
+                            }
+                            case NEW_INSTANCE -> {
+                                ib.new_instance(ib.l(0), target);
+                                ib.return_object(ib.l(0));
+                            }
+                        }
+                    })
+            );
+        }
     }
 
     private record FieldProcessor(FieldAccessKind kind, FieldId target,
                                   String sketch_name, ProtoId sketch_proto) implements Processor {
         static FieldProcessor of(Method sketch, ClassLoader loader, FieldAccess annotation,
-                                 Map<Class<?>, Field[]> cached_fields) {
+                                 HashMap<String, Class<?>> cached_classes, Map<Class<?>, Field[]> cached_fields) {
             var kind = annotation.kind();
-            var target_class = ClassUtils.forName(annotation.klass(), loader);
+            var target_class = cached_classes.computeIfAbsent(annotation.klass(),
+                    name -> ClassUtils.forName(name, loader));
             var target = searchField(cached_fields.computeIfAbsent(
                     target_class, Reflection::getHiddenFields), annotation.name());
             makeFieldPublic(target);
@@ -228,15 +313,16 @@ public class AccessLinker {
                                        String sketch_name,
                                        ProtoId sketch_proto) implements Processor {
         static ExecutableProcessor of(Method sketch, ClassLoader loader, ExecutableAccess annotation,
-                                      Map<Class<?>, Executable[]> cached_executables) {
+                                      HashMap<String, Class<?>> cached_classes, Map<Class<?>, Executable[]> cached_executables) {
             var kind = annotation.kind();
-            if ((kind == INVOKE_CONSTRUCTOR || kind == NEW_INSTANCE)
+            if ((kind == INIT || kind == NEW_INIT)
                     && !"<init>".equals(annotation.name())) {
                 throw new IllegalArgumentException(String.format(
                         "Executable name must be '<init>' for %s access", kind));
             }
 
-            Class<?> target_class = ClassUtils.forName(annotation.klass(), loader);
+            Class<?> target_class = cached_classes.computeIfAbsent(annotation.klass(),
+                    name -> ClassUtils.forName(name, loader));
             var target = searchExecutable(cached_executables.computeIfAbsent(target_class,
                     Reflection::getHiddenExecutables), annotation.name(), annotation.args());
             makeExecutablePublic(target);
@@ -244,9 +330,9 @@ public class AccessLinker {
             var access_shorty = ProtoId.of(target).computeShorty();
             access_shorty = switch (kind) {
                 case STATIC -> access_shorty;
-                case VIRTUAL, INTERFACE, INVOKE_CONSTRUCTOR ->
+                case VIRTUAL, INTERFACE, INIT ->
                         new StringBuilder(access_shorty).insert(1, "L").toString();
-                case NEW_INSTANCE -> "L" + access_shorty.substring(1);
+                case NEW_INIT -> "L" + access_shorty.substring(1);
             };
             var sketch_proto = ProtoId.of(sketch);
             var sketch_shorty = sketch_proto.computeShorty();
@@ -284,12 +370,12 @@ public class AccessLinker {
                                 ib.move_result_shorty(ret_shorty, ib.l(0));
                                 ib.return_shorty(ret_shorty, ib.l(0));
                             }
-                            case INVOKE_CONSTRUCTOR -> {
+                            case INIT -> {
                                 assert ret_shorty == 'V';
                                 ib.invoke_range(DIRECT, target, ins, ib.p(0));
                                 ib.return_void();
                             }
-                            case NEW_INSTANCE -> {
+                            case NEW_INIT -> {
                                 assert ret_shorty == 'L';
                                 ib.new_instance(ib.this_(), target.getDeclaringClass());
                                 ib.invoke_range(DIRECT, target, ins + 1, ib.this_());
@@ -326,6 +412,12 @@ public class AccessLinker {
         return generateImplClass(clazz, clazz.getClassLoader());
     }
 
+    private static void checkAbstact(Method method) {
+        if (!Modifier.isAbstract(method.getModifiers())) {
+            throw new IllegalStateException("Method must be abstract " + method);
+        }
+    }
+
     public static <T> Class<T> generateImplClass(Class<T> clazz, ClassLoader loader) {
         Objects.requireNonNull(clazz);
         Objects.requireNonNull(loader);
@@ -335,7 +427,7 @@ public class AccessLinker {
                     "Interfaces and final classes are not allowed" + clazz);
         }
 
-        // TODO: cached_classes?
+        var cached_classes = new HashMap<String, Class<?>>();
         var cached_executables = new HashMap<Class<?>, Executable[]>();
         var cached_fields = new HashMap<Class<?>, Field[]>();
 
@@ -343,20 +435,22 @@ public class AccessLinker {
         List<Processor> processors = new ArrayList<>(sketch_methods.length);
 
         for (Method method : sketch_methods) {
+            var class_access = getClassAccess(method.getDeclaredAnnotationsByType(ClassAccess.class));
+            if (class_access != null) {
+                checkAbstact(method);
+                processors.add(ClassProcessor.of(method, loader, class_access, cached_classes));
+                continue;
+            }
             var field_access = getFieldAccess(method.getDeclaredAnnotationsByType(FieldAccess.class));
             if (field_access != null) {
-                processors.add(FieldProcessor.of(method, loader, field_access, cached_fields));
-            } else {
-                var executable_access = getExecutableAccess(method.getDeclaredAnnotationsByType(ExecutableAccess.class));
-                if (executable_access != null) {
-                    processors.add(ExecutableProcessor.of(method, loader, executable_access, cached_executables));
-                } else {
-                    // Skip, this method does not require processing
-                    continue;
-                }
+                checkAbstact(method);
+                processors.add(FieldProcessor.of(method, loader, field_access, cached_classes, cached_fields));
+                continue;
             }
-            if (!Modifier.isAbstract(method.getModifiers())) {
-                throw new IllegalStateException("Method must be abstract " + method);
+            var executable_access = getExecutableAccess(method.getDeclaredAnnotationsByType(ExecutableAccess.class));
+            if (executable_access != null) {
+                checkAbstact(method);
+                processors.add(ExecutableProcessor.of(method, loader, executable_access, cached_classes, cached_executables));
             }
         }
 

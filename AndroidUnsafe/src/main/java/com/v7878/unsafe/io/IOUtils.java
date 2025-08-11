@@ -4,7 +4,7 @@ import static android.system.OsConstants.EINTR;
 import static android.system.OsConstants.F_GETFL;
 import static android.system.OsConstants.O_APPEND;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
-import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.NEW_INSTANCE;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.NEW_INIT;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccess;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
@@ -46,7 +46,7 @@ public class IOUtils {
         @FieldAccess(kind = INSTANCE_SETTER, klass = "java.io.FileDescriptor", name = "descriptor")
         abstract void descriptor(FileDescriptor instance, int value);
 
-        @ExecutableAccess(kind = NEW_INSTANCE, klass = "java.io.FileDescriptor",
+        @ExecutableAccess(kind = NEW_INIT, klass = "java.io.FileDescriptor",
                 name = "<init>", args = {"int"})
         abstract FileDescriptor newFileDescriptor(int value);
 
