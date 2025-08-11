@@ -2,7 +2,7 @@
 agp = "8.11.1"
 androidmisc = "v0.0.5"
 dexfile = "v1.0.3"
-raung = "dae6c50130"
+raung = "v0.0.1"
 r8_annotations = "v0.0.3"
 sun_cleanerstub = "v0.0.3"
 sun_unsafewrapper = "v0.0.3"
