@@ -1,6 +1,7 @@
 package com.v7878.unsafe.access;
 
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.access.AccessLinker.ClassAccessKind.CHECK_CAST;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.STATIC;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.VIRTUAL;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
@@ -9,6 +10,7 @@ import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.STATIC_GETTER
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.ApiSensitive;
+import com.v7878.unsafe.access.AccessLinker.ClassAccess;
 import com.v7878.unsafe.access.AccessLinker.Conditions;
 import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
 import com.v7878.unsafe.access.AccessLinker.FieldAccess;
@@ -77,6 +79,9 @@ public class ChannelsAccess {
         @ExecutableAccess(kind = VIRTUAL, klass = "sun.nio.ch.NativeThreadSet", name = "signalAndWait", args = {})
         abstract void signalAndWait(Object instance);
 
+        @ClassAccess(kind = CHECK_CAST, klass = "sun.nio.ch.FileChannelImpl")
+        abstract void checkFileChannelImpl(FileChannel instance);
+
         public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
@@ -110,23 +115,27 @@ public class ChannelsAccess {
         }
     }
 
+    public static void checkFileChannelImpl(FileChannel channel) {
+        AccessI.INSTANCE.checkFileChannelImpl(channel);
+    }
+
     public static boolean isReadable(FileChannel channel) {
-        // TODO: check channel is FileChannelImpl instance
+        checkFileChannelImpl(channel);
         return AccessI.INSTANCE.readable(channel);
     }
 
     public static boolean isWritable(FileChannel channel) {
-        // TODO: check channel is FileChannelImpl instance
+        checkFileChannelImpl(channel);
         return AccessI.INSTANCE.writable(channel);
     }
 
     public static Object positionLock(FileChannel channel) {
-        // TODO: check channel is FileChannelImpl instance
+        checkFileChannelImpl(channel);
         return AccessI.INSTANCE.positionLock(channel);
     }
 
     public static FileDescriptor getFD(FileChannel channel) {
-        // TODO: check channel is FileChannelImpl instance
+        checkFileChannelImpl(channel);
         return AccessI.INSTANCE.getFD(channel);
     }
 
@@ -160,7 +169,7 @@ public class ChannelsAccess {
     }
 
     public static NativeThreadSet getThreadSet(FileChannel channel) {
-        // TODO: check channel is FileChannelImpl instance
+        checkFileChannelImpl(channel);
         return new NativeThreadSetImpl(AccessI.INSTANCE.threads(channel));
     }
 }
