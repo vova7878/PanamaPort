@@ -10,6 +10,7 @@ import static com.v7878.dex.builder.CodeBuilder.InvokeKind.VIRTUAL;
 import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldNonFinal;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
+import static com.v7878.unsafe.ArtMethodUtils.getDispatchTableIndex;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.ClassUtils.makeClassPublic;
@@ -18,6 +19,8 @@ import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Utils.searchExecutable;
 import static com.v7878.unsafe.Utils.searchField;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.DIRECT_HOOK_VTABLE;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.INIT;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.NEW_INIT;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
@@ -36,10 +39,13 @@ import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
+import com.v7878.unsafe.ArtMethodUtils;
+import com.v7878.unsafe.ArtModifiers;
 import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DexFileUtils;
 import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
+import com.v7878.unsafe.VM;
 
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -118,8 +124,8 @@ public class AccessLinker {
         // just call constructor for an existing object or create a new instance first
         INIT, NEW_INIT,
         // NOTE: invoke-direct access is impossible except for constructors
-        // TODO: DIRECT_AS_VIRTUAL (As a workaround for invoke-direct)
-        // TODO: invoke-polymorphic?
+        // TODO: DIRECT_AS_VIRTUAL
+        DIRECT_HOOK_VTABLE
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -193,198 +199,223 @@ public class AccessLinker {
         return null;
     }
 
-    private sealed interface Processor permits ClassProcessor, FieldProcessor, ExecutableProcessor {
-        void apply(ClassBuilder builder);
-    }
-
-    private record ClassProcessor(ClassAccessKind kind, TypeId target,
-                                  String sketch_name, ProtoId sketch_proto) implements Processor {
-        static ClassProcessor of(Method sketch, ClassLoader loader, ClassAccess annotation,
-                                 HashMap<String, Class<?>> cached_classes) {
-            var kind = annotation.kind();
-            var target = cached_classes.computeIfAbsent(annotation.klass(),
-                    name -> ClassUtils.forName(name, loader));
-            assert !target.isPrimitive();
-            makeClassPublic(target);
-            var access_shorty = switch (kind) {
-                case INSTANCE_OF -> "ZL";
-                case CHECK_CAST -> "VL";
-                case NEW_INSTANCE -> "L";
-            };
-            var sketch_proto = ProtoId.of(sketch);
-            var sketch_shorty = sketch_proto.computeShorty();
-            if (!access_shorty.equals(sketch_shorty)) {
-                throw new IllegalArgumentException(String.format(
-                        "Shorty mismatch for %s access on class '%s': expected %s but was %s",
-                        kind, target, access_shorty, sketch_shorty));
-            }
-            return new ClassProcessor(kind, TypeId.of(target), sketch.getName(), sketch_proto);
+    private interface Processor {
+        default void apply(ClassBuilder builder) {
+            // nop
         }
 
-        @Override
-        public void apply(ClassBuilder cb) {
-            cb.withMethod(mb -> mb
-                    .withFlags(ACC_PUBLIC | ACC_FINAL)
-                    .withName(sketch_name)
-                    .withProto(sketch_proto)
-                    .withCode(1, ib -> {
-                        ib.generate_lines();
-                        switch (kind) {
-                            case INSTANCE_OF -> {
-                                ib.instance_of(ib.l(0), ib.p(0), target);
-                                ib.return_(ib.l(0));
-                            }
-                            case CHECK_CAST -> {
-                                ib.check_cast(ib.p(0), target);
-                                ib.return_void();
-                            }
-                            case NEW_INSTANCE -> {
-                                ib.new_instance(ib.l(0), target);
-                                ib.return_object(ib.l(0));
-                            }
-                        }
-                    })
-            );
+        default void post(Class<?> impl) {
+            // nop
         }
     }
 
-    private record FieldProcessor(FieldAccessKind kind, FieldId target,
-                                  String sketch_name, ProtoId sketch_proto) implements Processor {
-        static FieldProcessor of(Method sketch, ClassLoader loader, FieldAccess annotation,
-                                 HashMap<String, Class<?>> cached_classes, Map<Class<?>, Field[]> cached_fields) {
-            var kind = annotation.kind();
-            var target_class = cached_classes.computeIfAbsent(annotation.klass(),
-                    name -> ClassUtils.forName(name, loader));
-            var target = searchField(cached_fields.computeIfAbsent(
-                    target_class, Reflection::getHiddenFields), annotation.name());
-            makeFieldPublic(target);
-            if (kind == INSTANCE_SETTER || kind == STATIC_SETTER) {
-                makeFieldNonFinal(target);
+    private static Processor makeClassProcessor(
+            Method sketch, ClassLoader loader, ClassAccess annotation,
+            HashMap<String, Class<?>> cached_classes) {
+        record ClassProcessor(ClassAccessKind kind, TypeId target,
+                              String sketch_name, ProtoId sketch_proto) implements Processor {
+            @Override
+            public void apply(ClassBuilder cb) {
+                cb.withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName(sketch_name)
+                        .withProto(sketch_proto)
+                        .withCode(1, ib -> {
+                            ib.generate_lines();
+                            switch (kind) {
+                                case INSTANCE_OF -> {
+                                    ib.instance_of(ib.l(0), ib.p(0), target);
+                                    ib.return_(ib.l(0));
+                                }
+                                case CHECK_CAST -> {
+                                    ib.check_cast(ib.p(0), target);
+                                    ib.return_void();
+                                }
+                                case NEW_INSTANCE -> {
+                                    ib.new_instance(ib.l(0), target);
+                                    ib.return_object(ib.l(0));
+                                }
+                            }
+                        })
+                );
             }
-            var field_shorty = TypeId.of(target.getType()).getShorty();
-            var access_shorty = switch (kind) {
-                case INSTANCE_GETTER -> field_shorty + "L";
-                case STATIC_GETTER -> Character.toString(field_shorty);
-                case INSTANCE_SETTER -> "VL" + field_shorty;
-                case STATIC_SETTER -> "V" + field_shorty;
-            };
-            var sketch_proto = ProtoId.of(sketch);
-            var sketch_shorty = sketch_proto.computeShorty();
-            if (!access_shorty.equals(sketch_shorty)) {
-                throw new IllegalArgumentException(String.format(
-                        "Shorty mismatch for %s access on field '%s': expected %s but was %s",
-                        kind, target, access_shorty, sketch_shorty));
-            }
-            return new FieldProcessor(kind, FieldId.of(target), sketch.getName(), sketch_proto);
         }
-
-        @Override
-        public void apply(ClassBuilder cb) {
-            cb.withMethod(mb -> mb
-                    .withFlags(ACC_PUBLIC | ACC_FINAL)
-                    .withName(sketch_name)
-                    .withProto(sketch_proto)
-                    .withCode(/* wide return */ 2, ib -> {
-                        ib.generate_lines();
-                        switch (kind) {
-                            case STATIC_GETTER -> {
-                                ib.sget(ib.l(0), target);
-                                ib.return_shorty(target.getType().getShorty(), ib.l(0));
-                            }
-                            case STATIC_SETTER -> {
-                                ib.sput(ib.p(0), target);
-                                ib.return_void();
-                            }
-                            case INSTANCE_GETTER -> {
-                                ib.iget(ib.l(0), ib.p(0), target);
-                                ib.return_shorty(target.getType().getShorty(), ib.l(0));
-                            }
-                            case INSTANCE_SETTER -> {
-                                ib.iput(ib.p(1), ib.p(0), target);
-                                ib.return_void();
-                            }
-                        }
-                    })
-            );
+        var kind = annotation.kind();
+        var target = cached_classes.computeIfAbsent(annotation.klass(),
+                name -> ClassUtils.forName(name, loader));
+        assert !target.isPrimitive();
+        makeClassPublic(target);
+        var access_shorty = switch (kind) {
+            case INSTANCE_OF -> "ZL";
+            case CHECK_CAST -> "VL";
+            case NEW_INSTANCE -> "L";
+        };
+        var sketch_proto = ProtoId.of(sketch);
+        var sketch_shorty = sketch_proto.computeShorty();
+        if (!access_shorty.equals(sketch_shorty)) {
+            throw new IllegalArgumentException(String.format(
+                    "Shorty mismatch for %s access on class '%s': expected %s but was %s",
+                    kind, target, access_shorty, sketch_shorty));
         }
+        return new ClassProcessor(kind, TypeId.of(target), sketch.getName(), sketch_proto);
     }
 
-    private record ExecutableProcessor(ExecutableAccessKind kind, MethodId target,
-                                       String sketch_name,
-                                       ProtoId sketch_proto) implements Processor {
-        static ExecutableProcessor of(Method sketch, ClassLoader loader, ExecutableAccess annotation,
-                                      HashMap<String, Class<?>> cached_classes, Map<Class<?>, Executable[]> cached_executables) {
-            var kind = annotation.kind();
-            if ((kind == INIT || kind == NEW_INIT)
-                    && !"<init>".equals(annotation.name())) {
-                throw new IllegalArgumentException(String.format(
-                        "Executable name must be '<init>' for %s access", kind));
+    private static Processor makeFieldProcessor(
+            Method sketch, ClassLoader loader, FieldAccess annotation,
+            HashMap<String, Class<?>> cached_classes, Map<Class<?>, Field[]> cached_fields) {
+        record FieldProcessor(FieldAccessKind kind, FieldId target_id,
+                              String sketch_name, ProtoId sketch_proto) implements Processor {
+            @Override
+            public void apply(ClassBuilder cb) {
+                cb.withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName(sketch_name)
+                        .withProto(sketch_proto)
+                        .withCode(/* wide return */ 2, ib -> {
+                            ib.generate_lines();
+                            switch (kind) {
+                                case STATIC_GETTER -> {
+                                    ib.sget(ib.l(0), target_id);
+                                    ib.return_shorty(target_id.getType().getShorty(), ib.l(0));
+                                }
+                                case STATIC_SETTER -> {
+                                    ib.sput(ib.p(0), target_id);
+                                    ib.return_void();
+                                }
+                                case INSTANCE_GETTER -> {
+                                    ib.iget(ib.l(0), ib.p(0), target_id);
+                                    ib.return_shorty(target_id.getType().getShorty(), ib.l(0));
+                                }
+                                case INSTANCE_SETTER -> {
+                                    ib.iput(ib.p(1), ib.p(0), target_id);
+                                    ib.return_void();
+                                }
+                            }
+                        })
+                );
             }
+        }
+        var kind = annotation.kind();
+        var target_class = cached_classes.computeIfAbsent(annotation.klass(),
+                name -> ClassUtils.forName(name, loader));
+        var target = searchField(cached_fields.computeIfAbsent(
+                target_class, Reflection::getHiddenFields), annotation.name());
+        makeFieldPublic(target);
+        if (kind == INSTANCE_SETTER || kind == STATIC_SETTER) {
+            makeFieldNonFinal(target);
+        }
+        var field_shorty = TypeId.of(target.getType()).getShorty();
+        var access_shorty = switch (kind) {
+            case INSTANCE_GETTER -> field_shorty + "L";
+            case STATIC_GETTER -> Character.toString(field_shorty);
+            case INSTANCE_SETTER -> "VL" + field_shorty;
+            case STATIC_SETTER -> "V" + field_shorty;
+        };
+        var sketch_proto = ProtoId.of(sketch);
+        var sketch_shorty = sketch_proto.computeShorty();
+        if (!access_shorty.equals(sketch_shorty)) {
+            throw new IllegalArgumentException(String.format(
+                    "Shorty mismatch for %s access on field '%s': expected %s but was %s",
+                    kind, target, access_shorty, sketch_shorty));
+        }
+        return new FieldProcessor(kind, FieldId.of(target), sketch.getName(), sketch_proto);
+    }
 
-            Class<?> target_class = cached_classes.computeIfAbsent(annotation.klass(),
-                    name -> ClassUtils.forName(name, loader));
-            var target = searchExecutable(cached_executables.computeIfAbsent(target_class,
-                    Reflection::getHiddenExecutables), annotation.name(), annotation.args());
+    private static Processor makeExecutableProcessor(
+            Method sketch, ClassLoader loader, ExecutableAccess annotation,
+            HashMap<String, Class<?>> cached_classes, Map<Class<?>, Executable[]> cached_executables) {
+        record ExecutableProcessor(ExecutableAccessKind kind, MethodId target,
+                                   String sketch_name, ProtoId sketch_proto) implements Processor {
+            @Override
+            public void apply(ClassBuilder cb) {
+                cb.withMethod(mb -> mb
+                        .withFlags(ACC_PUBLIC | ACC_FINAL)
+                        .withName(sketch_name)
+                        .withProto(sketch_proto)
+                        .withCode(/* wide return */ 2, ib -> {
+                            ib.generate_lines();
+                            var ins = sketch_proto.countInputRegisters();
+                            var ret_shorty = sketch_proto.getReturnType().getShorty();
+                            switch (kind) {
+                                case STATIC -> {
+                                    ib.invoke_range(STATIC, target, ins, ins == 0 ? 0 : ib.p(0));
+                                    ib.move_result_shorty(ret_shorty, ib.l(0));
+                                    ib.return_shorty(ret_shorty, ib.l(0));
+                                }
+                                case VIRTUAL -> {
+                                    ib.invoke_range(VIRTUAL, target, ins, ib.p(0));
+                                    ib.move_result_shorty(ret_shorty, ib.l(0));
+                                    ib.return_shorty(ret_shorty, ib.l(0));
+                                }
+                                case INTERFACE -> {
+                                    ib.invoke_range(INTERFACE, target, ins, ib.p(0));
+                                    ib.move_result_shorty(ret_shorty, ib.l(0));
+                                    ib.return_shorty(ret_shorty, ib.l(0));
+                                }
+                                case INIT -> {
+                                    assert ret_shorty == 'V';
+                                    ib.invoke_range(DIRECT, target, ins, ib.p(0));
+                                    ib.return_void();
+                                }
+                                case NEW_INIT -> {
+                                    assert ret_shorty == 'L';
+                                    ib.new_instance(ib.this_(), target.getDeclaringClass());
+                                    ib.invoke_range(DIRECT, target, ins + 1, ib.this_());
+                                    ib.return_object(ib.this_());
+                                }
+                                case DIRECT_HOOK_VTABLE -> shouldNotReachHere();
+                            }
+                        })
+                );
+            }
+        }
+        var kind = annotation.kind();
+        if ((kind == INIT || kind == NEW_INIT)
+                && !"<init>".equals(annotation.name())) {
+            throw new IllegalArgumentException(String.format(
+                    "Executable name must be '<init>' for %s access", kind));
+        }
+
+        Class<?> target_class = cached_classes.computeIfAbsent(annotation.klass(),
+                name -> ClassUtils.forName(name, loader));
+        var target = searchExecutable(cached_executables.computeIfAbsent(target_class,
+                Reflection::getHiddenExecutables), annotation.name(), annotation.args());
+        if (kind != DIRECT_HOOK_VTABLE) {
             makeExecutablePublic(target);
+        }
 
-            var access_shorty = ProtoId.of(target).computeShorty();
-            access_shorty = switch (kind) {
-                case STATIC -> access_shorty;
-                case VIRTUAL, INTERFACE, INIT ->
-                        new StringBuilder(access_shorty).insert(1, "L").toString();
-                case NEW_INIT -> "L" + access_shorty.substring(1);
+        var access_shorty = ProtoId.of(target).computeShorty();
+        access_shorty = switch (kind) {
+            case STATIC, DIRECT_HOOK_VTABLE -> access_shorty;
+            case VIRTUAL, INTERFACE, INIT ->
+                    new StringBuilder(access_shorty).insert(1, "L").toString();
+            case NEW_INIT -> "L" + access_shorty.substring(1);
+        };
+        var sketch_proto = ProtoId.of(sketch);
+        var sketch_shorty = sketch_proto.computeShorty();
+        if (!access_shorty.equals(sketch_shorty)) {
+            throw new IllegalArgumentException(String.format(
+                    "Shorty mismatch for %s access on method '%s': expected %s but was %s",
+                    kind, target, access_shorty, sketch_shorty));
+        }
+        if (kind == DIRECT_HOOK_VTABLE) {
+            checkAbstact(sketch);
+
+            var sketch_art = Reflection.getArtMethod(sketch);
+            var target_art = Reflection.getArtMethod(target);
+
+            ArtMethodUtils.changeExecutableFlags(sketch_art,
+                    0, ArtModifiers.kAccSingleImplementation);
+            ArtMethodUtils.setExecutableData(sketch_art, target_art);
+
+            return new Processor() {
+                @Override
+                public void post(Class<?> impl) {
+                    VM.setEmbeddedVTableEntry(impl, getDispatchTableIndex(sketch_art), target_art);
+                }
             };
-            var sketch_proto = ProtoId.of(sketch);
-            var sketch_shorty = sketch_proto.computeShorty();
-            if (!access_shorty.equals(sketch_shorty)) {
-                throw new IllegalArgumentException(String.format(
-                        "Shorty mismatch for %s access on method '%s': expected %s but was %s",
-                        kind, target, access_shorty, sketch_shorty));
-            }
-            return new ExecutableProcessor(kind, MethodId.of(target), sketch.getName(), sketch_proto);
         }
-
-        @Override
-        public void apply(ClassBuilder cb) {
-            cb.withMethod(mb -> mb
-                    .withFlags(ACC_PUBLIC | ACC_FINAL)
-                    .withName(sketch_name)
-                    .withProto(sketch_proto)
-                    .withCode(/* wide return */ 2, ib -> {
-                        ib.generate_lines();
-                        var ins = sketch_proto.countInputRegisters();
-                        var ret_shorty = sketch_proto.getReturnType().getShorty();
-                        switch (kind) {
-                            case STATIC -> {
-                                ib.invoke_range(STATIC, target, ins, ins == 0 ? 0 : ib.p(0));
-                                ib.move_result_shorty(ret_shorty, ib.l(0));
-                                ib.return_shorty(ret_shorty, ib.l(0));
-                            }
-                            case VIRTUAL -> {
-                                ib.invoke_range(VIRTUAL, target, ins, ib.p(0));
-                                ib.move_result_shorty(ret_shorty, ib.l(0));
-                                ib.return_shorty(ret_shorty, ib.l(0));
-                            }
-                            case INTERFACE -> {
-                                ib.invoke_range(INTERFACE, target, ins, ib.p(0));
-                                ib.move_result_shorty(ret_shorty, ib.l(0));
-                                ib.return_shorty(ret_shorty, ib.l(0));
-                            }
-                            case INIT -> {
-                                assert ret_shorty == 'V';
-                                ib.invoke_range(DIRECT, target, ins, ib.p(0));
-                                ib.return_void();
-                            }
-                            case NEW_INIT -> {
-                                assert ret_shorty == 'L';
-                                ib.new_instance(ib.this_(), target.getDeclaringClass());
-                                ib.invoke_range(DIRECT, target, ins + 1, ib.this_());
-                                ib.return_object(ib.this_());
-                            }
-                        }
-                    })
-            );
-        }
+        return new ExecutableProcessor(kind, MethodId.of(target), sketch.getName(), sketch_proto);
     }
 
     public static <T> Class<T> processSymbols(Class<T> clazz, ClassLoader loader, List<Processor> processors) {
@@ -404,6 +435,11 @@ public class AccessLinker {
 
         var out = DexFileUtils.loadClass(dex, access_name, loader);
         ClassUtils.forceClassVerified(out);
+
+        for (var proc : processors) {
+            proc.post(out);
+        }
+
         //noinspection unchecked
         return (Class<T>) out;
     }
@@ -438,19 +474,19 @@ public class AccessLinker {
             var class_access = getClassAccess(method.getDeclaredAnnotationsByType(ClassAccess.class));
             if (class_access != null) {
                 checkAbstact(method);
-                processors.add(ClassProcessor.of(method, loader, class_access, cached_classes));
+                processors.add(makeClassProcessor(method, loader, class_access, cached_classes));
                 continue;
             }
             var field_access = getFieldAccess(method.getDeclaredAnnotationsByType(FieldAccess.class));
             if (field_access != null) {
                 checkAbstact(method);
-                processors.add(FieldProcessor.of(method, loader, field_access, cached_classes, cached_fields));
+                processors.add(makeFieldProcessor(method, loader, field_access, cached_classes, cached_fields));
                 continue;
             }
             var executable_access = getExecutableAccess(method.getDeclaredAnnotationsByType(ExecutableAccess.class));
             if (executable_access != null) {
                 checkAbstact(method);
-                processors.add(ExecutableProcessor.of(method, loader, executable_access, cached_classes, cached_executables));
+                processors.add(makeExecutableProcessor(method, loader, executable_access, cached_classes, cached_executables));
             }
         }
 
