@@ -1,23 +1,20 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.ArtMethodUtils.getExecutableData;
-import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.Reflection.getDeclaredMethods;
-import static com.v7878.unsafe.Reflection.getHiddenMethods;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.DIRECT_HOOK_VTABLE;
 import static com.v7878.unsafe.io.IOUtils.MADV_DONTNEED;
 import static com.v7878.unsafe.io.IOUtils.MADV_WILLNEED;
 import static com.v7878.unsafe.io.IOUtils.madvise;
 
-import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.access.AccessLinker.Conditions;
+import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
 
 import java.io.FileDescriptor;
-import java.lang.reflect.Method;
-import java.nio.MappedByteBuffer;
 
 class MappedMemoryUtils {
     private static final int PAGE_SIZE = AndroidUnsafe.PAGE_SIZE;
@@ -98,34 +95,31 @@ class MappedMemoryUtils {
 
     private static boolean isLoaded0(long address, long length, long pageCount) {
         if (ART_SDK_INT < 35) {
-            return isLoaded0_before35(address, length, (int) pageCount);
+            return AccessI.INSTANCE.isLoaded0b35(address, length, (int) pageCount);
         } else {
-            return isLoaded0_after35(address, length, pageCount);
+            return AccessI.INSTANCE.isLoaded0a35(address, length, pageCount);
         }
     }
 
-    // TODO: make AccessI class
+    private static void force0(FileDescriptor fd, long length, long pageCount) {
+        AccessI.INSTANCE.force0(fd, length, pageCount);
+    }
 
-    @DoNotShrink
-    @DoNotObfuscate
-    private static native boolean isLoaded0_before35(long address, long length, int pageCount);
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class AccessI {
+        @ExecutableAccess(conditions = @Conditions(max_art = 34), kind = DIRECT_HOOK_VTABLE,
+                klass = "java.nio.MappedByteBuffer", name = "isLoaded0", args = {"long", "long", "int"})
+        abstract boolean isLoaded0b35(long address, long length, int pageCount);
 
-    @DoNotShrink
-    @DoNotObfuscate
-    private static native boolean isLoaded0_after35(long address, long length, long pageCount);
+        @ExecutableAccess(conditions = @Conditions(min_art = 35), kind = DIRECT_HOOK_VTABLE,
+                klass = "java.nio.MappedByteBuffer", name = "isLoaded0", args = {"long", "long", "long"})
+        abstract boolean isLoaded0a35(long address, long length, long pageCount);
 
-    @DoNotShrink
-    @DoNotObfuscate
-    private static native void force0(FileDescriptor fd, long address, long length);
+        @ExecutableAccess(kind = DIRECT_HOOK_VTABLE, klass = "java.nio.MappedByteBuffer",
+                name = "force0", args = {"java.io.FileDescriptor", "long", "long"})
+        abstract void force0(FileDescriptor fd, long length, long pageCount);
 
-    static {
-        Method[] tm = getDeclaredMethods(MappedMemoryUtils.class);
-        Method[] mm = getHiddenMethods(MappedByteBuffer.class);
-        Class<?> pc_type = ART_SDK_INT < 35 ? int.class : long.class;
-        String suffix = ART_SDK_INT < 35 ? "_before35" : "_after35";
-        registerNativeMethod(searchMethod(tm, "isLoaded0" + suffix, long.class, long.class, pc_type),
-                getExecutableData(searchMethod(mm, "isLoaded0", long.class, long.class, pc_type)));
-        registerNativeMethod(searchMethod(tm, "force0", FileDescriptor.class, long.class, long.class),
-                getExecutableData(searchMethod(mm, "force0", FileDescriptor.class, long.class, long.class)));
+        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 }
