@@ -260,7 +260,6 @@ public class Utils {
 
     @DoNotShrink
     @DoNotOptimize
-    //TODO: check if keep rules work correctly
     private static class SinkHolder {
         static volatile Object sink;
         // Ensure that sink looks live to even a reasonably clever compiler.

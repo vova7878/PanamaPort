@@ -14,6 +14,7 @@ import static com.v7878.unsafe.Utils.dcheck;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
+import static com.v7878.unsafe.access.InvokeAccess.MT_ID;
 
 import com.v7878.dex.DexIO;
 import com.v7878.dex.builder.ClassBuilder;
@@ -78,14 +79,13 @@ public final class EmulatedStackFrame {
 
         Class<?> partial_impl = AccessLinker.generateImplClass(AccessI.class);
 
-        TypeId mt = TypeId.of(MethodType.class);
         TypeId esf = TypeId.of(ESF_CLASS);
 
         String access_name = EmulatedStackFrame.class.getName() + "$Access";
         TypeId access_id = TypeId.ofName(access_name);
 
-        var type_id = FieldId.of(esf, "type", mt);
-        var callsite_id = FieldId.of(esf, "callsiteType", mt);
+        var type_id = FieldId.of(esf, "type", MT_ID);
+        var callsite_id = FieldId.of(esf, "callsiteType", MT_ID);
         var references_id = FieldId.of(esf, "references", TypeId.OBJECT.array());
         var primitives_id = FieldId.of(esf, "stackFrame", TypeId.B.array());
 
@@ -96,7 +96,7 @@ public final class EmulatedStackFrame {
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("create")
                         .withReturnType(TypeId.OBJECT)
-                        .withParameterTypes(mt, TypeId.OBJECT.array(), TypeId.B.array())
+                        .withParameterTypes(MT_ID, TypeId.OBJECT.array(), TypeId.B.array())
                         .withCode(0, ib -> {
                             ib.generate_lines();
                             ib.new_instance(ib.this_(), esf);

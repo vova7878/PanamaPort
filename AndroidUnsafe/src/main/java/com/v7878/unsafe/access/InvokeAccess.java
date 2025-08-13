@@ -7,6 +7,8 @@ import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETT
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.STATIC_GETTER;
 
+import com.v7878.dex.immutable.MethodId;
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.ApiSensitive;
@@ -25,6 +27,14 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 
 public class InvokeAccess {
+    // TODO: Separate class with cached ids for code generation
+    public static final TypeId MT_ID = TypeId.of(MethodType.class);
+    public static final TypeId MH_ID = TypeId.of(MethodHandle.class);
+    public static final MethodId MH_INVOKE_ID = MethodId.of(MH_ID, "invoke",
+            TypeId.OBJECT, TypeId.of(Object[].class));
+    public static final MethodId MH_INVOKE_EXACT_ID = MethodId.of(MH_ID, "invokeExact",
+            TypeId.OBJECT, TypeId.of(Object[].class));
+
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class AccessI {

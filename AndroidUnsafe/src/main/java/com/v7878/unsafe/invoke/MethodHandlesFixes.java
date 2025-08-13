@@ -8,7 +8,7 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.Utils.unexpectedType;
 import static com.v7878.unsafe.access.InvokeAccess.rtype;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
-import static com.v7878.unsafe.invoke.Transformers.invokeExactWithFrameNoChecks;
+import static com.v7878.unsafe.invoke.Transformers.invokeExactNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 
 import android.annotation.TargetApi;
@@ -52,7 +52,7 @@ public class MethodHandlesFixes {
             StackFrameAccessor collector_accessor = collectorFrame.accessor();
             EmulatedStackFrame.copyArguments(this_accessor, pos,
                     collector_accessor, 0, collector_count);
-            invokeExactWithFrameNoChecks(collector, collectorFrame);
+            invokeExactNoChecks(collector, collectorFrame);
 
             // Start constructing the target frame.
             EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
@@ -75,7 +75,7 @@ public class MethodHandlesFixes {
                     stackFrame.type().parameterCount() - this_pos);
 
             // Invoke the target.
-            invokeExactWithFrameNoChecks(target, targetFrame);
+            invokeExactNoChecks(target, targetFrame);
             EmulatedStackFrame.copyReturnValue(target_accessor, this_accessor);
         }
     }
@@ -141,9 +141,9 @@ public class MethodHandlesFixes {
 
             // Finally, invoke the handle and copy the return value.
             if (isExactInvoker) {
-                Transformers.invokeExactWithFrame(target, targetFrame);
+                Transformers.invokeExact(target, targetFrame);
             } else {
-                Transformers.invokeWithFrame(target, targetFrame);
+                Transformers.invoke(target, targetFrame);
             }
             EmulatedStackFrame.copyReturnValue(targetAccessor, thisAccessor);
         }
@@ -179,7 +179,7 @@ public class MethodHandlesFixes {
 
             explicitCastArguments(callerAccessor, targetAccessor);
 
-            invokeExactWithFrameNoChecks(target, targetFrame);
+            invokeExactNoChecks(target, targetFrame);
 
             explicitCastReturnValue(targetAccessor.moveToReturn(), callerAccessor.moveToReturn());
         }
@@ -559,7 +559,7 @@ public class MethodHandlesFixes {
             for (int i = 0; i < reorder.length; i++) {
                 EmulatedStackFrame.copyValue(reader, reorder[i], writer, i);
             }
-            invokeExactWithFrameNoChecks(target, calleeFrame);
+            invokeExactNoChecks(target, calleeFrame);
             // copy from writer to reader as this is return value
             EmulatedStackFrame.copyReturnValue(writer, reader);
         }
@@ -640,7 +640,7 @@ public class MethodHandlesFixes {
 
             adaptArguments(callerAccessor, targetAccessor);
 
-            invokeExactWithFrameNoChecks(target, targetFrame);
+            invokeExactNoChecks(target, targetFrame);
 
             adaptReturnValue(targetAccessor.moveToReturn(), callerAccessor.moveToReturn());
         }
@@ -870,7 +870,7 @@ public class MethodHandlesFixes {
         public void transform(MethodHandle ignored, EmulatedStackFrame stack) throws Throwable {
             var backup = stack.type();
             stack.type(target.type());
-            Transformers.invokeTransformNoChecks(target, stack);
+            Transformers.invokeTransform(target, stack);
             stack.type(backup);
         }
     }
@@ -955,7 +955,7 @@ public class MethodHandlesFixes {
                     target_accessor, 0, target_count);
 
             // Invoke the target
-            invokeExactWithFrameNoChecks(target, target_frame);
+            invokeExactNoChecks(target, target_frame);
 
             // Constructing the collector frame.
             EmulatedStackFrame collectorFrame = EmulatedStackFrame.create(collector.type());
@@ -970,7 +970,7 @@ public class MethodHandlesFixes {
             }
 
             // Invoke the collector and copy its return value back to the original frame.
-            invokeExactWithFrameNoChecks(collector, collectorFrame);
+            invokeExactNoChecks(collector, collectorFrame);
             EmulatedStackFrame.copyReturnValue(collector_accessor, this_accessor);
         }
     }

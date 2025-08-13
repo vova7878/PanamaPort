@@ -55,7 +55,6 @@ public class LLVMTypes {
     }
 
     public static LLVMTypeRef intptr_t(LLVMContextRef context) {
-        // TODO?: get from target
         return IS64BIT ? int64_t(context) : int32_t(context);
     }
 

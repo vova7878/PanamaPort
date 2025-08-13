@@ -57,6 +57,7 @@ import static com.v7878.unsafe.Utils.newEmptyClassLoader;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.access.InvokeAccess.MH_INVOKE_EXACT_ID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToAddress;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
@@ -1182,7 +1183,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
     private static Method generateJavaUpcallStub(_FunctionDescriptorImpl descriptor, _LinkerOptions options) {
         final String method_name = "function";
-        final TypeId mh_id = TypeId.of(MethodHandle.class);
         final TypeId ms_id = TypeId.of(MemorySegment.class);
         final TypeId helper_id = TypeId.of(UpcallHelper.class);
         final TypeId scope_id = TypeId.of(_MemorySessionImpl.class);
@@ -1205,8 +1205,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         String stub_name = stubName(descriptor, options, false);
         TypeId stub_id = TypeId.ofName(stub_name);
 
-        MethodId mh_invoke_id = MethodId.of(mh_id, "invokeExact",
-                ProtoId.of(TypeId.OBJECT, TypeId.OBJECT.array()));
         MethodId create_scope_id = MethodId.of(helper_id, "createScope", scope_id);
         MethodId close_scope_id = MethodId.of(helper_id, "closeScope", TypeId.V, scope_id);
         MethodId handle_exception_id = MethodId.of(helper_id,
@@ -1315,7 +1313,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                     }
                                 })
 
-                                .invoke_polymorphic_range(mh_invoke_id, target_proto,
+                                .invoke_polymorphic_range(MH_INVOKE_EXACT_ID, target_proto,
                                         target_ins + /* handle */ 1, ib.l(reserved[0]))
                                 .if_(ret != null, ib2 -> {
                                     if (ret instanceof AddressLayout || ret instanceof GroupLayout) {

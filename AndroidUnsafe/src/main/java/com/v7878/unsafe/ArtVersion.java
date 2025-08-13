@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 
-// TODO: maybe we can read manifest-art.json?
 public class ArtVersion {
     @ApiSensitive
     public static final int ART_SDK_INT = computeSDKInt();

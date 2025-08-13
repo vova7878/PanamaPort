@@ -11,6 +11,7 @@ import static com.v7878.dex.builder.CodeBuilder.InvokeKind.VIRTUAL;
 import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.dex.builder.CodeBuilder.Test.EQ;
+import static com.v7878.dex.builder.CodeBuilder.Test.NE;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
@@ -27,6 +28,9 @@ import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.DEBUG_BUILD;
 import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.access.InvokeAccess.MH_ID;
+import static com.v7878.unsafe.access.InvokeAccess.MH_INVOKE_ID;
+import static com.v7878.unsafe.access.InvokeAccess.MT_ID;
 
 import com.v7878.dex.DexIO;
 import com.v7878.dex.builder.ClassBuilder;
@@ -54,22 +58,18 @@ import dalvik.system.DexFile;
 
 @ApiSensitive
 public class Transformers {
-
     private static final MethodHandle directAsVarargsCollector = nothrows_run(() -> unreflectDirect(
             getHiddenMethod(MethodHandle.class, "asVarargsCollector", Class.class)));
     private static final MethodHandle directBindTo = nothrows_run(() -> unreflectDirect(
             getHiddenMethod(MethodHandle.class, "bindTo", Object.class)));
 
     private static final MethodHandle new_transformer;
-    private static final InvokerI invoker;
+    private static final InvokerI INVOKER;
 
     static {
         Class<?> invoke_transformer = ClassUtils.sysClass(
                 "java.lang.invoke.Transformers$Transformer");
         TypeId invoke_transformer_id = TypeId.of(invoke_transformer);
-
-        TypeId mh = TypeId.of(MethodHandle.class);
-        TypeId mt = TypeId.of(MethodType.class);
 
         TypeId esf = TypeId.ofName("dalvik.system.EmulatedStackFrame");
         TypeId mesf = TypeId.of(EmulatedStackFrame.class);
@@ -84,7 +84,7 @@ public class Transformers {
 
         FieldId asTypeCache;
         if (ART_SDK_INT < 33) {
-            asTypeCache = FieldId.of(transformer_id, "asTypeCache", mh);
+            asTypeCache = FieldId.of(transformer_id, "asTypeCache", MH_ID);
         } else {
             Field cache = getHiddenInstanceField(MethodHandle.class, "asTypeCache");
             makeFieldPublic(cache);
@@ -110,10 +110,10 @@ public class Transformers {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_CONSTRUCTOR)
                         .withConstructorSignature()
-                        .withParameterTypes(mt, TypeId.I, transformer_impl_id)
+                        .withParameterTypes(MT_ID, TypeId.I, transformer_impl_id)
                         .withCode(0, ib -> ib
                                 .generate_lines()
-                                .invoke(DIRECT, MethodId.constructor(invoke_transformer_id, mt, TypeId.I),
+                                .invoke(DIRECT, MethodId.constructor(invoke_transformer_id, MT_ID, TypeId.I),
                                         ib.this_(), ib.p(0), ib.p(1))
                                 .iop(PUT_OBJECT, ib.p(2), ib.this_(), impl_field)
                                 .return_void()
@@ -131,10 +131,10 @@ public class Transformers {
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(STATIC, MethodId.of(mesf, "wrap",
-                                        ProtoId.of(mesf, TypeId.OBJECT)), ib.p(0))
+                                        mesf, TypeId.OBJECT), ib.p(0))
                                 .move_result_object(ib.p(0))
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id,
-                                                "transform", ProtoId.of(TypeId.V, mh, mesf)),
+                                                "transform", TypeId.V, MH_ID, mesf),
                                         ib.l(0), ib.this_(), ib.p(0))
                                 .return_void()
                         )
@@ -151,7 +151,7 @@ public class Transformers {
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id,
-                                                "isVarargsCollector", ProtoId.of(TypeId.Z, mh)),
+                                                "isVarargsCollector", TypeId.Z, MH_ID),
                                         ib.l(0), ib.this_())
                                 .move_result(ib.l(0))
                                 .return_(ib.l(0))
@@ -163,13 +163,13 @@ public class Transformers {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("asVarargsCollector")
-                        .withReturnType(mh)
+                        .withReturnType(MH_ID)
                         .withParameterTypes(TypeId.of(Class.class))
                         .withCode(1, ib -> ib
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "asVarargsCollector",
-                                                ProtoId.of(mh, mh, TypeId.of(Class.class))),
+                                                MH_ID, MH_ID, TypeId.of(Class.class)),
                                         ib.l(0), ib.this_(), ib.p(0))
                                 .move_result_object(ib.l(0))
                                 .return_object(ib.l(0))
@@ -181,13 +181,13 @@ public class Transformers {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("asFixedArity")
-                        .withReturnType(mh)
+                        .withReturnType(MH_ID)
                         .withParameters()
                         .withCode(1, ib -> ib
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "asFixedArity",
-                                        ProtoId.of(mh, mh)), ib.l(0), ib.this_())
+                                        MH_ID, MH_ID), ib.l(0), ib.this_())
                                 .move_result_object(ib.l(0))
                                 .return_object(ib.l(0))
                         )
@@ -198,13 +198,13 @@ public class Transformers {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("bindTo")
-                        .withReturnType(mh)
+                        .withReturnType(MH_ID)
                         .withParameterTypes(TypeId.OBJECT)
                         .withCode(1, ib -> ib
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "bindTo",
-                                                ProtoId.of(mh, mh, TypeId.OBJECT)),
+                                                MH_ID, MH_ID, TypeId.OBJECT),
                                         ib.l(0), ib.this_(), ib.p(0))
                                 .move_result_object(ib.l(0))
                                 .return_object(ib.l(0))
@@ -222,7 +222,7 @@ public class Transformers {
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "toString",
-                                        ProtoId.of(TypeId.of(String.class), mh)), ib.l(0), ib.this_())
+                                        TypeId.of(String.class), MH_ID), ib.l(0), ib.this_())
                                 .move_result_object(ib.l(0))
                                 .return_object(ib.l(0))
                         )
@@ -235,14 +235,14 @@ public class Transformers {
                 )
                 .commit(cb2 -> {
                     MethodId asTypeUncached = MethodId.of(transformer_id,
-                            "asTypeUncached", ProtoId.of(mh, mt));
+                            "asTypeUncached", MH_ID, MT_ID);
                     Consumer<CodeBuilder> fallbackAsType;
                     if (ART_SDK_INT < 33) {
                         if (ART_SDK_INT < 30) {
                             // return asTypeCache = super.asType(type);
                             fallbackAsType = ib -> ib
-                                    .invoke(SUPER, MethodId.of(mh, "asType",
-                                            ProtoId.of(mh, mt)), ib.this_(), ib.p(0))
+                                    .invoke(SUPER, MethodId.of(MH_ID, "asType",
+                                            MH_ID, MT_ID), ib.this_(), ib.p(0))
                                     .move_result_object(ib.l(0))
                                     .iop(PUT_OBJECT, ib.l(0), ib.this_(), asTypeCache)
                                     .return_object(ib.l(0));
@@ -259,9 +259,8 @@ public class Transformers {
                                     .return_object(ib.l(0));
                         }
 
-                        MethodId equals = MethodId.of(mt, "equals",
-                                ProtoId.of(TypeId.Z, TypeId.OBJECT));
-                        MethodId type = MethodId.of(mh, "type", ProtoId.of(mt));
+                        MethodId equals = MethodId.of(MT_ID, "equals", TypeId.Z, TypeId.OBJECT);
+                        MethodId type = MethodId.of(MH_ID, "type", MT_ID);
 
                         // public MethodHandle asType(MethodType type) {
                         //     if (type.equals(this.type())) {
@@ -276,8 +275,8 @@ public class Transformers {
                         cb2.withMethod(mb -> mb
                                 .withFlags(ACC_PUBLIC | ACC_FINAL)
                                 .withName("asType")
-                                .withReturnType(mh)
-                                .withParameterTypes(mt)
+                                .withReturnType(MH_ID)
+                                .withParameterTypes(MT_ID)
                                 .withCode(2, ib -> ib
                                         .generate_lines()
 
@@ -308,6 +307,7 @@ public class Transformers {
                         Method uncached = getHiddenMethod(MethodHandle.class,
                                 "asTypeUncached", MethodType.class);
                         makeMethodInheritable(uncached);
+
                         // return super.asTypeUncached(type);
                         fallbackAsType = ib -> ib
                                 .invoke(SUPER, MethodId.of(uncached), ib.this_(), ib.p(0))
@@ -328,7 +328,7 @@ public class Transformers {
                                     .generate_lines()
                                     .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                     .invoke(VIRTUAL, MethodId.of(TypeId.of(TransformerImpl.class),
-                                                    "asTypeUncached", ProtoId.of(mh, mh, mt)),
+                                                    "asTypeUncached", MH_ID, MH_ID, MT_ID),
                                             ib.l(0), ib.this_(), ib.p(0))
                                     .move_result_object(ib.l(0))
                                     .if_testz(EQ, ib.l(0), ":null")
@@ -357,7 +357,7 @@ public class Transformers {
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("isTransformer")
                         .withReturnType(TypeId.Z)
-                        .withParameterTypes(mh)
+                        .withParameterTypes(MH_ID)
                         .withCode(0, ib -> ib
                                 .generate_lines()
                                 .instance_of(ib.p(0), ib.p(0), invoke_transformer_id)
@@ -368,6 +368,7 @@ public class Transformers {
                     Method transform = getHiddenMethod(MethodHandle.class,
                             "transform", EmulatedStackFrame.ESF_CLASS);
                     makeMethodInheritable(transform);
+
                     // public void transform(MethodHandle handle, Object stack) {
                     //     handle.transform((dalvik.system.EmulatedStackFrame) stack);
                     // }
@@ -375,7 +376,7 @@ public class Transformers {
                             .withFlags(ACC_PUBLIC | ACC_FINAL)
                             .withName("transform")
                             .withReturnType(TypeId.V)
-                            .withParameterTypes(mh, TypeId.OBJECT)
+                            .withParameterTypes(MH_ID, TypeId.OBJECT)
                             .withCode(0, ib -> ib
                                     .generate_lines()
                                     .if_(DEBUG_BUILD, ib2 -> ib2
@@ -385,37 +386,69 @@ public class Transformers {
                                     .return_void()
                             )
                     );
+
+                    Consumer<CodeBuilder> invokeWithFrame;
+                    if (ART_SDK_INT <= 32) {
+                        invokeWithFrame = ib -> ib.invoke_polymorphic(MH_INVOKE_ID,
+                                ProtoId.of(TypeId.V, esf), ib.p(0), ib.p(1));
+                    } else {
+                        Method invokeWF = getHiddenMethod(MethodHandle.class,
+                                "invokeExactWithFrame", EmulatedStackFrame.ESF_CLASS);
+                        makeExecutablePublic(invokeWF);
+                        invokeWithFrame = ib -> ib.invoke(VIRTUAL,
+                                MethodId.of(invokeWF), ib.p(0), ib.p(1));
+                    }
+
+                    // public void invokeExactPlain(MethodHandle handle, Object stack) {
+                    //     handle.invokeWithFrame((dalvik.system.EmulatedStackFrame) stack);
+                    // }
+                    cb2.withMethod(mb -> mb
+                            .withFlags(ACC_PUBLIC | ACC_FINAL)
+                            .withName("invokeExactPlain")
+                            .withReturnType(TypeId.V)
+                            .withParameterTypes(MH_ID, TypeId.OBJECT)
+                            .withCode(0, ib -> {
+                                ib.generate_lines();
+                                if (DEBUG_BUILD) {
+                                    ib.check_cast(ib.p(1), esf);
+                                }
+                                ib.commit(invokeWithFrame);
+                                ib.return_void();
+                            })
+                    );
+
+                    // public void invokeExactCommon(MethodHandle handle, Object stack) {
+                    //     if (handle instanceof j.l.i.Transformer) {
+                    //         handle.transform((dalvik.system.EmulatedStackFrame) stack);
+                    //     } else {
+                    //         handle.invokeWithFrame((dalvik.system.EmulatedStackFrame) stack);
+                    //     }
+                    // }
+                    cb2.withMethod(mb -> mb
+                            .withFlags(ACC_PUBLIC | ACC_FINAL)
+                            .withName("invokeExactCommon")
+                            .withReturnType(TypeId.V)
+                            .withParameterTypes(MH_ID, TypeId.OBJECT)
+                            .withCode(1, ib -> {
+                                ib.generate_lines();
+                                if (DEBUG_BUILD) {
+                                    ib.check_cast(ib.p(1), esf);
+                                }
+
+                                ib.instance_of(ib.l(0), ib.p(0), invoke_transformer_id);
+                                ib.if_testz(NE, ib.l(0), "transformer");
+
+                                ib.commit(invokeWithFrame);
+                                ib.goto_("exit");
+
+                                ib.label("transformer");
+                                ib.invoke(VIRTUAL, MethodId.of(transform), ib.p(0), ib.p(1));
+
+                                ib.label("exit");
+                                ib.return_void();
+                            })
+                    );
                 })
-                // public void invokeExactWithFrame(MethodHandle handle, Object stack) {
-                //     if (ART_SDK_INT <= 32) {
-                //         handle.invoke((dalvik.system.EmulatedStackFrame) stack);
-                //     } else {
-                //         handle.invokeExactWithFrame((dalvik.system.EmulatedStackFrame) stack);
-                //     }
-                // }
-                .withMethod(mb -> mb
-                        .withFlags(ACC_PUBLIC | ACC_FINAL)
-                        .withName("invokeExactWithFrame")
-                        .withReturnType(TypeId.V)
-                        .withParameterTypes(mh, TypeId.OBJECT)
-                        .withCode(0, ib -> {
-                            ib.generate_lines();
-                            if (DEBUG_BUILD) {
-                                ib.check_cast(ib.p(1), esf);
-                            }
-                            if (ART_SDK_INT <= 32) {
-                                ib.invoke_polymorphic(MethodId.of(mh, "invoke",
-                                                ProtoId.of(TypeId.OBJECT, TypeId.of(Object[].class))),
-                                        ProtoId.of(TypeId.V, esf), ib.p(0), ib.p(1));
-                            } else {
-                                Method invokeWF = getHiddenMethod(MethodHandle.class,
-                                        "invokeExactWithFrame", EmulatedStackFrame.ESF_CLASS);
-                                makeExecutablePublic(invokeWF);
-                                ib.invoke(VIRTUAL, MethodId.of(invokeWF), ib.p(0), ib.p(1));
-                            }
-                            ib.return_void();
-                        })
-                )
         );
 
         DexFile dex = openDexFile(DexIO.write(Dex.of(transformer_def, invoker_def)));
@@ -427,7 +460,7 @@ public class Transformers {
         if (!DEBUG_BUILD) {
             ClassUtils.forceClassVerified(invoker_class);
         }
-        invoker = (InvokerI) allocateInstance(invoker_class);
+        INVOKER = (InvokerI) allocateInstance(invoker_class);
 
         Class<?> transformer = loadClass(dex, transformer_name, loader);
         new_transformer = unreflect(getDeclaredConstructor(transformer,
@@ -458,8 +491,11 @@ public class Transformers {
 
         abstract void transform(MethodHandle handle, Object stackFrame) throws Throwable;
 
-        abstract void invokeExactWithFrame(MethodHandle handle,
-                                           Object stackFrame) throws Throwable;
+        abstract void invokeExactPlain(MethodHandle handle,
+                                       Object stackFrame) throws Throwable;
+
+        abstract void invokeExactCommon(MethodHandle handle,
+                                        Object stackFrame) throws Throwable;
     }
 
     @DoNotShrink
@@ -567,42 +603,36 @@ public class Transformers {
     }
 
     public static boolean isTransformer(MethodHandle handle) {
-        return invoker.isTransformer(Objects.requireNonNull(handle));
+        return INVOKER.isTransformer(Objects.requireNonNull(handle));
     }
 
-    @ApiSensitive
-    public static void invokeExactWithFrameNoChecks(
+    public static void invokeExactPlain(
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        // TODO: move checks to invoker class
+        INVOKER.invokeExactPlain(target, stackFrame.esf);
+    }
+
+    public static void invokeTransform(
+            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
+        INVOKER.transform(target, stackFrame.esf);
+    }
+
+    public static void invokeExactNoChecks(
+            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
         // FIXME: android 8-12L convert nominalType to type (PLATFORM-BUG!)
-        if (invoker.isTransformer(target)) {
-            invoker.transform(target, stackFrame.esf);
-        } else {
-            invoker.invokeExactWithFrame(target, stackFrame.esf);
-        }
+        INVOKER.invokeExactCommon(target, stackFrame.esf);
     }
 
-    public static void invokePlainNoChecks(
-            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        invoker.invokeExactWithFrame(target, stackFrame.esf);
-    }
-
-    public static void invokeTransformNoChecks(
-            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        invoker.transform(target, stackFrame.esf);
-    }
-
-    public static void invokeExactWithFrame(
+    public static void invokeExact(
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
         if (!target.type().equals(stackFrame.type())) {
             throw newWrongMethodTypeException(stackFrame.type(), target.type());
         }
-        invokeExactWithFrameNoChecks(target, stackFrame);
+        invokeExactNoChecks(target, stackFrame);
     }
 
-    public static void invokeWithFrame(
+    public static void invoke(
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        MethodHandle adaptedTarget = target.asType(stackFrame.type());
-        invokeExactWithFrameNoChecks(adaptedTarget, stackFrame);
+        MethodHandle adaptedTarget = MethodHandlesFixes.asType(target, stackFrame.type());
+        invokeExactNoChecks(adaptedTarget, stackFrame);
     }
 }

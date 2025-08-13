@@ -195,7 +195,7 @@ public class VarHandleImpl extends VarHandle {
         EmulatedStackFrame frame = EmulatedStackFrame.create(type);
         System.arraycopy(args, 0, frame.references(), 0, arrayLength);
         try {
-            Transformers.invokeExactWithFrameNoChecks(generic, frame);
+            Transformers.invokeExactNoChecks(generic, frame);
         } catch (Throwable th) {
             VarHandlesImpl.handleCheckedExceptions(th);
         }
