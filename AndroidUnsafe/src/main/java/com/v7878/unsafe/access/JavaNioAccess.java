@@ -165,7 +165,7 @@ public class JavaNioAccess {
         @FieldAccess(kind = INSTANCE_GETTER, klass = "java.nio.Buffer", name = "address")
         abstract long address(Buffer instance);
 
-        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+        static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
     // TODO: simpify

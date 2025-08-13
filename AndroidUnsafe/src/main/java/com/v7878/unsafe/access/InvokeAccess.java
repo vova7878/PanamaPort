@@ -69,7 +69,7 @@ public class InvokeAccess {
         @FieldAccess(kind = INSTANCE_SETTER, klass = "java.lang.invoke.MethodHandle", name = "handleKind")
         abstract void handleKind(MethodHandle handle, int kind);
 
-        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+        static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
     public static MethodType realType(MethodHandle handle) {
@@ -198,7 +198,7 @@ public class InvokeAccess {
                 kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VAR_HANDLE_EXACT")
         abstract int INVOKE_VAR_HANDLE_EXACT();
 
-        public static final HandleKindI INSTANCE = AccessLinker.generateImpl(HandleKindI.class);
+        static final HandleKindI INSTANCE = AccessLinker.generateImpl(HandleKindI.class);
     }
 
     public static int kindInvokeVirtual() {

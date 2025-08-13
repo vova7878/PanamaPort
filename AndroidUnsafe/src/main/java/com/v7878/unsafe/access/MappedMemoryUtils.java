@@ -120,6 +120,6 @@ class MappedMemoryUtils {
                 name = "force0", args = {"java.io.FileDescriptor", "long", "long"})
         abstract void force0(FileDescriptor fd, long length, long pageCount);
 
-        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+        static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 }

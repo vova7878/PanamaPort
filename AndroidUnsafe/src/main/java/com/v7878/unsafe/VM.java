@@ -95,7 +95,7 @@ public class VM {
         @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.Class", name = "classSize")
         abstract int classSize(Class<?> instance);
 
-        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+        static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
     public static final int OBJECT_ALIGNMENT_SHIFT = 3;

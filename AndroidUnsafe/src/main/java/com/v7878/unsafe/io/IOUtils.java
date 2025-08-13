@@ -50,7 +50,7 @@ public class IOUtils {
                 name = "<init>", args = {"int"})
         abstract FileDescriptor newFileDescriptor(int value);
 
-        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+        static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
     @SuppressWarnings("SameParameterValue")

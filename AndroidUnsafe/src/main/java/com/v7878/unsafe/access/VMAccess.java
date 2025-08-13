@@ -50,7 +50,7 @@ public class VMAccess {
                 name = "addressOf", args = {"java.lang.Object"})
         abstract long addressOf(Object instance, Object array);
 
-        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+        static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
     private static Object getInstance() {

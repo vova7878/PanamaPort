@@ -277,7 +277,7 @@ public final class FileChannelUtils {
                 name = "size0", args = {"java.io.FileDescriptor"})
         abstract long size0(FileDescriptor fd) throws IOException;
 
-        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+        static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
     private static int truncate0(FileDescriptor fd, long size) throws IOException {

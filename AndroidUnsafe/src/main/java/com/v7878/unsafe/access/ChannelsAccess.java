@@ -82,7 +82,7 @@ public class ChannelsAccess {
         @ClassAccess(kind = CHECK_CAST, klass = "sun.nio.ch.FileChannelImpl")
         abstract void checkFileChannelImpl(FileChannel instance);
 
-        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+        static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
     public static void ensureOpen(FileChannel channel) throws IOException {
