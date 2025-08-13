@@ -15,17 +15,15 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
-import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
-import static com.v7878.unsafe.AndroidUnsafe.putObject;
 import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
-import static com.v7878.unsafe.Reflection.getHiddenMethod;
-import static com.v7878.unsafe.Reflection.unreflect;
-import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.INTERFACE;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
+import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
 
 import com.v7878.dex.DexIO;
 import com.v7878.dex.builder.ClassBuilder;
@@ -36,6 +34,7 @@ import com.v7878.dex.immutable.MethodId;
 import com.v7878.dex.immutable.TypeId;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.ApiSensitive;
 import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.DangerLevel;
@@ -43,11 +42,11 @@ import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.VM;
+import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
+import com.v7878.unsafe.access.AccessLinker.FieldAccess;
 import com.v7878.unsafe.access.DirectSegmentByteBuffer.SegmentMemoryRef;
 
 import java.io.FileDescriptor;
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Method;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -74,6 +73,16 @@ public class JavaNioAccess {
     //  sun.nio.ch.DatagramChannelImpl
     //  sun.nio.ch.SinkChannelImpl
     //  sun.nio.ch.SourceChannelImpl
+
+    // TODO: fix raw DirectBuffer.address() calls in
+    //  java.util.zip.Adler32
+    //  java.util.zip.CRC32
+    //  java.util.zip.CRC32C
+    //  sun.nio.ch.IOUtil
+    //  sun.nio.ch.Util
+    //  sun.nio.fs.LinuxUserDefinedFileAttributeView
+
+    // TODO: WTF is StringCharBuffer?
 
     // SegmentByteBuffers should not appear in JavaNioAccess as it breaks class loading order
     @DoNotOptimize
@@ -141,12 +150,26 @@ public class JavaNioAccess {
         void unmap();
     }
 
-    private static final MethodHandle attachment;
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class AccessI {
+        @ExecutableAccess(kind = INTERFACE, klass = "sun.nio.ch.DirectBuffer", name = "attachment", args = {})
+        abstract Object attachment(Buffer instance);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.nio.MappedByteBuffer", name = "fd")
+        abstract FileDescriptor fd(MappedByteBuffer instance);
+
+        @FieldAccess(kind = INSTANCE_SETTER, klass = "java.nio.MappedByteBuffer", name = "fd")
+        abstract void fd(MappedByteBuffer instance, FileDescriptor value);
+
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.nio.Buffer", name = "address")
+        abstract long address(Buffer instance);
+
+        public static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+    }
 
     // TODO: simpify
     static {
-        Method attachment_method;
-
         String nio_direct_buf_name = "java.nio.DirectByteBuffer";
         TypeId nio_direct_buf_id = TypeId.ofName(nio_direct_buf_name);
         String nio_mem_ref_name = "java.nio.DirectByteBuffer$MemoryRef";
@@ -159,32 +182,11 @@ public class JavaNioAccess {
 
         Class<?> nio_direct_buf_class = ClassUtils.sysClass(nio_direct_buf_name);
         ClassUtils.openClass(nio_direct_buf_class);
-        attachment_method = getHiddenMethod(nio_direct_buf_class, "attachment");
-        attachment = unreflect(attachment_method);
 
         Class<?> nio_heap_buf_class = ClassUtils.sysClass(nio_heap_buf_name);
         ClassUtils.openClass(nio_heap_buf_class);
 
         for (Class<?> clazz = MappedByteBuffer.class;
-             clazz != null && clazz != Object.class;
-             clazz = clazz.getSuperclass()) {
-            ClassUtils.openClass(clazz);
-        }
-
-        String nio_file_channel_name = "sun.nio.ch.SimpleAsynchronousFileChannelImpl";
-        TypeId nio_file_channel_id = TypeId.ofName(nio_file_channel_name);
-        String nio_socket_channel_name = "sun.nio.ch.UnixAsynchronousSocketChannelImpl";
-        TypeId nio_socket_channel_id = TypeId.ofName(nio_socket_channel_name);
-
-        Class<?> nio_file_channel_class = ClassUtils.sysClass(nio_file_channel_name);
-        for (Class<?> clazz = nio_file_channel_class;
-             clazz != null && clazz != Object.class;
-             clazz = clazz.getSuperclass()) {
-            ClassUtils.openClass(clazz);
-        }
-
-        Class<?> nio_socket_channel_class = ClassUtils.sysClass(nio_socket_channel_name);
-        for (Class<?> clazz = nio_socket_channel_class;
              clazz != null && clazz != Object.class;
              clazz = clazz.getSuperclass()) {
             ClassUtils.openClass(clazz);
@@ -262,7 +264,8 @@ public class JavaNioAccess {
                         .withParameters()
                         .withCode(1, ib -> ib
                                 .generate_lines()
-                                .invoke(SUPER, MethodId.of(attachment_method), ib.this_())
+                                .invoke(SUPER, MethodId.of(nio_direct_buf_id,
+                                        "attachment", TypeId.OBJECT), ib.this_())
                                 .move_result_object(ib.l(0))
                                 .check_cast(ib.l(0), mem_ref_id)
                                 .return_object(ib.l(0))
@@ -290,6 +293,25 @@ public class JavaNioAccess {
                         )
                 )
         );
+
+        String nio_file_channel_name = "sun.nio.ch.SimpleAsynchronousFileChannelImpl";
+        TypeId nio_file_channel_id = TypeId.ofName(nio_file_channel_name);
+        String nio_socket_channel_name = "sun.nio.ch.UnixAsynchronousSocketChannelImpl";
+        TypeId nio_socket_channel_id = TypeId.ofName(nio_socket_channel_name);
+
+        Class<?> nio_file_channel_class = ClassUtils.sysClass(nio_file_channel_name);
+        for (Class<?> clazz = nio_file_channel_class;
+             clazz != null && clazz != Object.class;
+             clazz = clazz.getSuperclass()) {
+            ClassUtils.openClass(clazz);
+        }
+
+        Class<?> nio_socket_channel_class = ClassUtils.sysClass(nio_socket_channel_name);
+        for (Class<?> clazz = nio_socket_channel_class;
+             clazz != null && clazz != Object.class;
+             clazz = clazz.getSuperclass()) {
+            ClassUtils.openClass(clazz);
+        }
 
         String file_channel_name = "com.v7878.unsafe.AsynchronousFileChannelBase";
         TypeId file_channel_id = TypeId.ofName(file_channel_name);
@@ -379,7 +401,7 @@ public class JavaNioAccess {
         return Helper.getBufferScope(buffer);
     }
 
-    public static FineClosable lockScope(ByteBuffer bb, boolean async) {
+    public static FineClosable lockScope(Buffer bb, boolean async) {
         var scope = getBufferScope(bb);
         if (async && scope != null && JavaForeignAccess.isThreadConfined(scope)) {
             throw new IllegalArgumentException("Buffer is thread confined");
@@ -387,20 +409,20 @@ public class JavaNioAccess {
         return JavaForeignAccess.lock(scope);
     }
 
-    public static void checkAsyncScope(ByteBuffer bb) {
+    public static void checkAsyncScope(Buffer bb) {
         var scope = getBufferScope(bb);
         if (scope != null && JavaForeignAccess.isThreadConfined(scope)) {
             throw new IllegalArgumentException("Buffer is thread confined");
         }
     }
 
-    public static void checkAsyncScope(ByteBuffer[] buffers) {
+    public static void checkAsyncScope(Buffer[] buffers) {
         for (var bb : buffers) {
             checkAsyncScope(bb);
         }
     }
 
-    public static FineClosable lockScopes(ByteBuffer[] buffers, boolean async) {
+    public static FineClosable lockScopes(Buffer[] buffers, boolean async) {
         FineClosable releaser = FineClosable.NOP;
         for (var bb : buffers) {
             releaser = Utils.linkClosables(lockScope(bb, async), releaser);
@@ -408,7 +430,7 @@ public class JavaNioAccess {
         return releaser;
     }
 
-    public static FineClosable lockScopes(ByteBuffer buf, ByteBuffer[] buffers, boolean async) {
+    public static FineClosable lockScopes(Buffer buf, Buffer[] buffers, boolean async) {
         if (buffers == null) {
             assert buf != null;
 
@@ -440,12 +462,7 @@ public class JavaNioAccess {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     private static long getBufferAddress(Buffer buffer) {
-        // TODO: move to AccessI
-        class Holder {
-            static final long OFFSET = Reflection.instanceFieldOffset(
-                    Buffer.class, "address");
-        }
-        return getLongO(buffer, Holder.OFFSET);
+        return AccessI.INSTANCE.address(buffer);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -518,18 +535,14 @@ public class JavaNioAccess {
         return offset + getBufferOffset(buffer);
     }
 
-    // TODO: move to AccessI
-    private static final long FD_OFFSET = Reflection.
-            instanceFieldOffset(MappedByteBuffer.class, "fd");
-
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static FileDescriptor getBufferFD(MappedByteBuffer buffer) {
-        return (FileDescriptor) getObject(Objects.requireNonNull(buffer), FD_OFFSET);
+        return AccessI.INSTANCE.fd(buffer);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void putBufferFD(MappedByteBuffer buffer, FileDescriptor fd) {
-        putObject(Objects.requireNonNull(buffer), FD_OFFSET, fd);
+        AccessI.INSTANCE.fd(buffer, fd);
     }
 
     public static UnmapperProxy unmapper(Buffer buffer) {
@@ -563,7 +576,7 @@ public class JavaNioAccess {
             throw new IllegalArgumentException("buffer is not direct");
         }
         var tmp = isBufferView(buffer) ? getDerivedBuffer(buffer) : buffer;
-        return nothrows_run(() -> attachment.invoke(tmp));
+        return AccessI.INSTANCE.attachment(tmp);
     }
 
     public static void force(FileDescriptor fd, long address, long offset, long length) {
