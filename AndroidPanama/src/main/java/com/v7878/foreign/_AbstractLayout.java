@@ -31,9 +31,9 @@ package com.v7878.foreign;
 import android.annotation.SuppressLint;
 
 import com.v7878.foreign.MemoryLayout.PathElement;
+import com.v7878.invoke.Handles;
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
-import com.v7878.unsafe.invoke.MethodHandlesFixes;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -168,7 +168,7 @@ abstract sealed class _AbstractLayout<L extends _AbstractLayout<L> & MemoryLayou
                     MethodType.methodType(long.class, long.class, long.class));
 
         }
-        return MethodHandlesFixes.bindTo(Holder.MH_SCALE, this);
+        return Handles.bindTo(Holder.MH_SCALE, this);
     }
 
 

@@ -4,6 +4,7 @@ import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.invoke.VarHandleImpl.accessType;
 
+import com.v7878.invoke.Handles;
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandle.AccessMode;
 import com.v7878.r8.annotations.AlwaysInline;
@@ -53,6 +54,7 @@ public final class VarHandlesImpl {
     }
 
     @AlwaysInline
+    @SuppressWarnings("SameParameterValue")
     private static int assert_same(int a, int b, String message) {
         if (a == b) {
             return a;
@@ -98,14 +100,14 @@ public final class VarHandlesImpl {
                     int lastParameterPos = modeHandle.type().parameterCount() - 1;
                     switch (accessType(mode)) {
                         case GET, GET_ATOMIC -> {
-                            return MethodHandlesFixes.collectReturnValue(modeHandle, filterFromTarget);
+                            return Handles.collectReturnValue(modeHandle, filterFromTarget);
                         }
                         case SET, SET_ATOMIC -> {
-                            return MethodHandlesFixes.collectArguments(modeHandle, lastParameterPos, filterToTarget);
+                            return Handles.collectArguments(modeHandle, lastParameterPos, filterToTarget);
                         }
                         case GET_AND_UPDATE, GET_AND_UPDATE_BITWISE, GET_AND_UPDATE_NUMERIC -> {
-                            MethodHandle adapter = MethodHandlesFixes.collectReturnValue(modeHandle, filterFromTarget);
-                            MethodHandle res = MethodHandlesFixes.collectArguments(adapter, lastParameterPos, filterToTarget);
+                            MethodHandle adapter = Handles.collectReturnValue(modeHandle, filterFromTarget);
+                            MethodHandle res = Handles.collectArguments(adapter, lastParameterPos, filterToTarget);
                             if (additional_args != 0) {
                                 res = joinDuplicateArgs(res, lastParameterPos,
                                         lastParameterPos + additional_args + 1, additional_args);
@@ -113,13 +115,13 @@ public final class VarHandlesImpl {
                             return res;
                         }
                         case COMPARE_AND_EXCHANGE -> {
-                            MethodHandle adapter = MethodHandlesFixes.collectReturnValue(modeHandle, filterFromTarget);
-                            adapter = MethodHandlesFixes.collectArguments(adapter, lastParameterPos, filterToTarget);
+                            MethodHandle adapter = Handles.collectReturnValue(modeHandle, filterFromTarget);
+                            adapter = Handles.collectArguments(adapter, lastParameterPos, filterToTarget);
                             if (additional_args != 0) {
                                 adapter = joinDuplicateArgs(adapter, lastParameterPos,
                                         lastParameterPos + additional_args + 1, additional_args);
                             }
-                            MethodHandle res = MethodHandlesFixes.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
+                            MethodHandle res = Handles.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
                             if (additional_args != 0) {
                                 res = joinDuplicateArgs(res, lastParameterPos - 1,
                                         lastParameterPos + additional_args, additional_args);
@@ -127,8 +129,8 @@ public final class VarHandlesImpl {
                             return res;
                         }
                         case COMPARE_AND_SET -> {
-                            MethodHandle adapter = MethodHandlesFixes.collectArguments(modeHandle, lastParameterPos, filterToTarget);
-                            MethodHandle res = MethodHandlesFixes.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
+                            MethodHandle adapter = Handles.collectArguments(modeHandle, lastParameterPos, filterToTarget);
+                            MethodHandle res = Handles.collectArguments(adapter, lastParameterPos - 1, filterToTarget);
                             if (additional_args != 0) {
                                 res = joinDuplicateArgs(res, lastParameterPos - 1,
                                         lastParameterPos + additional_args, additional_args);
@@ -152,7 +154,7 @@ public final class VarHandlesImpl {
         for (int i = dropStart + length; i < perms.length; i++) {
             perms[i] = i - length;
         }
-        return MethodHandlesFixes.permuteArguments(handle,
+        return Handles.permuteArguments(handle,
                 type.dropParameterTypes(dropStart, dropStart + length), perms);
     }
 
@@ -182,7 +184,7 @@ public final class VarHandlesImpl {
         }
 
         return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandlesFixes.filterArguments(modeHandle, pos, filters));
+                (mode, modeHandle) -> Handles.filterArguments(modeHandle, pos, filters));
     }
 
     public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
@@ -203,7 +205,7 @@ public final class VarHandlesImpl {
         newCoordinates.addAll(pos, filter.type().parameterList());
 
         return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandlesFixes.collectArguments(modeHandle, pos, filter));
+                (mode, modeHandle) -> Handles.collectArguments(modeHandle, pos, filter));
     }
 
     public static VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
@@ -232,7 +234,7 @@ public final class VarHandlesImpl {
         }
 
         return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandlesFixes.insertArguments(modeHandle, pos, values));
+                (mode, modeHandle) -> Handles.insertArguments(modeHandle, pos, values));
     }
 
     private static int numTrailingArgs(VarHandleImpl.AccessType at) {
@@ -271,12 +273,12 @@ public final class VarHandlesImpl {
         Objects.requireNonNull(reorder);
 
         List<Class<?>> targetCoordinates = target.coordinateTypes();
-        MethodHandlesFixes.permuteArgumentChecks(reorder,
+        MHUtils.permuteArgumentChecks(reorder,
                 MethodType.methodType(void.class, newCoordinates),
                 MethodType.methodType(void.class, targetCoordinates));
 
         return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandlesFixes.permuteArguments(modeHandle,
+                (mode, modeHandle) -> Handles.permuteArguments(modeHandle,
                         methodTypeFor(accessType(mode), modeHandle.type(), targetCoordinates, newCoordinates),
                         reorderArrayFor(accessType(mode), newCoordinates, reorder)));
     }
@@ -296,7 +298,7 @@ public final class VarHandlesImpl {
         newCoordinates.addAll(pos, List.of(valueTypes));
 
         return newIndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
-                (mode, modeHandle) -> MethodHandlesFixes.dropArguments(modeHandle, pos, valueTypes));
+                (mode, modeHandle) -> Handles.dropArguments(modeHandle, pos, valueTypes));
     }
 
     private static VarHandle newIndirectVarHandle(

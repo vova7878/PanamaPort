@@ -41,6 +41,7 @@ import com.v7878.dex.immutable.FieldId;
 import com.v7878.dex.immutable.MethodId;
 import com.v7878.dex.immutable.ProtoId;
 import com.v7878.dex.immutable.TypeId;
+import com.v7878.invoke.Handles;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.ApiSensitive;
@@ -632,7 +633,7 @@ public class Transformers {
 
     public static void invoke(
             MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        MethodHandle adaptedTarget = MethodHandlesFixes.asType(target, stackFrame.type());
+        MethodHandle adaptedTarget = Handles.asType(target, stackFrame.type());
         invokeExactNoChecks(adaptedTarget, stackFrame);
     }
 }

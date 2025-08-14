@@ -31,12 +31,12 @@ package com.v7878.foreign;
 import static com.v7878.unsafe.misc.Math.ceilDiv;
 import static java.util.stream.Collectors.joining;
 
+import com.v7878.invoke.Handles;
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.Utils;
-import com.v7878.unsafe.invoke.MethodHandlesFixes;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -175,7 +175,7 @@ final class _LayoutPath {
         }
         MemoryLayout derefLayout = addressLayout.targetLayout().get();
         MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
-        handle = MethodHandlesFixes.filterReturnValue(handle, MH_SEGMENT_RESIZE);
+        handle = Handles.filterReturnValue(handle, MH_SEGMENT_RESIZE);
         return derefPath(derefLayout, handle, this);
     }
 
@@ -208,7 +208,7 @@ final class _LayoutPath {
         handle = VarHandles.insertCoordinates(handle, 1, rootLayout());          // (MS, long, long)
         if (strides.length > 0) {
             MethodHandle offsetAdapter = offsetHandle();
-            offsetAdapter = MethodHandlesFixes.insertArguments(offsetAdapter, 0, 0L);
+            offsetAdapter = Handles.insertArguments(offsetAdapter, 0, 0L);
             handle = VarHandles.collectCoordinates(handle, 2, offsetAdapter);    // (MS, long)
         } else {
             // simpler adaptation
@@ -225,7 +225,7 @@ final class _LayoutPath {
                 // the first/outermost adapter will have a base offset coordinate, the rest are constant 0
                 if (i > 1) {
                     // plug in a constant 0 base offset for all but the outermost access in a deref chain
-                    adapter = MethodHandlesFixes.insertArguments(adapter, 1, 0);
+                    adapter = Handles.insertArguments(adapter, 1, 0);
                 }
                 handle = VarHandles.collectCoordinates(handle, 0, adapter);
             }
@@ -246,16 +246,16 @@ final class _LayoutPath {
     public MethodHandle offsetHandle() {
         MethodHandle mh = MH_ADD_EXACT;
         for (int i = strides.length - 1; i >= 0; i--) {
-            MethodHandle collector = MethodHandlesFixes.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i], bounds[i]);
+            MethodHandle collector = Handles.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i], bounds[i]);
             // (J, J, ...) -> J to (J, J, J, ...) -> J
             // 1. the leading argument is the base offset (externally provided).
             // 2. index arguments are added. The last index correspond to the innermost layout.
             // 3. overflow can only occur at the outermost layer, due to the final addition with the base offset.
             // This is because the layout API ensures (by construction) that all offsets generated from layout paths
             // are always < Long.MAX_VALUE.
-            mh = MethodHandlesFixes.collectArguments(mh, 1, collector);
+            mh = Handles.collectArguments(mh, 1, collector);
         }
-        return MethodHandlesFixes.insertArguments(mh, 1, offset);
+        return Handles.insertArguments(mh, 1, offset);
     }
 
     private MemoryLayout rootLayout() {
@@ -267,20 +267,20 @@ final class _LayoutPath {
         if (enclosing != null) {
             // drop the alignment check for the accessed element, we check the root layout instead
             sliceHandle = MH_SLICE; // (MS, long, long) -> MS
-            sliceHandle = MethodHandlesFixes.insertArguments(sliceHandle, 2, layout.byteSize()); // (MS, long) -> MS
+            sliceHandle = Handles.insertArguments(sliceHandle, 2, layout.byteSize()); // (MS, long) -> MS
         } else {
             sliceHandle = MH_SLICE_LAYOUT; // (MS, long, MemoryLayout) -> MS
-            sliceHandle = MethodHandlesFixes.insertArguments(sliceHandle, 2, layout); // (MS, long) -> MS
+            sliceHandle = Handles.insertArguments(sliceHandle, 2, layout); // (MS, long) -> MS
         }
-        sliceHandle = MethodHandlesFixes.collectArguments(sliceHandle, 1, offsetHandle()); // (MS, long, ...) -> MS
+        sliceHandle = Handles.collectArguments(sliceHandle, 1, offsetHandle()); // (MS, long, ...) -> MS
 
         if (enclosing != null) {
             // insert align check for the root layout on the initial MS + offset
             MethodType oldType = sliceHandle.type();
-            MethodHandle alignCheck = MethodHandlesFixes.insertArguments(MH_CHECK_ENCL_LAYOUT, 2, rootLayout());
-            sliceHandle = MethodHandlesFixes.collectArguments(sliceHandle, 0, alignCheck); // (MS, long, MS, long) -> MS
+            MethodHandle alignCheck = Handles.insertArguments(MH_CHECK_ENCL_LAYOUT, 2, rootLayout());
+            sliceHandle = Handles.collectArguments(sliceHandle, 0, alignCheck); // (MS, long, MS, long) -> MS
             int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, oldType.parameterCount())).toArray();
-            sliceHandle = MethodHandlesFixes.permuteArguments(sliceHandle, oldType, reorder); // (MS, long, ...) -> MS
+            sliceHandle = Handles.permuteArguments(sliceHandle, oldType, reorder); // (MS, long, ...) -> MS
         }
 
         return sliceHandle;

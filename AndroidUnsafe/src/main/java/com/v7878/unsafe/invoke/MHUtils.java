@@ -11,9 +11,7 @@ import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
 import static com.v7878.unsafe.invoke.Transformers.invokeExactNoChecks;
 import static com.v7878.unsafe.invoke.Transformers.makeTransformer;
 
-import android.annotation.TargetApi;
-import android.os.Build;
-
+import com.v7878.invoke.Handles;
 import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.access.InvokeAccess;
 import com.v7878.unsafe.invoke.EmulatedStackFrame.RelativeStackFrameAccessor;
@@ -21,14 +19,13 @@ import com.v7878.unsafe.invoke.EmulatedStackFrame.StackFrameAccessor;
 import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
 import java.util.Arrays;
 import java.util.Objects;
 
 //TODO: use codegen to improve performance
-public class MethodHandlesFixes {
+class MHUtils {
     private static class CollectArguments extends AbstractTransformer {
         private final MethodHandle target;
         private final MethodHandle collector;
@@ -100,7 +97,7 @@ public class MethodHandlesFixes {
         return targetType.dropParameterTypes(pos, pos + 1).insertParameterTypes(pos, filterArgs);
     }
 
-    static class Identity extends AbstractTransformer {
+    private static class Identity extends AbstractTransformer {
         Identity() {
         }
 
@@ -117,7 +114,27 @@ public class MethodHandlesFixes {
         return makeTransformer(MethodType.methodType(type, type), new Identity());
     }
 
-    static class Invoker extends AbstractTransformer {
+    private static class Empty extends AbstractTransformer {
+        Empty() {
+        }
+
+        @Override
+        public void transform(MethodHandle ignored, EmulatedStackFrame stack) {
+            // nop
+        }
+    }
+
+    public static MethodHandle empty(MethodType type) {
+        Objects.requireNonNull(type);
+        return makeTransformer(type, new Empty());
+    }
+
+    public static MethodHandle zero(Class<?> type) {
+        Objects.requireNonNull(type);
+        return empty(MethodType.methodType(type));
+    }
+
+    private static class Invoker extends AbstractTransformer {
         private final MethodType targetType;
         private final boolean isExactInvoker;
         private final int args_count;
@@ -161,7 +178,7 @@ public class MethodHandlesFixes {
         return Transformers.makeTransformer(transformer_type, new Invoker(type, true));
     }
 
-    static class ExplicitCastArguments extends AbstractTransformer {
+    private static class ExplicitCastArguments extends AbstractTransformer {
         private final MethodHandle target;
         private final MethodType type;
 
@@ -541,7 +558,7 @@ public class MethodHandlesFixes {
         return Transformers.makeTransformer(newType, new ExplicitCastArguments(target, newType));
     }
 
-    static class PermuteArguments extends AbstractTransformer {
+    private static class PermuteArguments extends AbstractTransformer {
         private final MethodHandle target;
         private final int[] reorder;
 
@@ -596,7 +613,7 @@ public class MethodHandlesFixes {
         return Transformers.makeTransformer(newType, new PermuteArguments(target, reorder));
     }
 
-    static MethodType reorderArgumentChecks(int[] reorder, MethodType type) {
+    private static MethodType reorderArgumentChecks(int[] reorder, MethodType type) {
         int limit;
         if ((limit = reorder.length) != type.parameterCount())
             throw newIllegalArgumentException("type parameter count and reorder array length do not match",
@@ -622,7 +639,7 @@ public class MethodHandlesFixes {
         return Transformers.makeTransformer(newType, new PermuteArguments(target, reorder));
     }
 
-    static class AsTypeAdapter extends AbstractTransformer {
+    private static class AsTypeAdapter extends AbstractTransformer {
         private final MethodHandle target;
         private final MethodType type;
 
@@ -890,46 +907,6 @@ public class MethodHandlesFixes {
         return handle;
     }
 
-    public static MethodHandle insertArguments(MethodHandle target, int pos, Object... values) {
-        return MethodHandles.insertArguments(target, pos, values);
-    }
-
-    public static MethodHandle dropArguments(MethodHandle target, int pos, Class<?>... valueTypes) {
-        return MethodHandles.dropArguments(target, pos, valueTypes);
-    }
-
-    public static MethodHandle filterArguments(MethodHandle target, int pos, MethodHandle... filters) {
-        return MethodHandles.filterArguments(target, pos, filters);
-    }
-
-    public static MethodHandle filterReturnValue(MethodHandle target, MethodHandle filter) {
-        return MethodHandles.filterReturnValue(target, filter);
-    }
-
-    public static MethodHandle bindTo(MethodHandle target, Object value) {
-        return target.bindTo(value);
-    }
-
-    public static MethodHandle asCollector(MethodHandle target, Class<?> arrayType, int arrayLength) {
-        return target.asCollector(arrayType, arrayLength);
-    }
-
-    @TargetApi(Build.VERSION_CODES.TIRAMISU)
-    public static MethodHandle asCollector(MethodHandle target, int collectArgPos, Class<?> arrayType, int arrayLength) {
-        // TODO: backport
-        return target.asCollector(collectArgPos, arrayType, arrayLength);
-    }
-
-    public static MethodHandle asSpreader(MethodHandle target, Class<?> arrayType, int arrayLength) {
-        return target.asSpreader(arrayType, arrayLength);
-    }
-
-    @TargetApi(Build.VERSION_CODES.TIRAMISU)
-    public static MethodHandle asSpreader(MethodHandle target, int spreadArgPos, Class<?> arrayType, int arrayLength) {
-        // TODO: backport
-        return target.asSpreader(spreadArgPos, arrayType, arrayLength);
-    }
-
     private static class CollectReturnValue extends AbstractTransformer {
         private final MethodHandle target;
         private final MethodHandle collector;
@@ -1011,7 +988,7 @@ public class MethodHandlesFixes {
         int value = target.type().returnType() == void.class ? 0 : 1;
         int parameters = filterType.parameterCount() - value;
         if (parameters == 0) {
-            return MethodHandlesFixes.filterReturnValue(target, filter);
+            return Handles.filterReturnValue(target, filter);
         }
         collectReturnValueChecks(targetType, filterType);
         MethodType newType = targetType.changeReturnType(filterType.returnType());

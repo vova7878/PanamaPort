@@ -1,5 +1,6 @@
 package com.v7878.unsafe.invoke;
 
+import com.v7878.invoke.Handles;
 import com.v7878.invoke.VarHandle;
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.unsafe.invoke.Transformers.AbstractTransformer;
@@ -522,7 +523,7 @@ public class VarHandleImpl extends VarHandle {
     @AlwaysInline
     private MethodHandle getGenericHandleUncached(int index) {
         var type = accessModeType(ALL_MODES[index]);
-        return MethodHandlesFixes.asType(modeMHTable[index], type.generic());
+        return Handles.asType(modeMHTable[index], type.generic());
     }
 
     @AlwaysInline

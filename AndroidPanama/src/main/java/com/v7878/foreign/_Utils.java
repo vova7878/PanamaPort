@@ -45,12 +45,12 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.toHexString;
 
+import com.v7878.invoke.Handles;
 import com.v7878.invoke.VarHandle;
 import com.v7878.invoke.VarHandles;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.NoSideEffects;
-import com.v7878.unsafe.invoke.MethodHandlesFixes;
 import com.v7878.unsafe.invoke.Wrapper;
 
 import java.lang.invoke.MethodHandle;
@@ -162,7 +162,7 @@ final class _Utils {
 
         if (layout instanceof AddressLayout addressLayout) {
             MethodHandle longToAddressAdapter = addressLayout.targetLayout().isPresent() ?
-                    MethodHandlesFixes.insertArguments(MAKE_SEGMENT_TARGET, 1, addressLayout) :
+                    Handles.insertArguments(MAKE_SEGMENT_TARGET, 1, addressLayout) :
                     MAKE_SEGMENT_NO_TARGET;
             handle = VarHandles.filterValue(handle, UNBOX_SEGMENT, longToAddressAdapter);
         }

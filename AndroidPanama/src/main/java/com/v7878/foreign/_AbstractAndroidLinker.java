@@ -8,11 +8,11 @@ import static com.v7878.foreign.ValueLayout.JAVA_FLOAT;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT;
 
+import com.v7878.invoke.Handles;
 import com.v7878.unsafe.Utils.SoftReferenceCache;
 import com.v7878.unsafe.access.InvokeAccess;
 import com.v7878.unsafe.cpp_std.CLayouts;
 import com.v7878.unsafe.foreign.RawNativeLibraries;
-import com.v7878.unsafe.invoke.MethodHandlesFixes;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -40,7 +40,7 @@ sealed abstract class _AbstractAndroidLinker implements Linker permits _AndroidL
     @Override
     public final MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
         _Utils.checkSymbol(symbol);
-        return MethodHandlesFixes.bindTo(downcallHandle(function, options), symbol);
+        return Handles.bindTo(downcallHandle(function, options), symbol);
     }
 
     @Override

@@ -148,6 +148,43 @@ public class MethodTypeHacks {
         }
     }
 
+    private static MethodTypeForm0 newForm(MethodType type, Object old_form) {
+        Class<?>[] ptypes = InvokeAccess.ptypes(type);
+        Class<?> rtype = InvokeAccess.rtype(type);
+        int[] primitivesOffsets = new int[ptypes.length + 2];
+        int[] referencesOffsets = new int[ptypes.length + 2];
+        StringBuilder rshorty = new StringBuilder(ptypes.length + 1);
+
+        int i = 0;
+        int frameOffset = 0;
+        int referenceOffset = 0;
+
+        for (; i < ptypes.length; i++) {
+            Class<?> ptype = ptypes[i];
+            if (ptype.isPrimitive()) {
+                frameOffset += getSize(ptype);
+            } else {
+                referenceOffset++;
+            }
+            primitivesOffsets[i + 1] = frameOffset;
+            referencesOffsets[i + 1] = referenceOffset;
+            rshorty.append(Wrapper.basicTypeChar(ptype));
+        }
+
+        if (rtype.isPrimitive()) {
+            frameOffset += getSize(rtype);
+        } else {
+            referenceOffset++;
+        }
+        primitivesOffsets[i + 1] = frameOffset;
+        referencesOffsets[i + 1] = referenceOffset;
+        rshorty.append(Wrapper.basicTypeChar(rtype));
+
+        var new_form = allocateInstance(FORM_IMPL);
+        new_form.init(old_form, primitivesOffsets, referencesOffsets, rshorty.toString());
+        return new_form;
+    }
+
     private static MethodTypeForm0 getForm0(MethodType type) {
         class Holder {
             static final long FORM_OFFSET = Reflection.
@@ -165,40 +202,7 @@ public class MethodTypeHacks {
         if (type != erased) {
             new_form = getForm0(erased);
         } else {
-            new_form = allocateInstance(FORM_IMPL);
-
-            Class<?>[] ptypes = InvokeAccess.ptypes(type);
-            Class<?> rtype = InvokeAccess.rtype(type);
-            int[] primitivesOffsets = new int[ptypes.length + 2];
-            int[] referencesOffsets = new int[ptypes.length + 2];
-            StringBuilder rshorty = new StringBuilder(ptypes.length + 1);
-
-            int i = 0;
-            int frameOffset = 0;
-            int referenceOffset = 0;
-
-            for (; i < ptypes.length; i++) {
-                Class<?> ptype = ptypes[i];
-                if (ptype.isPrimitive()) {
-                    frameOffset += getSize(ptype);
-                } else {
-                    referenceOffset++;
-                }
-                primitivesOffsets[i + 1] = frameOffset;
-                referencesOffsets[i + 1] = referenceOffset;
-                rshorty.append(Wrapper.basicTypeChar(ptype));
-            }
-
-            if (rtype.isPrimitive()) {
-                frameOffset += getSize(rtype);
-            } else {
-                referenceOffset++;
-            }
-            primitivesOffsets[i + 1] = frameOffset;
-            referencesOffsets[i + 1] = referenceOffset;
-            rshorty.append(Wrapper.basicTypeChar(rtype));
-
-            new_form.init(old_form, primitivesOffsets, referencesOffsets, rshorty.toString());
+            new_form = newForm(type, old_form);
         }
 
         AndroidUnsafe.putObject(type, Holder.FORM_OFFSET, new_form);
