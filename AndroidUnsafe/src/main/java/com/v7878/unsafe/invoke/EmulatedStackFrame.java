@@ -10,7 +10,6 @@ import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
 import static com.v7878.unsafe.Reflection.getHiddenInstanceFields;
-import static com.v7878.unsafe.Utils.dcheck;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
@@ -215,20 +214,17 @@ public final class EmulatedStackFrame {
         return new RelativeStackFrameAccessor(this);
     }
 
-    @AlwaysInline
-    private static int assertEq(int a, int b) {
-        dcheck(a == b, AssertionError::new);
-        return a;
-    }
-
     @DangerLevel(DangerLevel.VERY_CAREFUL)
-    // TODO: simplify
     public static void copyArguments(StackFrameAccessor reader, int reader_start_idx,
                                      StackFrameAccessor writer, int writer_start_idx, int count) {
-        Objects.checkFromIndexSize(reader_start_idx, count, reader.argCount);
-        Objects.checkFromIndexSize(writer_start_idx, count, writer.argCount);
+        Objects.checkFromIndexSize(reader_start_idx, count, reader.getArgCount());
+        Objects.checkFromIndexSize(writer_start_idx, count, writer.getArgCount());
 
         if (count == 0) return;
+
+        // debug check of subshorty
+        assert reader.rshorty.substring(reader_start_idx, reader_start_idx + count).equals(
+                writer.rshorty.substring(writer_start_idx, writer_start_idx + count));
 
         int reader_frame_start = reader.primitivesOffsets[reader_start_idx];
         int reader_ref_start = reader.referencesOffsets[reader_start_idx];
@@ -236,10 +232,8 @@ public final class EmulatedStackFrame {
         int writer_frame_start = writer.primitivesOffsets[writer_start_idx];
         int writer_ref_start = writer.referencesOffsets[writer_start_idx];
 
-        int frame_count = assertEq(reader.primitivesOffsets[reader_start_idx + count] - reader_frame_start,
-                writer.primitivesOffsets[writer_start_idx + count] - writer_frame_start);
-        int ref_count = assertEq(reader.referencesOffsets[reader_start_idx + count] - reader_ref_start,
-                writer.referencesOffsets[writer_start_idx + count] - writer_ref_start);
+        int frame_count = reader.primitivesOffsets[reader_start_idx + count] - reader_frame_start;
+        int ref_count = reader.referencesOffsets[reader_start_idx + count] - reader_ref_start;
 
         System.arraycopy(reader.primitives, reader_frame_start,
                 writer.primitives, writer_frame_start, frame_count);
@@ -305,6 +299,11 @@ public final class EmulatedStackFrame {
         @AlwaysInline
         public EmulatedStackFrame frame() {
             return frame;
+        }
+
+        @AlwaysInline
+        public int getArgCount() {
+            return argCount;
         }
 
         @AlwaysInline
