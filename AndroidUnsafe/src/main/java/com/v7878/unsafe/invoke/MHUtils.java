@@ -1251,8 +1251,8 @@ class MHUtils {
         var componentType = arrayType.getComponentType();
         MethodType needType = partType.insertParameterTypes(spreadArgPos,
                 Collections.nCopies(arrayLength, componentType));
-        target = Handles.asType(target, adapterType);
-        return Transformers.makeTransformer(needType, new Spreader(target,
+        target = Handles.asType(target, needType);
+        return Transformers.makeTransformer(adapterType, new Spreader(target,
                 componentType, spreadArgPos, arrayLength));
     }
 
