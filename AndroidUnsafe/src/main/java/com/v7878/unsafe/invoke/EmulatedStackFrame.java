@@ -244,6 +244,7 @@ public final class EmulatedStackFrame {
     public static void copyNextValue(RelativeStackFrameAccessor reader,
                                      RelativeStackFrameAccessor writer) {
         switch (checkAssignable(reader.currentShorty(), writer.currentShorty())) {
+            case 'V' -> { /* nop */ }
             case 'L' -> writer.putNextRSLOT(reader.getNextRSLOT());
             case 'Z', 'B', 'C', 'S', 'I', 'F' -> writer.putNextSSLOT(reader.getNextSSLOT());
             case 'J', 'D' -> writer.putNextDSLOT(reader.getNextDSLOT());
