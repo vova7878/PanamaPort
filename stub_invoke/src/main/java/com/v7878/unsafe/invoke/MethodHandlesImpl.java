@@ -170,7 +170,6 @@ public class MethodHandlesImpl {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asSpreader(MethodHandle handle, int spreadArgPos, Class<?> arrayType, int arrayLength) {
         throw new UnsupportedOperationException("Stub!");
     }

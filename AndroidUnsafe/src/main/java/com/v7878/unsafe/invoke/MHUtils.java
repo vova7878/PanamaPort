@@ -1010,12 +1010,14 @@ class MHUtils {
         private final int arrayOffset;
         private final int arrayLength;
         private final Class<?> componentType;
+        private final char shorty;
 
-        Collector(MethodHandle delegate, Class<?> arrayType, int start, int length) {
+        Collector(MethodHandle delegate, Class<?> componentType, int start, int length) {
             this.target = delegate;
             this.arrayOffset = start;
             this.arrayLength = length;
-            this.componentType = arrayType.getComponentType();
+            this.componentType = componentType;
+            this.shorty = Wrapper.basicTypeChar(componentType);
         }
 
         @Override
@@ -1034,7 +1036,7 @@ class MHUtils {
                     target_accessor, arrayOffset + 1,
                     caller_accessor.getArgCount() - (arrayOffset + arrayLength));
 
-            switch (Wrapper.basicTypeChar(componentType)) {
+            switch (shorty) {
                 case 'Z' -> {
                     boolean[] array = new boolean[arrayLength];
                     for (int i = 0; i < arrayLength; ++i) {
@@ -1098,6 +1100,7 @@ class MHUtils {
                     }
                     target_accessor.setReference(arrayOffset, array);
                 }
+                default -> shouldNotReachHere();
             }
 
             Transformers.invokeExactNoChecks(target, targetFrame);
@@ -1105,11 +1108,13 @@ class MHUtils {
         }
     }
 
-    public static MethodHandle asCollector(MethodHandle target, int collectArgPos, Class<?> arrayType, int arrayLength) {
+    public static MethodHandle asCollector(MethodHandle target, int collectArgPos,
+                                           Class<?> arrayType, int arrayLength) {
         asCollectorChecks(target.type(), arrayType, collectArgPos, arrayLength);
         var type = target.type().dropParameterTypes(collectArgPos, 1);
         type = type.insertParameterTypes(collectArgPos, Collections.nCopies(arrayLength, arrayType));
-        return Transformers.makeTransformer(type, new Collector(target, arrayType, collectArgPos, arrayLength));
+        return Transformers.makeTransformer(type, new Collector(target,
+                arrayType.getComponentType(), collectArgPos, arrayLength));
     }
 
     private static void spreadArrayChecks(Class<?> arrayType, int arrayLength) {
@@ -1126,15 +1131,139 @@ class MHUtils {
         }
     }
 
-    private static boolean asCollectorChecks(MethodType targetType, Class<?> arrayType, int pos, int arrayLength) {
+    private static void asCollectorChecks(MethodType targetType, Class<?> arrayType, int pos, int arrayLength) {
         spreadArrayChecks(arrayType, arrayLength);
-        int nargs = targetType.parameterCount();
-        if (pos < 0 || pos >= nargs) {
+        if (pos < 0 || pos >= targetType.parameterCount()) {
             throw newIllegalArgumentException("bad collect position");
         }
         Class<?> param = targetType.parameterType(pos);
-        if (param == arrayType) return true;
-        if (param.isAssignableFrom(arrayType)) return false;
+        if (param == arrayType || param.isAssignableFrom(arrayType)) return;
         throw newIllegalArgumentException("array type not assignable to argument", targetType, arrayType);
+    }
+
+    private static class Spreader extends AbstractTransformer {
+        private final MethodHandle target;
+        private final int arrayOffset;
+        private final int arrayLength;
+        private final char shorty;
+
+        Spreader(MethodHandle target, Class<?> componentType, int start, int length) {
+            this.target = target;
+            this.arrayOffset = start;
+            this.arrayLength = length;
+            this.shorty = Wrapper.basicTypeChar(componentType);
+        }
+
+        @Override
+        public void transform(MethodHandle thiz, EmulatedStackFrame callerFrame) throws Throwable {
+            StackFrameAccessor caller_accessor = callerFrame.accessor();
+
+            Object raw_array = caller_accessor.getReference(arrayOffset);
+            // The incoming array may be null if the expected number of array arguments is zero
+            int raw_length = (arrayLength == 0 && raw_array == null) ? 0 : Array.getLength(raw_array);
+            if (raw_length != arrayLength) {
+                throw new IllegalArgumentException("Invalid array length " +
+                        raw_length + " expected " + arrayLength);
+            }
+
+            // Create a new stack frame for the callee
+            EmulatedStackFrame targetFrame = EmulatedStackFrame.create(target.type());
+            StackFrameAccessor target_accessor = targetFrame.accessor();
+
+            // Copy arguments before the array
+            EmulatedStackFrame.copyArguments(caller_accessor, 0,
+                    target_accessor, 0, arrayOffset);
+
+            // Copy arguments after the array
+            EmulatedStackFrame.copyArguments(caller_accessor, arrayOffset + 1,
+                    target_accessor, arrayOffset + arrayLength,
+                    target_accessor.getArgCount() - (arrayOffset + arrayLength));
+
+            if (raw_length != 0) {
+                switch (shorty) {
+                    case 'Z' -> {
+                        boolean[] array = (boolean[]) raw_array;
+                        for (int i = 0; i < array.length; ++i) {
+                            target_accessor.setBoolean(arrayOffset + i, array[i]);
+                        }
+                    }
+                    case 'B' -> {
+                        byte[] array = (byte[]) raw_array;
+                        for (int i = 0; i < array.length; ++i) {
+                            target_accessor.setByte(arrayOffset + i, array[i]);
+                        }
+                    }
+                    case 'S' -> {
+                        short[] array = (short[]) raw_array;
+                        for (int i = 0; i < array.length; ++i) {
+                            target_accessor.setShort(arrayOffset + i, array[i]);
+                        }
+                    }
+                    case 'C' -> {
+                        char[] array = (char[]) raw_array;
+                        for (int i = 0; i < array.length; ++i) {
+                            target_accessor.setChar(arrayOffset + i, array[i]);
+                        }
+                    }
+                    case 'I' -> {
+                        int[] array = (int[]) raw_array;
+                        for (int i = 0; i < array.length; ++i) {
+                            target_accessor.setInt(arrayOffset + i, array[i]);
+                        }
+                    }
+                    case 'J' -> {
+                        long[] array = (long[]) raw_array;
+                        for (int i = 0; i < array.length; ++i) {
+                            target_accessor.setLong(arrayOffset + i, array[i]);
+                        }
+                    }
+                    case 'F' -> {
+                        float[] array = (float[]) raw_array;
+                        for (int i = 0; i < array.length; ++i) {
+                            target_accessor.setFloat(arrayOffset + i, array[i]);
+                        }
+                    }
+                    case 'D' -> {
+                        double[] array = (double[]) raw_array;
+                        for (int i = 0; i < array.length; ++i) {
+                            target_accessor.setDouble(arrayOffset + i, array[i]);
+                        }
+                    }
+                    case 'L' -> {
+                        Object[] array = (Object[]) raw_array;
+                        for (int i = 0; i < array.length; ++i) {
+                            target_accessor.setReference(arrayOffset + i, array[i]);
+                        }
+                    }
+                    default -> shouldNotReachHere();
+                }
+            }
+
+            Transformers.invokeExactNoChecks(target, targetFrame);
+            EmulatedStackFrame.copyReturnValue(target_accessor, caller_accessor);
+        }
+    }
+
+    public static MethodHandle asSpreader(MethodHandle target, int spreadArgPos,
+                                          Class<?> arrayType, int arrayLength) {
+        MethodType partType = asSpreaderChecks(target.type(), arrayType, spreadArgPos, arrayLength);
+        MethodType adapterType = partType.insertParameterTypes(spreadArgPos, arrayType);
+        var componentType = arrayType.getComponentType();
+        MethodType needType = partType.insertParameterTypes(spreadArgPos,
+                Collections.nCopies(arrayLength, componentType));
+        target = Handles.asType(target, adapterType);
+        return Transformers.makeTransformer(needType, new Spreader(target,
+                componentType, spreadArgPos, arrayLength));
+    }
+
+    private static MethodType asSpreaderChecks(MethodType targetType, Class<?> arrayType, int pos, int arrayLength) {
+        spreadArrayChecks(arrayType, arrayLength);
+        int nargs = targetType.parameterCount();
+        if (nargs < arrayLength || arrayLength < 0)
+            throw newIllegalArgumentException("bad spread array length");
+        if (pos < 0 || pos + arrayLength > nargs) {
+            throw newIllegalArgumentException("bad spread position");
+        }
+        return targetType.dropParameterTypes(pos, pos + arrayLength);
     }
 }

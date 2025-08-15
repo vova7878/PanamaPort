@@ -199,7 +199,6 @@ public final class Handles {
         return MethodHandlesImpl.asSpreader(handle, arrayType, arrayLength);
     }
 
-    @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asSpreader(MethodHandle handle, int spreadArgPos, Class<?> arrayType, int arrayLength) {
         return MethodHandlesImpl.asSpreader(handle, spreadArgPos, arrayType, arrayLength);
     }

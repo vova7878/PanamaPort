@@ -199,12 +199,11 @@ public class MethodHandlesImpl {
     }
 
     public static MethodHandle asSpreader(MethodHandle handle, Class<?> arrayType, int arrayLength) {
-        return handle.asSpreader(arrayType, arrayLength);
+        return asSpreader(handle, handle.type().parameterCount() - arrayLength, arrayType, arrayLength);
     }
 
-    @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asSpreader(MethodHandle handle, int spreadArgPos, Class<?> arrayType, int arrayLength) {
-        return handle.asSpreader(spreadArgPos, arrayType, arrayLength);
+        return MHUtils.asSpreader(handle, spreadArgPos, arrayType, arrayLength);
     }
 
     public static MethodHandle asCollector(MethodHandle handle, Class<?> arrayType, int arrayLength) {
