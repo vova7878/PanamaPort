@@ -208,12 +208,11 @@ public class MethodHandlesImpl {
     }
 
     public static MethodHandle asCollector(MethodHandle handle, Class<?> arrayType, int arrayLength) {
-        return handle.asCollector(arrayType, arrayLength);
+        return asCollector(handle, handle.type().parameterCount() - 1, arrayType, arrayLength);
     }
 
-    @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asCollector(MethodHandle handle, int collectArgPos, Class<?> arrayType, int arrayLength) {
-        return handle.asCollector(collectArgPos, arrayType, arrayLength);
+        return MHUtils.asCollector(handle, collectArgPos, arrayType, arrayLength);
     }
 
     public static MethodHandle asVarargsCollector(MethodHandle handle, Class<?> arrayType) {

@@ -179,7 +179,6 @@ public class MethodHandlesImpl {
         throw new UnsupportedOperationException("Stub!");
     }
 
-    @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asCollector(MethodHandle handle, int collectArgPos, Class<?> arrayType, int arrayLength) {
         throw new UnsupportedOperationException("Stub!");
     }

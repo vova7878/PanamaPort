@@ -208,7 +208,6 @@ public final class Handles {
         return MethodHandlesImpl.asCollector(handle, arrayType, arrayLength);
     }
 
-    @TargetApi(Build.VERSION_CODES.TIRAMISU)
     public static MethodHandle asCollector(MethodHandle handle, int collectArgPos, Class<?> arrayType, int arrayLength) {
         return MethodHandlesImpl.asCollector(handle, collectArgPos, arrayType, arrayLength);
     }
