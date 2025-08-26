@@ -1,6 +1,6 @@
 package com.v7878.llvm;
 
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static android.os.Build.VERSION.SDK_INT;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.SymbolLookup;
@@ -15,5 +15,5 @@ final class _LibLLVM {
     private static final Arena LLVM_SCOPE = Arena.ofAuto();
     @ApiSensitive
     public static final SymbolLookup LLVM = SymbolLookup.libraryLookup(
-            CORRECT_SDK_INT < 28 ? "libLLVM.so" : "libLLVM_android.so", LLVM_SCOPE);
+            SDK_INT < 28 ? "libLLVM.so" : "libLLVM_android.so", LLVM_SCOPE);
 }

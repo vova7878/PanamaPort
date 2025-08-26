@@ -1,7 +1,7 @@
 package com.v7878.unsafe;
 
+import static android.os.Build.VERSION.SDK_INT;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
 import android.annotation.SuppressLint;
@@ -245,7 +245,7 @@ public class Utils {
 
     @SuppressLint("NewApi")
     public static void reachabilityFence(Object ref) {
-        if (CORRECT_SDK_INT >= 28) {
+        if (SDK_INT >= 28) {
             Reference.reachabilityFence(ref);
         } else {
             SinkHolder.sink = ref;
@@ -387,8 +387,8 @@ public class Utils {
         throw new ClassCastException("Cannot cast from " + from + " to " + to);
     }
 
-    public static RuntimeException unsupportedSDK(int sdk) {
-        throw new IllegalStateException("Unsupported sdk: " + sdk);
+    public static RuntimeException unsupportedART(int art) {
+        throw new IllegalStateException("Unsupported art: " + art);
     }
 
     @SuppressWarnings("finally")

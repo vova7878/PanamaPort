@@ -1,6 +1,7 @@
 package com.v7878.unsafe.invoke;
 
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A13;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Utils.badCast;
 import static com.v7878.unsafe.Utils.newIllegalArgumentException;
 import static com.v7878.unsafe.Utils.newWrongMethodTypeException;
@@ -553,9 +554,9 @@ class MHUtils {
         MethodType oldType = target.type();
         if (oldType.equals(newType)) return target;
         explicitCastArgumentsChecks(oldType, newType);
-        if ((ART_SDK_INT >= 33 || !Transformers.isTransformer(target)) &&
+        if ((ART_INDEX >= A13 || !Transformers.isTransformer(target)) &&
                 InvokeAccess.explicitCastEquivalentToAsType(oldType, newType)) {
-            return target.asType(newType);
+            return asType(target, newType);
         }
         return Transformers.makeTransformer(newType, new ExplicitCastArguments(target, newType));
     }

@@ -1,6 +1,8 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A14;
+import static com.v7878.unsafe.ArtVersion.A15;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.access.AccessLinker.ClassAccessKind.CHECK_CAST;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.STATIC;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.VIRTUAL;
@@ -40,7 +42,7 @@ public class ChannelsAccess {
         abstract long allocationGranularity();
 
         @ApiSensitive
-        @ExecutableAccess(conditions = @Conditions(max_art = 34),
+        @ExecutableAccess(conditions = @Conditions(max_art = A14),
                 kind = STATIC, klass = "sun.nio.ch.FileChannelImpl",
                 name = "open", args = {"java.io.FileDescriptor", "java.lang.String",
                 "boolean", "boolean", "boolean", "java.lang.Object"})
@@ -48,7 +50,7 @@ public class ChannelsAccess {
                                              boolean writable, boolean append, Object parent);
 
         @ApiSensitive
-        @ExecutableAccess(conditions = @Conditions(min_art = 35),
+        @ExecutableAccess(conditions = @Conditions(min_art = A15),
                 kind = STATIC, klass = "sun.nio.ch.FileChannelImpl",
                 name = "open", args = {"java.io.FileDescriptor", "java.lang.String",
                 "boolean", "boolean", "java.lang.Object"})
@@ -107,7 +109,7 @@ public class ChannelsAccess {
 
     public static FileChannel openFileChannel(
             FileDescriptor fd, String path, boolean readable, boolean writable, Object parent) {
-        if (ART_SDK_INT >= 35) {
+        if (ART_INDEX >= A15) {
             return AccessI.INSTANCE.openFileChannel(fd, path, readable, writable, parent);
         } else {
             boolean append = IOUtils.getAppendFlag(fd);

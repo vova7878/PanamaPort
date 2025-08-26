@@ -6,8 +6,19 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BOOLEAN;
 import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.getLongO;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.Utils.unsupportedSDK;
+import static com.v7878.unsafe.ArtVersion.A10;
+import static com.v7878.unsafe.ArtVersion.A11;
+import static com.v7878.unsafe.ArtVersion.A12;
+import static com.v7878.unsafe.ArtVersion.A13;
+import static com.v7878.unsafe.ArtVersion.A14;
+import static com.v7878.unsafe.ArtVersion.A15;
+import static com.v7878.unsafe.ArtVersion.A16;
+import static com.v7878.unsafe.ArtVersion.A16p1;
+import static com.v7878.unsafe.ArtVersion.A8p0;
+import static com.v7878.unsafe.ArtVersion.A8p1;
+import static com.v7878.unsafe.ArtVersion.A9;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
+import static com.v7878.unsafe.Utils.unsupportedART;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.NATIVE_STATIC_OMIT_ENV;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
@@ -47,8 +58,9 @@ public class JniLibraries {
 
     // TODO: there must be a better way to do this
     @ApiSensitive
-    private static final long libraries_offset = switch (ART_SDK_INT) {
-        case 36 /*android 16*/, 35 /*android 15*/, 34 /*android 14*/ -> {
+    private static final long libraries_offset = switch (ART_INDEX) {
+        // TODO: Review after android 16 qpr 2 becomes stable
+        case A16p1, A16, A15, A14 -> {
             long tmp = ADDRESS_SIZE * 4L;
             tmp += 3;
             tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
@@ -66,8 +78,7 @@ public class JniLibraries {
             tmp += ADDRESS_SIZE * 3L;
             yield tmp;
         }
-        case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
-             30 /*android 11*/, 29 /*android 10*/ -> {
+        case A13, A12, A11, A10 -> {
             long tmp = ADDRESS_SIZE * 4L;
             tmp += 3;
             tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
@@ -89,7 +100,7 @@ public class JniLibraries {
             tmp += 8;
             yield tmp;
         }
-        case 28 /*android 9*/, 27 /*android 8.1*/, 26 /*android 8*/ -> {
+        case A9, A8p1, A8p0 -> {
             long tmp = ADDRESS_SIZE * 4L;
             tmp += 3;
             tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);
@@ -104,7 +115,7 @@ public class JniLibraries {
             tmp += 8;
             yield tmp;
         }
-        default -> throw unsupportedSDK(ART_SDK_INT);
+        default -> throw unsupportedART(ART_INDEX);
     };
 
     private static MemorySegment getLibraries() {

@@ -16,7 +16,9 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A15;
+import static com.v7878.unsafe.ArtVersion.A8p0;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
@@ -204,7 +206,7 @@ public class JavaNioAccess {
         ClassDef mem_def = ClassBuilder.build(mem_ref_id, cb -> cb
                 .withSuperClass(nio_mem_ref_id)
                 .withFlags(ACC_PUBLIC)
-                .if_(ART_SDK_INT == 26, cb2 -> cb2
+                .if_(ART_INDEX == A8p0, cb2 -> cb2
                         // public final Object originalBufferObject;
                         .withField(fb -> fb
                                 .of(obo)
@@ -220,7 +222,7 @@ public class JavaNioAccess {
                         .withParameterTypes(TypeId.J, TypeId.OBJECT)
                         .withCode(0, ib -> ib
                                 .generate_lines()
-                                .if_(ART_SDK_INT == 26,
+                                .if_(ART_INDEX == A8p0,
                                         ib2 -> ib2
                                                 .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id, TypeId.J),
                                                         ib.this_(), ib.p(0), ib.p(1))
@@ -482,7 +484,7 @@ public class JavaNioAccess {
             @SuppressWarnings("OptionalGetWithoutIsPresent")
             static final long OFFSET = BUFFER_VIEWS.stream()
                     .mapToLong(clazz -> Reflection.instanceFieldOffset(
-                            clazz, ART_SDK_INT >= 35 ? "byteOffset" : "offset"))
+                            clazz, ART_INDEX >= A15 ? "byteOffset" : "offset"))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
         return getIntO(buffer, Holder.OFFSET);

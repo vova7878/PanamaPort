@@ -1,14 +1,12 @@
 [versions]
-agp = "8.11.1"
-androidmisc = "v0.0.5"
-dexfile = "v1.0.3"
+agp = "8.12.1"
+dexfile = "v1.0.4"
 raung = "v0.0.1"
 r8_annotations = "v0.0.3"
-sun_cleanerstub = "v0.0.3"
+sun_cleanerstub = "v0.0.4"
 sun_unsafewrapper = "v0.0.3"
 
 [libraries]
-androidmisc = { module = "com.github.vova7878:AndroidMisc", version.ref = "androidmisc" }
 dexfile = { module = "com.github.vova7878:DexFile", version.ref = "dexfile" }
 r8_annotations = { module = "com.github.vova7878:R8Annotations", version.ref = "r8_annotations" }
 sun_cleanerstub = { module = "com.github.vova7878:SunCleanerStub", version.ref = "sun_cleanerstub" }

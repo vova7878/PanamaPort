@@ -1,12 +1,16 @@
 package com.v7878.unsafe;
 
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static com.v7878.dex.DexConstants.ACC_DIRECT_MASK;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_INDEX_SCALE;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putObject;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtModifiers.kAccCopied;
+import static com.v7878.unsafe.ArtVersion.A16;
+import static com.v7878.unsafe.ArtVersion.A16p1;
+import static com.v7878.unsafe.ArtVersion.A8p0;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchConstructor;
@@ -36,8 +40,51 @@ import java.util.stream.Stream;
 
 public class Reflection {
     static {
-        // SDK version checks
-        check(CORRECT_SDK_INT >= 26 && CORRECT_SDK_INT <= 36, AssertionError::new);
+        check(ART_INDEX >= A8p0 && ART_INDEX <= A16p1, AssertionError::new);
+    }
+
+    private static class Utils_16p1 {
+        @DoNotShrink
+        @DoNotObfuscate
+        @ApiSensitive
+        @SuppressWarnings("unused")
+        private static class ClassMirror {
+            public ClassLoader classLoader;
+            public Class<?> componentType;
+            public Object dexCache;
+            public Object extData;
+            public Object[] ifTable;
+            public String name;
+            public Class<?> superClass;
+            public Object vtable;
+            public long fields;
+            public long methods;
+            public int accessFlags;
+            public int classFlags;
+            public int classSize;
+            public int clinitThreadId;
+            public int dexClassDefIndex;
+            public volatile int dexTypeIndex;
+            public int numReferenceInstanceFields;
+            public int numReferenceStaticFields;
+            public int objectSize;
+            public int objectSizeAllocFastPath;
+            public int primitiveType;
+            public int referenceInstanceOffsets;
+            public int status;
+        }
+
+        public static long getMethods(Class<?> clazz) {
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
+            return mirror[0].methods;
+        }
+
+        public static long getFields(Class<?> clazz) {
+            var mirror = new ClassMirror[1];
+            fillArray(mirror, clazz);
+            return mirror[0].fields;
+        }
     }
 
     private static class Utils_16 {
@@ -165,20 +212,10 @@ public class Reflection {
 
     @AlwaysInline
     private static long getMethodsPtr(Class<?> clazz) {
-        return ART_SDK_INT >= 36 ? Utils_16.getMethods(clazz)
-                : Utils_8_15.getMethods(clazz);
-    }
-
-    @AlwaysInline
-    private static int getCopiedMethodsOffset(Class<?> clazz) {
-        return ART_SDK_INT >= 36 ? Utils_16.getCopiedMethodsOffset(clazz)
-                : Utils_8_15.getCopiedMethodsOffset(clazz);
-    }
-
-    @AlwaysInline
-    private static int getVirtualMethodsOffset(Class<?> clazz) {
-        return ART_SDK_INT >= 36 ? Utils_16.getVirtualMethodsOffset(clazz)
-                : Utils_8_15.getVirtualMethodsOffset(clazz);
+        return ART_INDEX >= A16 ? (ART_INDEX >= A16p1 ?
+                Utils_16p1.getMethods(clazz) :
+                Utils_16.getMethods(clazz)) :
+                Utils_8_15.getMethods(clazz);
     }
 
     @DoNotShrink
@@ -266,10 +303,6 @@ public class Reflection {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static final Class<MethodHandle> MethodHandleImplClass =
-            (Class<MethodHandle>) ClassUtils.sysClass("java.lang.invoke.MethodHandleImpl");
-
     public static final long ART_METHOD_SIZE;
     public static final long ART_METHOD_PADDING;
     public static final long ART_FIELD_SIZE;
@@ -293,8 +326,10 @@ public class Reflection {
         long af = getArtField(Test.af);
         long bf = getArtField(Test.bf);
         ART_FIELD_SIZE = Math.abs(bf - af);
-        long fields = ART_SDK_INT >= 36 ? Utils_16.getFields(Test.class)
-                : Utils_8_15.getStaticFields(Test.class);
+        long fields = ART_INDEX >= A16 ? (ART_INDEX >= A16p1 ?
+                Utils_16p1.getFields(Test.class) :
+                Utils_16.getFields(Test.class)) :
+                Utils_8_15.getStaticFields(Test.class);
         ART_FIELD_PADDING = (af - fields - length_field_size)
                 % ART_FIELD_SIZE + length_field_size;
     }
@@ -337,8 +372,14 @@ public class Reflection {
         return nothrows_run(() -> (long) getArtField.invokeExact(f));
     }
 
+    private static class Holder {
+        @SuppressWarnings("unchecked")
+        static final Class<MethodHandle> MH_IMPL = (Class<MethodHandle>)
+                ClassUtils.sysClass("java.lang.invoke.MethodHandleImpl");
+    }
+
     public static Executable toExecutable(long art_method) {
-        MethodHandle impl = allocateInstance(MethodHandleImplClass);
+        MethodHandle impl = allocateInstance(Holder.MH_IMPL);
         var mirror = new MethodHandleImplMirror[1];
         fillArray(mirror, impl);
         mirror[0].artFieldOrMethod = art_method;
@@ -348,7 +389,7 @@ public class Reflection {
     }
 
     public static Field toField(long art_field) {
-        MethodHandle impl = allocateInstance(MethodHandleImplClass);
+        MethodHandle impl = allocateInstance(Holder.MH_IMPL);
         var mirror = new MethodHandleImplMirror[1];
         fillArray(mirror, impl);
         mirror[0].artFieldOrMethod = art_field;
@@ -364,7 +405,7 @@ public class Reflection {
             return out;
         }
 
-        MethodHandle impl = allocateInstance(MethodHandleImplClass);
+        MethodHandle impl = allocateInstance(Holder.MH_IMPL);
         var mirror = new MethodHandleImplMirror[1];
         fillArray(mirror, impl);
         mirror[0].handleKind = Integer.MAX_VALUE;
@@ -392,8 +433,8 @@ public class Reflection {
     }
 
     public static Field[] getHiddenInstanceFields(Class<?> clazz) {
-        if (ART_SDK_INT >= 36) {
-            long fields = Utils_16.getFields(clazz);
+        if (ART_INDEX >= A16) {
+            long fields = ART_INDEX >= A16p1 ? Utils_16p1.getFields(clazz) : Utils_16.getFields(clazz);
             if (fields == 0) {
                 return new Field[0];
             }
@@ -420,8 +461,8 @@ public class Reflection {
     }
 
     public static Field[] getHiddenStaticFields(Class<?> clazz) {
-        if (ART_SDK_INT >= 36) {
-            long fields = Utils_16.getFields(clazz);
+        if (ART_INDEX >= A16) {
+            long fields = ART_INDEX >= A16p1 ? Utils_16p1.getFields(clazz) : Utils_16.getFields(clazz);
             if (fields == 0) {
                 return new Field[0];
             }
@@ -447,9 +488,8 @@ public class Reflection {
     }
 
     public static Field[] getHiddenFields(Class<?> clazz) {
-        if (ART_SDK_INT >= 36) {
-            // Note: sorted alphabetically
-            long fields = Utils_16.getFields(clazz);
+        if (ART_INDEX >= A16) {
+            long fields = ART_INDEX >= A16p1 ? Utils_16p1.getFields(clazz) : Utils_16.getFields(clazz);
             if (fields == 0) {
                 return new Field[0];
             }
@@ -480,29 +520,55 @@ public class Reflection {
         if (methods == 0) {
             return new long[0];
         }
-        int count = getCopiedMethodsOffset(clazz);
+        int count = ART_INDEX >= A16 ? (ART_INDEX >= A16p1 ?
+                getIntN(methods) :
+                Utils_16.getCopiedMethodsOffset(clazz)) :
+                Utils_8_15.getCopiedMethodsOffset(clazz);
         var out = new long[count];
+        int array_count = 0;
         for (int i = 0; i < count; i++) {
-            out[i] = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * i;
+            long art_method = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * i;
+            // TODO: Review after android 16 qpr 2 becomes stable
+            if ((ArtMethodUtils.getExecutableFlags(art_method) & kAccCopied) != 0) {
+                continue;
+            }
+            out[array_count++] = art_method;
         }
-        return out;
+        return Arrays.copyOf(out, array_count);
     }
 
-    private static void fillExecutables0(long methods, int begin, Executable[] out) {
+    @SuppressWarnings("unchecked")
+    // TODO: Review after android 16 qpr 2 becomes stable
+    private static <T extends Executable> T[] fillExecutables(
+            T[] out, long methods, int begin, IntPredicate filter) {
         if (out.length == 0) {
-            return;
+            return out;
         }
-        MethodHandle impl = allocateInstance(MethodHandleImplClass);
+
+        MethodHandle impl = allocateInstance(Holder.MH_IMPL);
         var mirror = new MethodHandleImplMirror[1];
         fillArray(mirror, impl);
+        mirror[0].handleKind = 0;
+
+        int array_count = 0;
         for (int i = 0; i < out.length; i++) {
             int index = begin + i;
-            mirror[0].artFieldOrMethod = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * index;
+            long art_method = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * index;
+            if (!filter.test(ArtMethodUtils.getExecutableFlags(art_method))) {
+                continue;
+            }
+            mirror[0].artFieldOrMethod = art_method;
             mirror[0].info = null;
             Executable tmp = MethodHandles.reflectAs(Executable.class, impl);
             setAccessible(tmp, true);
-            out[i] = tmp;
+            out[array_count++] = (T) tmp;
         }
+        return Arrays.copyOf(out, array_count);
+    }
+
+    private static <T extends Executable> T[] fillExecutables(
+            T[] out, long methods, int begin) {
+        return fillExecutables(out, methods, begin, unused -> true);
     }
 
     public static Executable[] getHiddenExecutables(Class<?> clazz) {
@@ -510,10 +576,15 @@ public class Reflection {
         if (methods == 0) {
             return new Executable[0];
         }
-        int count = getCopiedMethodsOffset(clazz);
+        int count = ART_INDEX >= A16 ? (ART_INDEX >= A16p1 ?
+                getIntN(methods) :
+                Utils_16.getCopiedMethodsOffset(clazz)) :
+                Utils_8_15.getCopiedMethodsOffset(clazz);
         var out = new Executable[count];
-        fillExecutables0(methods, 0, out);
-        return out;
+        if (ART_INDEX >= A16p1) {
+            return fillExecutables(out, methods, 0, flags -> (flags & kAccCopied) == 0);
+        }
+        return fillExecutables(out, methods, 0);
     }
 
     public static Executable[] getHiddenDirectExecutables(Class<?> clazz) {
@@ -521,10 +592,20 @@ public class Reflection {
         if (methods == 0) {
             return new Executable[0];
         }
-        int count = getVirtualMethodsOffset(clazz);
+        int count = ART_INDEX >= A16 ? (ART_INDEX >= A16p1 ?
+                getIntN(methods) :
+                Utils_16.getVirtualMethodsOffset(clazz)) :
+                Utils_8_15.getVirtualMethodsOffset(clazz);
         var out = new Executable[count];
-        fillExecutables0(methods, 0, out);
-        return out;
+        if (ART_INDEX >= A16p1) {
+            return fillExecutables(out, methods, 0, flags -> {
+                if ((flags & kAccCopied) != 0) {
+                    return false;
+                }
+                return (flags & ACC_DIRECT_MASK) != 0;
+            });
+        }
+        return fillExecutables(out, methods, 0);
     }
 
     // Note: only methods can be virtual
@@ -533,11 +614,23 @@ public class Reflection {
         if (methods == 0) {
             return new Method[0];
         }
-        int begin = getVirtualMethodsOffset(clazz);
-        int end = getCopiedMethodsOffset(clazz);
+        int begin = ART_INDEX >= A16 ? (ART_INDEX >= A16p1 ? 0 :
+                Utils_16.getVirtualMethodsOffset(clazz)) :
+                Utils_8_15.getVirtualMethodsOffset(clazz);
+        int end = ART_INDEX >= A16 ? (ART_INDEX >= A16p1 ?
+                getIntN(methods) :
+                Utils_16.getCopiedMethodsOffset(clazz)) :
+                Utils_8_15.getCopiedMethodsOffset(clazz);
         var out = new Method[end - begin];
-        fillExecutables0(methods, begin, out);
-        return out;
+        if (ART_INDEX >= A16p1) {
+            return fillExecutables(out, methods, begin, flags -> {
+                if ((flags & kAccCopied) != 0) {
+                    return false;
+                }
+                return (flags & ACC_DIRECT_MASK) == 0;
+            });
+        }
+        return fillExecutables(out, methods, begin);
     }
 
     public static Method getHiddenVirtualMethod(Class<?> clazz, String name, Class<?>... params) {

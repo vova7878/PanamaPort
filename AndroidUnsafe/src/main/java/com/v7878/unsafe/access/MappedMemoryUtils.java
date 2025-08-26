@@ -1,6 +1,8 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A14;
+import static com.v7878.unsafe.ArtVersion.A15;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.DIRECT_HOOK_VTABLE;
 import static com.v7878.unsafe.io.IOUtils.MADV_DONTNEED;
@@ -94,7 +96,7 @@ class MappedMemoryUtils {
     }
 
     private static boolean isLoaded0(long address, long length, long pageCount) {
-        if (ART_SDK_INT < 35) {
+        if (ART_INDEX < A15) {
             return AccessI.INSTANCE.isLoaded0b35(address, length, (int) pageCount);
         } else {
             return AccessI.INSTANCE.isLoaded0a35(address, length, pageCount);
@@ -108,11 +110,11 @@ class MappedMemoryUtils {
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class AccessI {
-        @ExecutableAccess(conditions = @Conditions(max_art = 34), kind = DIRECT_HOOK_VTABLE,
+        @ExecutableAccess(conditions = @Conditions(max_art = A14), kind = DIRECT_HOOK_VTABLE,
                 klass = "java.nio.MappedByteBuffer", name = "isLoaded0", args = {"long", "long", "int"})
         abstract boolean isLoaded0b35(long address, long length, int pageCount);
 
-        @ExecutableAccess(conditions = @Conditions(min_art = 35), kind = DIRECT_HOOK_VTABLE,
+        @ExecutableAccess(conditions = @Conditions(min_art = A15), kind = DIRECT_HOOK_VTABLE,
                 klass = "java.nio.MappedByteBuffer", name = "isLoaded0", args = {"long", "long", "long"})
         abstract boolean isLoaded0a35(long address, long length, long pageCount);
 

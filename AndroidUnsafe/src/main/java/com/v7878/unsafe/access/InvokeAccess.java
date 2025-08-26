@@ -1,6 +1,9 @@
 package com.v7878.unsafe.access;
 
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A12;
+import static com.v7878.unsafe.ArtVersion.A13;
+import static com.v7878.unsafe.ArtVersion.A9;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.STATIC;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.VIRTUAL;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
@@ -45,13 +48,13 @@ public class InvokeAccess {
         abstract void realType(MethodHandle handle, MethodType type);
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(max_art = 32),
-                kind = INSTANCE_GETTER, klass = "java.lang.invoke.MethodHandle", name = "nominalType")
+        @FieldAccess(conditions = @Conditions(max_art = A12), kind = INSTANCE_GETTER,
+                klass = "java.lang.invoke.MethodHandle", name = "nominalType")
         abstract MethodType nominalType(MethodHandle handle);
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(max_art = 32),
-                kind = INSTANCE_SETTER, klass = "java.lang.invoke.MethodHandle", name = "nominalType")
+        @FieldAccess(conditions = @Conditions(max_art = A12), kind = INSTANCE_SETTER,
+                klass = "java.lang.invoke.MethodHandle", name = "nominalType")
         abstract void nominalType(MethodHandle handle, MethodType type);
 
         @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.invoke.MethodType", name = "ptypes")
@@ -87,7 +90,7 @@ public class InvokeAccess {
     }
 
     public static MethodType nominalType(MethodHandle handle) {
-        if (ART_SDK_INT >= 33) {
+        if (ART_INDEX >= A13) {
             throw new UnsupportedOperationException();
         }
         return AccessI.INSTANCE.nominalType(handle);
@@ -98,7 +101,7 @@ public class InvokeAccess {
     }
 
     public static void setNominalType(MethodHandle handle, MethodType type) {
-        if (ART_SDK_INT >= 33) {
+        if (ART_INDEX >= A13) {
             throw new UnsupportedOperationException();
         }
         AccessI.INSTANCE.nominalType(handle, type);
@@ -194,18 +197,18 @@ public class InvokeAccess {
         abstract int SPUT();
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(max_art = 32),
-                kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_CALLSITE_TRANSFORM")
+        @FieldAccess(conditions = @Conditions(max_art = A12), kind = STATIC_GETTER,
+                klass = "java.lang.invoke.MethodHandle", name = "INVOKE_CALLSITE_TRANSFORM")
         abstract int INVOKE_CALLSITE_TRANSFORM();
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(min_art = 28),
-                kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VAR_HANDLE")
+        @FieldAccess(conditions = @Conditions(min_art = A9), kind = STATIC_GETTER,
+                klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VAR_HANDLE")
         abstract int INVOKE_VAR_HANDLE();
 
         @ApiSensitive
-        @FieldAccess(conditions = @Conditions(min_art = 28),
-                kind = STATIC_GETTER, klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VAR_HANDLE_EXACT")
+        @FieldAccess(conditions = @Conditions(min_art = A9), kind = STATIC_GETTER,
+                klass = "java.lang.invoke.MethodHandle", name = "INVOKE_VAR_HANDLE_EXACT")
         abstract int INVOKE_VAR_HANDLE_EXACT();
 
         static final HandleKindI INSTANCE = AccessLinker.generateImpl(HandleKindI.class);

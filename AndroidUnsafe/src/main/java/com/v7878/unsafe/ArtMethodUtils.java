@@ -16,11 +16,22 @@ import static com.v7878.unsafe.AndroidUnsafe.putWordN;
 import static com.v7878.unsafe.ArtModifiers.kAccCompileDontBother;
 import static com.v7878.unsafe.ArtModifiers.kAccIntrinsic;
 import static com.v7878.unsafe.ArtModifiers.kAccPreCompiled;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A10;
+import static com.v7878.unsafe.ArtVersion.A11;
+import static com.v7878.unsafe.ArtVersion.A12;
+import static com.v7878.unsafe.ArtVersion.A13;
+import static com.v7878.unsafe.ArtVersion.A14;
+import static com.v7878.unsafe.ArtVersion.A15;
+import static com.v7878.unsafe.ArtVersion.A16;
+import static com.v7878.unsafe.ArtVersion.A16p1;
+import static com.v7878.unsafe.ArtVersion.A8p0;
+import static com.v7878.unsafe.ArtVersion.A8p1;
+import static com.v7878.unsafe.ArtVersion.A9;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Reflection.ART_METHOD_SIZE;
 import static com.v7878.unsafe.Reflection.getArtMethod;
 import static com.v7878.unsafe.Utils.dcheck;
-import static com.v7878.unsafe.Utils.unsupportedSDK;
+import static com.v7878.unsafe.Utils.unsupportedART;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
 import com.v7878.foreign.GroupLayout;
@@ -33,7 +44,8 @@ import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
 public class ArtMethodUtils {
-    private static final GroupLayout art_method_16_12_layout = paddedStructLayout(
+    // TODO: Review after android 16 qpr 2 becomes stable
+    private static final GroupLayout art_method_16p1_12_layout = paddedStructLayout(
             JAVA_OBJECT.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),
             JAVA_INT.withName("dex_method_index_"),
@@ -94,13 +106,12 @@ public class ArtMethodUtils {
     );
 
     @ApiSensitive
-    public static final GroupLayout ARTMETHOD_LAYOUT = switch (ART_SDK_INT) {
-        case 36 /*android 16*/, 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/,
-             32 /*android 12L*/, 31 /*android 12*/ -> art_method_16_12_layout;
-        case 30 /*android 11*/, 29 /*android 10*/ -> art_method_11_10_layout;
-        case 28 /*android 9*/ -> art_method_9_layout;
-        case 27 /*android 8.1*/, 26 /*android 8*/ -> art_method_8xx_layout;
-        default -> throw unsupportedSDK(ART_SDK_INT);
+    public static final GroupLayout ARTMETHOD_LAYOUT = switch (ART_INDEX) {
+        case A16p1, A16, A15, A14, A13, A12 -> art_method_16p1_12_layout;
+        case A11, A10 -> art_method_11_10_layout;
+        case A9 -> art_method_9_layout;
+        case A8p1, A8p0 -> art_method_8xx_layout;
+        default -> throw unsupportedART(ART_INDEX);
     };
 
     static {

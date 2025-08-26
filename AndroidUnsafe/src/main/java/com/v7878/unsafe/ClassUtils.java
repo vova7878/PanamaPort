@@ -9,11 +9,22 @@ import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublicApi;
 import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
 import static com.v7878.unsafe.ArtModifiers.kAccSkipAccessChecks;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A10;
+import static com.v7878.unsafe.ArtVersion.A11;
+import static com.v7878.unsafe.ArtVersion.A12;
+import static com.v7878.unsafe.ArtVersion.A13;
+import static com.v7878.unsafe.ArtVersion.A14;
+import static com.v7878.unsafe.ArtVersion.A15;
+import static com.v7878.unsafe.ArtVersion.A16;
+import static com.v7878.unsafe.ArtVersion.A16p1;
+import static com.v7878.unsafe.ArtVersion.A8p0;
+import static com.v7878.unsafe.ArtVersion.A8p1;
+import static com.v7878.unsafe.ArtVersion.A9;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Reflection.getHiddenExecutables;
 import static com.v7878.unsafe.Reflection.getHiddenFields;
 import static com.v7878.unsafe.Utils.nothrows_run;
-import static com.v7878.unsafe.Utils.unsupportedSDK;
+import static com.v7878.unsafe.Utils.unsupportedART;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -43,9 +54,9 @@ public class ClassUtils {
         VisiblyInitialized;
 
         static {
-            switch (ART_SDK_INT) {
-                case 36 /*android 16*/, 35 /*android 15*/, 34 /*android 14*/, 33 /*android 13*/,
-                     32 /*android 12L*/, 31 /*android 12*/, 30 /*android 11*/ -> {
+            switch (ART_INDEX) {
+                // TODO: Review after android 16 qpr 2 becomes stable
+                case A16p1, A16, A15, A14, A13, A12, A11 -> {
                     NotReady.value = 0;  // Zero-initialized Class object starts in this state.
                     Retired.value = 1;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = 2;
@@ -63,7 +74,7 @@ public class ClassUtils {
                     Initialized.value = 14;  // Ready to go.
                     VisiblyInitialized.value = 15;  // Initialized and visible to all threads.
                 }
-                case 29 /*android 10*/, 28 /*android 9*/ -> {
+                case A10, A9 -> {
                     NotReady.value = 0;  // Zero-initialized Class object starts in this state.
                     Retired.value = 1;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = 2;
@@ -80,7 +91,7 @@ public class ClassUtils {
                     Initializing.value = 13;  // Class init in progress.
                     Initialized.value = 14;  // Ready to go.
                 }
-                case 27 /*android 8.1*/ -> {
+                case A8p1 -> {
                     Retired.value = -3;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = -2;
                     ErrorUnresolved.value = -1;
@@ -97,7 +108,7 @@ public class ClassUtils {
                     Initializing.value = 10;  // Class init in progress.
                     Initialized.value = 11;  // Ready to go.
                 }
-                case 26 /*android 8*/ -> {
+                case A8p0 -> {
                     Retired.value = -3;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = -2;
                     ErrorUnresolved.value = -1;
@@ -113,7 +124,7 @@ public class ClassUtils {
                     Initializing.value = 9;  // Class init in progress.
                     Initialized.value = 10;  // Ready to go.
                 }
-                default -> throw unsupportedSDK(ART_SDK_INT);
+                default -> throw unsupportedART(ART_INDEX);
             }
         }
 
@@ -152,7 +163,7 @@ public class ClassUtils {
     @ApiSensitive
     public static int getRawClassStatus(Class<?> clazz) {
         int value = AndroidUnsafe.getIntO(Objects.requireNonNull(clazz), Holder.CLASS_STATUS_OFFSET);
-        return ART_SDK_INT <= 27 ? value : (value >>> 32 - 4);
+        return ART_INDEX <= A8p1 ? value : (value >>> 32 - 4);
     }
 
     public static ClassStatus getClassStatus(Class<?> clazz) {
@@ -163,7 +174,7 @@ public class ClassUtils {
     @ApiSensitive
     public static void setRawClassStatus(Class<?> clazz, int status) {
         Objects.requireNonNull(clazz);
-        if (ART_SDK_INT > 27) {
+        if (ART_INDEX > A8p1) {
             int value = AndroidUnsafe.getIntO(clazz, Holder.CLASS_STATUS_OFFSET);
             status = (value & ~0 >>> 4) | (status << 32 - 4);
         }
@@ -219,7 +230,7 @@ public class ClassUtils {
     }
 
     public static boolean isClassVisiblyInitialized(Class<?> clazz) {
-        int value = ART_SDK_INT <= 29 ?
+        int value = ART_INDEX <= A10 ?
                 ClassStatus.Initialized.rawValue() :
                 ClassStatus.VisiblyInitialized.rawValue();
         return getRawClassStatus(clazz) == value;

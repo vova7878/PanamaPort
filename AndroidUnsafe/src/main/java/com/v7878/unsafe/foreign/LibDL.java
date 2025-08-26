@@ -5,7 +5,8 @@ import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A9;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
@@ -105,18 +106,20 @@ public class LibDL {
         static {
             String linker_name = IS64BIT ? "linker64" : "linker";
             MMapEntry linker = MMap.findFirstByPath("/\\S+/" + linker_name);
-            SymTab symbols = ELF.readSymTab(linker.path(), ART_SDK_INT >= 28);
+            SymTab symbols = ELF.readSymTab(linker.path(), ART_INDEX >= A9);
 
-            s_dladdr = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z8__dladdrPKvP7Dl_info" : "__loader_dladdr", linker.start());
-            s_dlclose = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z9__dlclosePv" : "__loader_dlclose", linker.start());
-            s_dlerror = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z9__dlerrorv" : "__loader_dlerror", linker.start());
-            s_dlopen = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z8__dlopenPKciPKv" : "__loader_dlopen", linker.start());
-            s_dlvsym = symbols.findFunction(ART_SDK_INT <= 27 ? "__dl__Z8__dlvsymPvPKcS1_PKv" : "__loader_dlvsym", linker.start());
+            s_dladdr = symbols.findFunction(ART_INDEX < A9 ? "__dl__Z8__dladdrPKvP7Dl_info" : "__loader_dladdr", linker.start());
+            s_dlclose = symbols.findFunction(ART_INDEX < A9 ? "__dl__Z9__dlclosePv" : "__loader_dlclose", linker.start());
+            s_dlerror = symbols.findFunction(ART_INDEX < A9 ? "__dl__Z9__dlerrorv" : "__loader_dlerror", linker.start());
+            s_dlopen = symbols.findFunction(ART_INDEX < A9 ? "__dl__Z8__dlopenPKciPKv" : "__loader_dlopen", linker.start());
+            s_dlvsym = symbols.findFunction(ART_INDEX < A9 ? "__dl__Z8__dlvsymPvPKcS1_PKv" : "__loader_dlvsym", linker.start());
 
-            s_android_create_namespace = symbols.findFunction(ART_SDK_INT <= 27 ?
-                    "__dl__Z26__android_create_namespacePKcS0_S0_yS0_P19android_namespace_tPKv" : "__loader_android_create_namespace", linker.start());
-            s_android_dlopen_ext = symbols.findFunction(ART_SDK_INT <= 27 ?
-                    "__dl__Z20__android_dlopen_extPKciPK17android_dlextinfoPKv" : "__loader_android_dlopen_ext", linker.start());
+            s_android_create_namespace = symbols.findFunction(ART_INDEX < A9 ?
+                    "__dl__Z26__android_create_namespacePKcS0_S0_yS0_P19android_namespace_tPKv" :
+                    "__loader_android_create_namespace", linker.start());
+            s_android_dlopen_ext = symbols.findFunction(ART_INDEX < A9 ?
+                    "__dl__Z20__android_dlopen_extPKciPK17android_dlextinfoPKv" :
+                    "__loader_android_dlopen_ext", linker.start());
         }
     }
 

@@ -1,5 +1,7 @@
 package com.v7878.unsafe.foreign;
 
+import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Build.VERSION.SDK_INT_FULL;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_INTERFACE;
 import static com.v7878.dex.DexConstants.ACC_NATIVE;
@@ -18,10 +20,9 @@ import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMGetParams;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.InstructionSet.ARM;
@@ -527,6 +528,12 @@ public class BulkLinker {
         int max_api() default Integer.MAX_VALUE;
 
         @ApiSensitive
+        int min_api_full() default 0;
+
+        @ApiSensitive
+        int max_api_full() default Integer.MAX_VALUE;
+
+        @ApiSensitive
         int min_art() default 0;
 
         @ApiSensitive
@@ -627,8 +634,9 @@ public class BulkLinker {
 
     private static boolean checkConditions(BulkLinker.Conditions cond) {
         return Utils.contains(cond.arch(), CURRENT_INSTRUCTION_SET) &&
-                (cond.min_api() <= CORRECT_SDK_INT && cond.max_api() >= CORRECT_SDK_INT) &&
-                (cond.min_art() <= ART_SDK_INT && cond.max_art() >= ART_SDK_INT) &&
+                (cond.min_api() <= SDK_INT && cond.max_api() >= SDK_INT) &&
+                (cond.min_api_full() <= SDK_INT_FULL && cond.max_api_full() >= SDK_INT_FULL) &&
+                (cond.min_art() <= ART_INDEX && cond.max_art() >= ART_INDEX) &&
                 checkPoisoning(cond.poisoning());
     }
 

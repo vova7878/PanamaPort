@@ -1,5 +1,6 @@
 package com.v7878.unsafe.access;
 
+import static com.v7878.unsafe.ArtVersion.A9;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.STATIC;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.VIRTUAL;
@@ -38,8 +39,8 @@ public class VMAccess {
         abstract boolean isNativeDebuggable(Object instance);
 
         @ApiSensitive
-        @ExecutableAccess(conditions = @Conditions(min_art = 28),
-                kind = VIRTUAL, klass = "dalvik.system.VMRuntime", name = "isJavaDebuggable", args = {})
+        @ExecutableAccess(conditions = @Conditions(min_art = A9), kind = VIRTUAL,
+                klass = "dalvik.system.VMRuntime", name = "isJavaDebuggable", args = {})
         abstract boolean isJavaDebuggable(Object instance);
 
         @ExecutableAccess(kind = VIRTUAL, klass = "dalvik.system.VMRuntime",

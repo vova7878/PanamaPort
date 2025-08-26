@@ -1,20 +1,43 @@
 package com.v7878.unsafe;
 
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
+import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Build.VERSION.SDK_INT_FULL;
+import static com.v7878.unsafe.Utils.LOG_TAG;
 import static com.v7878.unsafe.Utils.searchMethod;
-import static com.v7878.unsafe.Utils.unsupportedSDK;
+
+import android.util.Log;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.time.Duration;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class ArtVersion {
     @ApiSensitive
-    public static final int ART_SDK_INT = computeSDKInt();
+    public static final int ART_INDEX = computeIndex();
+
+    public static final int A8p0 = 1;
+    public static final int A8p1 = 2;
+    public static final int A9 = 3;
+    public static final int A10 = 4;
+    public static final int A11 = 5;
+    public static final int A12 = 6;
+    public static final int A13 = 7;
+    public static final int A14 = 8;
+    public static final int A15 = 9;
+    public static final int A16 = 10;
+    public static final int A16p1 = 11;
+
+    private static boolean is36p1() {
+        // TODO: Review after android 16 qpr 2 becomes stable
+        Method method = searchMethod(Files.class.getDeclaredMethods(),
+                "readString", false, Path.class);
+        return method != null;
+    }
 
     private static boolean is36() {
-        Method method = searchMethod(Duration.class.getDeclaredMethods(),
-                "isPositive", false);
+        Method method = searchMethod(Long.class.getDeclaredMethods(),
+                "compress", false, long.class, long.class);
         return method != null;
     }
 
@@ -36,34 +59,31 @@ public class ArtVersion {
         return method != null;
     }
 
-    private static int computeSDKInt() {
-        int tmp = CORRECT_SDK_INT;
+    private static int computeIndex() {
+        int tmp = SDK_INT;
+
+        if (tmp < 26) {
+            throw new UnsupportedOperationException("SDK versions below 26 are not supported");
+        }
 
         // Android 12 introduces mainline project
-        if (tmp <= 30) return tmp;
-        if (tmp > 36) throw unsupportedSDK(tmp);
+        if (tmp <= 30) return tmp - 26 + A8p0;
+        if (tmp > 36) {
+            tmp = 36;
+            Log.w(LOG_TAG, String.format("SDK version is too new: %s, maximum supported: %s", SDK_INT, 36));
+        }
 
-        // Art module version 32 does not exist
-        // (After version 31 comes version 33)
-        if (tmp == 32) tmp = 31;
+        // At the moment, there is nothing above 36.1
+        if (SDK_INT_FULL > 3600000 || is36p1()) return A16p1;
 
-        // At the moment, there is nothing above 36
-        if (tmp == 36) return tmp;
+        if (tmp == 36 || is36()) return A16;
+        if (tmp == 35 || is35()) return A15;
+        if (tmp == 34 || is34()) return A14;
+        if (tmp == 33 || is33()) return A13;
 
-        if (is36()) return 36;
-        // Not 36, but at least 35 -> 35
-        if (tmp == 35) return 35;
-
-        if (is35()) return 35;
-        // Not 35, but at least 34 -> 34
-        if (tmp == 34) return 34;
-
-        if (is34()) return 34;
-        // Not 34, but at least 33 -> 33
-        if (tmp == 33) return 33;
-
-        if (is33()) return 33;
-        // Not 33, but at least 31 (32 does not exist) -> 31
-        return tmp;
+        //noinspection ConstantValue
+        assert tmp == 31 || tmp == 32;
+        // Art module is the same for api 32 and 31
+        return A12;
     }
 }

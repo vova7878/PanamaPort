@@ -1,11 +1,11 @@
 package com.v7878.unsafe.foreign;
 
+import static android.os.Build.VERSION.SDK_INT;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.foreign.ValueLayout.JAVA_LONG;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
@@ -217,7 +217,7 @@ public class LibDLExt {
         private static final Arena SCOPE = Arena.ofAuto();
         @ApiSensitive
         private static final SymbolLookup DLEXT = SymbolLookup.libraryLookup(
-                CORRECT_SDK_INT < 29 ? "libdl.so" : "libdl_android.so", SCOPE);
+                SDK_INT < 29 ? "libdl.so" : "libdl_android.so", SCOPE);
 
         @SymbolGenerator(klass = LinkerSymbols.class, field = "s_android_dlopen_ext")
         @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, INT, LONG_AS_WORD, LONG_AS_WORD})

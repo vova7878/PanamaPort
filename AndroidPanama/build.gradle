@@ -30,7 +30,6 @@ dependencies {
 
     implementation libs.sun.cleanerstub
     implementation libs.r8.annotations
-    implementation libs.androidmisc
     implementation libs.dexfile
 }
 

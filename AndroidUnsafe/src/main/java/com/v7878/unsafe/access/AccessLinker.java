@@ -1,5 +1,7 @@
 package com.v7878.unsafe.access;
 
+import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Build.VERSION.SDK_INT_FULL;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_INTERFACE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
@@ -7,12 +9,11 @@ import static com.v7878.dex.builder.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.builder.CodeBuilder.InvokeKind.INTERFACE;
 import static com.v7878.dex.builder.CodeBuilder.InvokeKind.STATIC;
 import static com.v7878.dex.builder.CodeBuilder.InvokeKind.VIRTUAL;
-import static com.v7878.misc.Version.CORRECT_SDK_INT;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldNonFinal;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.getDispatchTableIndex;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.ClassUtils.makeClassPublic;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
@@ -74,6 +75,12 @@ public class AccessLinker {
         int max_api() default Integer.MAX_VALUE;
 
         @ApiSensitive
+        int min_api_full() default 0;
+
+        @ApiSensitive
+        int max_api_full() default Integer.MAX_VALUE;
+
+        @ApiSensitive
         int min_art() default 0;
 
         @ApiSensitive
@@ -81,8 +88,9 @@ public class AccessLinker {
     }
 
     private static boolean checkConditions(Conditions cond) {
-        return (cond.min_api() <= CORRECT_SDK_INT && cond.max_api() >= CORRECT_SDK_INT) &&
-                (cond.min_art() <= ART_SDK_INT && cond.max_art() >= ART_SDK_INT);
+        return (cond.min_api() <= SDK_INT && cond.max_api() >= SDK_INT) &&
+                (cond.min_api_full() <= SDK_INT_FULL && cond.max_api_full() >= SDK_INT_FULL) &&
+                (cond.min_art() <= ART_INDEX && cond.max_art() >= ART_INDEX);
     }
 
     public enum ClassAccessKind {

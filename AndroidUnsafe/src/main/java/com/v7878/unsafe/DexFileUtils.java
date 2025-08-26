@@ -6,8 +6,19 @@ import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.JAVA_BOOLEAN;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
-import static com.v7878.unsafe.Utils.unsupportedSDK;
+import static com.v7878.unsafe.ArtVersion.A10;
+import static com.v7878.unsafe.ArtVersion.A11;
+import static com.v7878.unsafe.ArtVersion.A12;
+import static com.v7878.unsafe.ArtVersion.A13;
+import static com.v7878.unsafe.ArtVersion.A14;
+import static com.v7878.unsafe.ArtVersion.A15;
+import static com.v7878.unsafe.ArtVersion.A16;
+import static com.v7878.unsafe.ArtVersion.A16p1;
+import static com.v7878.unsafe.ArtVersion.A8p0;
+import static com.v7878.unsafe.ArtVersion.A8p1;
+import static com.v7878.unsafe.ArtVersion.A9;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
+import static com.v7878.unsafe.Utils.unsupportedART;
 import static com.v7878.unsafe.cpp_std.basic_string.string;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
 
@@ -26,6 +37,30 @@ public class DexFileUtils {
     private static final GroupLayout array_ref_layout = paddedStructLayout(
             ADDRESS.withName("array_"),
             WORD.withName("size_")
+    );
+    // TODO: Review after android 16 qpr 2 becomes stable
+    private static final GroupLayout dex_file_16p1_layout = paddedStructLayout(
+            ADDRESS.withName("__cpp_virtual_data__"),
+            ADDRESS.withName("begin_"),
+            WORD.withName("unused_size_"),
+            array_ref_layout.withName("data_"),
+            string.LAYOUT.withName("location_"),
+            JAVA_INT.withName("location_checksum_"),
+            ADDRESS.withName("header_"),
+            ADDRESS.withName("string_ids_"),
+            ADDRESS.withName("type_ids_"),
+            ADDRESS.withName("field_ids_"),
+            ADDRESS.withName("method_ids_"),
+            ADDRESS.withName("proto_ids_"),
+            ADDRESS.withName("class_defs_"),
+            ADDRESS.withName("method_handles_"),
+            WORD.withName("num_method_handles_"),
+            ADDRESS.withName("call_site_ids_"),
+            WORD.withName("num_call_site_ids_"),
+            ADDRESS.withName("hiddenapi_class_data_"),
+            ADDRESS.withName("oat_dex_file_"),
+            shared_ptr.LAYOUT.withName("container_"),
+            JAVA_BYTE.withName("hiddenapi_domain_")
     );
     private static final GroupLayout dex_file_14_16_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
@@ -147,15 +182,14 @@ public class DexFileUtils {
     );
 
     @ApiSensitive
-    public static final GroupLayout DEXFILE_LAYOUT = switch (ART_SDK_INT) {
-        case 36 /*android 16*/, 35 /*android 15*/,
-             34 /*android 14*/ -> dex_file_14_16_layout;
-        case 33 /*android 13*/, 32 /*android 12L*/, 31 /*android 12*/,
-             30 /*android 11*/ -> dex_file_13_11_layout;
-        case 29 /*android 10*/ -> dex_file_10_layout;
-        case 28 /*android 9*/ -> dex_file_9_layout;
-        case 27 /*android 8.1*/, 26 /*android 8*/ -> dex_file_8xx_layout;
-        default -> throw unsupportedSDK(ART_SDK_INT);
+    public static final GroupLayout DEXFILE_LAYOUT = switch (ART_INDEX) {
+        case A16p1 -> dex_file_16p1_layout;
+        case A16, A15, A14 -> dex_file_14_16_layout;
+        case A13, A12, A11 -> dex_file_13_11_layout;
+        case A10 -> dex_file_10_layout;
+        case A9 -> dex_file_9_layout;
+        case A8p1, A8p0 -> dex_file_8xx_layout;
+        default -> throw unsupportedART(ART_INDEX);
     };
 
     public static Object getDexCache(Class<?> clazz) {
@@ -186,13 +220,10 @@ public class DexFileUtils {
 
     @ApiSensitive
     public static DexFile openDexFile(ByteBuffer data) {
-        if (ART_SDK_INT >= 26 && ART_SDK_INT <= 28) {
+        if (ART_INDEX <= A9) {
             return DexFileAccess.openDexFile(data);
-        } else if (ART_SDK_INT >= 29 && ART_SDK_INT <= 36) {
-            return DexFileAccess.openDexFile(new ByteBuffer[]{data}, null);
-        } else {
-            throw unsupportedSDK(ART_SDK_INT);
         }
+        return DexFileAccess.openDexFile(new ByteBuffer[]{data}, null);
     }
 
     public static DexFile openDexFile(byte[] data) {
@@ -201,13 +232,10 @@ public class DexFileUtils {
 
     @ApiSensitive
     public static long[] openCookie(ByteBuffer data) {
-        if (ART_SDK_INT >= 26 && ART_SDK_INT <= 28) {
+        if (ART_INDEX <= A9) {
             return (long[]) DexFileAccess.openCookie(data);
-        } else if (ART_SDK_INT >= 29 && ART_SDK_INT <= 36) {
-            return (long[]) DexFileAccess.openCookie(new ByteBuffer[]{data}, null);
-        } else {
-            throw unsupportedSDK(ART_SDK_INT);
         }
+        return (long[]) DexFileAccess.openCookie(new ByteBuffer[]{data}, null);
     }
 
     public static long[] openCookie(byte[] data) {
@@ -243,54 +271,46 @@ public class DexFileUtils {
 
     @ApiSensitive
     public static void setTrusted(long dexfile_struct) {
-        if (ART_SDK_INT <= 27) {
+        if (ART_INDEX < A9) {
             return;
         }
         class Holder {
             static final long offset;
 
             static {
-                if (ART_SDK_INT == 28) {
+                if (ART_INDEX == A9) {
                     offset = DEXFILE_LAYOUT.byteOffset(groupElement("is_platform_dex_"));
                 } else {
                     offset = DEXFILE_LAYOUT.byteOffset(groupElement("hiddenapi_domain_"));
                 }
             }
         }
-        if (ART_SDK_INT == 28) {
+        if (ART_INDEX == A9) {
             AndroidUnsafe.putBooleanN(dexfile_struct + Holder.offset, true);
             return;
         }
         final int kCorePlatform = 0;
-        if (ART_SDK_INT == 29) {
+        if (ART_INDEX == A10) {
             AndroidUnsafe.putIntN(dexfile_struct + Holder.offset, kCorePlatform);
             return;
         }
-        if (ART_SDK_INT <= 36) {
-            AndroidUnsafe.putByteN(dexfile_struct + Holder.offset, (byte) kCorePlatform);
-            return;
-        }
-        throw unsupportedSDK(ART_SDK_INT);
+        AndroidUnsafe.putByteN(dexfile_struct + Holder.offset, (byte) kCorePlatform);
     }
 
     @ApiSensitive
     public static void setTrusted(DexFile dex) {
-        if (ART_SDK_INT <= 27) {
+        if (ART_INDEX < A9) {
             return;
         }
-        if (ART_SDK_INT <= 36) {
-            long[] cookie = getCookie(dex);
-            final int start = 1;
-            for (int i = start; i < cookie.length; i++) {
-                setTrusted(cookie[i]);
-            }
-            return;
+        long[] cookie = getCookie(dex);
+        final int start = 1;
+        for (int i = start; i < cookie.length; i++) {
+            setTrusted(cookie[i]);
         }
-        throw unsupportedSDK(ART_SDK_INT);
     }
 
     public static void setTrusted(Class<?> clazz) {
-        if (ART_SDK_INT <= 27) {
+        if (ART_INDEX < A9) {
             return;
         }
         setTrusted(getDexFileStruct(clazz));

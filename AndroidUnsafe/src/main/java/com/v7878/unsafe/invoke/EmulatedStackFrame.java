@@ -5,7 +5,8 @@ import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A13;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
@@ -100,7 +101,7 @@ public final class EmulatedStackFrame {
                             ib.generate_lines();
                             ib.new_instance(ib.this_(), esf);
                             ib.iop(PUT_OBJECT, ib.p(0), ib.this_(), type_id);
-                            if (ART_SDK_INT <= 32) {
+                            if (ART_INDEX < A13) {
                                 ib.iop(PUT_OBJECT, ib.p(0), ib.this_(), callsite_id);
                             }
                             ib.iop(PUT_OBJECT, ib.p(1), ib.this_(), references_id);

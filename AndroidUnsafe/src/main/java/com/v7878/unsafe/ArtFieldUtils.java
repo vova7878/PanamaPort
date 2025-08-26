@@ -6,11 +6,13 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A16p1;
+import static com.v7878.unsafe.ArtVersion.A8p0;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Reflection.ART_FIELD_SIZE;
 import static com.v7878.unsafe.Reflection.getArtField;
 import static com.v7878.unsafe.Utils.dcheck;
-import static com.v7878.unsafe.Utils.unsupportedSDK;
+import static com.v7878.unsafe.Utils.unsupportedART;
 import static com.v7878.unsafe.foreign.ExtraLayouts.JAVA_OBJECT;
 
 import com.v7878.foreign.GroupLayout;
@@ -22,6 +24,7 @@ import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
 public class ArtFieldUtils {
+    // TODO: Review after android 16 qpr 2 becomes stable
     private static final GroupLayout art_field_layout = paddedStructLayout(
             JAVA_OBJECT.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),
@@ -33,10 +36,10 @@ public class ArtFieldUtils {
     public static final GroupLayout ARTFIELD_LAYOUT;
 
     static {
-        if (ART_SDK_INT >= 26 && ART_SDK_INT <= 36) {
+        if (ART_INDEX >= A8p0 && ART_INDEX <= A16p1) {
             ARTFIELD_LAYOUT = art_field_layout;
         } else {
-            throw unsupportedSDK(ART_SDK_INT);
+            throw unsupportedART(ART_INDEX);
         }
         dcheck(ARTFIELD_LAYOUT.byteSize() == ART_FIELD_SIZE, AssertionError::new);
     }

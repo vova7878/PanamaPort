@@ -16,7 +16,9 @@ import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeMethodInheritable;
-import static com.v7878.unsafe.ArtVersion.ART_SDK_INT;
+import static com.v7878.unsafe.ArtVersion.A10;
+import static com.v7878.unsafe.ArtVersion.A13;
+import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
 import static com.v7878.unsafe.DexFileUtils.setTrusted;
@@ -83,8 +85,9 @@ public class Transformers {
         FieldId impl_field = FieldId.of(transformer_id,
                 "impl", transformer_impl_id);
 
+        // TODO: Review after android 16 qpr 2 becomes stable
         FieldId asTypeCache;
-        if (ART_SDK_INT < 33) {
+        if (ART_INDEX < A13) {
             asTypeCache = FieldId.of(transformer_id, "asTypeCache", MH_ID);
         } else {
             Field cache = getHiddenInstanceField(MethodHandle.class, "asTypeCache");
@@ -228,7 +231,7 @@ public class Transformers {
                                 .return_object(ib.l(0))
                         )
                 )
-                .if_(ART_SDK_INT < 33, cb2 -> cb2
+                .if_(ART_INDEX < A13, cb2 -> cb2
                         .withField(fb -> fb
                                 .of(asTypeCache)
                                 .withFlags(ACC_PRIVATE)
@@ -238,8 +241,8 @@ public class Transformers {
                     MethodId asTypeUncached = MethodId.of(transformer_id,
                             "asTypeUncached", MH_ID, MT_ID);
                     Consumer<CodeBuilder> fallbackAsType;
-                    if (ART_SDK_INT < 33) {
-                        if (ART_SDK_INT < 30) {
+                    if (ART_INDEX < A13) {
+                        if (ART_INDEX < A10) {
                             // return asTypeCache = super.asType(type);
                             fallbackAsType = ib -> ib
                                     .invoke(SUPER, MethodId.of(MH_ID, "asType",
@@ -389,7 +392,7 @@ public class Transformers {
                     );
 
                     Consumer<CodeBuilder> invokeWithFrame;
-                    if (ART_SDK_INT <= 32) {
+                    if (ART_INDEX < A13) {
                         invokeWithFrame = ib -> ib.invoke_polymorphic(MH_INVOKE_ID,
                                 ProtoId.of(TypeId.V, esf), ib.p(0), ib.p(1));
                     } else {
@@ -471,7 +474,7 @@ public class Transformers {
     @ApiSensitive
     private static MethodHandle makeTransformer(
             MethodType fixed, TransformerImpl impl, boolean variadic) {
-        int kind = variadic && ART_SDK_INT < 33 ?
+        int kind = variadic && ART_INDEX < A13 ?
                 InvokeAccess.kindInvokeCallsiteTransform() :
                 InvokeAccess.kindInvokeTransform();
         return nothrows_run(() -> (MethodHandle) new_transformer.invoke(fixed, kind, impl));
