@@ -26,6 +26,8 @@ import static com.v7878.unsafe.Reflection.getHiddenFields;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.unsupportedART;
 
+import com.v7878.r8.annotations.DoNotShrink;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -281,6 +283,7 @@ public class ClassUtils {
         return caller.getClassLoader();
     }
 
+    @DoNotShrink // caller-sensitive
     public static Class<?> forName(String name) {
         return forName(name, false, getClassLoader(Stack.getStackClass1()));
     }

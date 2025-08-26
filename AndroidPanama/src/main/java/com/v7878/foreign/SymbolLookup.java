@@ -27,6 +27,7 @@
 
 package com.v7878.foreign;
 
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.Stack;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.access.JavaForeignAccess;
@@ -225,6 +226,7 @@ public interface SymbolLookup {
      * @see System#loadLibrary(String)
      */
     @SuppressWarnings("resource")
+    @DoNotShrink // caller-sensitive
     static SymbolLookup loaderLookup() {
         Class<?> caller = Stack.getStackClass1();
 

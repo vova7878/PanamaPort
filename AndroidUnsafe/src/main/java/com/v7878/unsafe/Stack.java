@@ -8,7 +8,6 @@ import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 
-//TODO: mark all methods that used this class as noinline
 public class Stack {
     static {
         registerNativeMethod(

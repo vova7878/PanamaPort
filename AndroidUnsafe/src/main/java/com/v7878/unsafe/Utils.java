@@ -4,7 +4,6 @@ import static android.os.Build.VERSION.SDK_INT;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
-import android.annotation.SuppressLint;
 import android.util.Log;
 
 import com.v7878.dex.immutable.TypeId;
@@ -243,7 +242,6 @@ public class Utils {
         }
     }
 
-    @SuppressLint("NewApi")
     public static void reachabilityFence(Object ref) {
         if (SDK_INT >= 28) {
             Reference.reachabilityFence(ref);
@@ -350,6 +348,7 @@ public class Utils {
         };
     }
 
+    @DoNotShrink // caller-sensitive
     public static ClassLoader newEmptyClassLoader() {
         return newEmptyClassLoader(getStackClass1().getClassLoader());
     }
