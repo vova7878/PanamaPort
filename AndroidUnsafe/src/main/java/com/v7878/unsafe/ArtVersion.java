@@ -36,9 +36,12 @@ public class ArtVersion {
     }
 
     private static boolean is36() {
-        Method method = searchMethod(Long.class.getDeclaredMethods(),
-                "compress", false, long.class, long.class);
-        return method != null;
+        try {
+            Class.forName("java.lang.invoke.DirectMethodHandle");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     private static boolean is35() {
