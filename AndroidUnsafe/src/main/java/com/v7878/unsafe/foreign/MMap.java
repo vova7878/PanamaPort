@@ -36,7 +36,7 @@ class MMap {
         if (!match.find()) {
             throw new IllegalStateException("Can`t find mmap entry with path " + path);
         }
-        long start = Long.parseLong(Objects.requireNonNull(match.group("start")), 16);
+        long start = Long.parseUnsignedLong(Objects.requireNonNull(match.group("start")), 16);
         path = match.group("path");
         return new MMapEntry(start, path);
     }
