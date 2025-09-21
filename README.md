@@ -25,15 +25,7 @@ Just add this library to the list of dependencies:
 
 ```
 dependencies {
-    implementation 'com.github.vova7878.PanamaPort:<sublibrary>:<version>'
-}
-```
-
-For example:
-
-```
-dependencies {
-    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.8-preview'
+    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.9-preview'
 }
 ```
 
