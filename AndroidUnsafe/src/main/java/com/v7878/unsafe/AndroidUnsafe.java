@@ -993,19 +993,28 @@ public class AndroidUnsafe {
         return SunUnsafe.compareAndSwapObject(obj, offset, expectedValue, value);
     }
 
-    @AlwaysInline
     public static int getAndSetIntO(Object obj, long offset, int newValue) {
-        return SunUnsafe.getAndSetInt(obj, offset, newValue);
+        int v;
+        do {
+            v = getIntVolatileO(obj, offset);
+        } while (!compareAndSwapIntO(obj, offset, v, newValue));
+        return v;
     }
 
-    @AlwaysInline
     public static long getAndSetLongO(Object obj, long offset, long newValue) {
-        return SunUnsafe.getAndSetLong(obj, offset, newValue);
+        long v;
+        do {
+            v = getLongVolatileO(obj, offset);
+        } while (!compareAndSwapLongO(obj, offset, v, newValue));
+        return v;
     }
 
-    @AlwaysInline
     public static Object getAndSetObject(Object obj, long offset, Object newValue) {
-        return SunUnsafe.getAndSetObject(obj, offset, newValue);
+        Object v;
+        do {
+            v = getObjectVolatile(obj, offset);
+        } while (!compareAndSwapObject(obj, offset, v, newValue));
+        return v;
     }
 
     public static int getAndAddIntO(Object o, long offset, int delta) {

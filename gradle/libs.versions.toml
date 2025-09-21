@@ -1,16 +1,16 @@
 [versions]
-agp = "8.12.2"
-dexfile = "v1.0.5"
-raung = "v0.0.1"
-r8_annotations = "v0.0.3"
-sun_cleanerstub = "v0.0.4"
-sun_unsafewrapper = "v0.0.3"
+agp = "8.13.0"
+dexfile = "v1.0.6"
+raung = "v0.0.3"
+r8-annotations = "v0.0.5"
+sun-cleanerstub = "v0.0.6"
+sun-unsafewrapper = "v0.0.4"
 
 [libraries]
 dexfile = { module = "com.github.vova7878:DexFile", version.ref = "dexfile" }
-r8_annotations = { module = "com.github.vova7878:R8Annotations", version.ref = "r8_annotations" }
-sun_cleanerstub = { module = "com.github.vova7878:SunCleanerStub", version.ref = "sun_cleanerstub" }
-sun_unsafewrapper = { module = "com.github.vova7878:SunUnsafeWrapper", version.ref = "sun_unsafewrapper" }
+r8-annotations = { module = "com.github.vova7878:R8Annotations", version.ref = "r8-annotations" }
+sun-cleanerstub = { module = "com.github.vova7878:SunCleanerStub", version.ref = "sun-cleanerstub" }
+sun-unsafewrapper = { module = "com.github.vova7878:SunUnsafeWrapper", version.ref = "sun-unsafewrapper" }
 
 [plugins]
 raung = { id = "com.github.vova7878.RaungPlugin", version.ref = "raung" }

@@ -28,7 +28,7 @@
 package com.v7878.foreign;
 
 import com.v7878.r8.annotations.DoNotShrink;
-import com.v7878.r8.annotations.KeepCodeAttribute;
+import com.v7878.r8.annotations.KeepCode;
 import com.v7878.sun.cleaner.SunCleaner;
 import com.v7878.unsafe.Utils;
 
@@ -74,7 +74,7 @@ sealed class _ImplicitSession extends _SharedSession {
         final Object ref;
 
         @DoNotShrink
-        @KeepCodeAttribute
+        @KeepCode
         public ImplicitHolderSession(SunCleaner cleaner, Object ref) {
             super(cleaner);
             this.ref = Objects.requireNonNull(ref);

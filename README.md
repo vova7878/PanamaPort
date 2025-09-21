@@ -14,9 +14,9 @@ The project contains 4 sublibraries:
 ### Requirements
 
 - JDK 21+
-- Gradle 8.0+
-- Android Gradle plugin 8.1.1+
-- compileSdk 34+
+- Gradle 8.7+
+- Android Gradle plugin 8.6.0+
+- compileSdk 35+
 - Support for dependencies from jitpack.io [(see documentation)](https://docs.jitpack.io/)
 
 ### Get started

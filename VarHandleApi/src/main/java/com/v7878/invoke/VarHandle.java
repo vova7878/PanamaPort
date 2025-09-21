@@ -23,6 +23,7 @@
 package com.v7878.invoke;
 
 import com.v7878.r8.annotations.AlwaysInline;
+import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.unsafe.invoke.VarHandleImpl.AccessType;
 
 import java.lang.invoke.MethodHandle;
@@ -141,6 +142,7 @@ public abstract class VarHandle {
         GET_AND_BITWISE_XOR_RELEASE("getAndBitwiseXorRelease", AccessType.GET_AND_UPDATE_BITWISE),
         GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE_BITWISE);
 
+        @NoSideEffects
         static final Map<String, AccessMode> methodNameToAccessMode;
 
         static {

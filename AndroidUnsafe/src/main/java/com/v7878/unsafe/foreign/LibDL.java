@@ -250,7 +250,6 @@ public class LibDL {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment info = arena.allocate(dlinfo_layout);
 
-            //TODO: check result?
             int ignore = Native.INSTANCE.dladdr(addr, info.nativeAddress());
 
             return new DLInfo(segmentToString((MemorySegment) fname_handle.get(info, 0)),

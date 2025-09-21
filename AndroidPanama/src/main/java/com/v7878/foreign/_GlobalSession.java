@@ -28,7 +28,7 @@
 package com.v7878.foreign;
 
 import com.v7878.r8.annotations.DoNotShrink;
-import com.v7878.r8.annotations.KeepCodeAttribute;
+import com.v7878.r8.annotations.KeepCode;
 import com.v7878.r8.annotations.NoSideEffects;
 
 import java.util.Objects;
@@ -79,7 +79,7 @@ sealed class _GlobalSession extends _MemorySessionImpl {
         final Object ref;
 
         @DoNotShrink
-        @KeepCodeAttribute
+        @KeepCode
         public GlobalHolderSession(Object ref) {
             this.ref = Objects.requireNonNull(ref);
         }

@@ -2,7 +2,8 @@ pluginManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
+        gradlePluginPortal()
+        maven { url = uri("https://jitpack.io") }
     }
 }
 dependencyResolutionManagement {
@@ -10,9 +11,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
+        maven { url = uri("https://jitpack.io") }
     }
 }
 rootProject.name = "PanamaPort"
-include ':AndroidUnsafe', ':AndroidPanama', ':VarHandleApi', ':LLVM'
-include ':stub_panama', ':stub_buffers', ':stub_invoke', ':stub_llvm'
+include(":AndroidUnsafe", ":AndroidPanama", ":VarHandleApi", ":LLVM")
+include(":stub_panama", ":stub_buffers", ":stub_invoke", ":stub_llvm")
+ 
