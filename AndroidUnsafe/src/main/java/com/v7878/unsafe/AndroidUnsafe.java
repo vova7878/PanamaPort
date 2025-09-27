@@ -101,8 +101,8 @@ public class AndroidUnsafe {
     }
 
     @AlwaysInline
+    @SuppressWarnings("unchecked")
     private static <E extends Throwable, T> T throwException0(Throwable th) throws E {
-        //noinspection unchecked
         throw (E) th;
     }
 
@@ -157,8 +157,8 @@ public class AndroidUnsafe {
     }
 
     @AlwaysInline
+    @SuppressWarnings("unchecked")
     public static <T> T allocateInstance(Class<T> clazz) {
-        //noinspection unchecked
         return (T) nothrows_run(() -> SunUnsafe.allocateInstance(clazz));
     }
 

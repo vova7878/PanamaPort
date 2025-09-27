@@ -35,6 +35,7 @@ import java.util.Objects;
 import dalvik.system.DexFile;
 
 @ApiSensitive
+@SuppressWarnings("unchecked")
 public class MethodTypeHacks {
     private static final Class<?> INVOKE_FORM =
             ClassUtils.sysClass("java.lang.invoke.MethodTypeForm");
@@ -141,7 +142,6 @@ public class MethodTypeHacks {
 
         ClassLoader loader = MethodTypeForm0.class.getClassLoader();
 
-        //noinspection unchecked
         FORM_IMPL = (Class<MethodTypeForm0>) loadClass(dex, form_name, loader);
         if (!DEBUG_BUILD) {
             ClassUtils.forceClassVerified(FORM_IMPL);

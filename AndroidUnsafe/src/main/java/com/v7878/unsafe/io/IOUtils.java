@@ -3,6 +3,8 @@ package com.v7878.unsafe.io;
 import static android.system.OsConstants.EINTR;
 import static android.system.OsConstants.F_GETFL;
 import static android.system.OsConstants.O_APPEND;
+import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.NEW_INIT;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccess;
@@ -23,6 +25,7 @@ import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.DangerLevel;
+import com.v7878.unsafe.EarlyNativeUtils;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.AccessLinker;
 import com.v7878.unsafe.access.JavaForeignAccess;
@@ -117,14 +120,6 @@ public class IOUtils {
         @CallSignature(type = CRITICAL, ret = INT, args = {INT, INT})
         abstract int ashmem_set_prot_region(int fd, int prot);
 
-        @LibrarySymbol(name = "ashmem_pin_region")
-        @CallSignature(type = CRITICAL, ret = INT, args = {INT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract int ashmem_pin_region(int fd, long offset, long len);
-
-        @LibrarySymbol(name = "ashmem_unpin_region")
-        @CallSignature(type = CRITICAL, ret = INT, args = {INT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract int ashmem_unpin_region(int fd, long offset, long len);
-
         @LibrarySymbol(name = "ashmem_get_size_region")
         @CallSignature(type = CRITICAL, ret = INT, args = {INT})
         abstract int ashmem_get_size_region(int fd);
@@ -145,11 +140,90 @@ public class IOUtils {
         @CallSignature(type = CRITICAL, ret = INT, args = {INT, INT})
         abstract int fcntl_void(int fd, int cmd);
 
+        @LibrarySymbol(name = "syscall")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LONG_AS_WORD, INT})
+        abstract long syscall_pi(long number, long arg2, int arg3);
+
         static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class, CUTILS);
     }
 
+    public static boolean isMemFDSupported() {
+        class Holder {
+            static final boolean SUPPORTED;
+
+            static {
+                final int kRequiredMajor = 3;
+                final int kRequiredMinor = 17;
+
+                boolean value = false;
+                var uname = Os.uname();
+                if ("Linux".equals(uname.sysname)) {
+                    var parts = uname.release.split("\\.", 3);
+                    if (parts.length >= 2) {
+                        int major = Integer.parseInt(parts[0]);
+                        int minor = Integer.parseInt(parts[1]);
+                        value = major > kRequiredMajor || (major == kRequiredMajor && minor >= kRequiredMinor);
+                    }
+                }
+                SUPPORTED = value;
+            }
+        }
+        return Holder.SUPPORTED;
+    }
+
+    private static int raw_memfd_create(String name, int flags) {
+        class Holder {
+            static final int __NR_memfd_create;
+
+            static {
+                switch (CURRENT_INSTRUCTION_SET) {
+                    case ARM, ARM64, RISCV64 -> __NR_memfd_create = 279;
+                    case X86 -> __NR_memfd_create = 356;
+                    case X86_64 -> __NR_memfd_create = 319;
+                    default -> throw shouldNotReachHere();
+                }
+            }
+        }
+        if (!isMemFDSupported()) {
+            Errno.errno(OsConstants.ENOSYS);
+            return -1;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment c_name = EarlyNativeUtils.allocString(arena, name);
+            return (int) Native.INSTANCE.syscall_pi(
+                    Holder.__NR_memfd_create, c_name.nativeAddress(), flags);
+        }
+    }
+
+    public static final int MFD_CLOEXEC = 0x0001;
+    public static final int MFD_ALLOW_SEALING = 0x0002;
+    public static final int MFD_NOEXEC_SEAL = 0x0008;
+    public static final int MFD_EXEC = 0x0010;
+
+    public static FileDescriptor memfd_create(String name, int flags) throws ErrnoException {
+        int value = raw_memfd_create(name, flags);
+        if (value == -1) {
+            throw new ErrnoException("memfd_create", Errno.errno());
+        }
+        return newFileDescriptor(value);
+    }
+
+    public static ScopedFD memfd_create_scoped(String name, int flags) throws ErrnoException {
+        return new ScopedFD(memfd_create(name, flags));
+    }
+
+    public static FileDescriptor memfd_create(String name, int flags, long size) throws ErrnoException {
+        var fd = memfd_create(name, flags);
+        Os.ftruncate(fd, size);
+        return fd;
+    }
+
+    public static ScopedFD memfd_create_scoped(String name, int flags, long size) throws ErrnoException {
+        return new ScopedFD(memfd_create(name, flags, size));
+    }
+
     public static void ashmem_valid(FileDescriptor fd) throws ErrnoException {
-        int value = IOUtils.Native.INSTANCE.ashmem_valid(getDescriptorValue(fd));
+        int value = Native.INSTANCE.ashmem_valid(getDescriptorValue(fd));
         if (value < 0) {
             throw new ErrnoException("ashmem_valid", Errno.errno());
         }
@@ -160,8 +234,8 @@ public class IOUtils {
             throw new IllegalArgumentException("Size must be greater than zero");
         }
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment c_name = arena.allocateFrom(name);
-            int value = IOUtils.Native.INSTANCE.ashmem_create_region(c_name.nativeAddress(), size);
+            MemorySegment c_name = EarlyNativeUtils.allocString(arena, name);
+            int value = Native.INSTANCE.ashmem_create_region(c_name.nativeAddress(), size);
             if (value == -1) {
                 throw new ErrnoException("ashmem_create_region", Errno.errno());
             }
@@ -174,28 +248,14 @@ public class IOUtils {
     }
 
     public static void ashmem_set_prot_region(FileDescriptor fd, int prot) throws ErrnoException {
-        int value = IOUtils.Native.INSTANCE.ashmem_set_prot_region(getDescriptorValue(fd), prot);
+        int value = Native.INSTANCE.ashmem_set_prot_region(getDescriptorValue(fd), prot);
         if (value < 0) {
             throw new ErrnoException("ashmem_set_prot_region", Errno.errno());
         }
     }
 
-    public static void ashmem_pin_region(FileDescriptor fd, long offset, long len) throws ErrnoException {
-        int value = IOUtils.Native.INSTANCE.ashmem_pin_region(getDescriptorValue(fd), offset, len);
-        if (value < 0) {
-            throw new ErrnoException("ashmem_pin_region", Errno.errno());
-        }
-    }
-
-    public static void ashmem_unpin_region(FileDescriptor fd, long offset, long len) throws ErrnoException {
-        int value = IOUtils.Native.INSTANCE.ashmem_unpin_region(getDescriptorValue(fd), offset, len);
-        if (value < 0) {
-            throw new ErrnoException("ashmem_unpin_region", Errno.errno());
-        }
-    }
-
     public static int ashmem_get_size_region(FileDescriptor fd) throws ErrnoException {
-        int value = IOUtils.Native.INSTANCE.ashmem_get_size_region(getDescriptorValue(fd));
+        int value = Native.INSTANCE.ashmem_get_size_region(getDescriptorValue(fd));
         if (value < 0) {
             throw new ErrnoException("ashmem_get_size_region", Errno.errno());
         }
@@ -208,6 +268,16 @@ public class IOUtils {
             throw new ErrnoException("mprotect", Errno.errno());
         }
     }
+
+    private static final int F_LINUX_SPECIFIC_BASE = 1024;
+    public static final int F_ADD_SEALS = (F_LINUX_SPECIFIC_BASE + 9);
+    public static final int F_GET_SEALS = (F_LINUX_SPECIFIC_BASE + 10);
+    public static final int F_SEAL_SEAL = 0x0001;
+    public static final int F_SEAL_SHRINK = 0x0002;
+    public static final int F_SEAL_GROW = 0x0004;
+    public static final int F_SEAL_WRITE = 0x0008;
+    public static final int F_SEAL_FUTURE_WRITE = 0x0010;
+    public static final int F_SEAL_EXEC = 0x0020;
 
     public static int fcntl_arg(FileDescriptor fd, int cmd, int arg) throws ErrnoException {
         int fd_int = getDescriptorValue(fd);

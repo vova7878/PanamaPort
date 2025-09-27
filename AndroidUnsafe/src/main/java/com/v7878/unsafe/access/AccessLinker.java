@@ -426,6 +426,7 @@ public class AccessLinker {
         return new ExecutableProcessor(kind, MethodId.of(target), sketch.getName(), sketch_proto);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> Class<T> processSymbols(Class<T> clazz, ClassLoader loader, List<Processor> processors) {
         String access_name = Utils.generateClassName(loader, clazz.getName() + "$Access");
         TypeId access_id = TypeId.ofName(access_name);
@@ -448,7 +449,6 @@ public class AccessLinker {
             proc.post(out);
         }
 
-        //noinspection unchecked
         return (Class<T>) out;
     }
 

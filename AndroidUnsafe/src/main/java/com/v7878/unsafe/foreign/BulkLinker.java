@@ -460,6 +460,7 @@ public class BulkLinker {
         processASMs(scope, symbols, code, map);
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> Class<T> processSymbols(Arena scope, Class<T> parent, ClassLoader loader, SymbolInfo[] infos) {
         Objects.requireNonNull(scope);
         Objects.requireNonNull(loader);
@@ -475,12 +476,12 @@ public class BulkLinker {
             for (int i = 0; i < infos.length; i++) {
                 SymbolInfo info = infos[i];
                 if (info.requireNativeStub) native_stubs_map[native_stubs_count++] = i;
-                if (info.source instanceof ASMSource gs) {
+                if (info.source instanceof ASMSource(byte[] code)) {
                     asm_map[asm_count] = i;
-                    asm_data[asm_count] = Objects.requireNonNull(gs.code());
+                    asm_data[asm_count] = Objects.requireNonNull(code);
                     asm_count++;
-                } else if (info.source instanceof SegmentSource ss) {
-                    symbols[i] = Objects.requireNonNull(ss.symbol());
+                } else if (info.source instanceof SegmentSource(MemorySegment symbol)) {
+                    symbols[i] = Objects.requireNonNull(symbol);
                 } else {
                     shouldNotReachHere();
                 }
@@ -498,7 +499,6 @@ public class BulkLinker {
         {
             String impl_name = parent.getName() + "$Impl";
             DexFile dex = openDexFile(generateJavaStub(parent, impl_name, infos));
-            //noinspection unchecked
             impl = (Class<T>) loadClass(dex, impl_name, loader);
             ClassUtils.forceClassVerified(impl);
 

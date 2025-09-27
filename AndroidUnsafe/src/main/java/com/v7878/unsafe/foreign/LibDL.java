@@ -3,10 +3,11 @@ package com.v7878.unsafe.foreign;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.MemoryLayout.paddedStructLayout;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtVersion.A9;
 import static com.v7878.unsafe.ArtVersion.ART_INDEX;
+import static com.v7878.unsafe.EarlyNativeUtils.allocString;
+import static com.v7878.unsafe.EarlyNativeUtils.segmentToString;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
@@ -20,18 +21,12 @@ import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
-import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ArtMethodUtils;
-import com.v7878.unsafe.ExtraMemoryAccess;
-import com.v7878.unsafe.access.JavaForeignAccess;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.SymbolGenerator;
 import com.v7878.unsafe.foreign.ELF.SymTab;
 import com.v7878.unsafe.foreign.MMap.MMapEntry;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -163,40 +158,6 @@ public class LibDL {
                 Native.class, unused -> Optional.empty());
     }
 
-    // TODO: refactor?
-    private static MemorySegment allocString(Arena arena, String value) {
-        if (ExtraMemoryAccess.isEarlyNativeInitialized()) {
-            return arena.allocateFrom(value);
-        }
-
-        byte[] data = value.getBytes(StandardCharsets.UTF_8);
-        data = Arrays.copyOf(data, data.length + 1);
-        MemorySegment out = JavaForeignAccess.allocateNoInit(data.length, 1, arena);
-        AndroidUnsafe.copyMemory(data, ARRAY_BYTE_BASE_OFFSET,
-                null, out.nativeAddress(), data.length);
-        return out;
-    }
-
-    // TODO: refactor?
-    private static String segmentToString(MemorySegment segment) {
-        if (MemorySegment.NULL.equals(segment)) return null;
-        if (ExtraMemoryAccess.isEarlyNativeInitialized()) {
-            return segment.reinterpret(Long.MAX_VALUE).getString(0);
-        }
-
-        ByteArrayOutputStream data = new ByteArrayOutputStream();
-        var base = JavaForeignAccess.unsafeGetBase(segment);
-        var offset = JavaForeignAccess.unsafeGetOffset(segment);
-
-        for (int i = 0; ; i++) {
-            byte value = AndroidUnsafe.getByte(base, offset + i);
-            if (value == 0) break;
-            data.write(value);
-        }
-
-        return data.toString();
-    }
-
     public static long cdlopen(String filename, int flags, long caller_addr) {
         Objects.requireNonNull(filename);
         try (Arena arena = Arena.ofConfined()) {
@@ -224,7 +185,8 @@ public class LibDL {
         Objects.requireNonNull(symbol);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment c_symbol = allocString(arena, symbol);
-            MemorySegment c_version = version == null ? MemorySegment.NULL : allocString(arena, version);
+            // Note: version is nullable
+            MemorySegment c_version = allocString(arena, version);
             return Native.INSTANCE.dlvsym(handle, c_symbol.nativeAddress(), c_version.nativeAddress(), caller_addr);
         }
     }
@@ -241,21 +203,23 @@ public class LibDL {
         return cdlsym(handle, symbol, DEFAULT_CALLER);
     }
 
-    private static final VarHandle fname_handle = dlinfo_layout.varHandle(groupElement("fname"));
-    private static final VarHandle fbase_handle = dlinfo_layout.varHandle(groupElement("fbase"));
-    private static final VarHandle sname_handle = dlinfo_layout.varHandle(groupElement("sname"));
-    private static final VarHandle saddr_handle = dlinfo_layout.varHandle(groupElement("saddr"));
-
     public static DLInfo dladdr(long addr) {
+        class Holder {
+            static final VarHandle fname = dlinfo_layout.varHandle(groupElement("fname"));
+            static final VarHandle fbase = dlinfo_layout.varHandle(groupElement("fbase"));
+            static final VarHandle sname = dlinfo_layout.varHandle(groupElement("sname"));
+            static final VarHandle saddr = dlinfo_layout.varHandle(groupElement("saddr"));
+        }
+
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment info = arena.allocate(dlinfo_layout);
 
             int ignore = Native.INSTANCE.dladdr(addr, info.nativeAddress());
 
-            return new DLInfo(segmentToString((MemorySegment) fname_handle.get(info, 0)),
-                    ((MemorySegment) fbase_handle.get(info, 0)).nativeAddress(),
-                    segmentToString((MemorySegment) sname_handle.get(info, 0)),
-                    ((MemorySegment) saddr_handle.get(info, 0)).nativeAddress());
+            return new DLInfo(segmentToString((MemorySegment) Holder.fname.get(info, 0)),
+                    ((MemorySegment) Holder.fbase.get(info, 0)).nativeAddress(),
+                    segmentToString((MemorySegment) Holder.sname.get(info, 0)),
+                    ((MemorySegment) Holder.saddr.get(info, 0)).nativeAddress());
         }
     }
 }

@@ -647,8 +647,8 @@ public class Reflection {
         return searchMethod(getHiddenMethods(clazz), name, params);
     }
 
+    @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
     public static <T> Constructor<T>[] getHiddenConstructors(Class<T> clazz) {
-        //noinspection SuspiciousToArrayCall,unchecked
         return Arrays.stream(getHiddenDirectExecutables(clazz))
                 .filter((exec) -> exec instanceof Constructor
                         && !Modifier.isStatic(exec.getModifiers()))

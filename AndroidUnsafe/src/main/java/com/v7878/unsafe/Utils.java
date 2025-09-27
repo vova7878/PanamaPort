@@ -1,6 +1,7 @@
 package com.v7878.unsafe;
 
 import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Process.FIRST_APPLICATION_UID;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.unsafe.Stack.getStackClass1;
 
@@ -398,6 +399,19 @@ public class Utils {
             } finally {
                 System.exit(1);
             }
+        }
+    }
+
+    public static int getAppId(int uid) {
+        final int PER_USER_RANGE = 100000;
+        return uid % PER_USER_RANGE;
+    }
+
+    public static boolean isCoreUid(int uid) {
+        if (uid >= 0) {
+            return getAppId(uid) < FIRST_APPLICATION_UID;
+        } else {
+            return false;
         }
     }
 
