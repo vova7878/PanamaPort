@@ -1,19 +1,21 @@
 package com.v7878.unsafe;
 
+import static android.system.OsConstants.PROT_READ;
 import static com.v7878.unsafe.AndroidUnsafe.PAGE_SIZE;
 import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
 import static com.v7878.unsafe.Utils.shouldNotHappen;
 import static com.v7878.unsafe.io.IOUtils.F_ADD_SEALS;
+import static com.v7878.unsafe.io.IOUtils.F_SEAL_FUTURE_WRITE;
 import static com.v7878.unsafe.io.IOUtils.F_SEAL_GROW;
 import static com.v7878.unsafe.io.IOUtils.F_SEAL_SEAL;
 import static com.v7878.unsafe.io.IOUtils.F_SEAL_SHRINK;
-import static com.v7878.unsafe.io.IOUtils.F_SEAL_WRITE;
 import static com.v7878.unsafe.io.IOUtils.MAP_ANONYMOUS;
 import static com.v7878.unsafe.io.IOUtils.MFD_ALLOW_SEALING;
 import static com.v7878.unsafe.misc.Math.roundUpUL;
 
 import android.os.Process;
 import android.system.ErrnoException;
+import android.system.Os;
 import android.system.OsConstants;
 
 import com.v7878.foreign.Arena;
@@ -24,11 +26,11 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class NativeCodeBlob {
-    private static final int PROT_RW = OsConstants.PROT_READ | OsConstants.PROT_WRITE;
-    private static final int PROT_RX = OsConstants.PROT_READ | OsConstants.PROT_EXEC;
+    private static final int PROT_RW = PROT_READ | OsConstants.PROT_WRITE;
+    private static final int PROT_RX = PROT_READ | OsConstants.PROT_EXEC;
     private static final int FD_MAP_FLAGS = OsConstants.MAP_SHARED;
     private static final int ANON_MAP_FLAGS = OsConstants.MAP_PRIVATE | MAP_ANONYMOUS;
-    private static final int MEMFD_SEAL_FLAGS = F_SEAL_SEAL | F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_WRITE;
+    private static final int MEMFD_SEAL_FLAGS = F_SEAL_SEAL | F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_FUTURE_WRITE;
     private static final int CODE_ALIGNMENT = CURRENT_INSTRUCTION_SET.codeAlignment();
     private static final String MAP_NAME = "jit-cache";
 
@@ -53,7 +55,7 @@ public class NativeCodeBlob {
             }
 
             IOUtils.mprotect(data.nativeAddress(), size, PROT_RX);
-        } else if (IOUtils.isMemFDSupported()) {
+        } else if (IOUtils.isSealFutureWriteSupported()) {
             try (var fd = IOUtils.memfd_create_scoped(MAP_NAME, MFD_ALLOW_SEALING, size)) {
                 try (var scope = Arena.ofConfined()) {
                     data = IOUtils.mmap(0, fd.value(), 0, size, PROT_RW, FD_MAP_FLAGS, scope);
@@ -62,6 +64,8 @@ public class NativeCodeBlob {
                         EarlyNativeUtils.copy(code[i], 0, data, offsets[i], sizes[i]);
                     }
                 }
+
+                Os.fsync(fd.value());
 
                 IOUtils.fcntl_arg(fd.value(), F_ADD_SEALS, MEMFD_SEAL_FLAGS);
 
@@ -76,6 +80,8 @@ public class NativeCodeBlob {
                         EarlyNativeUtils.copy(code[i], 0, data, offsets[i], sizes[i]);
                     }
                 }
+
+                Os.fsync(fd.value());
 
                 IOUtils.ashmem_set_prot_region(fd.value(), PROT_RX);
 

@@ -171,6 +171,26 @@ public class IOUtils {
         return Holder.SUPPORTED;
     }
 
+    public static boolean isSealFutureWriteSupported() {
+        class Holder {
+            static final boolean SUPPORTED;
+
+            static {
+                boolean value;
+                try {
+                    try (var fd = IOUtils.memfd_create_scoped("test", MFD_ALLOW_SEALING)) {
+                        IOUtils.fcntl_arg(fd.value(), F_ADD_SEALS, F_SEAL_FUTURE_WRITE);
+                    }
+                    value = true;
+                } catch (ErrnoException ignored) {
+                    value = false;
+                }
+                SUPPORTED = value;
+            }
+        }
+        return Holder.SUPPORTED;
+    }
+
     private static int raw_memfd_create(String name, int flags) {
         class Holder {
             static final int __NR_memfd_create;
