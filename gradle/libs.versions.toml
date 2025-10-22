@@ -1,6 +1,6 @@
 [versions]
 agp = "8.13.0"
-dexfile = "v1.0.6"
+dexfile = "v1.1.0"
 raung = "v0.0.3"
 r8-annotations = "v0.0.5"
 sun-cleanerstub = "v0.0.6"
