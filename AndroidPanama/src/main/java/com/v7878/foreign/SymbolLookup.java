@@ -226,7 +226,7 @@ public interface SymbolLookup {
      * @see System#loadLibrary(String)
      */
     @SuppressWarnings("resource")
-    @DoNotShrink // caller-sensitive
+    @DoNotShrink // TODO: DoNotInline // caller-sensitive
     static SymbolLookup loaderLookup() {
         Class<?> caller = Stack.getStackClass1();
 

@@ -43,7 +43,7 @@ final class _ScopedMemoryAccess {
         }
     }
 
-    private record SessionLock(_MemorySessionImpl session) implements FineClosable {
+    record SessionLock(_MemorySessionImpl session) implements FineClosable {
         @AlwaysInline
         @CheckDiscard
         SessionLock {
@@ -64,7 +64,7 @@ final class _ScopedMemoryAccess {
 
     @AlwaysInline
     @CheckDiscard
-    private static SessionLock lock(_MemorySessionImpl session) {
+    static SessionLock lock(_MemorySessionImpl session) {
         return new SessionLock(session);
     }
 

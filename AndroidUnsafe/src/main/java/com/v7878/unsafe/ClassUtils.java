@@ -283,7 +283,7 @@ public class ClassUtils {
         return caller.getClassLoader();
     }
 
-    @DoNotShrink // caller-sensitive
+    @DoNotShrink // TODO: DoNotInline // caller-sensitive
     public static Class<?> forName(String name) {
         return forName(name, false, getClassLoader(Stack.getStackClass1()));
     }

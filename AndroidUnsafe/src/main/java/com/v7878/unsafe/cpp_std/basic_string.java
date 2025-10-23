@@ -78,6 +78,7 @@ public final class basic_string {
             }
         }
 
+        // Note: call destruct before assign
         public void assign(MemorySegment data) {
             long bytes = data.byteSize();
             if (bytes % ELEMENT.byteSize() != 0) {

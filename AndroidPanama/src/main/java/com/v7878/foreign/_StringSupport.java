@@ -30,10 +30,7 @@ package com.v7878.foreign;
 import static com.v7878.foreign.ValueLayout.JAVA_BYTE;
 import static com.v7878.foreign.ValueLayout.JAVA_INT_UNALIGNED;
 import static com.v7878.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
-import static com.v7878.unsafe.AndroidUnsafe.IS_BIG_ENDIAN;
 import static com.v7878.unsafe.ExtraMemoryAccess.SOFT_MAX_ARRAY_LENGTH;
-import static com.v7878.unsafe.InstructionSet.CURRENT_INSTRUCTION_SET;
-import static com.v7878.unsafe.InstructionSet.X86_64;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -42,6 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.unsafe.VM;
 
 import java.nio.charset.Charset;
@@ -127,6 +125,7 @@ final class _StringSupport {
      * @throws IllegalArgumentException if the examined region contains no zero bytes
      *                                  within a length that can be accepted by a String
      */
+    @DoNotShrink // TODO: DoNotInline
     public static int strlenByte(_AbstractMemorySegmentImpl segment,
                                  long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
@@ -136,29 +135,38 @@ final class _StringSupport {
             segment.scope.checkValidState();
             throw nullNotFound(segment, fromOffset, toOffset);
         }
-        final long longBytes = length & LONG_MASK;
-        final long longLimit = fromOffset + longBytes;
-        long offset = fromOffset;
-        for (; offset < longLimit; offset += Long.BYTES) {
-            long val = _ScopedMemoryAccess.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
-            if (mightContainZeroByte(val)) {
-                for (int j = 0; j < Long.BYTES; j++) {
-                    if (_ScopedMemoryAccess.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j) == 0) {
-                        return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
+
+        // TODO: use aligned memory access
+        try (var ignored = _ScopedMemoryAccess.lock(segment.sessionImpl())) {
+            var u_base = segment.unsafeGetBase();
+            var u_offset = segment.unsafeGetOffset();
+
+            final long longBytes = length & LONG_MASK;
+            final long longLimit = fromOffset + longBytes;
+            long offset = fromOffset;
+            for (; offset < longLimit; offset += Long.BYTES) {
+                long val = _ScopedMemoryAccess.getLongUnaligned(null, u_base, u_offset + offset, false);
+                if (mightContainZeroByte(val)) {
+                    for (int j = 0; j < Long.BYTES; j++) {
+                        if ((val & 0xffL) == 0L) {
+                            return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                        }
+                        val >>>= 8;
                     }
                 }
             }
-        }
-        // Handle the tail
-        for (; offset < toOffset; offset++) {
-            byte val = _ScopedMemoryAccess.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset);
-            if (val == 0) {
-                return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
+            // Handle the tail
+            for (; offset < toOffset; offset++) {
+                byte val = _ScopedMemoryAccess.getByte(null, u_base, u_offset + offset);
+                if (val == 0) {
+                    return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
+                }
             }
         }
         throw nullNotFound(segment, fromOffset, toOffset);
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static int strlenShort(_AbstractMemorySegmentImpl segment,
                                   long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
@@ -168,31 +176,40 @@ final class _StringSupport {
             segment.scope.checkValidState();
             throw nullNotFound(segment, fromOffset, toOffset);
         }
-        final long longBytes = length & LONG_MASK;
-        final long longLimit = fromOffset + longBytes;
-        long offset = fromOffset;
-        for (; offset < longLimit; offset += Long.BYTES) {
-            long val = _ScopedMemoryAccess.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
-            if (mightContainZeroShort(val)) {
-                for (int j = 0; j < Long.BYTES; j += Short.BYTES) {
-                    if (_ScopedMemoryAccess.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, IS_BIG_ENDIAN) == 0) {
-                        return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
+
+        // TODO: use aligned memory access
+        try (var ignored = _ScopedMemoryAccess.lock(segment.sessionImpl())) {
+            var u_base = segment.unsafeGetBase();
+            var u_offset = segment.unsafeGetOffset();
+
+            final long longBytes = length & LONG_MASK;
+            final long longLimit = fromOffset + longBytes;
+            long offset = fromOffset;
+            for (; offset < longLimit; offset += Long.BYTES) {
+                long val = _ScopedMemoryAccess.getLongUnaligned(null, u_base, u_offset + offset, false);
+                if (mightContainZeroShort(val)) {
+                    for (int j = 0; j < Long.BYTES; j += Short.BYTES) {
+                        if ((val & 0xffffL) == 0L) {
+                            return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                        }
+                        val >>>= 16;
                     }
                 }
             }
-        }
-        // Handle the tail
-        // Prevent over scanning as we step by 2
-        final long endScan = toOffset & ~1; // The last bit is zero
-        for (; offset < endScan; offset += Short.BYTES) {
-            short val = _ScopedMemoryAccess.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
-            if (val == 0) {
-                return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
+            // Handle the tail
+            // Prevent over scanning as we step by 2
+            final long endScan = toOffset & ~1; // The last bit is zero
+            for (; offset < endScan; offset += Short.BYTES) {
+                short val = _ScopedMemoryAccess.getShortUnaligned(null, u_base, u_offset + offset, false);
+                if (val == 0) {
+                    return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
+                }
             }
         }
         throw nullNotFound(segment, fromOffset, toOffset);
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static int strlenInt(_AbstractMemorySegmentImpl segment,
                                 long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
@@ -202,30 +219,34 @@ final class _StringSupport {
             segment.scope.checkValidState();
             throw nullNotFound(segment, fromOffset, toOffset);
         }
-        long offset = fromOffset;
-        // TODO: Is this really true for android?
-        // For quad byte strings, it does not pay off to use long scanning on x64
-        if (CURRENT_INSTRUCTION_SET != X86_64) {
+
+        // TODO: use aligned memory access
+        try (var ignored = _ScopedMemoryAccess.lock(segment.sessionImpl())) {
+            var u_base = segment.unsafeGetBase();
+            var u_offset = segment.unsafeGetOffset();
+
             final long longBytes = length & LONG_MASK;
             final long longLimit = fromOffset + longBytes;
+            long offset = fromOffset;
             for (; offset < longLimit; offset += Long.BYTES) {
-                long val = _ScopedMemoryAccess.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
+                long val = _ScopedMemoryAccess.getLongUnaligned(null, u_base, u_offset + offset, false);
                 if (mightContainZeroInt(val)) {
                     for (int j = 0; j < Long.BYTES; j += Integer.BYTES) {
-                        if (_ScopedMemoryAccess.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, IS_BIG_ENDIAN) == 0) {
+                        if ((val & 0xffffffffL) == 0L) {
                             return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
                         }
+                        val >>>= 32;
                     }
                 }
             }
-        }
-        // Handle the tail
-        // Prevent over scanning as we step by 4
-        final long endScan = toOffset & ~3; // The last two bit are zero
-        for (; offset < endScan; offset += Integer.BYTES) {
-            int val = _ScopedMemoryAccess.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, IS_BIG_ENDIAN);
-            if (val == 0) {
-                return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
+            // Handle the tail
+            // Prevent over scanning as we step by 4
+            final long endScan = toOffset & ~3; // The last two bit are zero
+            for (; offset < endScan; offset += Integer.BYTES) {
+                int val = _ScopedMemoryAccess.getIntUnaligned(null, u_base, u_offset + offset, false);
+                if (val == 0) {
+                    return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
+                }
             }
         }
         throw nullNotFound(segment, fromOffset, toOffset);

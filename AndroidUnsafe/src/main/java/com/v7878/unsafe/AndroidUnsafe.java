@@ -10,6 +10,7 @@ import static com.v7878.unsafe.misc.Math.toUnsignedInt;
 import static com.v7878.unsafe.misc.Math.toUnsignedLong;
 
 import com.v7878.r8.annotations.AlwaysInline;
+import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.sun.unsafe.SunUnsafe;
 
@@ -585,26 +586,50 @@ public class AndroidUnsafe {
                 | (toUnsignedInt(i1) << pickPos(8, 8)));
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static long getLongUnaligned(Object obj, long offset) {
         if (UNALIGNED_ACCESS || ((offset & 7) == 0)) {
             return getLong(obj, offset);
         } else if ((offset & 3) == 0) {
-            return makeLong(getInt(obj, offset),
-                    getInt(obj, offset + 4));
+            if (obj == null) {
+                return makeLong(getIntN(offset),
+                        getIntN(offset + 4));
+            } else {
+                return makeLong(getIntO(obj, offset),
+                        getIntO(obj, offset + 4));
+            }
         } else if ((offset & 1) == 0) {
-            return makeLong(getShort(obj, offset),
-                    getShort(obj, offset + 2),
-                    getShort(obj, offset + 4),
-                    getShort(obj, offset + 6));
+            if (obj == null) {
+                return makeLong(getShortN(offset),
+                        getShortN(offset + 2),
+                        getShortN(offset + 4),
+                        getShortN(offset + 6));
+            } else {
+                return makeLong(getShortO(obj, offset),
+                        getShortO(obj, offset + 2),
+                        getShortO(obj, offset + 4),
+                        getShortO(obj, offset + 6));
+            }
         } else {
-            return makeLong(getByte(obj, offset),
-                    getByte(obj, offset + 1),
-                    getByte(obj, offset + 2),
-                    getByte(obj, offset + 3),
-                    getByte(obj, offset + 4),
-                    getByte(obj, offset + 5),
-                    getByte(obj, offset + 6),
-                    getByte(obj, offset + 7));
+            if (obj == null) {
+                return makeLong(getByteN(offset),
+                        getByteN(offset + 1),
+                        getByteN(offset + 2),
+                        getByteN(offset + 3),
+                        getByteN(offset + 4),
+                        getByteN(offset + 5),
+                        getByteN(offset + 6),
+                        getByteN(offset + 7));
+            } else {
+                return makeLong(getByteO(obj, offset),
+                        getByteO(obj, offset + 1),
+                        getByteO(obj, offset + 2),
+                        getByteO(obj, offset + 3),
+                        getByteO(obj, offset + 4),
+                        getByteO(obj, offset + 5),
+                        getByteO(obj, offset + 6),
+                        getByteO(obj, offset + 7));
+            }
         }
     }
 
@@ -623,17 +648,30 @@ public class AndroidUnsafe {
         return Double.longBitsToDouble(getLongUnaligned(obj, offset, swap));
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static int getIntUnaligned(Object obj, long offset) {
         if (UNALIGNED_ACCESS || ((offset & 3) == 0)) {
             return getInt(obj, offset);
         } else if ((offset & 1) == 0) {
-            return makeInt(getShort(obj, offset),
-                    getShort(obj, offset + 2));
+            if (obj == null) {
+                return makeInt(getShortN(offset),
+                        getShortN(offset + 2));
+            } else {
+                return makeInt(getShortO(obj, offset),
+                        getShortO(obj, offset + 2));
+            }
         } else {
-            return makeInt(getByte(obj, offset),
-                    getByte(obj, offset + 1),
-                    getByte(obj, offset + 2),
-                    getByte(obj, offset + 3));
+            if (obj == null) {
+                return makeInt(getByteN(offset),
+                        getByteN(offset + 1),
+                        getByteN(offset + 2),
+                        getByteN(offset + 3));
+            } else {
+                return makeInt(getByteO(obj, offset),
+                        getByteO(obj, offset + 1),
+                        getByteO(obj, offset + 2),
+                        getByteO(obj, offset + 3));
+            }
         }
     }
 
@@ -652,12 +690,18 @@ public class AndroidUnsafe {
         return Float.intBitsToFloat(getIntUnaligned(obj, offset, swap));
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static short getShortUnaligned(Object obj, long offset) {
         if (UNALIGNED_ACCESS || ((offset & 1) == 0)) {
             return getShort(obj, offset);
         } else {
-            return makeShort(getByte(obj, offset),
-                    getByte(obj, offset + 1));
+            if (obj == null) {
+                return makeShort(getByteN(offset),
+                        getByteN(offset + 1));
+            } else {
+                return makeShort(getByteO(obj, offset),
+                        getByteO(obj, offset + 1));
+            }
         }
     }
 
@@ -705,50 +749,91 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     private static void putLongParts(Object o, long offset, byte i0, byte i1, byte i2, byte i3, byte i4, byte i5, byte i6, byte i7) {
-        putByte(o, offset, pick(i0, i7));
-        putByte(o, offset + 1, pick(i1, i6));
-        putByte(o, offset + 2, pick(i2, i5));
-        putByte(o, offset + 3, pick(i3, i4));
-        putByte(o, offset + 4, pick(i4, i3));
-        putByte(o, offset + 5, pick(i5, i2));
-        putByte(o, offset + 6, pick(i6, i1));
-        putByte(o, offset + 7, pick(i7, i0));
+        if (o == null) {
+            putByteN(offset, pick(i0, i7));
+            putByteN(offset + 1, pick(i1, i6));
+            putByteN(offset + 2, pick(i2, i5));
+            putByteN(offset + 3, pick(i3, i4));
+            putByteN(offset + 4, pick(i4, i3));
+            putByteN(offset + 5, pick(i5, i2));
+            putByteN(offset + 6, pick(i6, i1));
+            putByteN(offset + 7, pick(i7, i0));
+        } else {
+            putByteO(o, offset, pick(i0, i7));
+            putByteO(o, offset + 1, pick(i1, i6));
+            putByteO(o, offset + 2, pick(i2, i5));
+            putByteO(o, offset + 3, pick(i3, i4));
+            putByteO(o, offset + 4, pick(i4, i3));
+            putByteO(o, offset + 5, pick(i5, i2));
+            putByteO(o, offset + 6, pick(i6, i1));
+            putByteO(o, offset + 7, pick(i7, i0));
+        }
     }
 
     @AlwaysInline
     private static void putLongParts(Object o, long offset, short i0, short i1, short i2, short i3) {
-        putShort(o, offset, pick(i0, i3));
-        putShort(o, offset + 2, pick(i1, i2));
-        putShort(o, offset + 4, pick(i2, i1));
-        putShort(o, offset + 6, pick(i3, i0));
+        if (o == null) {
+            putShortN(offset, pick(i0, i3));
+            putShortN(offset + 2, pick(i1, i2));
+            putShortN(offset + 4, pick(i2, i1));
+            putShortN(offset + 6, pick(i3, i0));
+        } else {
+            putShortO(o, offset, pick(i0, i3));
+            putShortO(o, offset + 2, pick(i1, i2));
+            putShortO(o, offset + 4, pick(i2, i1));
+            putShortO(o, offset + 6, pick(i3, i0));
+        }
     }
 
     @AlwaysInline
     private static void putLongParts(Object o, long offset, int i0, int i1) {
-        putInt(o, offset, pick(i0, i1));
-        putInt(o, offset + 4, pick(i1, i0));
-    }
-
-    @AlwaysInline
-    private static void putIntParts(Object o, long offset, short i0, short i1) {
-        putShort(o, offset, pick(i0, i1));
-        putShort(o, offset + 2, pick(i1, i0));
+        if (o == null) {
+            putIntN(offset, pick(i0, i1));
+            putIntN(offset + 4, pick(i1, i0));
+        } else {
+            putIntO(o, offset, pick(i0, i1));
+            putIntO(o, offset + 4, pick(i1, i0));
+        }
     }
 
     @AlwaysInline
     private static void putIntParts(Object o, long offset, byte i0, byte i1, byte i2, byte i3) {
-        putByte(o, offset, pick(i0, i3));
-        putByte(o, offset + 1, pick(i1, i2));
-        putByte(o, offset + 2, pick(i2, i1));
-        putByte(o, offset + 3, pick(i3, i0));
+        if (o == null) {
+            putByteN(offset, pick(i0, i3));
+            putByteN(offset + 1, pick(i1, i2));
+            putByteN(offset + 2, pick(i2, i1));
+            putByteN(offset + 3, pick(i3, i0));
+        } else {
+            putByteO(o, offset, pick(i0, i3));
+            putByteO(o, offset + 1, pick(i1, i2));
+            putByteO(o, offset + 2, pick(i2, i1));
+            putByteO(o, offset + 3, pick(i3, i0));
+        }
+    }
+
+    @AlwaysInline
+    private static void putIntParts(Object o, long offset, short i0, short i1) {
+        if (o == null) {
+            putShortN(offset, pick(i0, i1));
+            putShortN(offset + 2, pick(i1, i0));
+        } else {
+            putShortO(o, offset, pick(i0, i1));
+            putShortO(o, offset + 2, pick(i1, i0));
+        }
     }
 
     @AlwaysInline
     private static void putShortParts(Object o, long offset, byte i0, byte i1) {
-        putByte(o, offset, pick(i0, i1));
-        putByte(o, offset + 1, pick(i1, i0));
+        if (o == null) {
+            putByteN(offset, pick(i0, i1));
+            putByteN(offset + 1, pick(i1, i0));
+        } else {
+            putByteO(o, offset, pick(i0, i1));
+            putByteO(o, offset + 1, pick(i1, i0));
+        }
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static void putLongUnaligned(Object o, long offset, long value) {
         if (UNALIGNED_ACCESS || ((offset & 7) == 0)) {
             putLong(o, offset, value);
@@ -790,6 +875,7 @@ public class AndroidUnsafe {
         putLongUnaligned(o, offset, Double.doubleToRawLongBits(value), swap);
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static void putIntUnaligned(Object o, long offset, int value) {
         if (UNALIGNED_ACCESS || ((offset & 3) == 0)) {
             putInt(o, offset, value);
@@ -821,6 +907,7 @@ public class AndroidUnsafe {
         putIntUnaligned(o, offset, Float.floatToRawIntBits(value), swap);
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static void putShortUnaligned(Object o, long offset, short value) {
         if (UNALIGNED_ACCESS || ((offset & 1) == 0)) {
             putShort(o, offset, value);
@@ -864,15 +951,15 @@ public class AndroidUnsafe {
         }
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes) {
-        if (bytes == 0) {
+        if (bytes <= 0) {
             return;
         }
         if (srcBase == null && destBase == null) {
             copyMemory(srcOffset, destOffset, bytes);
             return;
         }
-        // TODO: what if src and dst overlaps?
         if (srcBase == null) {
             for (long i = 0; i < bytes; i++) {
                 putByteO(destBase, destOffset + i, getByteN(srcOffset + i));
@@ -885,13 +972,20 @@ public class AndroidUnsafe {
             }
             return;
         }
-        for (long i = 0; i < bytes; i++) {
-            putByteO(destBase, destOffset + i, getByteO(srcBase, srcOffset + i));
+        if ((srcBase == destBase) && (srcOffset < destOffset)) {
+            for (long i = bytes - 1; i >= 0; i--) {
+                putByteO(destBase, destOffset + i, getByteO(srcBase, srcOffset + i));
+            }
+        } else {
+            for (long i = 0; i < bytes; i++) {
+                putByteO(destBase, destOffset + i, getByteO(srcBase, srcOffset + i));
+            }
         }
     }
 
+    @DoNotShrink // TODO: DoNotInline
     public static void setMemory(Object base, long offset, long bytes, byte value) {
-        if (bytes == 0) {
+        if (bytes <= 0) {
             return;
         }
         if (base == null) {

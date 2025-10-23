@@ -32,6 +32,7 @@ import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import android.annotation.SuppressLint;
 
 import com.v7878.r8.annotations.AlwaysInline;
+import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.unsafe.ExtraMemoryAccess;
 import com.v7878.unsafe.Utils;
 import com.v7878.unsafe.access.JavaNioAccess;
@@ -348,12 +349,15 @@ abstract sealed class _AbstractMemorySegmentImpl
         }
     }
 
+    @NoSideEffects
     public abstract long unsafeGetOffset();
 
+    @NoSideEffects
     public abstract Object unsafeGetBase();
 
     // Helper methods
 
+    @NoSideEffects
     public abstract long maxAlignMask();
 
     public final boolean isAlignedForElement(long offset, MemoryLayout layout) {

@@ -79,9 +79,9 @@ public class NativeCodeBlob {
                     for (int i = 0; i < count; i++) {
                         EarlyNativeUtils.copy(code[i], 0, data, offsets[i], sizes[i]);
                     }
-                }
 
-                Os.fsync(fd.value());
+                    data.force();
+                }
 
                 IOUtils.ashmem_set_prot_region(fd.value(), PROT_RX);
 
