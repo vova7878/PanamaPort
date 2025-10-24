@@ -39,7 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.unsafe.BulkMemoryOperations;
 import com.v7878.unsafe.VM;
 
 import java.nio.charset.Charset;
@@ -48,11 +48,8 @@ import java.nio.charset.Charset;
  * Miscellaneous functions to read and write strings, in various charsets.
  */
 final class _StringSupport {
-
     private _StringSupport() {
     }
-
-    private static final long LONG_MASK = ~7L; // The last three bits are zero
 
     public static String read(_AbstractMemorySegmentImpl segment, long offset, Charset charset) {
         return switch (CharsetKind.of(charset)) {
@@ -125,7 +122,6 @@ final class _StringSupport {
      * @throws IllegalArgumentException if the examined region contains no zero bytes
      *                                  within a length that can be accepted by a String
      */
-    @DoNotShrink // TODO: DoNotInline
     public static int strlenByte(_AbstractMemorySegmentImpl segment,
                                  long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
@@ -136,37 +132,16 @@ final class _StringSupport {
             throw nullNotFound(segment, fromOffset, toOffset);
         }
 
-        // TODO: use aligned memory access
         try (var ignored = _ScopedMemoryAccess.lock(segment.sessionImpl())) {
-            var u_base = segment.unsafeGetBase();
-            var u_offset = segment.unsafeGetOffset();
-
-            final long longBytes = length & LONG_MASK;
-            final long longLimit = fromOffset + longBytes;
-            long offset = fromOffset;
-            for (; offset < longLimit; offset += Long.BYTES) {
-                long val = _ScopedMemoryAccess.getLongUnaligned(null, u_base, u_offset + offset, false);
-                if (mightContainZeroByte(val)) {
-                    for (int j = 0; j < Long.BYTES; j++) {
-                        if ((val & 0xffL) == 0L) {
-                            return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
-                        }
-                        val >>>= 8;
-                    }
-                }
+            long bytes = BulkMemoryOperations.strlenByte(segment.unsafeGetBase(),
+                    segment.unsafeGetOffset() + fromOffset, length);
+            if (bytes < 0) {
+                throw nullNotFound(segment, fromOffset, toOffset);
             }
-            // Handle the tail
-            for (; offset < toOffset; offset++) {
-                byte val = _ScopedMemoryAccess.getByte(null, u_base, u_offset + offset);
-                if (val == 0) {
-                    return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
-                }
-            }
+            return requireWithinStringSize(bytes, segment, fromOffset, toOffset);
         }
-        throw nullNotFound(segment, fromOffset, toOffset);
     }
 
-    @DoNotShrink // TODO: DoNotInline
     public static int strlenShort(_AbstractMemorySegmentImpl segment,
                                   long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
@@ -177,39 +152,16 @@ final class _StringSupport {
             throw nullNotFound(segment, fromOffset, toOffset);
         }
 
-        // TODO: use aligned memory access
         try (var ignored = _ScopedMemoryAccess.lock(segment.sessionImpl())) {
-            var u_base = segment.unsafeGetBase();
-            var u_offset = segment.unsafeGetOffset();
-
-            final long longBytes = length & LONG_MASK;
-            final long longLimit = fromOffset + longBytes;
-            long offset = fromOffset;
-            for (; offset < longLimit; offset += Long.BYTES) {
-                long val = _ScopedMemoryAccess.getLongUnaligned(null, u_base, u_offset + offset, false);
-                if (mightContainZeroShort(val)) {
-                    for (int j = 0; j < Long.BYTES; j += Short.BYTES) {
-                        if ((val & 0xffffL) == 0L) {
-                            return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
-                        }
-                        val >>>= 16;
-                    }
-                }
+            long bytes = BulkMemoryOperations.strlenShort(segment.unsafeGetBase(),
+                    segment.unsafeGetOffset() + fromOffset, length);
+            if (bytes < 0) {
+                throw nullNotFound(segment, fromOffset, toOffset);
             }
-            // Handle the tail
-            // Prevent over scanning as we step by 2
-            final long endScan = toOffset & ~1; // The last bit is zero
-            for (; offset < endScan; offset += Short.BYTES) {
-                short val = _ScopedMemoryAccess.getShortUnaligned(null, u_base, u_offset + offset, false);
-                if (val == 0) {
-                    return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
-                }
-            }
+            return requireWithinStringSize(bytes, segment, fromOffset, toOffset);
         }
-        throw nullNotFound(segment, fromOffset, toOffset);
     }
 
-    @DoNotShrink // TODO: DoNotInline
     public static int strlenInt(_AbstractMemorySegmentImpl segment,
                                 long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
@@ -220,68 +172,14 @@ final class _StringSupport {
             throw nullNotFound(segment, fromOffset, toOffset);
         }
 
-        // TODO: use aligned memory access
         try (var ignored = _ScopedMemoryAccess.lock(segment.sessionImpl())) {
-            var u_base = segment.unsafeGetBase();
-            var u_offset = segment.unsafeGetOffset();
-
-            final long longBytes = length & LONG_MASK;
-            final long longLimit = fromOffset + longBytes;
-            long offset = fromOffset;
-            for (; offset < longLimit; offset += Long.BYTES) {
-                long val = _ScopedMemoryAccess.getLongUnaligned(null, u_base, u_offset + offset, false);
-                if (mightContainZeroInt(val)) {
-                    for (int j = 0; j < Long.BYTES; j += Integer.BYTES) {
-                        if ((val & 0xffffffffL) == 0L) {
-                            return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
-                        }
-                        val >>>= 32;
-                    }
-                }
+            long bytes = BulkMemoryOperations.strlenInt(segment.unsafeGetBase(),
+                    segment.unsafeGetOffset() + fromOffset, length);
+            if (bytes < 0) {
+                throw nullNotFound(segment, fromOffset, toOffset);
             }
-            // Handle the tail
-            // Prevent over scanning as we step by 4
-            final long endScan = toOffset & ~3; // The last two bit are zero
-            for (; offset < endScan; offset += Integer.BYTES) {
-                int val = _ScopedMemoryAccess.getIntUnaligned(null, u_base, u_offset + offset, false);
-                if (val == 0) {
-                    return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
-                }
-            }
+            return requireWithinStringSize(bytes, segment, fromOffset, toOffset);
         }
-        throw nullNotFound(segment, fromOffset, toOffset);
-    }
-
-    /*
-    Bits 63 and N * 8 (N = 1..7) of this number are zero.  Call these bits
-    the "holes".  Note that there is a hole just to the left of
-    each byte, with an extra at the end:
-
-    bits:  01111110 11111110 11111110 11111110 11111110 11111110 11111110 11111111
-    bytes: AAAAAAAA BBBBBBBB CCCCCCCC DDDDDDDD EEEEEEEE FFFFFFFF GGGGGGGG HHHHHHHH
-
-    The 1-bits make sure that carries propagate to the next 0-bit.
-    The 0-bits provide holes for carries to fall into.
-    */
-    private static final long HIMAGIC_FOR_BYTES = 0x8080_8080_8080_8080L;
-    private static final long LOMAGIC_FOR_BYTES = 0x0101_0101_0101_0101L;
-
-    private static boolean mightContainZeroByte(long l) {
-        return ((l - LOMAGIC_FOR_BYTES) & (~l) & HIMAGIC_FOR_BYTES) != 0;
-    }
-
-    private static final long HIMAGIC_FOR_SHORTS = 0x8000_8000_8000_8000L;
-    private static final long LOMAGIC_FOR_SHORTS = 0x0001_0001_0001_0001L;
-
-    private static boolean mightContainZeroShort(long l) {
-        return ((l - LOMAGIC_FOR_SHORTS) & (~l) & HIMAGIC_FOR_SHORTS) != 0;
-    }
-
-    private static final long HIMAGIC_FOR_INTS = 0x8000_0000_8000_0000L;
-    private static final long LOMAGIC_FOR_INTS = 0x0000_0001_0000_0001L;
-
-    private static boolean mightContainZeroInt(long l) {
-        return ((l - LOMAGIC_FOR_INTS) & (~l) & HIMAGIC_FOR_INTS) != 0;
     }
 
     private static int requireWithinStringSize(long size, _AbstractMemorySegmentImpl segment,

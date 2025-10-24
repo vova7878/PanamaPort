@@ -1598,7 +1598,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      */
     static void copy(MemorySegment srcSegment, long srcOffset,
                      MemorySegment dstSegment, long dstOffset, long bytes) {
-        _SegmentBulkOperations.copy((_AbstractMemorySegmentImpl) srcSegment, srcOffset,
+        _AbstractMemorySegmentImpl.copy((_AbstractMemorySegmentImpl) srcSegment, srcOffset,
                 (_AbstractMemorySegmentImpl) dstSegment, dstOffset, bytes);
     }
 
@@ -1666,8 +1666,8 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
         Objects.requireNonNull(dstSegment);
         Objects.requireNonNull(dstElementLayout);
 
-        _AbstractMemorySegmentImpl.copy(srcSegment, srcElementLayout, srcOffset,
-                dstSegment, dstElementLayout, dstOffset, elementCount);
+        _AbstractMemorySegmentImpl.copy((_AbstractMemorySegmentImpl) srcSegment, srcElementLayout, srcOffset,
+                (_AbstractMemorySegmentImpl) dstSegment, dstElementLayout, dstOffset, elementCount);
     }
 
     /**
@@ -2557,8 +2557,8 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
         Objects.requireNonNull(dstArray);
         Objects.requireNonNull(srcLayout);
 
-        _AbstractMemorySegmentImpl.copy(srcSegment, srcLayout, srcOffset,
-                dstArray, dstIndex, elementCount);
+        _AbstractMemorySegmentImpl.copy((_AbstractMemorySegmentImpl) srcSegment,
+                srcLayout, srcOffset, dstArray, dstIndex, elementCount);
     }
 
     /**
@@ -2607,7 +2607,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
         Objects.requireNonNull(dstLayout);
 
         _AbstractMemorySegmentImpl.copy(srcArray, srcIndex,
-                dstSegment, dstLayout, dstOffset, elementCount);
+                (_AbstractMemorySegmentImpl) dstSegment, dstLayout, dstOffset, elementCount);
     }
 
     /**

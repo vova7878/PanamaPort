@@ -6,6 +6,7 @@ import static com.v7878.unsafe.misc.Math.byte2bool;
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.CheckDiscard;
 import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.BulkMemoryOperations;
 import com.v7878.unsafe.ExtraMemoryAccess;
 import com.v7878.unsafe.Utils.FineClosable;
 import com.v7878.unsafe.access.JavaNioAccess;
@@ -69,13 +70,27 @@ final class _ScopedMemoryAccess {
     }
 
     @AlwaysInline
+    @CheckDiscard
+    static void check(_MemorySessionImpl session) {
+        if (session != null) {
+            session.checkValidState();
+        }
+    }
+
+    @AlwaysInline
     public static void copyMemory(_MemorySessionImpl srcSession, _MemorySessionImpl dstSession,
                                   Object srcBase, long srcOffset,
                                   Object destBase, long destOffset,
                                   long bytes) {
+        if (bytes <= 0) {
+            // Implicit state check
+            check(srcSession);
+            check(dstSession);
+            return;
+        }
         try (var ignored1 = lock(srcSession);
              var ignored2 = lock(dstSession)) {
-            ExtraMemoryAccess.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
+            BulkMemoryOperations.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
         }
     }
 
@@ -84,16 +99,27 @@ final class _ScopedMemoryAccess {
                                       Object srcBase, long srcOffset,
                                       Object destBase, long destOffset,
                                       long bytes, long elemSize) {
+        if (bytes <= 0) {
+            // Implicit state check
+            check(srcSession);
+            check(dstSession);
+            return;
+        }
         try (var ignored1 = lock(srcSession);
              var ignored2 = lock(dstSession)) {
-            ExtraMemoryAccess.copySwapMemory(srcBase, srcOffset, destBase, destOffset, bytes, elemSize);
+            BulkMemoryOperations.copySwapMemory(srcBase, srcOffset, destBase, destOffset, bytes, elemSize);
         }
     }
 
     @AlwaysInline
     public static void setMemory(_MemorySessionImpl session, Object base, long offset, long bytes, byte value) {
+        if (bytes <= 0) {
+            // Implicit state check
+            check(session);
+            return;
+        }
         try (var ignored = lock(session)) {
-            ExtraMemoryAccess.setMemory(base, offset, bytes, value);
+            BulkMemoryOperations.setMemory(base, offset, bytes, value);
         }
     }
 

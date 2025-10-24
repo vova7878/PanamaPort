@@ -198,7 +198,8 @@ abstract sealed class _AbstractMemorySegmentImpl
 
     @Override
     public final MemorySegment fill(byte value) {
-        return _SegmentBulkOperations.fill(this, value);
+        fill(this, value);
+        return this;
     }
 
     @Override
@@ -597,86 +598,104 @@ abstract sealed class _AbstractMemorySegmentImpl
         }
     }
 
-    public static void copy(MemorySegment srcSegment, ValueLayout srcElementLayout, long srcOffset,
-                            MemorySegment dstSegment, ValueLayout dstElementLayout, long dstOffset,
+    public static void copy(_AbstractMemorySegmentImpl srcSegment, ValueLayout srcElementLayout, long srcOffset,
+                            _AbstractMemorySegmentImpl dstSegment, ValueLayout dstElementLayout, long dstOffset,
                             long elementCount) {
-
         _Utils.checkNonNegativeIndex(elementCount, "elementCount");
-        _AbstractMemorySegmentImpl srcImpl = (_AbstractMemorySegmentImpl) srcSegment;
-        _AbstractMemorySegmentImpl dstImpl = (_AbstractMemorySegmentImpl) dstSegment;
         if (srcElementLayout.byteSize() != dstElementLayout.byteSize()) {
             throw new IllegalArgumentException("Source and destination layouts must have same size");
         }
         _Utils.checkElementAlignment(srcElementLayout, "Source layout alignment greater than its size");
         _Utils.checkElementAlignment(dstElementLayout, "Destination layout alignment greater than its size");
-        if (!srcImpl.isAlignedForElement(srcOffset, srcElementLayout)) {
+        if (!srcSegment.isAlignedForElement(srcOffset, srcElementLayout)) {
             throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
         }
-        if (!dstImpl.isAlignedForElement(dstOffset, dstElementLayout)) {
+        if (!dstSegment.isAlignedForElement(dstOffset, dstElementLayout)) {
             throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
         }
         long size = elementCount * srcElementLayout.byteSize();
-        srcImpl.checkAccess(srcOffset, size, true);
-        dstImpl.checkAccess(dstOffset, size, false);
+        srcSegment.checkAccess(srcOffset, size, true);
+        dstSegment.checkAccess(dstOffset, size, false);
         if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
-            _ScopedMemoryAccess.copyMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
-                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size);
+            _ScopedMemoryAccess.copyMemory(srcSegment.sessionImpl(), dstSegment.sessionImpl(),
+                    srcSegment.unsafeGetBase(), srcSegment.unsafeGetOffset() + srcOffset,
+                    dstSegment.unsafeGetBase(), dstSegment.unsafeGetOffset() + dstOffset, size);
         } else {
-            _ScopedMemoryAccess.copySwapMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
-                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size, srcElementLayout.byteSize());
+            _ScopedMemoryAccess.copySwapMemory(srcSegment.sessionImpl(), dstSegment.sessionImpl(),
+                    srcSegment.unsafeGetBase(), srcSegment.unsafeGetOffset() + srcOffset,
+                    dstSegment.unsafeGetBase(), dstSegment.unsafeGetOffset() + dstOffset,
+                    size, srcElementLayout.byteSize());
         }
     }
 
-    public static void copy(MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
+    public static void copy(_AbstractMemorySegmentImpl srcSegment, ValueLayout srcLayout, long srcOffset,
                             Object dstArray, int dstIndex, int elementCount) {
         _Utils.checkNonNegativeIndex(elementCount, "elementCount");
         var dstInfo = _Utils.BaseAndScale.of(dstArray);
         if (dstArray.getClass().getComponentType() != srcLayout.carrier()) {
             throw new IllegalArgumentException("Incompatible value layout: " + srcLayout);
         }
-        _AbstractMemorySegmentImpl srcImpl = (_AbstractMemorySegmentImpl) srcSegment;
         _Utils.checkElementAlignment(srcLayout, "Source layout alignment greater than its size");
-        if (!srcImpl.isAlignedForElement(srcOffset, srcLayout)) {
+        if (!srcSegment.isAlignedForElement(srcOffset, srcLayout)) {
             throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
         }
-        srcImpl.checkAccess(srcOffset, elementCount * dstInfo.scale(), true);
+        srcSegment.checkAccess(srcOffset, elementCount * dstInfo.scale(), true);
         Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
         if (dstInfo.scale() == 1 || srcLayout.order() == ByteOrder.nativeOrder()) {
-            _ScopedMemoryAccess.copyMemory(srcImpl.sessionImpl(), null,
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
-                    dstArray, dstInfo.base() + (dstIndex * dstInfo.scale()), elementCount * dstInfo.scale());
+            _ScopedMemoryAccess.copyMemory(srcSegment.sessionImpl(), null,
+                    srcSegment.unsafeGetBase(), srcSegment.unsafeGetOffset() + srcOffset,
+                    dstArray, dstInfo.base() + (dstIndex * dstInfo.scale()),
+                    elementCount * dstInfo.scale());
         } else {
-            _ScopedMemoryAccess.copySwapMemory(srcImpl.sessionImpl(), null,
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
-                    dstArray, dstInfo.base() + (dstIndex * dstInfo.scale()), elementCount * dstInfo.scale(), dstInfo.scale());
+            _ScopedMemoryAccess.copySwapMemory(srcSegment.sessionImpl(), null,
+                    srcSegment.unsafeGetBase(), srcSegment.unsafeGetOffset() + srcOffset,
+                    dstArray, dstInfo.base() + (dstIndex * dstInfo.scale()),
+                    elementCount * dstInfo.scale(), dstInfo.scale());
         }
     }
 
     public static void copy(Object srcArray, int srcIndex,
-                            MemorySegment dstSegment, ValueLayout dstLayout, long dstOffset,
+                            _AbstractMemorySegmentImpl dstSegment, ValueLayout dstLayout, long dstOffset,
                             int elementCount) {
         var srcInfo = _Utils.BaseAndScale.of(srcArray);
         if (srcArray.getClass().getComponentType() != dstLayout.carrier()) {
             throw new IllegalArgumentException("Incompatible value layout: " + dstLayout);
         }
         Objects.checkFromIndexSize(srcIndex, elementCount, Array.getLength(srcArray));
-        _AbstractMemorySegmentImpl destImpl = (_AbstractMemorySegmentImpl) dstSegment;
         _Utils.checkElementAlignment(dstLayout, "Destination layout alignment greater than its size");
-        if (!destImpl.isAlignedForElement(dstOffset, dstLayout)) {
+        if (!dstSegment.isAlignedForElement(dstOffset, dstLayout)) {
             throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
         }
-        destImpl.checkAccess(dstOffset, elementCount * srcInfo.scale(), false);
+        dstSegment.checkAccess(dstOffset, elementCount * srcInfo.scale(), false);
         if (srcInfo.scale() == 1 || dstLayout.order() == ByteOrder.nativeOrder()) {
-            _ScopedMemoryAccess.copyMemory(null, destImpl.sessionImpl(),
+            _ScopedMemoryAccess.copyMemory(null, dstSegment.sessionImpl(),
                     srcArray, srcInfo.base() + (srcIndex * srcInfo.scale()),
-                    destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcInfo.scale());
+                    dstSegment.unsafeGetBase(), dstSegment.unsafeGetOffset() + dstOffset,
+                    elementCount * srcInfo.scale());
         } else {
-            _ScopedMemoryAccess.copySwapMemory(null, destImpl.sessionImpl(),
+            _ScopedMemoryAccess.copySwapMemory(null, dstSegment.sessionImpl(),
                     srcArray, srcInfo.base() + (srcIndex * srcInfo.scale()),
-                    destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcInfo.scale(), srcInfo.scale());
+                    dstSegment.unsafeGetBase(), dstSegment.unsafeGetOffset() + dstOffset,
+                    elementCount * srcInfo.scale(), srcInfo.scale());
         }
+    }
+
+    public static void copy(_AbstractMemorySegmentImpl src, long srcOffset,
+                            _AbstractMemorySegmentImpl dst, long dstOffset, long size) {
+        _Utils.checkNonNegativeIndex(size, "size");
+        // Implicit null check for src and dst
+        src.checkAccess(srcOffset, size, true);
+        dst.checkAccess(dstOffset, size, false);
+
+        _ScopedMemoryAccess.copyMemory(src.sessionImpl(), dst.sessionImpl(),
+                src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
+                dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, size);
+    }
+
+    public static void fill(_AbstractMemorySegmentImpl dst, byte value) {
+        dst.checkReadOnly(false);
+        _ScopedMemoryAccess.setMemory(dst.sessionImpl(), dst.unsafeGetBase(),
+                dst.unsafeGetOffset(), dst.length, value);
     }
 
     // accessors

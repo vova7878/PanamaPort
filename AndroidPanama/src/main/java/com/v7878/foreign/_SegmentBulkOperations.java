@@ -18,128 +18,12 @@ import com.v7878.r8.annotations.DoNotShrink;
 final class _SegmentBulkOperations {
     private _SegmentBulkOperations() {
     }
-
     // All the threshold values below MUST be a power of two and should preferably be
     // greater or equal to 2^3.
 
     // TODO: choose the best values for android
-    private static final int NATIVE_THRESHOLD_FILL = 1 << 4;
     private static final int NATIVE_THRESHOLD_MISMATCH = 1 << 4;
-    private static final int NATIVE_THRESHOLD_COPY = 1 << 4;
 
-    @DoNotShrink // TODO: DoNotInline
-    public static MemorySegment fill(_AbstractMemorySegmentImpl dst, byte value) {
-        dst.checkReadOnly(false);
-        if (dst.length == 0) {
-            // Implicit state check
-            dst.sessionImpl().checkValidState();
-        } else if (dst.length < NATIVE_THRESHOLD_FILL) {
-            // 0 <= length < FILL_NATIVE_LIMIT : 0...0X...XXXX
-
-            // Handle smaller segments directly without transitioning to native code
-            final long u = value & 0xffL;
-            final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
-
-            // TODO: use aligned memory access
-            try (var ignored = _ScopedMemoryAccess.lock(dst.sessionImpl())) {
-                var dst_u_base = dst.unsafeGetBase();
-                var dst_u_offset = dst.unsafeGetOffset();
-
-                int offset = 0;
-                // 0...0X...X000
-                final int limit = (int) (dst.length & (NATIVE_THRESHOLD_FILL - 8));
-                for (; offset < limit; offset += Long.BYTES) {
-                    _ScopedMemoryAccess.putLongUnaligned(null, dst_u_base, dst_u_offset + offset, longValue, false);
-                }
-                int remaining = (int) dst.length - offset;
-                // 0...0X00
-                if (remaining >= Integer.BYTES) {
-                    _ScopedMemoryAccess.putIntUnaligned(null, dst_u_base, dst_u_offset + offset, (int) longValue, false);
-                    offset += Integer.BYTES;
-                    remaining -= Integer.BYTES;
-                }
-                // 0...00X0
-                if (remaining >= Short.BYTES) {
-                    _ScopedMemoryAccess.putShortUnaligned(null, dst_u_base, dst_u_offset + offset, (short) longValue, false);
-                    offset += Short.BYTES;
-                    remaining -= Short.BYTES;
-                }
-                // 0...000X
-                if (remaining >= 1) {
-                    _ScopedMemoryAccess.putByte(null, dst_u_base, dst_u_offset + offset, value);
-                }
-            }
-            // We have now fully handled 0...0X...XXXX
-        } else {
-            // Handle larger segments via native calls
-            _ScopedMemoryAccess.setMemory(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), dst.length, value);
-        }
-        return dst;
-    }
-
-    @DoNotShrink // TODO: DoNotInline
-    public static void copy(_AbstractMemorySegmentImpl src, long srcOffset,
-                            _AbstractMemorySegmentImpl dst, long dstOffset,
-                            long size) {
-        _Utils.checkNonNegativeIndex(size, "size");
-        // Implicit null check for src and dst
-        src.checkAccess(srcOffset, size, true);
-        dst.checkAccess(dstOffset, size, false);
-
-        if (size <= 0) {
-            // Do nothing
-        } else if (size < NATIVE_THRESHOLD_COPY && !src.overlaps(dst)) {
-            // 0 < size < FILL_NATIVE_LIMIT : 0...0X...XXXX
-            //
-            // Strictly, we could check for !src.asSlice(srcOffset, size).overlaps(dst.asSlice(dstOffset, size) but
-            // this is a bit slower and it likely very unusual there is any difference in the outcome. Also, if there
-            // is an overlap, we could tolerate one particular direction of overlap (but not the other).
-
-            try (var ignored1 = _ScopedMemoryAccess.lock(src.sessionImpl());
-                 var ignored2 = _ScopedMemoryAccess.lock(dst.sessionImpl())) {
-                var src_u_base = src.unsafeGetBase();
-                var src_u_offset = src.unsafeGetOffset();
-                var dst_u_base = dst.unsafeGetBase();
-                var dst_u_offset = dst.unsafeGetOffset();
-
-                // 0...0X...X000
-                final int limit = (int) (size & (NATIVE_THRESHOLD_COPY - Long.BYTES));
-                int offset = 0;
-                for (; offset < limit; offset += Long.BYTES) {
-                    final long v = _ScopedMemoryAccess.getLongUnaligned(null, src_u_base, src_u_offset + srcOffset + offset, false);
-                    _ScopedMemoryAccess.putLongUnaligned(null, dst_u_base, dst_u_offset + dstOffset + offset, v, false);
-                }
-                int remaining = (int) size - offset;
-                // 0...0X00
-                if (remaining >= Integer.BYTES) {
-                    final int v = _ScopedMemoryAccess.getIntUnaligned(null, src_u_base, src_u_offset + srcOffset + offset, false);
-                    _ScopedMemoryAccess.putIntUnaligned(null, dst_u_base, dst_u_offset + dstOffset + offset, v, false);
-                    offset += Integer.BYTES;
-                    remaining -= Integer.BYTES;
-                }
-                // 0...00X0
-                if (remaining >= Short.BYTES) {
-                    final short v = _ScopedMemoryAccess.getShortUnaligned(null, src_u_base, src_u_offset + srcOffset + offset, false);
-                    _ScopedMemoryAccess.putShortUnaligned(null, dst_u_base, dst_u_offset + dstOffset + offset, v, false);
-                    offset += Short.BYTES;
-                    remaining -= Short.BYTES;
-                }
-                // 0...000X
-                if (remaining == 1) {
-                    final byte v = _ScopedMemoryAccess.getByte(null, src_u_base, src_u_offset + srcOffset + offset);
-                    _ScopedMemoryAccess.putByte(null, dst_u_base, dst_u_offset + dstOffset + offset, v);
-                }
-            }
-            // We have now fully handled 0...0X...XXXX
-        } else {
-            // For larger sizes, the transition to native code pays off
-            _ScopedMemoryAccess.copyMemory(src.sessionImpl(), dst.sessionImpl(),
-                    src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
-                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, size);
-        }
-    }
-
-    // TODO: refactor code
     @DoNotShrink // TODO: DoNotInline
     public static long mismatch(_AbstractMemorySegmentImpl src, long srcFromOffset, long srcToOffset,
                                 _AbstractMemorySegmentImpl dst, long dstFromOffset, long dstToOffset) {
