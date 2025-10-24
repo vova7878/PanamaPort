@@ -1,5 +1,6 @@
 package com.v7878.unsafe;
 
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotShrink;
 
 public class BulkMemoryOperations {
@@ -12,7 +13,6 @@ public class BulkMemoryOperations {
     // TODO: choose the best values for android
     private static final int NATIVE_THRESHOLD_FILL = 1 << 4;
     private static final int NATIVE_THRESHOLD_COPY = 1 << 4;
-    private static final int NATIVE_THRESHOLD_MISMATCH = 1 << 4;
 
     @DoNotShrink // TODO: DoNotInline
     private static void setMemoryJava(Object base, long offset, int bytes, byte value) {
@@ -102,12 +102,13 @@ public class BulkMemoryOperations {
             remaining -= Short.BYTES;
         }
 
-        if (remaining == 1) {
+        if (remaining >= Byte.BYTES) {
             final byte v = AndroidUnsafe.getByte(srcBase, srcOffset + position);
             AndroidUnsafe.putByte(dstBase, dstOffset + position, v);
         }
     }
 
+    @AlwaysInline
     private static boolean backwards(Object srcBase, long srcOffset,
                                      Object dstBase, long dstOffset, long size) {
         if (srcBase == dstBase) {  // both either native or the same heap segment
@@ -143,6 +144,77 @@ public class BulkMemoryOperations {
         ExtraMemoryAccess.copySwapMemory(srcBase, srcOffset, dstBase, dstOffset, bytes, elemSize);
     }
 
+    @AlwaysInline
+    private static int mismatchLong(long first, long second) {
+        final long x = first ^ second;
+        return (AndroidUnsafe.IS_BIG_ENDIAN ? Long.numberOfLeadingZeros(x) :
+                Long.numberOfTrailingZeros(x)) / Byte.SIZE;
+    }
+
+    @AlwaysInline
+    private static int mismatchInt(int first, int second) {
+        final int x = first ^ second;
+        return (AndroidUnsafe.IS_BIG_ENDIAN ? Integer.numberOfLeadingZeros(x) :
+                Integer.numberOfTrailingZeros(x)) / Byte.SIZE;
+    }
+
+    @AlwaysInline
+    private static int mismatchShort(short first, short second) {
+        var hi = AndroidUnsafe.IS_BIG_ENDIAN ? 0 : 1;
+        var lo = AndroidUnsafe.IS_BIG_ENDIAN ? 1 : 0;
+        return ((0xff & first) == (0xff & second)) ? hi : lo;
+    }
+
+    // TODO: use aligned memory access
+    @DoNotShrink // TODO: DoNotInline
+    public static long mismatch(Object aBase, long aOffset,
+                                Object bBase, long bOffset, long bytes) {
+        if (bytes <= 0) {
+            return -1;
+        }
+
+        long position = 0;
+        long remaining = bytes;
+
+        for (; remaining >= Long.BYTES; position += Long.BYTES, remaining -= Long.BYTES) {
+            final long av = AndroidUnsafe.getLongUnaligned(aBase, aOffset + position);
+            final long bv = AndroidUnsafe.getLongUnaligned(bBase, bOffset + position);
+            if (av != bv) {
+                return position + mismatchLong(av, bv);
+            }
+        }
+
+        if (remaining >= Integer.BYTES) {
+            final int av = AndroidUnsafe.getIntUnaligned(aBase, aOffset + position);
+            final int bv = AndroidUnsafe.getIntUnaligned(bBase, bOffset + position);
+            if (av != bv) {
+                return position + mismatchInt(av, bv);
+            }
+            position += Integer.BYTES;
+            remaining -= Integer.BYTES;
+        }
+
+        if (remaining >= Short.BYTES) {
+            final short av = AndroidUnsafe.getShortUnaligned(aBase, aOffset + position);
+            final short bv = AndroidUnsafe.getShortUnaligned(bBase, bOffset + position);
+            if (av != bv) {
+                return position + mismatchShort(av, bv);
+            }
+            position += Short.BYTES;
+            remaining -= Short.BYTES;
+        }
+
+        if (remaining >= Byte.BYTES) {
+            final short av = AndroidUnsafe.getByte(aBase, aOffset + position);
+            final short bv = AndroidUnsafe.getByte(bBase, bOffset + position);
+            if (av != bv) {
+                return position;
+            }
+        }
+
+        return -1;
+    }
+
     /*
     Bits 63 and N * 8 (N = 1..7) of this number are zero.  Call these bits
     the "holes".  Note that there is a hole just to the left of
@@ -157,6 +229,7 @@ public class BulkMemoryOperations {
     private static final long HIMAGIC_FOR_BYTES = 0x8080_8080_8080_8080L;
     private static final long LOMAGIC_FOR_BYTES = 0x0101_0101_0101_0101L;
 
+    @AlwaysInline
     private static boolean mightContainZeroByte(long l) {
         return ((l - LOMAGIC_FOR_BYTES) & (~l) & HIMAGIC_FOR_BYTES) != 0;
     }
@@ -164,6 +237,7 @@ public class BulkMemoryOperations {
     private static final long HIMAGIC_FOR_SHORTS = 0x8000_8000_8000_8000L;
     private static final long LOMAGIC_FOR_SHORTS = 0x0001_0001_0001_0001L;
 
+    @AlwaysInline
     private static boolean mightContainZeroShort(long l) {
         return ((l - LOMAGIC_FOR_SHORTS) & (~l) & HIMAGIC_FOR_SHORTS) != 0;
     }
@@ -171,6 +245,7 @@ public class BulkMemoryOperations {
     private static final long HIMAGIC_FOR_INTS = 0x8000_0000_8000_0000L;
     private static final long LOMAGIC_FOR_INTS = 0x0000_0001_0000_0001L;
 
+    @AlwaysInline
     private static boolean mightContainZeroInt(long l) {
         return ((l - LOMAGIC_FOR_INTS) & (~l) & HIMAGIC_FOR_INTS) != 0;
     }

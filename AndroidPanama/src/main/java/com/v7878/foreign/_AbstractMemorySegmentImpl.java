@@ -259,7 +259,7 @@ abstract sealed class _AbstractMemorySegmentImpl
     @Override
     public long mismatch(MemorySegment other) {
         Objects.requireNonNull(other);
-        return _SegmentBulkOperations.mismatch(this, 0, byteSize(),
+        return mismatch(this, 0, byteSize(),
                 (_AbstractMemorySegmentImpl) other, 0, other.byteSize());
     }
 
@@ -690,6 +690,25 @@ abstract sealed class _AbstractMemorySegmentImpl
         _ScopedMemoryAccess.copyMemory(src.sessionImpl(), dst.sessionImpl(),
                 src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
                 dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, size);
+    }
+
+    public static long mismatch(_AbstractMemorySegmentImpl src, long srcFromOffset, long srcToOffset,
+                                _AbstractMemorySegmentImpl dst, long dstFromOffset, long dstToOffset) {
+        final long srcBytes = srcToOffset - srcFromOffset;
+        final long dstBytes = dstToOffset - dstFromOffset;
+        src.checkAccess(srcFromOffset, srcBytes, true);
+        dst.checkAccess(dstFromOffset, dstBytes, true);
+
+        final long length = Math.min(srcBytes, dstBytes);
+        final boolean srcAndDstBytesDiffer = srcBytes != dstBytes;
+
+        long pos = _ScopedMemoryAccess.mismatch(src.sessionImpl(), dst.sessionImpl(),
+                src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset,
+                dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset, length);
+        if (pos < 0) {
+            return srcAndDstBytesDiffer ? length : -1;
+        }
+        return pos;
     }
 
     public static void fill(_AbstractMemorySegmentImpl dst, byte value) {

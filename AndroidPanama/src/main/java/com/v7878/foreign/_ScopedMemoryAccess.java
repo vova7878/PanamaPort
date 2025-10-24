@@ -124,14 +124,18 @@ final class _ScopedMemoryAccess {
     }
 
     @AlwaysInline
-    public static int vectorizedMismatch(_MemorySessionImpl aSession, _MemorySessionImpl bSession,
-                                         Object aBase, long aOffset,
-                                         Object bBase, long bOffset,
-                                         int length, int log2ArrayIndexScale) {
+    public static long mismatch(_MemorySessionImpl aSession, _MemorySessionImpl bSession,
+                                Object aBase, long aOffset,
+                                Object bBase, long bOffset, long length) {
+        if (length <= 0) {
+            // Implicit state check
+            check(aSession);
+            check(bSession);
+            return -1;
+        }
         try (var ignored1 = lock(aSession);
              var ignored2 = lock(bSession)) {
-            return ExtraMemoryAccess.vectorizedMismatch(
-                    aBase, aOffset, bBase, bOffset, length, log2ArrayIndexScale);
+            return BulkMemoryOperations.mismatch(aBase, aOffset, bBase, bOffset, length);
         }
     }
 

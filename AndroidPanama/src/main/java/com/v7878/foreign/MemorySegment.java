@@ -1598,6 +1598,9 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      */
     static void copy(MemorySegment srcSegment, long srcOffset,
                      MemorySegment dstSegment, long dstOffset, long bytes) {
+        Objects.requireNonNull(srcSegment);
+        Objects.requireNonNull(dstSegment);
+
         _AbstractMemorySegmentImpl.copy((_AbstractMemorySegmentImpl) srcSegment, srcOffset,
                 (_AbstractMemorySegmentImpl) dstSegment, dstOffset, bytes);
     }
@@ -2656,7 +2659,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      */
     static long mismatch(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
                          MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
-        return _SegmentBulkOperations.mismatch(
+        return _AbstractMemorySegmentImpl.mismatch(
                 (_AbstractMemorySegmentImpl) Objects.requireNonNull(srcSegment), srcFromOffset, srcToOffset,
                 (_AbstractMemorySegmentImpl) Objects.requireNonNull(dstSegment), dstFromOffset, dstToOffset);
     }

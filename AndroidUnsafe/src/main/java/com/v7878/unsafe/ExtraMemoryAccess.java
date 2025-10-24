@@ -27,14 +27,6 @@ import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntULT;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Core.LLVMSetAlignment;
 import static com.v7878.llvm.Core.LLVMSetOrdering;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BOOLEAN_INDEX_SCALE;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_INDEX_SCALE;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_INDEX_SCALE;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_DOUBLE_INDEX_SCALE;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_FLOAT_INDEX_SCALE;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_INDEX_SCALE;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_INDEX_SCALE;
-import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_INDEX_SCALE;
 import static com.v7878.unsafe.InstructionSet.ARM;
 import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.X86;
@@ -1267,69 +1259,4 @@ public class ExtraMemoryAccess {
     }
 
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
-
-    public static final int LOG2_ARRAY_BOOLEAN_INDEX_SCALE = exactLog2(ARRAY_BOOLEAN_INDEX_SCALE);
-    public static final int LOG2_ARRAY_BYTE_INDEX_SCALE = exactLog2(ARRAY_BYTE_INDEX_SCALE);
-    public static final int LOG2_ARRAY_CHAR_INDEX_SCALE = exactLog2(ARRAY_CHAR_INDEX_SCALE);
-    public static final int LOG2_ARRAY_SHORT_INDEX_SCALE = exactLog2(ARRAY_SHORT_INDEX_SCALE);
-    public static final int LOG2_ARRAY_INT_INDEX_SCALE = exactLog2(ARRAY_INT_INDEX_SCALE);
-    public static final int LOG2_ARRAY_LONG_INDEX_SCALE = exactLog2(ARRAY_LONG_INDEX_SCALE);
-    public static final int LOG2_ARRAY_FLOAT_INDEX_SCALE = exactLog2(ARRAY_FLOAT_INDEX_SCALE);
-    public static final int LOG2_ARRAY_DOUBLE_INDEX_SCALE = exactLog2(ARRAY_DOUBLE_INDEX_SCALE);
-
-    private static final int LOG2_BYTE_BIT_SIZE = exactLog2(Byte.SIZE);
-
-    private static int exactLog2(int scale) {
-        if ((scale & (scale - 1)) != 0)
-            throw new Error("data type scale not a power of two");
-        return Integer.numberOfTrailingZeros(scale);
-    }
-
-    public static int vectorizedMismatch(Object a, long aOffset,
-                                         Object b, long bOffset,
-                                         int length,
-                                         int log2ArrayIndexScale) {
-        // assert a.getClass().isArray();
-        // assert b.getClass().isArray();
-        // assert 0 <= length <= sizeOf(a)
-        // assert 0 <= length <= sizeOf(b)
-        // assert 0 <= log2ArrayIndexScale <= 3
-
-        int log2ValuesPerWidth = LOG2_ARRAY_LONG_INDEX_SCALE - log2ArrayIndexScale;
-        int wi = 0;
-        for (; wi < length >> log2ValuesPerWidth; wi++) {
-            long bi = ((long) wi) << LOG2_ARRAY_LONG_INDEX_SCALE;
-            long av = AndroidUnsafe.getLongUnaligned(a, aOffset + bi);
-            long bv = AndroidUnsafe.getLongUnaligned(b, bOffset + bi);
-            if (av != bv) {
-                long x = av ^ bv;
-                int o = AndroidUnsafe.IS_BIG_ENDIAN
-                        ? Long.numberOfLeadingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale)
-                        : Long.numberOfTrailingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale);
-                return (wi << log2ValuesPerWidth) + o;
-            }
-        }
-
-        // Calculate the tail of remaining elements to check
-        int tail = length - (wi << log2ValuesPerWidth);
-
-        if (log2ArrayIndexScale < LOG2_ARRAY_INT_INDEX_SCALE) {
-            int wordTail = 1 << (LOG2_ARRAY_INT_INDEX_SCALE - log2ArrayIndexScale);
-            // Handle 4 bytes or 2 chars in the tail using int width
-            if (tail >= wordTail) {
-                long bi = ((long) wi) << LOG2_ARRAY_LONG_INDEX_SCALE;
-                int av = AndroidUnsafe.getIntUnaligned(a, aOffset + bi);
-                int bv = AndroidUnsafe.getIntUnaligned(b, bOffset + bi);
-                if (av != bv) {
-                    int x = av ^ bv;
-                    int o = AndroidUnsafe.IS_BIG_ENDIAN
-                            ? Integer.numberOfLeadingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale)
-                            : Integer.numberOfTrailingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale);
-                    return (wi << log2ValuesPerWidth) + o;
-                }
-                tail -= wordTail;
-            }
-        }
-        return ~tail;
-    }
 }
