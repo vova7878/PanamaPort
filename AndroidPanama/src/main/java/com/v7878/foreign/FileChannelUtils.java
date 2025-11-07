@@ -25,7 +25,7 @@ import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.NonWritableChannelException;
 import java.util.Objects;
 
-@PortApi
+@PortAPI
 public final class FileChannelUtils {
     private FileChannelUtils() {
     }

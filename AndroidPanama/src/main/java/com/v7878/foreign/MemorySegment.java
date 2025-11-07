@@ -545,7 +545,7 @@ public sealed interface MemorySegment permits _AbstractMemorySegmentImpl {
      *                                       {@linkplain #isNative() native} segment
      * @see #address()
      */
-    @PortApi
+    @PortAPI
     long nativeAddress();
 
     /**

@@ -50,7 +50,7 @@ PanamaPort implements full Foreign Function & Memory API support, including:
 
 ### What was added
 
-All non-standard apis added to the port are marked with `@PortApi` annotation
+All non-standard apis added to the port are marked with `@PortAPI` annotation
 
 This includes just useful methods:
 
