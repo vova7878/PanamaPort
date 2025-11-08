@@ -6,6 +6,12 @@ plugins {
 android {
     namespace = "com.v7878.foreign"
 
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/java", "src/openjdk/java")
+        }
+    }
+
     defaultConfig {
         consumerProguardFiles("consumer-rules.pro")
     }
