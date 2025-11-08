@@ -33,10 +33,8 @@ import android.annotation.SuppressLint;
 import com.v7878.foreign.MemorySegment.Scope;
 import com.v7878.foreign._GlobalSession.GlobalHolderSession;
 import com.v7878.foreign._ImplicitSession.ImplicitHolderSession;
-import com.v7878.foreign._ScopedMemoryAccess.ScopedAccessError;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotShrink;
-import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.sun.cleaner.SunCleaner;
 
 import java.util.Objects;
@@ -54,11 +52,6 @@ abstract sealed class _MemorySessionImpl implements Scope
     static final int NONCLOSEABLE = 1;
 
     static final int MAX_FORKS = Integer.MAX_VALUE;
-
-    @NoSideEffects
-    static final ScopedAccessError ALREADY_CLOSED = new ScopedAccessError(_MemorySessionImpl::alreadyClosed);
-    @NoSideEffects
-    static final ScopedAccessError WRONG_THREAD = new ScopedAccessError(_MemorySessionImpl::wrongThread);
 
     // This is the session of all zero-length memory segments
 
@@ -169,33 +162,17 @@ abstract sealed class _MemorySessionImpl implements Scope
     }
 
     /**
-     * This is a faster version of {@link #checkValidState()}, which is called upon memory access, and which
-     * relies on invariants associated with the memory session implementations (volatile access
-     * to the closed state bit is replaced with plain access). This method should be monomorphic,
-     * to avoid virtual calls in the memory access hot path. This method is not intended as general purpose method
-     * and should only be used in the memory access handle hot path; for liveness checks triggered by other API methods,
-     * please use {@link #checkValidState()}.
-     */
-    public final void checkValidStateRaw() {
-        if (owner != null && owner != Thread.currentThread()) {
-            throw WRONG_THREAD;
-        }
-        if (state < OPEN) {
-            throw ALREADY_CLOSED;
-        }
-    }
-
-    /**
      * Checks that this session is still alive (see {@link #isAlive()}).
      *
      * @throws IllegalStateException if this session is already closed or if this is
      *                               a confined session and this method is called outside the owner thread.
      */
     public final void checkValidState() {
-        try {
-            checkValidStateRaw();
-        } catch (ScopedAccessError error) {
-            throw error.newRuntimeException();
+        if (owner != null && owner != Thread.currentThread()) {
+            throw wrongThread();
+        }
+        if (state < OPEN) {
+            throw alreadyClosed();
         }
     }
 
