@@ -8,7 +8,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("src/main/java", "src/openjdk/java")
+            java.srcDir("src/openjdk/java")
         }
     }
 
