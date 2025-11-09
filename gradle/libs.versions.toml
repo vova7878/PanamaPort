@@ -1,5 +1,7 @@
 [versions]
 agp = "8.13.0"
+maven-publish = "0.34.0"
+
 dexfile = "v1.2.0"
 raung = "v1.0.0"
 r8-annotations = "v1.0.0"
@@ -13,6 +15,7 @@ sun-cleanerstub = { module = "io.github.vova7878:SunCleanerStub", version.ref = 
 sun-unsafewrapper = { module = "io.github.vova7878:SunUnsafeWrapper", version.ref = "sun-unsafewrapper" }
 
 [plugins]
-raung = { id = "io.github.vova7878.RaungPlugin", version.ref = "raung" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-maven-publish = { id = 'maven-publish' }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
+
+raung = { id = "io.github.vova7878.RaungPlugin", version.ref = "raung" }
