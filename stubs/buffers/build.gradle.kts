@@ -8,5 +8,5 @@ android {
 }
 
 dependencies {
-    implementation(libs.sun.cleanerstub)
+    implementation(libs.sun.cleaner)
 }

@@ -19,10 +19,9 @@ android {
 }
 
 dependencies {
-
     api(project(":Core"))
-    implementation(project(":Unsafe"))
 
+    implementation(project(":Unsafe"))
     implementation(libs.r8.annotations)
 }
 

@@ -5,14 +5,14 @@ maven-publish = "0.34.0"
 dexfile = "v1.2.0"
 raung = "v1.0.0"
 r8-annotations = "v1.0.0"
-sun-cleanerstub = "v1.0.0"
-sun-unsafewrapper = "v1.0.0"
+sun-cleaner = "v1.0.0"
+sun-unsafe = "v1.0.0"
 
 [libraries]
 dexfile = { module = "io.github.vova7878:DexFile", version.ref = "dexfile" }
 r8-annotations = { module = "io.github.vova7878:R8Annotations", version.ref = "r8-annotations" }
-sun-cleanerstub = { module = "io.github.vova7878:SunCleanerStub", version.ref = "sun-cleanerstub" }
-sun-unsafewrapper = { module = "io.github.vova7878:SunUnsafeWrapper", version.ref = "sun-unsafewrapper" }
+sun-cleaner = { module = "io.github.vova7878:SunCleanerStub", version.ref = "sun-cleaner" }
+sun-unsafe = { module = "io.github.vova7878:SunUnsafeWrapper", version.ref = "sun-unsafe" }
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }

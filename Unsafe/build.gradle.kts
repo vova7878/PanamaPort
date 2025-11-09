@@ -31,12 +31,11 @@ dependencies {
     api(libs.dexfile)
 
     implementation(libs.r8.annotations)
-
-    implementation(libs.sun.unsafewrapper)
-    runtimeOnly(project(":Core"))
+    implementation(libs.sun.unsafe)
 
     //TODO: runtimeOnlyApi?
     runtimeOnly(project(":LLVM"))
+    runtimeOnly(project(":Core"))
 }
 
 mavenPublishing {

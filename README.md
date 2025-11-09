@@ -4,12 +4,12 @@
 
 ### Components
 
-The project contains 4 sublibraries:
+This project contains 4 sublibraries:
 
-- AndroidPanama - the entire public API and implementation of the Panama project
-- AndroidUnsafe - low-level implementation details and additional capabilities not provided by the original API
+- Core - the entire public API and implementation of the Panama project
+- Unsafe - low-level implementation details and additional capabilities not provided by the original API
 - LLVM - bindings to the built-in libLLVM.so Android library
-- VarHandleApi - backport of java.lang.invoke.VarHandle which didn't exist in android 8.x
+- VarHandles - backport of java.lang.invoke.VarHandle which didn't exist in android 8.x
 
 ### Requirements
 
@@ -17,7 +17,6 @@ The project contains 4 sublibraries:
 - Gradle 8.7+
 - Android Gradle plugin 8.6.0+
 - compileSdk 35+
-- Support for dependencies from jitpack.io [(see documentation)](https://docs.jitpack.io/)
 
 ### Get started
 
@@ -25,7 +24,7 @@ Just add this library to the list of dependencies:
 
 ```
 dependencies {
-    implementation 'com.github.vova7878.PanamaPort:AndroidPanama:v0.0.9-preview'
+    implementation 'io.github.vova7878.panama:Core:v0.1.0'
 }
 ```
 

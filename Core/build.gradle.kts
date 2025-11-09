@@ -27,10 +27,12 @@ android {
 
 dependencies {
     compileOnly(project(":stubs:llvm"))
+
     api(project(":VarHandles"))
+
     implementation(project(":Unsafe"))
 
-    implementation(libs.sun.cleanerstub)
+    implementation(libs.sun.cleaner)
     implementation(libs.r8.annotations)
     implementation(libs.dexfile)
 }

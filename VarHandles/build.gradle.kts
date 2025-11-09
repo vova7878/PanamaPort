@@ -19,9 +19,10 @@ android {
 }
 
 dependencies {
-
     compileOnly(project(":stubs:invoke"))
+
     implementation(libs.r8.annotations)
+
     runtimeOnly(project(":Unsafe"))
 }
 
