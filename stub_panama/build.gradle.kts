@@ -5,7 +5,7 @@ plugins {
 android {
     namespace = "com.v7878.foreign"
 }
-
 dependencies {
-    api(project(":VarHandleApi"))
+    api(project(":VarHandles"))
 }
+

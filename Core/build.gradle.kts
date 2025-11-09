@@ -4,7 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.v7878.invoke"
+    namespace = "com.v7878.foreign"
+
+    sourceSets {
+        named("main") {
+            java.srcDir("src/openjdk/java")
+        }
+    }
 
     defaultConfig {
         consumerProguardFiles("consumer-rules.pro")
@@ -12,17 +18,20 @@ android {
 
     publishing {
         singleVariant("release") {
+            withJavadocJar()
             withSourcesJar()
         }
     }
 }
 
 dependencies {
-    compileOnly(project(":stub_invoke"))
+    compileOnly(project(":stub_llvm"))
+    api(project(":VarHandles"))
+    implementation(project(":Unsafe"))
 
+    implementation(libs.sun.cleanerstub)
     implementation(libs.r8.annotations)
-
-    runtimeOnly(project(":AndroidUnsafe"))
+    implementation(libs.dexfile)
 }
 
 mavenPublishing {
@@ -31,12 +40,12 @@ mavenPublishing {
 
     coordinates(
         groupId = "io.github.vova7878.panama",
-        artifactId = "VarHandles",
+        artifactId = "Core",
         version = project.version.toString()
     )
 
     pom {
-        name.set("PanamaPort-VarHandles")
+        name.set("PanamaPort-Core")
         description.set("Implementation of FFM API for Android 8.0+")
         inceptionYear.set("2025")
         url.set("https://github.com/vova7878/PanamaPort")

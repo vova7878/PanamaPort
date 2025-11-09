@@ -1,38 +1,41 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.maven.publish)
+    alias(libs.plugins.raung)
 }
 
 android {
-    namespace = "com.v7878.foreign"
-
-    sourceSets {
-        named("main") {
-            java.srcDir("src/openjdk/java")
-        }
-    }
+    namespace = "com.v7878.unsafe"
 
     defaultConfig {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     publishing {
         singleVariant("release") {
-            withJavadocJar()
             withSourcesJar()
         }
     }
 }
 
 dependencies {
+    compileOnly(project(":stub_buffers"))
+    compileOnly(project(":stub_panama"))
     compileOnly(project(":stub_llvm"))
-    api(project(":VarHandleApi"))
 
-    implementation(project(":AndroidUnsafe"))
+    api(libs.dexfile)
 
-    implementation(libs.sun.cleanerstub)
     implementation(libs.r8.annotations)
-    implementation(libs.dexfile)
+
+    implementation(libs.sun.unsafewrapper)
+    runtimeOnly(project(":Core"))
+
+    //TODO: runtimeOnlyApi?
+    runtimeOnly(project(":LLVM"))
 }
 
 mavenPublishing {
@@ -41,12 +44,12 @@ mavenPublishing {
 
     coordinates(
         groupId = "io.github.vova7878.panama",
-        artifactId = "Core",
+        artifactId = "Unsafe",
         version = project.version.toString()
     )
 
     pom {
-        name.set("PanamaPort-Core")
+        name.set("PanamaPort-Unsafe")
         description.set("Implementation of FFM API for Android 8.0+")
         inceptionYear.set("2025")
         url.set("https://github.com/vova7878/PanamaPort")

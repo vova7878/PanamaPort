@@ -18,9 +18,9 @@ android {
 }
 
 dependencies {
-    api(project(":AndroidPanama"))
 
-    implementation(project(":AndroidUnsafe"))
+    api(project(":Core"))
+    implementation(project(":Unsafe"))
 
     implementation(libs.r8.annotations)
 }

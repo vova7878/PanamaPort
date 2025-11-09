@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "PanamaPort"
-include(":AndroidUnsafe", ":AndroidPanama", ":VarHandleApi", ":LLVM")
+include(":Core", ":Unsafe", ":LLVM", ":VarHandles")
 include(":stub_panama", ":stub_buffers", ":stub_invoke", ":stub_llvm")
  
