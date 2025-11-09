@@ -14,5 +14,5 @@ dependencyResolutionManagement {
 }
 rootProject.name = "PanamaPort"
 include(":Core", ":Unsafe", ":LLVM", ":VarHandles")
-include(":stub_panama", ":stub_buffers", ":stub_invoke", ":stub_llvm")
+include(":stubs:panama", ":stubs:buffers", ":stubs:invoke", ":stubs:llvm")
  

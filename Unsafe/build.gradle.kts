@@ -16,16 +16,17 @@ android {
     }
 
     publishing {
-        singleVariant("release") {
+        multipleVariants {
+            includeBuildTypeValues("debug", "release")
             withSourcesJar()
         }
     }
 }
 
 dependencies {
-    compileOnly(project(":stub_buffers"))
-    compileOnly(project(":stub_panama"))
-    compileOnly(project(":stub_llvm"))
+    compileOnly(project(":stubs:buffers"))
+    compileOnly(project(":stubs:panama"))
+    compileOnly(project(":stubs:llvm"))
 
     api(libs.dexfile)
 

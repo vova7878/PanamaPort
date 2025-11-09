@@ -17,7 +17,8 @@ android {
     }
 
     publishing {
-        singleVariant("release") {
+        multipleVariants {
+            includeBuildTypeValues("debug", "release")
             withJavadocJar()
             withSourcesJar()
         }
@@ -25,7 +26,7 @@ android {
 }
 
 dependencies {
-    compileOnly(project(":stub_llvm"))
+    compileOnly(project(":stubs:llvm"))
     api(project(":VarHandles"))
     implementation(project(":Unsafe"))
 

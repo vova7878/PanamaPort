@@ -11,15 +11,16 @@ android {
     }
 
     publishing {
-        singleVariant("release") {
+        multipleVariants {
+            includeBuildTypeValues("debug", "release")
             withSourcesJar()
         }
     }
 }
 
 dependencies {
-    compileOnly(project(":stub_invoke"))
 
+    compileOnly(project(":stubs:invoke"))
     implementation(libs.r8.annotations)
     runtimeOnly(project(":Unsafe"))
 }

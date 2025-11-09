@@ -11,7 +11,8 @@ android {
     }
 
     publishing {
-        singleVariant("release") {
+        multipleVariants {
+            includeBuildTypeValues("debug", "release")
             withSourcesJar()
         }
     }

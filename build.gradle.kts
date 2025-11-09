@@ -4,15 +4,17 @@ plugins {
 
 subprojects {
     afterEvaluate {
-        configure<com.android.build.api.dsl.LibraryExtension> {
-            compileSdk = 36
+        if (plugins.hasPlugin("com.android.library")) {
+            configure<com.android.build.api.dsl.LibraryExtension> {
+                compileSdk = 36
 
-            defaultConfig {
-                minSdk = 26
+                defaultConfig {
+                    minSdk = 26
+                }
             }
-        }
-        configure<JavaPluginExtension> {
-            toolchain.languageVersion = JavaLanguageVersion.of(21)
+            configure<JavaPluginExtension> {
+                toolchain.languageVersion = JavaLanguageVersion.of(21)
+            }
         }
     }
 }
