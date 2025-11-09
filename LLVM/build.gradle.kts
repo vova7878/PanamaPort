@@ -28,6 +28,7 @@ dependencies {
 mavenPublishing {
     publishToMavenCentral(automaticRelease = false)
     signAllPublications()
+    configureBasedOnAppliedPlugins(sourcesJar = true, javadocJar = false)
 
     coordinates(
         groupId = "io.github.vova7878.panama",
