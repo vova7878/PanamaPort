@@ -1,0 +1,8 @@
+This project incorporates code derived from OpenJDK in the directory `Core/src/openjdk`.
+- Source: https://openjdk.org
+- License: GNU General Public License v2.0 with Classpath Exception (see `Core/src/openjdk/LICENSE`)
+- Copyright: Copyright (c) 1997-2025 Oracle and/or its affiliates
+- Modifications: Copyright (c) 2025 Vladimir Kozelkov
+
+All other code in this project, including build scripts, is original work by Vladimir Kozelkov
+and licensed under the MIT License (see `LICENSE` in the project root).

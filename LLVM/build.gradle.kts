@@ -44,7 +44,7 @@ mavenPublishing {
         licenses {
             license {
                 name.set("MIT AND GPL-2.0-with-classpath-exception")
-                //TODO: url.set("https://github.com/vova7878/PanamaPort#licensing")
+                url.set("https://github.com/vova7878/PanamaPort/blob/main/NOTICE")
                 distribution.set("repository")
                 comments.set(
                     """
