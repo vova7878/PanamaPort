@@ -1,3 +1,5 @@
+import com.vanniktech.maven.publish.AndroidMultiVariantLibrary
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.maven.publish)
@@ -14,13 +16,6 @@ android {
 
     defaultConfig {
         consumerProguardFiles("consumer-rules.pro")
-    }
-
-    publishing {
-        multipleVariants {
-            includeBuildTypeValues("debug", "release")
-            withSourcesJar()
-        }
     }
 }
 
@@ -39,7 +34,12 @@ dependencies {
 mavenPublishing {
     publishToMavenCentral(automaticRelease = false)
     signAllPublications()
-    configureBasedOnAppliedPlugins(sourcesJar = true, javadocJar = false)
+    configure(
+        AndroidMultiVariantLibrary(
+            sourcesJar = true,
+            publishJavadocJar = false,
+        )
+    )
 
     coordinates(
         groupId = "io.github.vova7878.panama",
