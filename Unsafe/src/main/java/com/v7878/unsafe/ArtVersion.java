@@ -9,8 +9,6 @@ import android.util.Log;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class ArtVersion {
     @ApiSensitive
@@ -29,10 +27,12 @@ public class ArtVersion {
     public static final int A16p1 = 11;
 
     private static boolean is36p1() {
-        // TODO: Review after android 16 qpr 2 becomes stable
-        Method method = searchMethod(Files.class.getDeclaredMethods(),
-                "readString", false, Path.class);
-        return method != null;
+        try {
+            Class.forName("java.lang.invoke.VirtualThread");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     private static boolean is36() {

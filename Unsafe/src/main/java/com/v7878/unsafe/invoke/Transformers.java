@@ -85,7 +85,6 @@ public class Transformers {
         FieldId impl_field = FieldId.of(transformer_id,
                 "impl", transformer_impl_id);
 
-        // TODO: Review after android 16 qpr 2 becomes stable
         FieldId asTypeCache;
         if (ART_INDEX < A13) {
             asTypeCache = FieldId.of(transformer_id, "asTypeCache", MH_ID);

@@ -38,7 +38,7 @@ public class DexFileUtils {
             ADDRESS.withName("array_"),
             WORD.withName("size_")
     );
-    // TODO: Review after android 16 qpr 2 becomes stable
+
     private static final GroupLayout dex_file_16p1_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),

@@ -528,7 +528,6 @@ public class Reflection {
         int array_count = 0;
         for (int i = 0; i < count; i++) {
             long art_method = methods + ART_METHOD_PADDING + ART_METHOD_SIZE * i;
-            // TODO: Review after android 16 qpr 2 becomes stable
             if ((ArtMethodUtils.getExecutableFlags(art_method) & kAccCopied) != 0) {
                 continue;
             }
@@ -538,7 +537,6 @@ public class Reflection {
     }
 
     @SuppressWarnings("unchecked")
-    // TODO: Review after android 16 qpr 2 becomes stable
     private static <T extends Executable> T[] fillExecutables(
             T[] out, long methods, int begin, IntPredicate filter) {
         if (out.length == 0) {

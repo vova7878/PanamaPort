@@ -44,7 +44,6 @@ import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
 public class ArtMethodUtils {
-    // TODO: Review after android 16 qpr 2 becomes stable
     private static final GroupLayout art_method_16p1_12_layout = paddedStructLayout(
             JAVA_OBJECT.withName("declaring_class_"),
             JAVA_INT.withName("access_flags_"),
