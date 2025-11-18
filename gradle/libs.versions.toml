@@ -2,7 +2,7 @@
 agp = "8.13.0"
 maven-publish = "0.34.0"
 
-dexfile = "v1.2.0"
+dexfile = "v1.2.1"
 raung = "v1.0.0"
 r8-annotations = "v1.0.0"
 sun-cleaner = "v1.0.0"

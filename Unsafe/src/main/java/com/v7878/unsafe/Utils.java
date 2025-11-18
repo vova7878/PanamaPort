@@ -349,7 +349,7 @@ public class Utils {
         };
     }
 
-    @DoNotShrink // TODO: DoNotShrink // caller-sensitive
+    @DoNotShrink // TODO: DoNotInline // caller-sensitive
     public static ClassLoader newEmptyClassLoader() {
         return newEmptyClassLoader(getStackClass1().getClassLoader());
     }

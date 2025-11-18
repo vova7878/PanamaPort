@@ -28,7 +28,6 @@ dependencies {
     implementation(libs.r8.annotations)
     implementation(libs.sun.unsafe)
 
-    //TODO: runtimeOnlyApi?
     runtimeOnly(project(":LLVM"))
     runtimeOnly(project(":Core"))
 }
