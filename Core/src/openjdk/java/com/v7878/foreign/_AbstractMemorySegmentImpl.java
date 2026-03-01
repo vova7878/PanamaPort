@@ -525,6 +525,13 @@ abstract sealed class _AbstractMemorySegmentImpl
     }
 
     @Override
+    public String getString(long offset, Charset charset, long byteLength) {
+        _Utils.checkNonNegativeArgument(byteLength, "byteLength");
+        Objects.requireNonNull(charset);
+        return _StringSupport.read(this, offset, charset, byteLength);
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(
                 unsafeGetOffset(),
@@ -555,7 +562,7 @@ abstract sealed class _AbstractMemorySegmentImpl
     private static _NativeMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
         //TODO: check buffer.isAccessible or isFreed in segments?
         if (!b.isDirect()) {
-            throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
+            throw new IllegalArgumentException("The provided heap buffer is not backed by an array");
         }
         final var unmapper = JavaNioAccess.unmapper(b);
         return unmapper == null
@@ -646,16 +653,15 @@ abstract sealed class _AbstractMemorySegmentImpl
         }
         srcSegment.checkAccess(srcOffset, elementCount * dstInfo.scale(), true);
         Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
+        long dstOffset = dstInfo.base() + (dstIndex * dstInfo.scale());
         if (dstInfo.scale() == 1 || srcLayout.order() == ByteOrder.nativeOrder()) {
             _ScopedMemoryAccess.copyMemory(srcSegment.sessionImpl(), null,
                     srcSegment.unsafeGetBase(), srcSegment.unsafeGetOffset() + srcOffset,
-                    dstArray, dstInfo.base() + (dstIndex * dstInfo.scale()),
-                    elementCount * dstInfo.scale());
+                    dstArray, dstOffset, elementCount * dstInfo.scale());
         } else {
             _ScopedMemoryAccess.copySwapMemory(srcSegment.sessionImpl(), null,
                     srcSegment.unsafeGetBase(), srcSegment.unsafeGetOffset() + srcOffset,
-                    dstArray, dstInfo.base() + (dstIndex * dstInfo.scale()),
-                    elementCount * dstInfo.scale(), dstInfo.scale());
+                    dstArray, dstOffset, elementCount * dstInfo.scale(), dstInfo.scale());
         }
     }
 
@@ -720,6 +726,15 @@ abstract sealed class _AbstractMemorySegmentImpl
         dst.checkReadOnly(false);
         _ScopedMemoryAccess.setMemory(dst.sessionImpl(), dst.unsafeGetBase(),
                 dst.unsafeGetOffset(), dst.length, value);
+    }
+
+    public static long copy(String src, Charset dstEncoding, int srcIndex,
+                            _AbstractMemorySegmentImpl dst, long dstOffset, int numChars) {
+        Objects.requireNonNull(src);
+        Objects.requireNonNull(dstEncoding);
+        Objects.requireNonNull(dst);
+
+        return _StringSupport.copyBytes(src, dst, dstEncoding, dstOffset, srcIndex, numChars);
     }
 
     // accessors
