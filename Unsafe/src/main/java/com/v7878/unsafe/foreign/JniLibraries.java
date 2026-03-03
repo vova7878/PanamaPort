@@ -60,7 +60,6 @@ public class JniLibraries {
     // TODO: there must be a better way to do this
     @ApiSensitive
     private static final long libraries_offset = switch (ART_INDEX) {
-        // TODO: Review after android 16 qpr 2 becomes stable
         case A17, A16p1, A16, A15, A14 -> {
             long tmp = ADDRESS_SIZE * 4L;
             tmp += 3;

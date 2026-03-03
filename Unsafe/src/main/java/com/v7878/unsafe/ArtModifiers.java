@@ -15,7 +15,6 @@ import static com.v7878.unsafe.ArtVersion.A9;
 import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Utils.unsupportedART;
 
-// TODO: Review after android 16 qpr 2 becomes stable
 public class ArtModifiers {
     @ApiSensitive
     public static final int kAccSkipAccessChecks = switch (ART_INDEX) {

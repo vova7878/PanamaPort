@@ -2,11 +2,11 @@
 agp = "9.0.1"
 maven-publish = "0.36.0"
 
-dexfile = "v1.3.2"
-raung = "v1.0.0"
-r8-annotations = "v1.0.0"
-sun-cleaner = "v1.0.0"
-sun-unsafe = "v1.0.1"
+dexfile = "v1.3.4"
+raung = "v1.0.1"
+r8-annotations = "v1.0.1"
+sun-cleaner = "v1.0.1"
+sun-unsafe = "v1.0.2"
 
 [libraries]
 dexfile = { module = "io.github.vova7878:DexFile", version.ref = "dexfile" }

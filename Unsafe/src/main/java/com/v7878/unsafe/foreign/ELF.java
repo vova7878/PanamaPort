@@ -281,6 +281,7 @@ class ELF {
             return findSymbol(name, bias, STT_FUNC);
         }
 
+        @SuppressWarnings("unused")
         @DangerLevel(DangerLevel.VERY_CAREFUL)
         public MemorySegment findObject(String name, long bias) {
             return findSymbol(name, bias, STT_OBJECT);

@@ -21,7 +21,7 @@ import java.util.Objects;
 public class RawNativeLibraries {
     public static final NativeLibrary DEFAULT = load("libc.so");
     public static final SymbolLookup DEFAULT_LOOKUP = JavaForeignAccess
-            .libraryLookup(RawNativeLibraries.DEFAULT, Arena.global());
+            .libraryLookup(DEFAULT, Arena.global());
 
     public static long findNative(ClassLoader loader, String name) {
         Objects.requireNonNull(name);
