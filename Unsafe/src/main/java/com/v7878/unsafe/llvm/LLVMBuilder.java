@@ -1,12 +1,17 @@
 package com.v7878.unsafe.llvm;
 
+import static com.v7878.llvm.Core.LLVMAddIncoming;
+import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
+import static com.v7878.llvm.Core.LLVMBuildAnd;
+import static com.v7878.llvm.Core.LLVMBuildBr;
 import static com.v7878.llvm.Core.LLVMBuildCall;
+import static com.v7878.llvm.Core.LLVMBuildCondBr;
+import static com.v7878.llvm.Core.LLVMBuildICmp;
 import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
 import static com.v7878.llvm.Core.LLVMBuildNeg;
-import static com.v7878.llvm.Core.LLVMBuildPtrToInt;
-import static com.v7878.llvm.Core.LLVMBuildTrunc;
+import static com.v7878.llvm.Core.LLVMBuildPhi;
 import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
 import static com.v7878.llvm.Core.LLVMConstInt;
 import static com.v7878.llvm.Core.LLVMConstIntOfArbitraryPrecision;
@@ -15,6 +20,8 @@ import static com.v7878.llvm.Core.LLVMGetBasicBlockParent;
 import static com.v7878.llvm.Core.LLVMGetGlobalParent;
 import static com.v7878.llvm.Core.LLVMGetInsertBlock;
 import static com.v7878.llvm.Core.LLVMGetModuleContext;
+import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
+import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Types.LLVMBuilderRef;
 import static com.v7878.llvm.Types.LLVMContextRef;
 import static com.v7878.llvm.Types.LLVMModuleRef;
@@ -50,30 +57,49 @@ public class LLVMBuilder {
         return LLVMGetModuleContext(getBuilderModule(builder));
     }
 
+    public static LLVMValueRef buildLocalJObjectToAddress(
+            LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset) {
+        var current_block = LLVMGetInsertBlock(builder);
+        var function = LLVMGetBasicBlockParent(current_block);
+
+        var context = getBuilderContext(builder);
+
+        var zeroptr = const_intptr(context, 0);
+
+        var non_zero = LLVMAppendBasicBlock(function, "");
+        var continuation = LLVMAppendBasicBlock(function, "");
+
+        var test = LLVMBuildICmp(builder, LLVMIntEQ, base, zeroptr, "");
+        LLVMBuildCondBr(builder, test, continuation, non_zero);
+
+        LLVMPositionBuilderAtEnd(builder, non_zero);
+        base = LLVMBuildAnd(builder, base, const_intptr(context, 0xfffffffffffffffcL), "");
+        base = LLVMBuildIntToPtr(builder, base, ptr_t(int32_t(context)), "");
+        base = LLVMBuildLoad(builder, base, "");
+        base = LLVMBuildZExtOrBitCast(builder, base, intptr_t(context), "");
+        base = LLVMBuildAdd(builder, base, offset, "");
+        LLVMBuildBr(builder, continuation);
+
+        LLVMPositionBuilderAtEnd(builder, continuation);
+        var out = LLVMBuildPhi(builder, intptr_t(context), "");
+        LLVMAddIncoming(out, offset, current_block);
+        LLVMAddIncoming(out, base, non_zero);
+
+        return out;
+    }
+
+    public static LLVMValueRef buildLocalJObjectToAddress(
+            LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset, LLVMTypeRef type) {
+        return LLVMBuildIntToPtr(builder, buildLocalJObjectToAddress(builder, base, offset), ptr_t(type), "");
+    }
+
+    // TODO: remove
     public static LLVMValueRef buildRawObjectToAddress(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset) {
         if (VM.isPoisonReferences()) {
             base = LLVMBuildNeg(builder, base, "");
         }
         base = LLVMBuildZExtOrBitCast(builder, base, intptr_t(getBuilderContext(builder)), "");
         return LLVMBuildAdd(builder, base, offset, "");
-    }
-
-    public static LLVMValueRef buildRawObjectToPointer(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset, LLVMTypeRef type) {
-        return LLVMBuildIntToPtr(builder, buildRawObjectToAddress(builder, base, offset), ptr_t(type), "");
-    }
-
-    public static LLVMValueRef buildAddressToRawObject(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset) {
-        base = LLVMBuildAdd(builder, base, offset, "");
-        base = LLVMBuildTrunc(builder, base, int32_t(getBuilderContext(builder)), "");
-        if (VM.isPoisonReferences()) {
-            base = LLVMBuildNeg(builder, base, "");
-        }
-        return base;
-    }
-
-    public static LLVMValueRef buildPointerToRawObject(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset) {
-        base = LLVMBuildPtrToInt(builder, base, intptr_t(getBuilderContext(builder)), "");
-        return buildAddressToRawObject(builder, base, offset);
     }
 
     public static LLVMValueRef const_int128(LLVMContextRef context, long low, long high) {

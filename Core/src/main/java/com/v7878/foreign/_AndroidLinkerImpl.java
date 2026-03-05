@@ -59,7 +59,7 @@ import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.access.InvokeAccess.MH_INVOKE_EXACT_ID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
-import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToAddress;
+import static com.v7878.unsafe.llvm.LLVMBuilder.buildLocalJObjectToAddress;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_load_ptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
@@ -222,8 +222,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         throw shouldNotReachHere();
     }
 
-    private static LLVMTypeRef fdToLLVMType(LLVMContextRef context, _FunctionDescriptorImpl descriptor,
-                                            boolean allowsHeapAccess, boolean fullEnv) {
+    private static LLVMTypeRef fdToLLVMType(LLVMContextRef context,
+                                            _FunctionDescriptorImpl descriptor,
+                                            boolean allowsHeapAccess) {
         MemoryLayout retLayout = descriptor.returnLayoutPlain();
         LLVMTypeRef returnType = retLayout == null ? void_t(context) : layoutToLLVMType(context, retLayout);
         List<MemoryLayout> argLayouts = descriptor.argumentLayouts();
@@ -231,7 +232,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         for (MemoryLayout layout : argLayouts) {
             if (layout instanceof AddressLayout || layout instanceof GroupLayout) {
                 if (allowsHeapAccess) {
-                    argTypes.add(int32_t(context));
+                    argTypes.add(intptr_t(context));
                     argTypes.add(intptr_t(context));
                 } else {
                     argTypes.add(intptr_t(context));
@@ -242,10 +243,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 throw shouldNotReachHere();
             }
         }
-        if (fullEnv) {
-            argTypes.add(0, void_ptr_t(context)); // JNIEnv*
-            argTypes.add(1, void_ptr_t(context)); // jclass
-        }
+        argTypes.add(0, void_ptr_t(context)); // JNIEnv*
+        argTypes.add(1, void_ptr_t(context)); // jclass
         return function_t(returnType, argTypes.toArray(new LLVMTypeRef[0]));
     }
 
@@ -294,8 +293,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             var sret_attr = LLVMCreateEnumAttribute(context, "sret", 0);
             var byval_attr = LLVMCreateEnumAttribute(context, "byval", 0);
 
-            var stub_type = fdToLLVMType(context, stub_descriptor,
-                    options.allowsHeapAccess(), !options.isCritical());
+            var stub_type = fdToLLVMType(context, stub_descriptor, options.allowsHeapAccess());
             var stub = LLVMAddFunction(module, function_name, stub_type);
 
             var target_type = sdToLLVMType(context, target_descriptor,
@@ -309,10 +307,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 assert options.isCritical();
                 List<LLVMValueRef> out = new ArrayList<>();
                 var tmp = LLVMGetParams(stub);
-                int t = 0;
+                int t = 2; // drop JNIEnv* and jclass
                 for (MemoryLayout layout : stub_descriptor.argumentLayouts()) {
                     if (layout instanceof GroupLayout || layout instanceof AddressLayout) {
-                        out.add(buildRawObjectToAddress(builder, tmp[t++], tmp[t++]));
+                        out.add(buildLocalJObjectToAddress(builder, tmp[t++], tmp[t++]));
                     } else if (layout instanceof ValueLayout) {
                         out.add(tmp[t++]);
                     } else {
@@ -322,10 +320,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 stub_args = out.toArray(new LLVMValueRef[0]);
             } else {
                 stub_args = LLVMGetParams(stub);
-                if (!options.isCritical()) {
-                    // drop JNIEnv* and jclass
-                    stub_args = Arrays.copyOfRange(stub_args, 2, stub_args.length);
-                }
+                // drop JNIEnv* and jclass
+                stub_args = Arrays.copyOfRange(stub_args, 2, stub_args.length);
             }
             assert stub_args.length == stub_descriptor.argumentLayouts().size();
 
@@ -661,7 +657,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                         .of(native_stub_id)
                         .withFlags(ACC_PRIVATE | ACC_STATIC | ACC_NATIVE)
                         .if_(options.isCritical(), mb2 -> mb2
-                                .withAnnotations(Annotation.CriticalNative())
+                                .withAnnotations(Annotation.FastNative())
                         )
                 )
                 .withMethod(mb -> mb
@@ -910,11 +906,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
         Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
 
-        if (options.allowsHeapAccess()) {
-            // reinterpret cast Object to int
-            ClassUtils.forceClassVerified(stub_class);
-        }
-
         var methods = getDeclaredMethods(stub_class);
 
         Method init_scope = searchMethod(methods, init_scope_name, Object.class);
@@ -927,11 +918,6 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         Method java_function = searchMethod(methods,
                 java_stub_name, java_stub_type.parameterArray());
         return unreflect(java_function);
-    }
-
-    private static MethodType fixObjectParameters(MethodType stubType) {
-        return MethodType.methodType(stubType.returnType(), stubType.parameterList().stream()
-                .map(a -> a == Object.class ? int.class : a).toArray(Class[]::new));
     }
 
     @Override
@@ -948,7 +934,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         MemorySegment nativeStub = generateNativeDowncallStub(
                 Arena.ofAuto(), target_descriptor, stub_descriptor, options);
-        return generateJavaDowncallStub(nativeStub, fixObjectParameters(stubType), descriptor, options);
+        return generateJavaDowncallStub(nativeStub, stubType, descriptor, options);
     }
 
     private static int computeEnvIndex(_LLVMStorageDescriptor stub_descriptor, _LinkerOptions options) {

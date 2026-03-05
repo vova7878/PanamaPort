@@ -4,6 +4,7 @@ import static com.v7878.llvm.Analysis.LLVMVerifyModule;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMCreatePassManager;
 import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
+import static com.v7878.llvm.Core.LLVMPrintModuleToString;
 import static com.v7878.llvm.Core.LLVMRunPassManager;
 import static com.v7878.llvm.ObjectFile.LLVMCreateObjectFile;
 import static com.v7878.llvm.ObjectFile.LLVMGetSectionSegment;
@@ -88,7 +89,11 @@ public class LLVMUtils {
 
             generator.generate(context, module, builder);
 
-            LLVMVerifyModule(module);
+            try {
+                LLVMVerifyModule(module);
+            } catch (LLVMException e) {
+                throw new LLVMException(e.getMessage() + "\n" + LLVMPrintModuleToString(module), e);
+            }
 
             try (var pass_manager = LLVMCreatePassManager()) {
                 try (var pmb = LLVMPassManagerBuilderCreate()) {

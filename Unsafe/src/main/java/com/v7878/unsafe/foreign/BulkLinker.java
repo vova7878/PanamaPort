@@ -39,7 +39,6 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
-import static com.v7878.unsafe.llvm.LLVMBuilder.buildAddressToRawObject;
 import static com.v7878.unsafe.llvm.LLVMBuilder.buildRawObjectToAddress;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
 import static com.v7878.unsafe.llvm.LLVMBuilder.build_const_load_ptr;
@@ -124,10 +123,8 @@ public class BulkLinker {
         BOOL_AS_INT(false, int.class, boolean.class),
 
         @DangerLevel(DangerLevel.VERY_CAREFUL)
-        OBJECT_AS_RAW_INT(false, int.class, Object.class),
-        @DangerLevel(DangerLevel.VERY_CAREFUL)
+        // TODO: remove
         OBJECT_AS_ADDRESS(true, int.class, Object.class);
-        //TODO: OBJECT_AS_ADDRESS_WITH_OFFSET(true, int.class, Object.class);
 
         final boolean requireNativeStub;
         final Class<?> forStub;
@@ -219,10 +216,13 @@ public class BulkLinker {
                     throw new IllegalArgumentException("MapType.OBJECT incompatible with CallType.CRITICAL");
                 }
             }
+            if (ret == MapType.OBJECT_AS_ADDRESS) {
+                // TODO
+                throw new IllegalArgumentException("Unsupported");
+            }
             if (!call_type.allowObjPtrs) {
                 if (Stream.concat(Stream.of(ret), Stream.of(args))
-                        .anyMatch(value -> value == MapType.OBJECT_AS_ADDRESS
-                                || value == MapType.OBJECT_AS_RAW_INT)) {
+                        .anyMatch(value -> value == MapType.OBJECT_AS_ADDRESS)) {
                     throw new IllegalArgumentException(String.format(
                             "Call type %s incompatible with object pointers", call_type));
                 }
@@ -318,7 +318,7 @@ public class BulkLinker {
                                                 }
                                                 regs[1] += 2;
                                             }
-                                            case OBJECT, OBJECT_AS_RAW_INT, OBJECT_AS_ADDRESS ->
+                                            case OBJECT, OBJECT_AS_ADDRESS ->
                                                     ib.move_object(ib.l(regs[0]++), ib.p(regs[1]++));
                                             default -> throw shouldNotReachHere();
                                         }
@@ -350,7 +350,7 @@ public class BulkLinker {
                                                 ib.return_wide(ib.l(0));
                                             }
                                         }
-                                        case OBJECT, OBJECT_AS_RAW_INT, OBJECT_AS_ADDRESS -> {
+                                        case OBJECT, OBJECT_AS_ADDRESS -> {
                                             ib.move_result_object(ib.l(0));
                                             ib.return_object(ib.l(0));
                                         }
@@ -371,7 +371,7 @@ public class BulkLinker {
             case BOOL -> int1_t(context);
             case BYTE -> int8_t(context);
             case SHORT, CHAR -> int16_t(context);
-            case INT, BOOL_AS_INT, OBJECT_AS_RAW_INT -> int32_t(context);
+            case INT, BOOL_AS_INT -> int32_t(context);
             case FLOAT -> float_t(context);
             case LONG -> int64_t(context);
             case DOUBLE -> double_t(context);
@@ -432,10 +432,6 @@ public class BulkLinker {
             if (info.ret == MapType.VOID) {
                 LLVMBuildRetVoid(builder);
             } else {
-                if (info.ret == MapType.OBJECT_AS_ADDRESS) {
-                    ret_val = buildAddressToRawObject(
-                            builder, ret_val, const_intptr(context, 0));
-                }
                 LLVMBuildRet(builder, ret_val);
             }
         }, function_name);
