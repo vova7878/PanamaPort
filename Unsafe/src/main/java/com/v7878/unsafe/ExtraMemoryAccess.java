@@ -312,7 +312,7 @@ public class ExtraMemoryAccess {
         private static final Arena SCOPE = Arena.ofAuto();
 
         @SuppressWarnings("SameParameterValue")
-        private static void gen_memmove_modify(
+        private static LLVMValueRef gen_memmove_modify(
                 LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder, String name,
                 LLVMTypeRef element_type, int align, Function<LLVMValueRef, LLVMValueRef> action) {
             var one = const_intptr(context, 1);
@@ -379,6 +379,8 @@ public class ExtraMemoryAccess {
 
             LLVMPositionBuilderAtEnd(builder, end);
             LLVMBuildRetVoid(builder);
+
+            return function;
         }
 
         @ASMGenerator(method = "gen_memmove_swap_shorts")
@@ -393,9 +395,9 @@ public class ExtraMemoryAccess {
             return generateFunctionCodeArray((context, module, builder) -> {
                 var bswap16_type = function_t(int16_t(context), int16_t(context));
                 var bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
-                gen_memmove_modify(context, module, builder, name, int16_t(context), 1,
+                return gen_memmove_modify(context, module, builder, name, int16_t(context), 1,
                         value -> build_call(builder, bswap16, value));
-            }, name);
+            });
         }
 
         @ASMGenerator(method = "gen_memmove_swap_ints")
@@ -410,9 +412,9 @@ public class ExtraMemoryAccess {
             return generateFunctionCodeArray((context, module, builder) -> {
                 var bswap32_type = function_t(int32_t(context), int32_t(context));
                 var bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
-                gen_memmove_modify(context, module, builder, name, int32_t(context), 1,
+                return gen_memmove_modify(context, module, builder, name, int32_t(context), 1,
                         value -> build_call(builder, bswap32, value));
-            }, name);
+            });
         }
 
         @ASMGenerator(method = "gen_memmove_swap_longs")
@@ -427,9 +429,9 @@ public class ExtraMemoryAccess {
             return generateFunctionCodeArray((context, module, builder) -> {
                 var bswap64_type = function_t(int64_t(context), int64_t(context));
                 var bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
-                gen_memmove_modify(context, module, builder, name, int64_t(context), 1,
+                return gen_memmove_modify(context, module, builder, name, int64_t(context), 1,
                         value -> build_call(builder, bswap64, value));
-            }, name);
+            });
         }
 
         private static byte[] gen_load_atomic(
@@ -448,7 +450,9 @@ public class ExtraMemoryAccess {
                 LLVMSetOrdering(load, LLVMAtomicOrderingSequentiallyConsistent);
 
                 LLVMBuildRet(builder, load);
-            }, name);
+
+                return function;
+            });
         }
 
         @ASMGenerator(method = "gen_load_byte_atomic")
@@ -511,7 +515,9 @@ public class ExtraMemoryAccess {
                 LLVMSetOrdering(store, LLVMAtomicOrderingSequentiallyConsistent);
 
                 LLVMBuildRetVoid(builder);
-            }, name);
+
+                return function;
+            });
         }
 
         @ASMGenerator(method = "gen_store_byte_atomic")
@@ -573,7 +579,9 @@ public class ExtraMemoryAccess {
                         LLVMAtomicOrderingSequentiallyConsistent, false);
 
                 LLVMBuildRet(builder, rmw);
-            }, name);
+
+                return function;
+            });
         }
 
         @ASMGenerator(method = "gen_atomic_exchange_byte")
@@ -771,7 +779,9 @@ public class ExtraMemoryAccess {
                 var ret = LLVMBuildExtractValue(builder, cmpxchg, ret_value ? 0 : 1, "");
 
                 LLVMBuildRet(builder, ret);
-            }, name);
+
+                return function;
+            });
         }
 
         @ASMGenerator(method = "gen_atomic_compare_and_exchange_byte")

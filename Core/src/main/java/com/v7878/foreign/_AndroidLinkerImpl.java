@@ -46,14 +46,12 @@ import static com.v7878.llvm.Core.LLVMSetInstrParamAlignment;
 import static com.v7878.llvm.Core.LLVMStructTypeInContext;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.ArtMethodUtils.registerNativeMethod;
-import static com.v7878.unsafe.DexFileUtils.loadClass;
-import static com.v7878.unsafe.DexFileUtils.openDexFile;
+import static com.v7878.unsafe.ClassUtils.newLoader;
 import static com.v7878.unsafe.JNIUtils.getJNINativeInterfaceOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredMethod;
 import static com.v7878.unsafe.Reflection.getDeclaredMethods;
 import static com.v7878.unsafe.Reflection.unreflect;
 import static com.v7878.unsafe.Utils.handleUncaughtException;
-import static com.v7878.unsafe.Utils.newEmptyClassLoader;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
@@ -65,6 +63,7 @@ import static com.v7878.unsafe.llvm.LLVMBuilder.build_load_ptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.functionPointerFactory;
 import static com.v7878.unsafe.llvm.LLVMBuilder.intptrFactory;
+import static com.v7878.unsafe.llvm.LLVMBuilder.no_frame_pointer_elim;
 import static com.v7878.unsafe.llvm.LLVMBuilder.pointerFactory;
 import static com.v7878.unsafe.llvm.LLVMTypes.double_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.float_t;
@@ -126,8 +125,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import dalvik.system.DexFile;
 
 final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     static {
@@ -288,13 +285,13 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
     private static MemorySegment generateNativeDowncallStub(
             Arena scope, _LLVMStorageDescriptor target_descriptor,
             _FunctionDescriptorImpl stub_descriptor, _LinkerOptions options) {
-        final String function_name = "stub";
         return generateFunctionCodeSegment((context, module, builder) -> {
             var sret_attr = LLVMCreateEnumAttribute(context, "sret", 0);
             var byval_attr = LLVMCreateEnumAttribute(context, "byval", 0);
 
             var stub_type = fdToLLVMType(context, stub_descriptor, options.allowsHeapAccess());
-            var stub = LLVMAddFunction(module, function_name, stub_type);
+            var stub = LLVMAddFunction(module, "stub", stub_type);
+            no_frame_pointer_elim(stub);
 
             var target_type = sdToLLVMType(context, target_descriptor,
                     options.firstVariadicArgIndex());
@@ -409,7 +406,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             } else {
                 LLVMBuildRet(builder, call);
             }
-        }, function_name, scope);
+
+            return stub;
+        }, scope);
     }
 
     private static String layoutName(MemoryLayout layout) {
@@ -903,8 +902,10 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 )
         );
 
-        DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
-        Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
+
+        var loader = _AndroidLinkerImpl.class.getClassLoader();
+        loader = newLoader(loader, DexIO.write(Dex.of(stub_def)));
+        Class<?> stub_class = ClassUtils.forName(stub_name, loader);
 
         var methods = getDeclaredMethods(stub_class);
 
@@ -983,6 +984,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             var stub_type = sdToLLVMType(context, stub_descriptor, -1);
             var stub = LLVMAddFunction(module, function_name, stub_type);
+            no_frame_pointer_elim(stub);
 
             var body = LLVMAppendBasicBlock(stub, "");
             var normal_exit = LLVMAppendBasicBlock(stub, "");
@@ -1102,7 +1104,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 LLVMSetAlignment(load, Math.toIntExact(retLoad.byteAlignment()));
                 LLVMBuildRet(builder, load);
             }
-        }, function_name, scope);
+
+            return stub;
+        }, scope);
     }
 
     @DoNotObfuscate
@@ -1380,8 +1384,9 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 )
         );
 
-        DexFile dex = openDexFile(DexIO.write(Dex.of(stub_def)));
-        Class<?> stub_class = loadClass(dex, stub_name, newEmptyClassLoader());
+        var loader = _AndroidLinkerImpl.class.getClassLoader();
+        loader = newLoader(loader, DexIO.write(Dex.of(stub_def)));
+        Class<?> stub_class = ClassUtils.forName(stub_name, loader);
 
         return getDeclaredMethod(stub_class, method_name, stub_type.parameterArray());
     }

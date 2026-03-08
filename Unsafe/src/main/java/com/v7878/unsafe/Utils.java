@@ -3,7 +3,6 @@ package com.v7878.unsafe;
 import static android.os.Build.VERSION.SDK_INT;
 import static android.os.Process.FIRST_APPLICATION_UID;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
-import static com.v7878.unsafe.Stack.getStackClass1;
 
 import android.util.Log;
 
@@ -342,16 +341,6 @@ public class Utils {
 
     public static String toHexString(long value) {
         return "0x" + Long.toHexString(value);
-    }
-
-    public static ClassLoader newEmptyClassLoader(ClassLoader parent) {
-        return new ClassLoader(parent) {
-        };
-    }
-
-    @DoNotShrink // TODO: DoNotInline // caller-sensitive
-    public static ClassLoader newEmptyClassLoader() {
-        return newEmptyClassLoader(getStackClass1().getClassLoader());
     }
 
     public static RuntimeException newIllegalArgumentException(String message) {

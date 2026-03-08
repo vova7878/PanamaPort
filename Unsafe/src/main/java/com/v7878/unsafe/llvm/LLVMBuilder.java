@@ -1,6 +1,7 @@
 package com.v7878.unsafe.llvm;
 
 import static com.v7878.llvm.Core.LLVMAddIncoming;
+import static com.v7878.llvm.Core.LLVMAddTargetDependentFunctionAttr;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildAnd;
@@ -10,7 +11,6 @@ import static com.v7878.llvm.Core.LLVMBuildCondBr;
 import static com.v7878.llvm.Core.LLVMBuildICmp;
 import static com.v7878.llvm.Core.LLVMBuildIntToPtr;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
-import static com.v7878.llvm.Core.LLVMBuildNeg;
 import static com.v7878.llvm.Core.LLVMBuildPhi;
 import static com.v7878.llvm.Core.LLVMBuildZExtOrBitCast;
 import static com.v7878.llvm.Core.LLVMConstInt;
@@ -39,7 +39,6 @@ import static com.v7878.unsafe.llvm.LLVMTypes.ptr_t;
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
 import com.v7878.unsafe.Utils;
-import com.v7878.unsafe.VM;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -93,13 +92,10 @@ public class LLVMBuilder {
         return LLVMBuildIntToPtr(builder, buildLocalJObjectToAddress(builder, base, offset), ptr_t(type), "");
     }
 
-    // TODO: remove
-    public static LLVMValueRef buildRawObjectToAddress(LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset) {
-        if (VM.isPoisonReferences()) {
-            base = LLVMBuildNeg(builder, base, "");
-        }
-        base = LLVMBuildZExtOrBitCast(builder, base, intptr_t(getBuilderContext(builder)), "");
-        return LLVMBuildAdd(builder, base, offset, "");
+    public static void no_frame_pointer_elim(LLVMValueRef function) {
+        LLVMAddTargetDependentFunctionAttr(function, "no-frame-pointer-elim", "true");
+        LLVMAddTargetDependentFunctionAttr(function, "frame-pointer", "all");
+
     }
 
     public static LLVMValueRef const_int128(LLVMContextRef context, long low, long high) {

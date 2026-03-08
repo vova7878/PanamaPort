@@ -91,7 +91,6 @@ public class ENVGetter {
     private static final MemorySegment GETTER;
 
     static {
-        final String name = "getter";
         GETTER = generateFunctionCodeSegment((context, module, builder) -> {
             var nullptr = const_intptr(context, 0);
             var zero32 = const_int32(context, 0);
@@ -99,7 +98,7 @@ public class ENVGetter {
             var jni_version = const_int32(context, /* JNI_VERSION_1_6 */ 0x00010006);
 
             var f_type = function_t(intptr_t(context));
-            var function = LLVMAddFunction(module, name, f_type);
+            var function = LLVMAddFunction(module, "getter", f_type);
 
             var init = LLVMAppendBasicBlock(function, "");
             var get_cached_env = LLVMAppendBasicBlock(function, "");
@@ -165,7 +164,9 @@ public class ENVGetter {
             LLVMAddIncoming(abort_code, status, attach);
             LLVMAddIncoming(cache_env_ptr, env_ptr, attach);
             LLVMBuildCondBr(builder, test, cache, abort);
-        }, name, SCOPE);
+
+            return function;
+        }, SCOPE);
     }
 
     public static final MemorySegment INSTANCE = MemorySegment.ofAddress(GETTER.nativeAddress());

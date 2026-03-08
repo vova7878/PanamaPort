@@ -32,8 +32,12 @@ import com.v7878.r8.annotations.DoNotShrink;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
+
+import dalvik.system.InMemoryDexClassLoader;
+import dalvik.system.PathClassLoader;
 
 public class ClassUtils {
     @ApiSensitive
@@ -321,5 +325,11 @@ public class ClassUtils {
 
     public static void openClass(Class<?> clazz) {
         openClass(clazz, false);
+    }
+
+    public static ClassLoader newLoader(ClassLoader parent, byte[] data) {
+        var loader = new InMemoryDexClassLoader(ByteBuffer.wrap(data), parent);
+        VM.setObjectClass(loader, PathClassLoader.class);
+        return loader;
     }
 }
