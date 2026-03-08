@@ -43,6 +43,10 @@ public interface SegmentAllocator {
         throw new UnsupportedOperationException("Stub!");
     }
 
+    default MemorySegment allocateFrom(String str, Charset charset, int srcIndex, int numChars) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
     default MemorySegment allocateFrom(OfByte layout, byte value) {
         throw new UnsupportedOperationException("Stub!");
     }

@@ -117,6 +117,8 @@ public interface MemorySegment {
 
     String getString(long offset, Charset charset);
 
+    String getString(long offset, Charset charset, long byteLength);
+
     void setString(long offset, String str);
 
     void setString(long offset, String str, Charset charset);
@@ -167,6 +169,11 @@ public interface MemorySegment {
     static void copy(MemorySegment srcSegment, ValueLayout srcElementLayout, long srcOffset,
                      MemorySegment dstSegment, ValueLayout dstElementLayout, long dstOffset,
                      long elementCount) {
+        throw new UnsupportedOperationException("Stub!");
+    }
+
+    static long copy(String src, Charset dstEncoding, int srcIndex,
+                     MemorySegment dst, long dstOffset, int numChars) {
         throw new UnsupportedOperationException("Stub!");
     }
 
