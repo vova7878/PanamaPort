@@ -95,7 +95,6 @@ public class LLVMBuilder {
     public static void no_frame_pointer_elim(LLVMValueRef function) {
         LLVMAddTargetDependentFunctionAttr(function, "no-frame-pointer-elim", "true");
         LLVMAddTargetDependentFunctionAttr(function, "frame-pointer", "all");
-
     }
 
     public static LLVMValueRef const_int128(LLVMContextRef context, long low, long high) {

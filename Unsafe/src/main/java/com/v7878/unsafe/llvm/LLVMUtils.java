@@ -3,7 +3,6 @@ package com.v7878.unsafe.llvm;
 import static com.v7878.llvm.Analysis.LLVMVerifyModule;
 import static com.v7878.llvm.Core.LLVMCreateBuilderInContext;
 import static com.v7878.llvm.Core.LLVMCreatePassManager;
-import static com.v7878.llvm.Core.LLVMGetBufferSegment;
 import static com.v7878.llvm.Core.LLVMGetValueName;
 import static com.v7878.llvm.Core.LLVMModuleCreateWithNameInContext;
 import static com.v7878.llvm.Core.LLVMPrintModuleToString;
@@ -20,7 +19,6 @@ import static com.v7878.llvm.ObjectFile.LLVMMoveToContainingSection;
 import static com.v7878.llvm.ObjectFile.LLVMMoveToNextSymbol;
 import static com.v7878.llvm.PassManagerBuilder.LLVMPassManagerBuilderCreate;
 import static com.v7878.llvm.PassManagerBuilder.LLVMPassManagerBuilderPopulateModulePassManager;
-import static com.v7878.llvm.TargetMachine.LLVMCodeGenFileType.LLVMAssemblyFile;
 import static com.v7878.llvm.TargetMachine.LLVMCodeGenFileType.LLVMObjectFile;
 import static com.v7878.llvm.TargetMachine.LLVMTargetMachineEmitToMemoryBuffer;
 import static com.v7878.llvm.Types.LLVMValueRef;
@@ -38,7 +36,6 @@ import com.v7878.llvm.Types.LLVMContextRef;
 import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.unsafe.NativeCodeBlob;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
@@ -107,14 +104,7 @@ public class LLVMUtils {
                 LLVMRunPassManager(pass_manager, module);
             }
 
-            System.out.println(LLVMPrintModuleToString(module));
-
             try (var machine = newDefaultMachine()) {
-                try (var asm = LLVMTargetMachineEmitToMemoryBuffer(machine, module, LLVMAssemblyFile)) {
-                    var segment = LLVMGetBufferSegment(asm);
-                    System.out.println(segment.getString(0,
-                            StandardCharsets.UTF_8, segment.byteSize()));
-                }
                 var buffer = LLVMTargetMachineEmitToMemoryBuffer(machine, module, LLVMObjectFile);
                 try (var of = LLVMCreateObjectFile(buffer)) {
                     return getFunctionCode(of, name).toArray(ValueLayout.JAVA_BYTE);
