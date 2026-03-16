@@ -307,7 +307,7 @@ public class BulkLinker {
 
                                     int call_regs = regs[0] - reserved;
                                     var kind = info.call_type.isStatic ? STATIC : DIRECT;
-                                    ib.invoke_range(kind, raw_id, call_regs, call_regs == 0 ? 0 : ib.l(reserved));
+                                    ib.invoke_range(kind, raw_id, call_regs == 0 ? 0 : ib.l(reserved));
 
                                     switch (info.ret) {
                                         case VOID -> ib.return_void();

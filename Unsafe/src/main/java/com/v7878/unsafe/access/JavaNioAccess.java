@@ -252,7 +252,7 @@ public class JavaNioAccess {
                                 .generate_lines()
                                 .invoke_range(DIRECT, MethodId.constructor(nio_direct_buf_id, nio_mem_ref_id,
                                                 TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
-                                        8, ib.this_())
+                                        ib.this_())
                                 .return_void()
                         )
                 )
@@ -290,7 +290,7 @@ public class JavaNioAccess {
                                 .generate_lines()
                                 .invoke_range(DIRECT, MethodId.constructor(nio_heap_buf_id, TypeId.of(byte[].class),
                                                 TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
-                                        8, ib.this_())
+                                        ib.this_())
                                 .return_void()
                         )
                 )

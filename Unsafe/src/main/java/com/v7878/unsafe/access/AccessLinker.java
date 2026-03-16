@@ -128,11 +128,12 @@ public class AccessLinker {
     }
 
     public enum ExecutableAccessKind {
+        // Common call types
         VIRTUAL, INTERFACE, STATIC,
-        // just call constructor for an existing object or create a new instance first
+        // Just call constructor for an existing object or create a new instance first
         INIT, NEW_INIT,
-        // NOTE: invoke-direct access is impossible except for constructors
-        // TODO: DIRECT_AS_VIRTUAL
+        // Hacks for invoke-direct
+        // TODO DIRECT_AS_SUPER,
         DIRECT_HOOK_VTABLE
     }
 
@@ -209,10 +210,6 @@ public class AccessLinker {
 
     private interface Processor {
         default void apply(ClassBuilder builder) {
-            // nop
-        }
-
-        default void post(Class<?> impl) {
             // nop
         }
     }
@@ -346,29 +343,29 @@ public class AccessLinker {
                             var ret_shorty = sketch_proto.getReturnType().getShorty();
                             switch (kind) {
                                 case STATIC -> {
-                                    ib.invoke_range(STATIC, target, ins, ins == 0 ? 0 : ib.p(0));
+                                    ib.invoke_range(STATIC, target, ins == 0 ? 0 : ib.p(0));
                                     ib.move_result_shorty(ret_shorty, ib.l(0));
                                     ib.return_shorty(ret_shorty, ib.l(0));
                                 }
                                 case VIRTUAL -> {
-                                    ib.invoke_range(VIRTUAL, target, ins, ib.p(0));
+                                    ib.invoke_range(VIRTUAL, target, ib.p(0));
                                     ib.move_result_shorty(ret_shorty, ib.l(0));
                                     ib.return_shorty(ret_shorty, ib.l(0));
                                 }
                                 case INTERFACE -> {
-                                    ib.invoke_range(INTERFACE, target, ins, ib.p(0));
+                                    ib.invoke_range(INTERFACE, target, ib.p(0));
                                     ib.move_result_shorty(ret_shorty, ib.l(0));
                                     ib.return_shorty(ret_shorty, ib.l(0));
                                 }
                                 case INIT -> {
                                     assert ret_shorty == 'V';
-                                    ib.invoke_range(DIRECT, target, ins, ib.p(0));
+                                    ib.invoke_range(DIRECT, target, ib.p(0));
                                     ib.return_void();
                                 }
                                 case NEW_INIT -> {
                                     assert ret_shorty == 'L';
                                     ib.new_instance(ib.this_(), target.getDeclaringClass());
-                                    ib.invoke_range(DIRECT, target, ins + 1, ib.this_());
+                                    ib.invoke_range(DIRECT, target, ib.this_());
                                     ib.return_object(ib.this_());
                                 }
                                 case DIRECT_HOOK_VTABLE -> shouldNotReachHere();
@@ -392,12 +389,13 @@ public class AccessLinker {
             makeExecutablePublic(target);
         }
 
-        var access_shorty = ProtoId.of(target).computeShorty();
-        access_shorty = switch (kind) {
-            case STATIC, DIRECT_HOOK_VTABLE -> access_shorty;
+        var target_proto = ProtoId.of(target);
+        var target_shorty = target_proto.computeShorty();
+        var access_shorty = switch (kind) {
+            case STATIC, DIRECT_HOOK_VTABLE -> target_shorty;
             case VIRTUAL, INTERFACE, INIT ->
-                    new StringBuilder(access_shorty).insert(1, "L").toString();
-            case NEW_INIT -> "L" + access_shorty.substring(1);
+                    new StringBuilder(target_shorty).insert(1, "L").toString();
+            case NEW_INIT -> "L" + target_shorty.substring(1);
         };
         var sketch_proto = ProtoId.of(sketch);
         var sketch_shorty = sketch_proto.computeShorty();
@@ -407,8 +405,6 @@ public class AccessLinker {
                     kind, target, access_shorty, sketch_shorty));
         }
         if (kind == DIRECT_HOOK_VTABLE) {
-            checkAbstact(sketch);
-
             var sketch_art = Reflection.getArtMethod(sketch);
             var target_art = Reflection.getArtMethod(target);
 
@@ -416,19 +412,15 @@ public class AccessLinker {
                     0, ArtModifiers.kAccSingleImplementation);
             ArtMethodUtils.setExecutableData(sketch_art, target_art);
 
-            return new Processor() {
-                @Override
-                public void post(Class<?> impl) {
-                    VM.setEmbeddedVTableEntry(impl, getDispatchTableIndex(sketch_art), target_art);
-                }
-            };
+            VM.setEmbeddedVTableEntry(sketch.getDeclaringClass(),
+                    getDispatchTableIndex(sketch_art), target_art);
         }
         return new ExecutableProcessor(kind, MethodId.of(target), sketch.getName(), sketch_proto);
     }
 
     @SuppressWarnings("unchecked")
     public static <T> Class<T> processSymbols(Class<T> clazz, ClassLoader loader, List<Processor> processors) {
-        String access_name = Utils.generateClassName(loader, clazz.getName() + "$Access");
+        String access_name = Utils.generateClassName(loader, clazz.getName() + "$Impl");
         TypeId access_id = TypeId.ofName(access_name);
 
         ClassDef access_def = ClassBuilder.build(access_id, cb -> {
@@ -444,10 +436,6 @@ public class AccessLinker {
 
         var out = DexFileUtils.loadClass(dex, access_name, loader);
         ClassUtils.forceClassVerified(out);
-
-        for (var proc : processors) {
-            proc.post(out);
-        }
 
         return (Class<T>) out;
     }

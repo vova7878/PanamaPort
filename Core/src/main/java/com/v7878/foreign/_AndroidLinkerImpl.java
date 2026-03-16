@@ -629,7 +629,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         Consumer<CodeBuilder> create_arena = ib -> ib
                 .const_wide(ib.l(0), max_arena_size)
-                .invoke_range(STATIC, create_arena_id, 2, ib.l(0))
+                .invoke_range(STATIC, create_arena_id, ib.l(0))
                 .move_result_object(ib.l(arena_reg));
 
         Consumer<CodeBuilder> close_arena = ib -> ib
@@ -671,13 +671,12 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                 .commit(ib2 -> {
                                     int symbol_arg = regs[1]++;
 
-                                    ib2.invoke_range(STATIC, acquire_id,
-                                            1, ib2.p(symbol_arg));
+                                    ib2.invoke_range(STATIC, acquire_id, ib2.p(symbol_arg));
                                     ib2.label(label_for_reg("try_segment", symbol_arg, true));
                                     acquired_segments.add(symbol_arg);
 
                                     ib2.invoke_range(STATIC, unbox_symbol_segment_id,
-                                            1, ib2.p(symbol_arg));
+                                            ib2.p(symbol_arg));
                                     ib2.move_result_wide(ib2.l(0));
                                     if (IS64BIT) {
                                         ib2.move_wide(ib2.l(regs[0]), ib2.l(0));
@@ -696,20 +695,19 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                     ib2.const_wide(ib2.l(1), ret.byteSize());
                                     ib2.const_wide(ib2.l(3), ret.byteAlignment());
 
-                                    ib2.invoke_range(STATIC, allocate_segment_id,
-                                            5, ib2.l(0));
+                                    ib2.invoke_range(STATIC, allocate_segment_id, ib2.l(0));
                                     ib2.move_result_object(ib2.l(0));
                                     ib2.move_object(ib2.p(allocator_arg[0]), ib2.l(0));
 
                                     if (heap_access) {
                                         ib2.invoke_range(STATIC, get_base_id,
-                                                1, ib2.p(allocator_arg[0]));
+                                                ib2.p(allocator_arg[0]));
                                         ib2.move_result_object(ib2.l(0));
                                         ib2.move_object(ib2.l(regs[0]++), ib2.l(0));
                                     }
                                     ib2.invoke_range(STATIC,
                                             heap_access ? get_offset_id : unbox_segment_id,
-                                            1, ib2.p(allocator_arg[0]));
+                                            ib2.p(allocator_arg[0]));
                                     ib2.move_result_wide(ib2.l(0));
                                     if (IS64BIT) {
                                         ib2.move_wide(ib2.l(regs[0]), ib2.l(0));
@@ -723,12 +721,12 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                     state_arg[0] = regs[1]++;
 
                                     ib2.invoke_range(STATIC, check_capture_segment_id,
-                                            1, ib2.p(state_arg[0]));
+                                            ib2.p(state_arg[0]));
                                     ib2.move_result_object(ib2.l(0));
                                     ib2.move_object(ib2.p(state_arg[0]), ib2.l(0));
 
                                     ib2.invoke_range(STATIC, acquire_id,
-                                            1, ib2.p(state_arg[0]));
+                                            ib2.p(state_arg[0]));
                                     ib2.label(label_for_reg("try_segment", state_arg[0], true));
                                     acquired_segments.add(state_arg[0]);
                                 })
@@ -752,25 +750,25 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                                 ib2.const_wide(ib2.l(4), gl.byteAlignment());
 
                                                 ib2.invoke_range(STATIC, allocate_copy_id,
-                                                        6, ib2.l(0));
+                                                        ib2.l(0));
                                                 ib2.move_result_object(ib2.l(0));
                                                 ib2.move_object(ib2.p(segment_reg), ib2.l(0));
                                             } else {
                                                 ib2.invoke_range(STATIC, acquire_id,
-                                                        1, ib2.p(segment_reg));
+                                                        ib2.p(segment_reg));
                                                 ib2.label(label_for_reg("try_segment", segment_reg, true));
                                                 acquired_segments.add(segment_reg);
                                             }
 
                                             if (heap_access) {
                                                 ib2.invoke_range(STATIC, get_base_id,
-                                                        1, ib2.p(segment_reg));
+                                                        ib2.p(segment_reg));
                                                 ib2.move_result_object(ib2.l(0));
                                                 ib2.move_object(ib2.l(regs[0]++), ib2.l(0));
                                             }
                                             ib2.invoke_range(STATIC,
                                                     heap_access ? get_offset_id : unbox_segment_id,
-                                                    1, ib2.p(segment_reg));
+                                                    ib2.p(segment_reg));
                                             ib2.move_result_wide(ib2.l(0));
                                             if (IS64BIT) {
                                                 ib2.move_wide(ib2.l(regs[0]), ib2.l(0));
@@ -785,15 +783,14 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                     }
                                 })
 
-                                .invoke_range(STATIC, native_stub_id,
-                                        native_ins, ib.l(reserved[0]))
+                                .invoke_range(STATIC, native_stub_id, ib.l(reserved[0]))
                                 .if_(native_ret_reg != -1, ib2 -> ib2.
                                         move_result_shorty(native_ret_shorty,
                                                 ib2.l(native_ret_reg))
                                 )
 
                                 .if_((capturedStateMask & ERRNO_MASK) != 0, ib2 -> ib2
-                                        .invoke_range(STATIC, put_errno_id, 1, ib2.p(state_arg[0]))
+                                        .invoke_range(STATIC, put_errno_id, ib2.p(state_arg[0]))
                                 )
 
                                 .commit(ib2 -> {
@@ -801,8 +798,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         int segment_reg = acquired_segments.get(i);
                                         ib2.label(label_for_reg("try_segment", segment_reg, false));
 
-                                        ib2.invoke_range(STATIC, release_id,
-                                                1, ib2.p(segment_reg));
+                                        ib2.invoke_range(STATIC, release_id, ib2.p(segment_reg));
                                     }
                                 })
                                 .label("try_arena_end")
@@ -827,7 +823,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
                                             ib2.const_wide(ib2.l(2), size);
                                             ib2.const_wide(ib2.l(4), align);
-                                            ib2.invoke_range(STATIC, make_segment_id, 6, ib2.l(0));
+                                            ib2.invoke_range(STATIC, make_segment_id, ib2.l(0));
                                             ib2.move_result_object(ib2.l(0));
                                             ib2.return_object(ib2.l(0));
                                         }
@@ -868,8 +864,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                         ib2.label(label_for_reg("catch_segment", segment_reg, true));
 
                                         ib2.move_exception(ib2.l(exception_reg));
-                                        ib2.invoke_range(STATIC, release_id,
-                                                1, ib2.p(segment_reg));
+                                        ib2.invoke_range(STATIC, release_id, ib2.p(segment_reg));
                                         ib2.throw_(ib2.l(exception_reg));
 
                                         ib2.label(label_for_reg("catch_segment", segment_reg, false));
@@ -1290,7 +1285,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                                             }
                                             ib2.const_wide(ib2.l(2), size);
                                             ib2.const_wide(ib2.l(4), align);
-                                            ib2.invoke_range(STATIC, make_segment_id, 7, ib2.l(0));
+                                            ib2.invoke_range(STATIC, make_segment_id, ib2.l(0));
                                             ib2.move_result_object(ib2.l(0));
                                             ib2.move_object(ib2.l(regs[0]++), ib2.l(0));
                                         } else {
@@ -1331,23 +1326,23 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
                                     if (ret instanceof OfByte || ret instanceof OfBoolean) {
                                         ib2.unop(INT_TO_BYTE, ib2.l(2), ib2.l(2));
-                                        ib2.invoke_range(STATIC, put_byte_id, 3, ib2.l(0));
+                                        ib2.invoke_range(STATIC, put_byte_id, ib2.l(0));
                                     } else if (ret instanceof OfShort | ret instanceof OfChar) {
                                         ib2.unop(INT_TO_SHORT, ib2.l(2), ib2.l(2));
-                                        ib2.invoke_range(STATIC, put_short_id, 3, ib2.l(0));
+                                        ib2.invoke_range(STATIC, put_short_id, ib2.l(0));
                                     } else if (ret instanceof OfInt) {
-                                        ib2.invoke_range(STATIC, put_int_id, 3, ib2.l(0));
+                                        ib2.invoke_range(STATIC, put_int_id, ib2.l(0));
                                     } else if (ret instanceof OfFloat) {
-                                        ib2.invoke_range(STATIC, put_float_id, 3, ib2.l(0));
+                                        ib2.invoke_range(STATIC, put_float_id, ib2.l(0));
                                     } else if (ret instanceof OfLong) {
-                                        ib2.invoke_range(STATIC, put_long_id, 4, ib2.l(0));
+                                        ib2.invoke_range(STATIC, put_long_id, ib2.l(0));
                                     } else if (ret instanceof OfDouble) {
-                                        ib2.invoke_range(STATIC, put_double_id, 4, ib2.l(0));
+                                        ib2.invoke_range(STATIC, put_double_id, ib2.l(0));
                                     } else if (ret instanceof AddressLayout) {
-                                        ib2.invoke_range(STATIC, put_address_id, 3, ib2.l(0));
+                                        ib2.invoke_range(STATIC, put_address_id, ib2.l(0));
                                     } else if (ret instanceof GroupLayout gl) {
                                         ib2.const_wide(ib2.l(3), gl.byteSize());
-                                        ib2.invoke_range(STATIC, put_segment_id, 5, ib2.l(0));
+                                        ib2.invoke_range(STATIC, put_segment_id, ib2.l(0));
                                     } else {
                                         throw shouldNotReachHere();
                                     }
