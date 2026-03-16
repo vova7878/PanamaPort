@@ -4,6 +4,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ADDRESS_SIZE;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_OBJECT_INDEX_SCALE;
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.arrayBaseOffset;
 import static com.v7878.unsafe.AndroidUnsafe.arrayIndexScale;
 import static com.v7878.unsafe.AndroidUnsafe.getInt;
@@ -14,17 +15,16 @@ import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
 import static com.v7878.unsafe.Reflection.fillArray;
-import static com.v7878.unsafe.Reflection.getHiddenMethod;
-import static com.v7878.unsafe.Reflection.unreflectDirect;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.dcheck;
-import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.DIRECT_AS_SUPER;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccess;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_GETTER;
 import static com.v7878.unsafe.access.AccessLinker.FieldAccessKind.INSTANCE_SETTER;
 import static com.v7878.unsafe.misc.Math.isSigned32Bit;
 import static com.v7878.unsafe.misc.Math.roundUpU;
 import static com.v7878.unsafe.misc.Math.roundUpUL;
+import static com.v7878.unsafe.misc.Math.ulong;
 
 import android.annotation.TargetApi;
 import android.os.Build;
@@ -34,9 +34,9 @@ import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.access.AccessLinker;
+import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
 import com.v7878.unsafe.access.VMAccess;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
 
@@ -98,6 +98,16 @@ public class VM {
         static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class MAccessI {
+        @ExecutableAccess(kind = DIRECT_AS_SUPER, klass = "java.lang.Object",
+                name = "internalClone", args = {})
+        abstract Object internalClone(Object instance);
+
+        static final MAccessI INSTANCE = AccessLinker.generateImpl(MAccessI.class);
+    }
+
     public static final int OBJECT_ALIGNMENT_SHIFT = 3;
     public static final int OBJECT_ALIGNMENT = 1 << OBJECT_ALIGNMENT_SHIFT;
     public static final int OBJECT_INSTANCE_SIZE = objectSizeField(Object.class);
@@ -117,12 +127,7 @@ public class VM {
 
     @SuppressWarnings("unchecked")
     public static <T> T internalClone(T obj) {
-        // TODO: move to AccessI
-        class Holder {
-            static final MethodHandle internalClone = unreflectDirect(
-                    getHiddenMethod(Object.class, "internalClone"));
-        }
-        return (T) nothrows_run(() -> Holder.internalClone.invoke(obj));
+        return (T) MAccessI.INSTANCE.internalClone(obj);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -264,6 +269,25 @@ public class VM {
         AccessI.INSTANCE.vtable(clazz, vtable);
     }
 
+    public static long getVTableEntry(Class<?> clazz, int index) {
+        var vtable = getVTable(clazz);
+        if (IS64BIT) {
+            return ((long[]) vtable)[index];
+        } else {
+            return ulong(((int[]) vtable)[index]);
+        }
+    }
+
+    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    public static void setVTableEntry(Class<?> clazz, int index, long art_method) {
+        var vtable = getVTable(clazz);
+        if (IS64BIT) {
+            ((long[]) vtable)[index] = art_method;
+        } else {
+            ((int[]) vtable)[index] = (int) art_method;
+        }
+    }
+
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static /* IfTable */ Object[] getIFTable(Class<?> clazz) {
         return AccessI.INSTANCE.ifTable(clazz);
@@ -369,7 +393,7 @@ public class VM {
 
     @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)
     public static long objectToLong(Object obj) {
-        return objectToInt(obj) & 0xffffffffL;
+        return ulong(objectToInt(obj));
     }
 
     @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)
