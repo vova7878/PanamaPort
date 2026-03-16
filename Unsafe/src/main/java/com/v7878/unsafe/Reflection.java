@@ -17,6 +17,7 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchConstructor;
 import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.misc.Math.ulong;
 
 import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotObfuscate;
@@ -358,7 +359,7 @@ public class Reflection {
     public static long fieldOffset(Field f) {
         var mirror = new FieldMirror[1];
         fillArray(mirror, f);
-        return mirror[0].offset & 0xffffffffL;
+        return ulong(mirror[0].offset);
     }
 
     @AlwaysInline

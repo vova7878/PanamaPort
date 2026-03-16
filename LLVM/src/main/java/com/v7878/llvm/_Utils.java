@@ -7,6 +7,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_LONG;
 import static com.v7878.llvm.Core.nLLVMDisposeMessage;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
+import static com.v7878.unsafe.misc.Math.ulong;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
@@ -146,6 +147,6 @@ final class _Utils {
     }
 
     public static long getWord(MemorySegment ms, long offset) {
-        return IS64BIT ? ms.get(JAVA_LONG, offset) : ms.get(JAVA_INT, offset) & 0xffffffffL;
+        return IS64BIT ? ms.get(JAVA_LONG, offset) : ulong(ms.get(JAVA_INT, offset));
     }
 }

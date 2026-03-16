@@ -30,6 +30,7 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
+import static com.v7878.unsafe.misc.Math.ulong;
 
 import android.annotation.SuppressLint;
 
@@ -794,7 +795,7 @@ public final class Core {
             @Override
             protected void transform(MethodHandle ignored, EmulatedStackFrame stack) {
                 var accessor = stack.relativeAccessor();
-                var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
+                var value = IS64BIT ? accessor.nextLong() : ulong(accessor.nextInt());
                 handler.invoke(LLVMDiagnosticInfoRef.of(value));
             }
         });
@@ -815,7 +816,7 @@ public final class Core {
             @Override
             protected void transform(MethodHandle ignored, EmulatedStackFrame stack) {
                 var accessor = stack.relativeAccessor();
-                var value = IS64BIT ? accessor.nextLong() : accessor.nextInt() & 0xffffffffL;
+                var value = IS64BIT ? accessor.nextLong() : ulong(accessor.nextInt());
                 callback.invoke(LLVMContextRef.of(value));
             }
         });

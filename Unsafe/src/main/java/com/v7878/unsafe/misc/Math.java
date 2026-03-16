@@ -176,27 +176,27 @@ public class Math {
     }
 
     @AlwaysInline
-    public static int toUnsignedInt(byte n) {
+    public static int uint(byte n) {
         return n & 0xff;
     }
 
     @AlwaysInline
-    public static int toUnsignedInt(short n) {
+    public static int uint(short n) {
         return n & 0xffff;
     }
 
     @AlwaysInline
-    public static long toUnsignedLong(byte n) {
+    public static long ulong(byte n) {
         return n & 0xffL;
     }
 
     @AlwaysInline
-    public static long toUnsignedLong(short n) {
+    public static long ulong(short n) {
         return n & 0xffffL;
     }
 
     @AlwaysInline
-    public static long toUnsignedLong(int n) {
+    public static long ulong(int n) {
         return n & 0xffffffffL;
     }
 }
