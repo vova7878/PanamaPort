@@ -10,6 +10,14 @@ import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_BYTE;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_LONG;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_SHORT;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.LONG_TO_INT;
+import static com.v7878.dex.immutable.TypeId.B;
+import static com.v7878.dex.immutable.TypeId.D;
+import static com.v7878.dex.immutable.TypeId.F;
+import static com.v7878.dex.immutable.TypeId.I;
+import static com.v7878.dex.immutable.TypeId.J;
+import static com.v7878.dex.immutable.TypeId.OBJECT;
+import static com.v7878.dex.immutable.TypeId.S;
+import static com.v7878.dex.immutable.TypeId.V;
 import static com.v7878.foreign.MemoryLayout.PathElement.groupElement;
 import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.foreign.ValueLayout.OfChar;
@@ -581,26 +589,26 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         String stub_name = stubName(descriptor, options, true);
         TypeId stub_id = TypeId.ofName(stub_name);
 
-        FieldId scope_id = FieldId.of(stub_id, scope_field_name, TypeId.OBJECT);
+        FieldId scope_id = FieldId.of(stub_id, scope_field_name, OBJECT);
         MethodId native_stub_id = MethodId.of(stub_id, native_stub_name, native_stub_proto);
 
-        MethodId create_arena_id = MethodId.of(helper_id, "createArena", arena_id, TypeId.J);
+        MethodId create_arena_id = MethodId.of(helper_id, "createArena", arena_id, J);
         MethodId allocate_segment_id = MethodId.of(helper_id,
-                "allocateSegment", ms_id, sa_id, TypeId.J, TypeId.J);
+                "allocateSegment", ms_id, sa_id, J, J);
         MethodId allocate_copy_id = MethodId.of(helper_id,
-                "allocateCopy", ms_id, ms_id, arena_id, TypeId.J, TypeId.J);
-        MethodId close_arena_id = MethodId.of(helper_id, "closeArena", TypeId.V, arena_id);
+                "allocateCopy", ms_id, ms_id, arena_id, J, J);
+        MethodId close_arena_id = MethodId.of(helper_id, "closeArena", V, arena_id);
         MethodId check_capture_segment_id = MethodId.of(helper_id, "checkCaptureSegment", ms_id, ms_id);
         MethodId make_segment_id = MethodId.of(helper_id,
-                "makeSegment", ms_id, TypeId.J, TypeId.J, TypeId.J);
+                "makeSegment", ms_id, J, J, J);
         MethodId unbox_symbol_segment_id = MethodId.of(helper_id,
-                "unboxSymbolSegment", TypeId.J, ms_id);
-        MethodId unbox_segment_id = MethodId.of(helper_id, "unboxSegment", TypeId.J, ms_id);
-        MethodId get_base_id = MethodId.of(helper_id, "getBase", TypeId.OBJECT, ms_id);
-        MethodId get_offset_id = MethodId.of(helper_id, "getOffset", TypeId.J, ms_id);
-        MethodId acquire_id = MethodId.of(helper_id, "acquire", TypeId.V, ms_id);
-        MethodId release_id = MethodId.of(helper_id, "release", TypeId.V, ms_id);
-        MethodId put_errno_id = MethodId.of(helper_id, "putErrno", TypeId.V, ms_id);
+                "unboxSymbolSegment", J, ms_id);
+        MethodId unbox_segment_id = MethodId.of(helper_id, "unboxSegment", J, ms_id);
+        MethodId get_base_id = MethodId.of(helper_id, "getBase", OBJECT, ms_id);
+        MethodId get_offset_id = MethodId.of(helper_id, "getOffset", J, ms_id);
+        MethodId acquire_id = MethodId.of(helper_id, "acquire", V, ms_id);
+        MethodId release_id = MethodId.of(helper_id, "release", V, ms_id);
+        MethodId put_errno_id = MethodId.of(helper_id, "putErrno", V, ms_id);
 
         var has_arena = !heap_access && Stream.of(args)
                 .anyMatch(layout -> layout instanceof GroupLayout);
@@ -636,15 +644,15 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 .invoke(STATIC, close_arena_id, ib.l(arena_reg));
 
         ClassDef stub_def = ClassBuilder.build(stub_id, cb -> cb
-                .withSuperClass(TypeId.OBJECT)
+                .withSuperClass(OBJECT)
                 .withField(fb -> fb
                         .of(scope_id)
                         .withFlags(ACC_PRIVATE | ACC_STATIC)
                 )
                 .withMethod(mb -> mb
                         .withName(init_scope_name)
-                        .withReturnType(TypeId.V)
-                        .withParameterTypes(TypeId.OBJECT)
+                        .withReturnType(V)
+                        .withParameterTypes(OBJECT)
                         .withFlags(ACC_PRIVATE | ACC_STATIC)
                         .withCode(0, ib -> ib
                                 .generate_lines()
@@ -1187,20 +1195,20 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         TypeId stub_id = TypeId.ofName(stub_name);
 
         MethodId create_scope_id = MethodId.of(helper_id, "createScope", scope_id);
-        MethodId close_scope_id = MethodId.of(helper_id, "closeScope", TypeId.V, scope_id);
+        MethodId close_scope_id = MethodId.of(helper_id, "closeScope", V, scope_id);
         MethodId handle_exception_id = MethodId.of(helper_id,
-                "handleException", TypeId.V, TypeId.of(Throwable.class));
+                "handleException", V, TypeId.of(Throwable.class));
         MethodId make_segment_id = MethodId.of(helper_id, "makeSegment",
-                ms_id, TypeId.J, TypeId.J, TypeId.J, scope_id);
+                ms_id, J, J, J, scope_id);
 
-        MethodId put_byte_id = MethodId.of(helper_id, "putByte", TypeId.V, TypeId.J, TypeId.B);
-        MethodId put_short_id = MethodId.of(helper_id, "putShort", TypeId.V, TypeId.J, TypeId.S);
-        MethodId put_int_id = MethodId.of(helper_id, "putInt", TypeId.V, TypeId.J, TypeId.I);
-        MethodId put_float_id = MethodId.of(helper_id, "putFloat", TypeId.V, TypeId.J, TypeId.F);
-        MethodId put_long_id = MethodId.of(helper_id, "putLong", TypeId.V, TypeId.J, TypeId.J);
-        MethodId put_double_id = MethodId.of(helper_id, "putDouble", TypeId.V, TypeId.J, TypeId.D);
-        MethodId put_address_id = MethodId.of(helper_id, "putAddress", TypeId.V, TypeId.J, ms_id);
-        MethodId put_segment_id = MethodId.of(helper_id, "putSegment", TypeId.V, TypeId.J, ms_id, TypeId.J);
+        MethodId put_byte_id = MethodId.of(helper_id, "putByte", V, J, B);
+        MethodId put_short_id = MethodId.of(helper_id, "putShort", V, J, S);
+        MethodId put_int_id = MethodId.of(helper_id, "putInt", V, J, I);
+        MethodId put_float_id = MethodId.of(helper_id, "putFloat", V, J, F);
+        MethodId put_long_id = MethodId.of(helper_id, "putLong", V, J, J);
+        MethodId put_double_id = MethodId.of(helper_id, "putDouble", V, J, D);
+        MethodId put_address_id = MethodId.of(helper_id, "putAddress", V, J, ms_id);
+        MethodId put_segment_id = MethodId.of(helper_id, "putSegment", V, J, ms_id, J);
 
         int target_ins = target_proto.countInputRegisters();
 
@@ -1233,7 +1241,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 .throw_(ib.l(exception_reg));
 
         ClassDef stub_def = ClassBuilder.build(stub_id, cb -> cb
-                .withSuperClass(TypeId.OBJECT)
+                .withSuperClass(OBJECT)
                 .withMethod(mb -> mb
                         .withFlags(ACC_PRIVATE | ACC_STATIC)
                         .withName(method_name)

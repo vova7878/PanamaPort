@@ -595,12 +595,12 @@ public class BulkLinker {
         CallSignature[] value();
     }
 
-    private static boolean checkPoisoning(BulkLinker.Tristate poisoning) {
-        return poisoning == BulkLinker.Tristate.NO_MATTER ||
-                ((poisoning == BulkLinker.Tristate.TRUE) == VM.isPoisonReferences());
+    private static boolean checkPoisoning(Tristate poisoning) {
+        return poisoning == Tristate.NO_MATTER ||
+                ((poisoning == Tristate.TRUE) == VM.isPoisonReferences());
     }
 
-    private static boolean checkConditions(BulkLinker.Conditions cond) {
+    private static boolean checkConditions(Conditions cond) {
         return Utils.contains(cond.arch(), CURRENT_INSTRUCTION_SET) &&
                 (cond.min_api() <= SDK_INT && cond.max_api() >= SDK_INT) &&
                 (cond.min_api_full() <= SDK_INT_FULL && cond.max_api_full() >= SDK_INT_FULL) &&

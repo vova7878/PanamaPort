@@ -3,6 +3,8 @@ package com.v7878.unsafe.invoke;
 import static com.v7878.dex.DexConstants.ACC_FINAL;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
+import static com.v7878.dex.immutable.TypeId.B;
+import static com.v7878.dex.immutable.TypeId.OBJECT;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.ArtVersion.A13;
@@ -86,8 +88,8 @@ public final class EmulatedStackFrame {
 
         var type_id = FieldId.of(esf, "type", MT_ID);
         var callsite_id = FieldId.of(esf, "callsiteType", MT_ID);
-        var references_id = FieldId.of(esf, "references", TypeId.OBJECT.array());
-        var primitives_id = FieldId.of(esf, "stackFrame", TypeId.B.array());
+        var references_id = FieldId.of(esf, "references", OBJECT.array());
+        var primitives_id = FieldId.of(esf, "stackFrame", B.array());
 
         ClassDef access_def = ClassBuilder.build(access_id, cb -> cb
                 .withSuperClass(TypeId.of(partial_impl))
@@ -95,8 +97,8 @@ public final class EmulatedStackFrame {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("create")
-                        .withReturnType(TypeId.OBJECT)
-                        .withParameterTypes(MT_ID, TypeId.OBJECT.array(), TypeId.B.array())
+                        .withReturnType(OBJECT)
+                        .withParameterTypes(MT_ID, OBJECT.array(), B.array())
                         .withCode(0, ib -> {
                             ib.generate_lines();
                             ib.new_instance(ib.this_(), esf);

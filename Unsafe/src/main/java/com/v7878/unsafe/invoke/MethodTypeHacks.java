@@ -5,6 +5,9 @@ import static com.v7878.dex.DexConstants.ACC_PRIVATE;
 import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
+import static com.v7878.dex.immutable.TypeId.I;
+import static com.v7878.dex.immutable.TypeId.OBJECT;
+import static com.v7878.dex.immutable.TypeId.V;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.DexFileUtils.loadClass;
 import static com.v7878.unsafe.DexFileUtils.openDexFile;
@@ -52,7 +55,7 @@ public class MethodTypeHacks {
         ClassUtils.makeClassInheritable(INVOKE_FORM);
 
         TypeId mtf = TypeId.of(MethodTypeForm0.class);
-        TypeId i_arr = TypeId.of(int[].class);
+        TypeId i_arr = I.array();
         TypeId str = TypeId.of(String.class);
 
         String form_name = MethodTypeForm.class.getName() + "$Impl";
@@ -81,8 +84,8 @@ public class MethodTypeHacks {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("init")
-                        .withReturnType(TypeId.V)
-                        .withParameterTypes(TypeId.OBJECT, i_arr, i_arr, str)
+                        .withReturnType(V)
+                        .withParameterTypes(OBJECT, i_arr, i_arr, str)
                         .withCode(2, ib -> {
                             ib.generate_lines();
                             if (DEBUG_BUILD) {

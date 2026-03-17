@@ -1,5 +1,6 @@
 package com.v7878.unsafe.access;
 
+import static com.v7878.dex.immutable.TypeId.OBJECT;
 import static com.v7878.unsafe.ArtVersion.A12;
 import static com.v7878.unsafe.ArtVersion.A13;
 import static com.v7878.unsafe.ArtVersion.A9;
@@ -33,10 +34,10 @@ public class InvokeAccess {
     // TODO: Separate class with cached ids for code generation
     public static final TypeId MT_ID = TypeId.of(MethodType.class);
     public static final TypeId MH_ID = TypeId.of(MethodHandle.class);
-    public static final MethodId MH_INVOKE_ID = MethodId.of(MH_ID, "invoke",
-            TypeId.OBJECT, TypeId.of(Object[].class));
-    public static final MethodId MH_INVOKE_EXACT_ID = MethodId.of(MH_ID, "invokeExact",
-            TypeId.OBJECT, TypeId.of(Object[].class));
+    public static final MethodId MH_INVOKE_ID = MethodId.of(
+            MH_ID, "invoke", OBJECT, OBJECT.array());
+    public static final MethodId MH_INVOKE_EXACT_ID = MethodId.of(
+            MH_ID, "invokeExact", OBJECT, OBJECT.array());
 
     @DoNotShrinkType
     @DoNotOptimize

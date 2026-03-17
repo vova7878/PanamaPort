@@ -12,6 +12,10 @@ import static com.v7878.dex.builder.CodeBuilder.Op.GET_OBJECT;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
 import static com.v7878.dex.builder.CodeBuilder.Test.EQ;
 import static com.v7878.dex.builder.CodeBuilder.Test.NE;
+import static com.v7878.dex.immutable.TypeId.I;
+import static com.v7878.dex.immutable.TypeId.OBJECT;
+import static com.v7878.dex.immutable.TypeId.V;
+import static com.v7878.dex.immutable.TypeId.Z;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.ArtFieldUtils.makeFieldPublic;
 import static com.v7878.unsafe.ArtMethodUtils.makeExecutablePublic;
@@ -113,10 +117,10 @@ public class Transformers {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_CONSTRUCTOR)
                         .withConstructorSignature()
-                        .withParameterTypes(MT_ID, TypeId.I, transformer_impl_id)
+                        .withParameterTypes(MT_ID, I, transformer_impl_id)
                         .withCode(0, ib -> ib
                                 .generate_lines()
-                                .invoke(DIRECT, MethodId.constructor(invoke_transformer_id, MT_ID, TypeId.I),
+                                .invoke(DIRECT, MethodId.constructor(invoke_transformer_id, MT_ID, I),
                                         ib.this_(), ib.p(0), ib.p(1))
                                 .iop(PUT_OBJECT, ib.p(2), ib.this_(), impl_field)
                                 .return_void()
@@ -128,16 +132,16 @@ public class Transformers {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("transform")
-                        .withReturnType(TypeId.V)
+                        .withReturnType(V)
                         .withParameterTypes(esf)
                         .withCode(1, ib -> ib
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(STATIC, MethodId.of(mesf, "wrap",
-                                        mesf, TypeId.OBJECT), ib.p(0))
+                                        mesf, OBJECT), ib.p(0))
                                 .move_result_object(ib.p(0))
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id,
-                                                "transform", TypeId.V, MH_ID, mesf),
+                                                "transform", V, MH_ID, mesf),
                                         ib.l(0), ib.this_(), ib.p(0))
                                 .return_void()
                         )
@@ -148,13 +152,13 @@ public class Transformers {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("isVarargsCollector")
-                        .withReturnType(TypeId.Z)
+                        .withReturnType(Z)
                         .withParameters()
                         .withCode(1, ib -> ib
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id,
-                                                "isVarargsCollector", TypeId.Z, MH_ID),
+                                                "isVarargsCollector", Z, MH_ID),
                                         ib.l(0), ib.this_())
                                 .move_result(ib.l(0))
                                 .return_(ib.l(0))
@@ -202,12 +206,12 @@ public class Transformers {
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("bindTo")
                         .withReturnType(MH_ID)
-                        .withParameterTypes(TypeId.OBJECT)
+                        .withParameterTypes(OBJECT)
                         .withCode(1, ib -> ib
                                 .generate_lines()
                                 .iop(GET_OBJECT, ib.l(0), ib.this_(), impl_field)
                                 .invoke(VIRTUAL, MethodId.of(transformer_impl_id, "bindTo",
-                                                MH_ID, MH_ID, TypeId.OBJECT),
+                                                MH_ID, MH_ID, OBJECT),
                                         ib.l(0), ib.this_(), ib.p(0))
                                 .move_result_object(ib.l(0))
                                 .return_object(ib.l(0))
@@ -262,7 +266,7 @@ public class Transformers {
                                     .return_object(ib.l(0));
                         }
 
-                        MethodId equals = MethodId.of(MT_ID, "equals", TypeId.Z, TypeId.OBJECT);
+                        MethodId equals = MethodId.of(MT_ID, "equals", Z, OBJECT);
                         MethodId type = MethodId.of(MH_ID, "type", MT_ID);
 
                         // public MethodHandle asType(MethodType type) {
@@ -359,7 +363,7 @@ public class Transformers {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_FINAL)
                         .withName("isTransformer")
-                        .withReturnType(TypeId.Z)
+                        .withReturnType(Z)
                         .withParameterTypes(MH_ID)
                         .withCode(0, ib -> ib
                                 .generate_lines()
@@ -378,8 +382,8 @@ public class Transformers {
                     cb2.withMethod(mb -> mb
                             .withFlags(ACC_PUBLIC | ACC_FINAL)
                             .withName("transform")
-                            .withReturnType(TypeId.V)
-                            .withParameterTypes(MH_ID, TypeId.OBJECT)
+                            .withReturnType(V)
+                            .withParameterTypes(MH_ID, OBJECT)
                             .withCode(0, ib -> ib
                                     .generate_lines()
                                     .if_(DEBUG_BUILD, ib2 -> ib2
@@ -393,7 +397,7 @@ public class Transformers {
                     Consumer<CodeBuilder> invokeWithFrame;
                     if (ART_INDEX < A13) {
                         invokeWithFrame = ib -> ib.invoke_polymorphic(MH_INVOKE_ID,
-                                ProtoId.of(TypeId.V, esf), ib.p(0), ib.p(1));
+                                ProtoId.of(V, esf), ib.p(0), ib.p(1));
                     } else {
                         Method invokeWF = getHiddenMethod(MethodHandle.class,
                                 "invokeExactWithFrame", EmulatedStackFrame.ESF_CLASS);
@@ -408,8 +412,8 @@ public class Transformers {
                     cb2.withMethod(mb -> mb
                             .withFlags(ACC_PUBLIC | ACC_FINAL)
                             .withName("invokeExactPlain")
-                            .withReturnType(TypeId.V)
-                            .withParameterTypes(MH_ID, TypeId.OBJECT)
+                            .withReturnType(V)
+                            .withParameterTypes(MH_ID, OBJECT)
                             .withCode(0, ib -> {
                                 ib.generate_lines();
                                 if (DEBUG_BUILD) {
@@ -430,8 +434,8 @@ public class Transformers {
                     cb2.withMethod(mb -> mb
                             .withFlags(ACC_PUBLIC | ACC_FINAL)
                             .withName("invokeExactCommon")
-                            .withReturnType(TypeId.V)
-                            .withParameterTypes(MH_ID, TypeId.OBJECT)
+                            .withReturnType(V)
+                            .withParameterTypes(MH_ID, OBJECT)
                             .withCode(1, ib -> {
                                 ib.generate_lines();
                                 if (DEBUG_BUILD) {

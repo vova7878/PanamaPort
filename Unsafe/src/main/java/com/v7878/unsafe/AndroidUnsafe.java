@@ -13,7 +13,6 @@ import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.NoSideEffects;
 import com.v7878.sun.unsafe.SunUnsafe;
-import com.v7878.unsafe.misc.Math;
 
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -549,22 +548,22 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     private static long makeLong(short i0, short i1, short i2, short i3) {
-        return ((Math.ulong(i0) << pickPos(48, 0))
-                | (Math.ulong(i1) << pickPos(48, 16))
-                | (Math.ulong(i2) << pickPos(48, 32))
-                | (Math.ulong(i3) << pickPos(48, 48)));
+        return ((ulong(i0) << pickPos(48, 0))
+                | (ulong(i1) << pickPos(48, 16))
+                | (ulong(i2) << pickPos(48, 32))
+                | (ulong(i3) << pickPos(48, 48)));
     }
 
     @AlwaysInline
     private static long makeLong(byte i0, byte i1, byte i2, byte i3, byte i4, byte i5, byte i6, byte i7) {
-        return ((Math.ulong(i0) << pickPos(56, 0))
-                | (Math.ulong(i1) << pickPos(56, 8))
-                | (Math.ulong(i2) << pickPos(56, 16))
-                | (Math.ulong(i3) << pickPos(56, 24))
-                | (Math.ulong(i4) << pickPos(56, 32))
-                | (Math.ulong(i5) << pickPos(56, 40))
-                | (Math.ulong(i6) << pickPos(56, 48))
-                | (Math.ulong(i7) << pickPos(56, 56)));
+        return ((ulong(i0) << pickPos(56, 0))
+                | (ulong(i1) << pickPos(56, 8))
+                | (ulong(i2) << pickPos(56, 16))
+                | (ulong(i3) << pickPos(56, 24))
+                | (ulong(i4) << pickPos(56, 32))
+                | (ulong(i5) << pickPos(56, 40))
+                | (ulong(i6) << pickPos(56, 48))
+                | (ulong(i7) << pickPos(56, 56)));
     }
 
     @AlwaysInline
@@ -575,16 +574,16 @@ public class AndroidUnsafe {
 
     @AlwaysInline
     private static int makeInt(byte i0, byte i1, byte i2, byte i3) {
-        return ((Math.uint(i0) << pickPos(24, 0))
-                | (Math.uint(i1) << pickPos(24, 8))
-                | (Math.uint(i2) << pickPos(24, 16))
-                | (Math.uint(i3) << pickPos(24, 24)));
+        return ((uint(i0) << pickPos(24, 0))
+                | (uint(i1) << pickPos(24, 8))
+                | (uint(i2) << pickPos(24, 16))
+                | (uint(i3) << pickPos(24, 24)));
     }
 
     @AlwaysInline
     private static short makeShort(byte i0, byte i1) {
-        return (short) ((Math.uint(i0) << pickPos(8, 0))
-                | (Math.uint(i1) << pickPos(8, 8)));
+        return (short) ((uint(i0) << pickPos(8, 0))
+                | (uint(i1) << pickPos(8, 8)));
     }
 
     @DoNotShrink // TODO: DoNotInline

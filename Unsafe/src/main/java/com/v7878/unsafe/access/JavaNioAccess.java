@@ -7,6 +7,11 @@ import static com.v7878.dex.DexConstants.ACC_PUBLIC;
 import static com.v7878.dex.builder.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.builder.CodeBuilder.InvokeKind.SUPER;
 import static com.v7878.dex.builder.CodeBuilder.Op.PUT_OBJECT;
+import static com.v7878.dex.immutable.TypeId.B;
+import static com.v7878.dex.immutable.TypeId.I;
+import static com.v7878.dex.immutable.TypeId.J;
+import static com.v7878.dex.immutable.TypeId.OBJECT;
+import static com.v7878.dex.immutable.TypeId.Z;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_BYTE_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_CHAR_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_DOUBLE_BASE_OFFSET;
@@ -201,7 +206,7 @@ public class JavaNioAccess {
         String heap_buf_name = "com.v7878.unsafe.HeapByteBuffer";
         TypeId heap_buf_id = TypeId.ofName(heap_buf_name);
 
-        FieldId obo = FieldId.of(mem_ref_id, "originalBufferObject", TypeId.OBJECT);
+        FieldId obo = FieldId.of(mem_ref_id, "originalBufferObject", OBJECT);
 
         ClassDef mem_def = ClassBuilder.build(mem_ref_id, cb -> cb
                 .withSuperClass(nio_mem_ref_id)
@@ -219,17 +224,17 @@ public class JavaNioAccess {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_CONSTRUCTOR)
                         .withConstructorSignature()
-                        .withParameterTypes(TypeId.J, TypeId.OBJECT)
+                        .withParameterTypes(J, OBJECT)
                         .withCode(0, ib -> ib
                                 .generate_lines()
                                 .if_(ART_INDEX == A8p0,
                                         ib2 -> ib2
-                                                .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id, TypeId.J),
+                                                .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id, J),
                                                         ib.this_(), ib.p(0), ib.p(1))
                                                 .iop(PUT_OBJECT, ib.p(2), ib.this_(), obo),
                                         ib2 -> ib2
                                                 .invoke(DIRECT, MethodId.constructor(nio_mem_ref_id,
-                                                                TypeId.J, TypeId.OBJECT),
+                                                                J, OBJECT),
                                                         ib.this_(), ib.p(0), ib.p(1), ib.p(2))
                                 )
                                 .return_void()
@@ -246,12 +251,12 @@ public class JavaNioAccess {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_CONSTRUCTOR)
                         .withConstructorSignature()
-                        .withParameterTypes(mem_ref_id, TypeId.I, TypeId.I,
-                                TypeId.I, TypeId.I, TypeId.I, TypeId.Z)
+                        .withParameterTypes(mem_ref_id, I, I,
+                                I, I, I, Z)
                         .withCode(0, ib -> ib
                                 .generate_lines()
                                 .invoke_range(DIRECT, MethodId.constructor(nio_direct_buf_id, nio_mem_ref_id,
-                                                TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
+                                                I, I, I, I, I, Z),
                                         ib.this_())
                                 .return_void()
                         )
@@ -267,7 +272,7 @@ public class JavaNioAccess {
                         .withCode(1, ib -> ib
                                 .generate_lines()
                                 .invoke(SUPER, MethodId.of(nio_direct_buf_id,
-                                        "attachment", TypeId.OBJECT), ib.this_())
+                                        "attachment", OBJECT), ib.this_())
                                 .move_result_object(ib.l(0))
                                 .check_cast(ib.l(0), mem_ref_id)
                                 .return_object(ib.l(0))
@@ -284,12 +289,12 @@ public class JavaNioAccess {
                 .withMethod(mb -> mb
                         .withFlags(ACC_PUBLIC | ACC_CONSTRUCTOR)
                         .withConstructorSignature()
-                        .withParameterTypes(TypeId.of(byte[].class), TypeId.I,
-                                TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z)
+                        .withParameterTypes(B.array(), I,
+                                I, I, I, I, Z)
                         .withCode(0, ib -> ib
                                 .generate_lines()
-                                .invoke_range(DIRECT, MethodId.constructor(nio_heap_buf_id, TypeId.of(byte[].class),
-                                                TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.I, TypeId.Z),
+                                .invoke_range(DIRECT, MethodId.constructor(nio_heap_buf_id, B.array(),
+                                                I, I, I, I, I, Z),
                                         ib.this_())
                                 .return_void()
                         )
