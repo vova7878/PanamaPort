@@ -141,7 +141,7 @@ public final class EmulatedStackFrame {
     }
 
     @AlwaysInline
-    private static char checSame(char expected, char actual) {
+    private static char checkSame(char expected, char actual) {
         if (expected == actual) {
             return expected;
         }
@@ -247,7 +247,7 @@ public final class EmulatedStackFrame {
 
     public static void copyNextValue(RelativeStackFrameAccessor reader,
                                      RelativeStackFrameAccessor writer) {
-        switch (checSame(reader.currentShorty(), writer.currentShorty())) {
+        switch (checkSame(reader.currentShorty(), writer.currentShorty())) {
             case 'V' -> { /* nop */ }
             case 'L' -> writer.putNextRSLOT(reader.getNextRSLOT());
             case 'Z', 'B', 'C', 'S', 'I', 'F' -> writer.putNextSSLOT(reader.getNextSSLOT());
@@ -258,7 +258,7 @@ public final class EmulatedStackFrame {
 
     public static void copyValue(StackFrameAccessor reader, int reader_idx,
                                  StackFrameAccessor writer, int writer_idx) {
-        switch (checSame(reader.getArgumentShorty(reader_idx),
+        switch (checkSame(reader.getArgumentShorty(reader_idx),
                 writer.getArgumentShorty(writer_idx))) {
             case 'V' -> { /* nop */ }
             case 'L' -> writer.putRSLOT(writer_idx, reader.getRSLOT(reader_idx));
@@ -349,12 +349,12 @@ public final class EmulatedStackFrame {
 
         @AlwaysInline
         private void checkWriteType(int index, char expected) {
-            checSame(getArgumentShorty(index), expected);
+            checkSame(getArgumentShorty(index), expected);
         }
 
         @AlwaysInline
         private void checkReadType(int index, char expected) {
-            checSame(expected, getArgumentShorty(index));
+            checkSame(expected, getArgumentShorty(index));
         }
 
         @AlwaysInline
@@ -580,12 +580,12 @@ public final class EmulatedStackFrame {
 
         @AlwaysInline
         private void checkWriteType(char expected) {
-            checSame(currentShorty(), expected);
+            checkSame(currentShorty(), expected);
         }
 
         @AlwaysInline
         private void checkReadType(char expected) {
-            checSame(expected, currentShorty());
+            checkSame(expected, currentShorty());
         }
 
         public RelativeStackFrameAccessor moveTo(int index) {
