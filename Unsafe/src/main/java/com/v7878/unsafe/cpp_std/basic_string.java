@@ -30,7 +30,7 @@ public final class basic_string {
     public basic_string(MemoryLayout element) {
         this.ELEMENT = Objects.requireNonNull(element);
         if (element.byteAlignment() > 8) {
-            throw new IllegalArgumentException("Elements with alihnment more than 8 is not supported");
+            throw new IllegalArgumentException("Elements with alignment more than 8 is not supported");
         }
         this.LONG_LAYOUT = structLayout(sequenceLayout(3, ADDRESS));
         long min_cap = (LONG_LAYOUT.byteSize() - 1) / ELEMENT.byteSize();
