@@ -381,7 +381,7 @@ public class AccessLinker {
                                     ib.invoke_range(DIRECT, target, ib.this_());
                                     ib.return_object(ib.this_());
                                 }
-                                case DIRECT_HOOK_VTABLE -> shouldNotReachHere();
+                                case DIRECT_AS_SUPER, DIRECT_HOOK_VTABLE -> shouldNotReachHere();
                             }
                         })
                 );
@@ -427,8 +427,11 @@ public class AccessLinker {
                     0, ArtModifiers.kAccSingleImplementation);
             ArtMethodUtils.setExecutableData(sketch_art, target_art);
 
-            VM.setEmbeddedVTableEntry(sketch.getDeclaringClass(),
+            VM.setVTableEntry(sketch.getDeclaringClass(),
                     getDispatchTableIndex(sketch_art), target_art);
+            return new Processor() {
+                // nop
+            };
         }
         if (kind == DIRECT_AS_SUPER) {
             var name = sketch.getName() + "_stub";
