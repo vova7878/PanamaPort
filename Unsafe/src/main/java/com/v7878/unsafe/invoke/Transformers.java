@@ -376,8 +376,8 @@ public class Transformers {
                             "transform", EmulatedStackFrame.ESF_CLASS);
                     makeMethodInheritable(transform);
 
-                    // public void transform(MethodHandle handle, Object stack) {
-                    //     handle.transform((dalvik.system.EmulatedStackFrame) stack);
+                    // public void transform(MethodHandle handle, Object frame) {
+                    //     handle.transform((dalvik.system.EmulatedStackFrame) frame);
                     // }
                     cb2.withMethod(mb -> mb
                             .withFlags(ACC_PUBLIC | ACC_FINAL)
@@ -406,34 +406,16 @@ public class Transformers {
                                 MethodId.of(invokeWF), ib.p(0), ib.p(1));
                     }
 
-                    // public void invokeExactPlain(MethodHandle handle, Object stack) {
-                    //     handle.invokeWithFrame((dalvik.system.EmulatedStackFrame) stack);
-                    // }
-                    cb2.withMethod(mb -> mb
-                            .withFlags(ACC_PUBLIC | ACC_FINAL)
-                            .withName("invokeExactPlain")
-                            .withReturnType(V)
-                            .withParameterTypes(MH_ID, OBJECT)
-                            .withCode(0, ib -> {
-                                ib.generate_lines();
-                                if (DEBUG_BUILD) {
-                                    ib.check_cast(ib.p(1), esf);
-                                }
-                                ib.commit(invokeWithFrame);
-                                ib.return_void();
-                            })
-                    );
-
-                    // public void invokeExactCommon(MethodHandle handle, Object stack) {
+                    // public void invokeExact(MethodHandle handle, Object frame) {
                     //     if (handle instanceof j.l.i.Transformer) {
-                    //         handle.transform((dalvik.system.EmulatedStackFrame) stack);
+                    //         handle.transform((dalvik.system.EmulatedStackFrame) frame);
                     //     } else {
-                    //         handle.invokeWithFrame((dalvik.system.EmulatedStackFrame) stack);
+                    //         handle.invokeWithFrame((dalvik.system.EmulatedStackFrame) frame);
                     //     }
                     // }
                     cb2.withMethod(mb -> mb
                             .withFlags(ACC_PUBLIC | ACC_FINAL)
-                            .withName("invokeExactCommon")
+                            .withName("invokeExact")
                             .withReturnType(V)
                             .withParameterTypes(MH_ID, OBJECT)
                             .withCode(1, ib -> {
@@ -442,17 +424,23 @@ public class Transformers {
                                     ib.check_cast(ib.p(1), esf);
                                 }
 
-                                ib.instance_of(ib.l(0), ib.p(0), invoke_transformer_id);
-                                ib.if_testz(NE, ib.l(0), "transformer");
+                                if (ART_INDEX < A13) {
+                                    // For Android 8-12L, transformer check is built into the call
+                                    ib.commit(invokeWithFrame);
+                                    ib.return_void();
+                                } else {
+                                    ib.instance_of(ib.l(0), ib.p(0), invoke_transformer_id);
+                                    ib.if_testz(NE, ib.l(0), "transformer");
 
-                                ib.commit(invokeWithFrame);
-                                ib.goto_("exit");
+                                    ib.commit(invokeWithFrame);
+                                    ib.goto_("exit");
 
-                                ib.label("transformer");
-                                ib.invoke(VIRTUAL, MethodId.of(transform), ib.p(0), ib.p(1));
+                                    ib.label("transformer");
+                                    ib.invoke(VIRTUAL, MethodId.of(transform), ib.p(0), ib.p(1));
 
-                                ib.label("exit");
-                                ib.return_void();
+                                    ib.label("exit");
+                                    ib.return_void();
+                                }
                             })
                     );
                 })
@@ -498,11 +486,8 @@ public class Transformers {
 
         abstract void transform(MethodHandle handle, Object stackFrame) throws Throwable;
 
-        abstract void invokeExactPlain(MethodHandle handle,
-                                       Object stackFrame) throws Throwable;
-
-        abstract void invokeExactCommon(MethodHandle handle,
-                                        Object stackFrame) throws Throwable;
+        abstract void invokeExact(MethodHandle handle,
+                                  Object stackFrame) throws Throwable;
     }
 
     @DoNotShrink
@@ -614,32 +599,41 @@ public class Transformers {
     }
 
     public static void invokeExactPlain(
-            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        INVOKER.invokeExactPlain(target, stackFrame.esf);
+            MethodHandle target, EmulatedStackFrame frame) throws Throwable {
+        INVOKER.invokeExact(target, frame.esf);
     }
 
     public static void invokeTransform(
-            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        INVOKER.transform(target, stackFrame.esf);
+            MethodHandle target, EmulatedStackFrame frame) throws Throwable {
+        INVOKER.transform(target, frame.esf);
     }
 
     public static void invokeExactNoChecks(
-            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        // FIXME: android 8-12L convert nominalType to type (PLATFORM-BUG!)
-        INVOKER.invokeExactCommon(target, stackFrame.esf);
+            MethodHandle target, EmulatedStackFrame frame) throws Throwable {
+        if (ART_INDEX >= A13 || !isTransformer(target)) {
+            invokeExactPlain(target, frame);
+        } else {
+            var real_type = InvokeAccess.realType(target);
+            if (real_type == InvokeAccess.nominalType(target)) {
+                invokeExactPlain(target, frame);
+            } else {
+                // cast nominal type to real type
+                MHUtils.AsTypeAdapter.apply(target, real_type, frame);
+            }
+        }
     }
 
     public static void invokeExact(
-            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        if (!target.type().equals(stackFrame.type())) {
-            throw newWrongMethodTypeException(stackFrame.type(), target.type());
+            MethodHandle target, EmulatedStackFrame frame) throws Throwable {
+        if (!target.type().equals(frame.type())) {
+            throw newWrongMethodTypeException(frame.type(), target.type());
         }
-        invokeExactNoChecks(target, stackFrame);
+        invokeExactNoChecks(target, frame);
     }
 
     public static void invoke(
-            MethodHandle target, EmulatedStackFrame stackFrame) throws Throwable {
-        MethodHandle adaptedTarget = Handles.asType(target, stackFrame.type());
-        invokeExactNoChecks(adaptedTarget, stackFrame);
+            MethodHandle target, EmulatedStackFrame frame) throws Throwable {
+        target = Handles.asType(target, frame.type());
+        invokeExactPlain(target, frame);
     }
 }

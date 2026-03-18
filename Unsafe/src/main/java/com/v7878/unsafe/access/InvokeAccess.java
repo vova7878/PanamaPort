@@ -164,6 +164,18 @@ public class InvokeAccess {
         return VM.internalClone(handle);
     }
 
+    public static MethodHandle realTypeHandle(MethodHandle handle) {
+        if (ART_INDEX >= A13) {
+            return handle;
+        }
+        if (nominalType(handle) == null) {
+            return handle;
+        }
+        handle = duplicateHandle(handle);
+        setNominalType(handle, null);
+        return handle;
+    }
+
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class HandleKindI {
