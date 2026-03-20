@@ -12,10 +12,10 @@ import static com.v7878.llvm.Target.LLVMInitializeNativeTarget;
 import static com.v7878.llvm.Target.LLVMInitializeNativeTargetInfo;
 import static com.v7878.llvm.Target.LLVMInitializeNativeTargetMC;
 import static com.v7878.llvm.TargetMachine.LLVMCodeGenOptLevel.LLVMCodeGenLevelDefault;
-import static com.v7878.llvm.TargetMachine.LLVMCodeModel.LLVMCodeModelDefault;
+import static com.v7878.llvm.TargetMachine.LLVMCodeModel.LLVMCodeModelLarge;
 import static com.v7878.llvm.TargetMachine.LLVMCreateTargetMachine;
 import static com.v7878.llvm.TargetMachine.LLVMGetTargetFromTriple;
-import static com.v7878.llvm.TargetMachine.LLVMRelocMode.LLVMRelocDefault;
+import static com.v7878.llvm.TargetMachine.LLVMRelocMode.LLVMRelocStatic;
 import static com.v7878.unsafe.Utils.DEBUG_BUILD;
 import static com.v7878.unsafe.Utils.nothrows_run;
 
@@ -58,6 +58,8 @@ public class LLVMGlobals {
     }
 
     public static LLVMTargetMachineRef newDefaultMachine() {
-        return newHostMachine(LLVMCodeGenLevelDefault, LLVMRelocDefault, LLVMCodeModelDefault);
+        // LLVMRelocStatic - to use absolute addresses without relocations
+        // LLVMCodeModelLarge - to encode constants directly in the code without using the constant pool
+        return newHostMachine(LLVMCodeGenLevelDefault, LLVMRelocStatic, LLVMCodeModelLarge);
     }
 }

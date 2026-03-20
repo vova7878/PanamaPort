@@ -41,10 +41,10 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.SHORT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
-import static com.v7878.unsafe.llvm.LLVMBuilder.buildLocalJObjectToAddress;
-import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
+import static com.v7878.unsafe.llvm.LLVMBuilder.call;
 import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
-import static com.v7878.unsafe.llvm.LLVMTypes.function_t;
+import static com.v7878.unsafe.llvm.LLVMBuilder.local_jobj_to_ptr;
+import static com.v7878.unsafe.llvm.LLVMTypes.fn_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int16_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int1_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
@@ -318,7 +318,7 @@ public class ExtraMemoryAccess {
             var one = const_intptr(context, 1);
             var zero = const_intptr(context, 0);
 
-            var type = function_t(void_t(context), intptr_t(context), intptr_t(context), intptr_t(context),
+            var type = fn_t(void_t(context), intptr_t(context), intptr_t(context), intptr_t(context),
                     intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context));
             var function = LLVMAddFunction(module, name, type);
             var args = LLVMGetParams(function);
@@ -337,8 +337,8 @@ public class ExtraMemoryAccess {
 
             LLVMPositionBuilderAtEnd(builder, body);
             var langth_m1 = LLVMBuildSub(builder, length, one, "");
-            var dst = buildLocalJObjectToAddress(builder, args[0], args[1], element_type);
-            var src = buildLocalJObjectToAddress(builder, args[2], args[3], element_type);
+            var dst = local_jobj_to_ptr(builder, args[0], args[1], element_type);
+            var src = local_jobj_to_ptr(builder, args[2], args[3], element_type);
             body = LLVMGetInsertBlock(builder);
 
             var test_order = LLVMBuildICmp(builder, LLVMIntULT, dst, src, "");
@@ -393,10 +393,10 @@ public class ExtraMemoryAccess {
         private static byte[] gen_memmove_swap_shorts() {
             final String name = "memmove_swap_shorts";
             return generateFunctionCodeArray((context, module, builder) -> {
-                var bswap16_type = function_t(int16_t(context), int16_t(context));
+                var bswap16_type = fn_t(int16_t(context), int16_t(context));
                 var bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
                 return gen_memmove_modify(context, module, builder, name, int16_t(context), 1,
-                        value -> build_call(builder, bswap16, value));
+                        value -> call(builder, bswap16, value));
             });
         }
 
@@ -410,10 +410,10 @@ public class ExtraMemoryAccess {
         private static byte[] gen_memmove_swap_ints() {
             final String name = "memmove_swap_ints";
             return generateFunctionCodeArray((context, module, builder) -> {
-                var bswap32_type = function_t(int32_t(context), int32_t(context));
+                var bswap32_type = fn_t(int32_t(context), int32_t(context));
                 var bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
                 return gen_memmove_modify(context, module, builder, name, int32_t(context), 1,
-                        value -> build_call(builder, bswap32, value));
+                        value -> call(builder, bswap32, value));
             });
         }
 
@@ -427,10 +427,10 @@ public class ExtraMemoryAccess {
         private static byte[] gen_memmove_swap_longs() {
             final String name = "memmove_swap_longs";
             return generateFunctionCodeArray((context, module, builder) -> {
-                var bswap64_type = function_t(int64_t(context), int64_t(context));
+                var bswap64_type = fn_t(int64_t(context), int64_t(context));
                 var bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
                 return gen_memmove_modify(context, module, builder, name, int64_t(context), 1,
-                        value -> build_call(builder, bswap64, value));
+                        value -> call(builder, bswap64, value));
             });
         }
 
@@ -438,13 +438,13 @@ public class ExtraMemoryAccess {
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
             return generateFunctionCodeArray((context, module, builder) -> {
                 var var_type = type.apply(context);
-                var f_type = function_t(var_type, intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context));
+                var f_type = fn_t(var_type, intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context));
                 var function = LLVMAddFunction(module, name, f_type);
                 var args = LLVMGetParams(function);
                 args = Arrays.copyOfRange(args, 2, args.length);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                var pointer = buildLocalJObjectToAddress(builder, args[0], args[1], var_type);
+                var pointer = local_jobj_to_ptr(builder, args[0], args[1], var_type);
                 var load = LLVMBuildLoad(builder, pointer, "");
                 LLVMSetAlignment(load, alignment);
                 LLVMSetOrdering(load, LLVMAtomicOrderingSequentiallyConsistent);
@@ -503,13 +503,13 @@ public class ExtraMemoryAccess {
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
             return generateFunctionCodeArray((context, module, builder) -> {
                 var var_type = type.apply(context);
-                var f_type = function_t(void_t(context), intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context), var_type);
+                var f_type = fn_t(void_t(context), intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context), var_type);
                 var function = LLVMAddFunction(module, name, f_type);
                 var args = LLVMGetParams(function);
                 args = Arrays.copyOfRange(args, 2, args.length);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                var pointer = buildLocalJObjectToAddress(builder, args[0], args[1], var_type);
+                var pointer = local_jobj_to_ptr(builder, args[0], args[1], var_type);
                 var store = LLVMBuildStore(builder, args[2], pointer);
                 LLVMSetAlignment(store, alignment);
                 LLVMSetOrdering(store, LLVMAtomicOrderingSequentiallyConsistent);
@@ -568,13 +568,13 @@ public class ExtraMemoryAccess {
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, LLVMAtomicRMWBinOp op) {
             return generateFunctionCodeArray((context, module, builder) -> {
                 var var_type = type.apply(context);
-                var f_type = function_t(var_type, intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context), var_type);
+                var f_type = fn_t(var_type, intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context), var_type);
                 var function = LLVMAddFunction(module, name, f_type);
                 var args = LLVMGetParams(function);
                 args = Arrays.copyOfRange(args, 2, args.length);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                var pointer = buildLocalJObjectToAddress(builder, args[0], args[1], var_type);
+                var pointer = local_jobj_to_ptr(builder, args[0], args[1], var_type);
                 var rmw = LLVMBuildAtomicRMW(builder, op, pointer, args[2],
                         LLVMAtomicOrderingSequentiallyConsistent, false);
 
@@ -766,13 +766,13 @@ public class ExtraMemoryAccess {
             return generateFunctionCodeArray((context, module, builder) -> {
                 var var_type = type.apply(context);
                 var r_type = ret_value ? var_type : int1_t(context);
-                var f_type = function_t(r_type, intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context), var_type, var_type);
+                var f_type = fn_t(r_type, intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context), var_type, var_type);
                 var function = LLVMAddFunction(module, name, f_type);
                 var args = LLVMGetParams(function);
                 args = Arrays.copyOfRange(args, 2, args.length);
 
                 LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                var pointer = buildLocalJObjectToAddress(builder, args[0], args[1], var_type);
+                var pointer = local_jobj_to_ptr(builder, args[0], args[1], var_type);
                 var cmpxchg = LLVMBuildAtomicCmpXchg(builder, pointer, args[2],
                         args[3], LLVMAtomicOrderingSequentiallyConsistent,
                         LLVMAtomicOrderingSequentiallyConsistent, false);

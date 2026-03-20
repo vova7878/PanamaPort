@@ -38,30 +38,29 @@ import static com.v7878.unsafe.llvm.LLVMTypes.ptr_t;
 
 import com.v7878.foreign.Arena;
 import com.v7878.foreign.MemorySegment;
-import com.v7878.unsafe.Utils;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class LLVMBuilder {
-    public static LLVMModuleRef getBuilderModule(LLVMBuilderRef builder) {
+    public static LLVMModuleRef builderModule(LLVMBuilderRef builder) {
         return LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
     }
 
-    public static LLVMContextRef getModuleContext(LLVMModuleRef module) {
+    public static LLVMContextRef moduleContext(LLVMModuleRef module) {
         return LLVMGetModuleContext(module);
     }
 
-    public static LLVMContextRef getBuilderContext(LLVMBuilderRef builder) {
-        return LLVMGetModuleContext(getBuilderModule(builder));
+    public static LLVMContextRef builderContext(LLVMBuilderRef builder) {
+        return LLVMGetModuleContext(builderModule(builder));
     }
 
-    public static LLVMValueRef buildLocalJObjectToAddress(
+    public static LLVMValueRef local_jobj_to_intptr(
             LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset) {
         var current_block = LLVMGetInsertBlock(builder);
         var function = LLVMGetBasicBlockParent(current_block);
 
-        var context = getBuilderContext(builder);
+        var context = builderContext(builder);
 
         var zeroptr = const_intptr(context, 0);
 
@@ -87,9 +86,9 @@ public class LLVMBuilder {
         return out;
     }
 
-    public static LLVMValueRef buildLocalJObjectToAddress(
+    public static LLVMValueRef local_jobj_to_ptr(
             LLVMBuilderRef builder, LLVMValueRef base, LLVMValueRef offset, LLVMTypeRef type) {
-        return LLVMBuildIntToPtr(builder, buildLocalJObjectToAddress(builder, base, offset), ptr_t(type), "");
+        return LLVMBuildIntToPtr(builder, local_jobj_to_intptr(builder, base, offset), ptr_t(type), "");
     }
 
     public static void no_frame_pointer_elim(LLVMValueRef function) {
@@ -133,49 +132,36 @@ public class LLVMBuilder {
         return const_ptr(context, type, value + offset);
     }
 
-    public static LLVMValueRef build_const_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value) {
-        var context = getBuilderContext(builder);
-        var ptr = const_ptr(context, type, value);
-        return LLVMBuildLoad(builder, ptr, "");
-    }
-
-    public static LLVMValueRef build_const_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, long value, long offset) {
-        return build_const_load_ptr(builder, type, value + offset);
-    }
-
-    public static LLVMValueRef build_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value) {
+    public static LLVMValueRef load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value) {
         var ptr = LLVMBuildIntToPtr(builder, value, ptr_t(type), "");
         return LLVMBuildLoad(builder, ptr, "");
     }
 
-    public static LLVMValueRef build_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value, LLVMValueRef offset) {
-        return build_load_ptr(builder, type, LLVMBuildAdd(builder, value, offset, ""));
+    public static LLVMValueRef load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value, LLVMValueRef offset) {
+        return load_ptr(builder, type, LLVMBuildAdd(builder, value, offset, ""));
     }
 
-    public static LLVMValueRef build_load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value, long offset) {
-        var context = getBuilderContext(builder);
-        return build_load_ptr(builder, type, value, const_intptr(context, offset));
+    public static LLVMValueRef load_ptr(LLVMBuilderRef builder, LLVMTypeRef type, LLVMValueRef value, long offset) {
+        var context = builderContext(builder);
+        return load_ptr(builder, type, value, const_intptr(context, offset));
     }
 
-    public static LLVMValueRef build_call(LLVMBuilderRef builder, LLVMValueRef target, LLVMValueRef... args) {
+    public static LLVMValueRef call(LLVMBuilderRef builder, LLVMValueRef target, LLVMValueRef... args) {
         return LLVMBuildCall(builder, target, args, "");
     }
 
-    public static BiFunction<LLVMBuilderRef, LLVMValueRef, LLVMValueRef> pointerFactory(
+    public static BiFunction<LLVMBuilderRef, LLVMValueRef, LLVMValueRef> ptr_factory(
             long offset, Function<LLVMContextRef, LLVMTypeRef> type) {
-        return (builder, base) -> build_load_ptr(builder,
-                type.apply(getBuilderContext(builder)), base, offset);
+        return (builder, base) -> load_ptr(builder,
+                ptr_t(type.apply(builderContext(builder))), base, offset);
     }
 
-    public static Function<LLVMBuilderRef, LLVMValueRef> functionPointerFactory(
+    public static Function<LLVMContextRef, LLVMValueRef> fnptr_factory(
             Arena scope, MemorySegment value, Function<LLVMContextRef, LLVMTypeRef> type) {
-        //TODO: indirect pointers may be unnecessary for some architectures
-        MemorySegment holder = Utils.allocateAddress(scope, value);
-        return builder -> build_const_load_ptr(builder,
-                type.apply(getBuilderContext(builder)), holder.nativeAddress());
+        return context -> const_ptr(context, type.apply(context), value.nativeAddress());
     }
 
-    public static Function<LLVMContextRef, LLVMValueRef> intptrFactory(MemorySegment value) {
+    public static Function<LLVMContextRef, LLVMValueRef> intptr_factory(MemorySegment value) {
         return context -> const_intptr(context, value.nativeAddress());
     }
 }

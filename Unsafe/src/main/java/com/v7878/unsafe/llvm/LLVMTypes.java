@@ -74,19 +74,11 @@ public class LLVMTypes {
         return LLVMFP128TypeInContext(context);
     }
 
-    public static LLVMTypeRef function_t(LLVMTypeRef ret, LLVMTypeRef... args) {
+    public static LLVMTypeRef fn_t(LLVMTypeRef ret, LLVMTypeRef... args) {
         return LLVMFunctionType(ret, args, false);
     }
 
-    public static LLVMTypeRef function_ptr_t(LLVMTypeRef ret, LLVMTypeRef... args) {
-        return ptr_t(function_t(ret, args));
-    }
-
-    public static LLVMTypeRef variadic_function_t(LLVMTypeRef ret, LLVMTypeRef... args) {
+    public static LLVMTypeRef var_fn_t(LLVMTypeRef ret, LLVMTypeRef... args) {
         return LLVMFunctionType(ret, args, true);
-    }
-
-    public static LLVMTypeRef variadic_function_ptr_t(LLVMTypeRef ret, LLVMTypeRef... args) {
-        return ptr_t(variadic_function_t(ret, args));
     }
 }

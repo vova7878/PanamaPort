@@ -65,18 +65,17 @@ import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.access.InvokeAccess.MH_INVOKE_EXACT_ID;
 import static com.v7878.unsafe.foreign.ExtraLayouts.WORD;
-import static com.v7878.unsafe.llvm.LLVMBuilder.buildLocalJObjectToAddress;
-import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
-import static com.v7878.unsafe.llvm.LLVMBuilder.build_load_ptr;
+import static com.v7878.unsafe.llvm.LLVMBuilder.call;
 import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
-import static com.v7878.unsafe.llvm.LLVMBuilder.functionPointerFactory;
-import static com.v7878.unsafe.llvm.LLVMBuilder.intptrFactory;
+import static com.v7878.unsafe.llvm.LLVMBuilder.fnptr_factory;
+import static com.v7878.unsafe.llvm.LLVMBuilder.intptr_factory;
+import static com.v7878.unsafe.llvm.LLVMBuilder.load_ptr;
+import static com.v7878.unsafe.llvm.LLVMBuilder.local_jobj_to_intptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.no_frame_pointer_elim;
-import static com.v7878.unsafe.llvm.LLVMBuilder.pointerFactory;
+import static com.v7878.unsafe.llvm.LLVMBuilder.ptr_factory;
 import static com.v7878.unsafe.llvm.LLVMTypes.double_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.float_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.function_ptr_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.function_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.fn_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int16_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int1_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
@@ -84,7 +83,7 @@ import static com.v7878.unsafe.llvm.LLVMTypes.int64_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int8_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.ptr_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.variadic_function_ptr_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.var_fn_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.void_ptr_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeSegment;
@@ -250,7 +249,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         }
         argTypes.add(0, void_ptr_t(context)); // JNIEnv*
         argTypes.add(1, void_ptr_t(context)); // jclass
-        return function_t(returnType, argTypes.toArray(new LLVMTypeRef[0]));
+        return fn_t(returnType, argTypes.toArray(new LLVMTypeRef[0]));
     }
 
     private static LLVMTypeRef sdToLLVMType(
@@ -315,7 +314,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 int t = 2; // drop JNIEnv* and jclass
                 for (MemoryLayout layout : stub_descriptor.argumentLayouts()) {
                     if (layout instanceof GroupLayout || layout instanceof AddressLayout) {
-                        out.add(buildLocalJObjectToAddress(builder, tmp[t++], tmp[t++]));
+                        out.add(local_jobj_to_intptr(builder, tmp[t++], tmp[t++]));
                     } else if (layout instanceof ValueLayout) {
                         out.add(tmp[t++]);
                     } else {
@@ -393,7 +392,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 }
             }
 
-            var call = build_call(builder, target, Arrays.copyOf(target_args, count));
+            var call = call(builder, target, Arrays.copyOf(target_args, count));
 
             final int offset = LLVMAttributeFirstArgIndex;
             for (int i = 0; i < count; i++) {
@@ -960,24 +959,24 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             private static final Arena SCOPE = Arena.ofAuto();
 
             private static final Function<LLVMContextRef, LLVMValueRef> UNCAUGHT_EXCEPTION_MSG =
-                    intptrFactory(SCOPE.allocateFrom("Uncaught exception in upcall:"));
+                    intptr_factory(SCOPE.allocateFrom("Uncaught exception in upcall:"));
 
-            private static final Function<LLVMBuilderRef, LLVMValueRef> INIT =
-                    functionPointerFactory(SCOPE, ENVGetter.INSTANCE, context ->
-                            function_ptr_t(intptr_t(context)));
+            private static final Function<LLVMContextRef, LLVMValueRef> INIT =
+                    fnptr_factory(SCOPE, ENVGetter.INSTANCE, context ->
+                            fn_t(intptr_t(context)));
 
             private static final BiFunction<LLVMBuilderRef, LLVMValueRef, LLVMValueRef> CALL =
-                    pointerFactory(getJNINativeInterfaceOffset("CallStaticVoidMethod"), context ->
-                            variadic_function_ptr_t(void_t(context), intptr_t(context),
+                    ptr_factory(getJNINativeInterfaceOffset("CallStaticVoidMethod"), context ->
+                            var_fn_t(void_t(context), intptr_t(context),
                                     intptr_t(context), intptr_t(context)));
 
             private static final BiFunction<LLVMBuilderRef, LLVMValueRef, LLVMValueRef> EXCEPTION_CHECK =
-                    pointerFactory(getJNINativeInterfaceOffset("ExceptionCheck"), context ->
-                            function_ptr_t(int1_t(context), intptr_t(context)));
+                    ptr_factory(getJNINativeInterfaceOffset("ExceptionCheck"), context ->
+                            fn_t(int1_t(context), intptr_t(context)));
 
             private static final BiFunction<LLVMBuilderRef, LLVMValueRef, LLVMValueRef> FATAL_ERROR =
-                    pointerFactory(getJNINativeInterfaceOffset("FatalError"), context ->
-                            function_ptr_t(void_t(context), intptr_t(context), intptr_t(context)));
+                    ptr_factory(getJNINativeInterfaceOffset("FatalError"), context ->
+                            fn_t(void_t(context), intptr_t(context), intptr_t(context)));
         }
 
         final String function_name = "stub";
@@ -1000,8 +999,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             int env_index = computeEnvIndex(stub_descriptor, options);
             var env_ptr = env_index >= 0 ? stub_args[env_index] :
-                    build_call(builder, Holder.INIT.apply(builder));
-            var env_iface = build_load_ptr(builder, intptr_t(context), env_ptr);
+                    call(builder, Holder.INIT.apply(context));
+            var env_iface = load_ptr(builder, intptr_t(context), env_ptr);
 
             int count = 0; // current index in target_args[] and their count
             int index = 0; // current index in stub_args[]
@@ -1084,17 +1083,17 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
                 }
             }
 
-            build_call(builder, target, Arrays.copyOf(target_args, count));
+            call(builder, target, Arrays.copyOf(target_args, count));
             if (options.allowExceptions()) {
                 LLVMBuildBr(builder, normal_exit);
             } else {
                 var uncaught_exception = LLVMAppendBasicBlock(stub, "");
-                var test_exceptions = build_call(builder,
+                var test_exceptions = call(builder,
                         Holder.EXCEPTION_CHECK.apply(builder, env_iface), env_ptr);
                 LLVMBuildCondBr(builder, test_exceptions, uncaught_exception, normal_exit);
 
                 LLVMPositionBuilderAtEnd(builder, uncaught_exception);
-                build_call(builder, Holder.FATAL_ERROR.apply(builder, env_iface),
+                call(builder, Holder.FATAL_ERROR.apply(builder, env_iface),
                         env_ptr, Holder.UNCAUGHT_EXCEPTION_MSG.apply(context));
                 LLVMBuildUnreachable(builder);
             }

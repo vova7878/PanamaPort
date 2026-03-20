@@ -13,7 +13,6 @@ import static com.v7878.dex.builder.CodeBuilder.InvokeKind.DIRECT;
 import static com.v7878.dex.builder.CodeBuilder.InvokeKind.STATIC;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.INT_TO_LONG;
 import static com.v7878.dex.builder.CodeBuilder.UnOp.LONG_TO_INT;
-import static com.v7878.foreign.ValueLayout.ADDRESS;
 import static com.v7878.llvm.Core.LLVMAddFunction;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMBuildRet;
@@ -39,19 +38,18 @@ import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
-import static com.v7878.unsafe.llvm.LLVMBuilder.build_call;
-import static com.v7878.unsafe.llvm.LLVMBuilder.build_const_load_ptr;
+import static com.v7878.unsafe.llvm.LLVMBuilder.call;
+import static com.v7878.unsafe.llvm.LLVMBuilder.const_ptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.no_frame_pointer_elim;
 import static com.v7878.unsafe.llvm.LLVMTypes.double_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.float_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.function_t;
+import static com.v7878.unsafe.llvm.LLVMTypes.fn_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int16_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int1_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int64_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int8_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.intptr_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.ptr_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeArray;
 import static java.lang.annotation.ElementType.METHOD;
@@ -376,7 +374,7 @@ public class BulkLinker {
             }
         }
 
-        return function_t(retType, argTypes.toArray(new LLVMTypeRef[0]));
+        return fn_t(retType, argTypes.toArray(new LLVMTypeRef[0]));
     }
 
     private static byte[] generateNativeStub(SymbolInfo info, long symbol_ptr) {
@@ -389,7 +387,7 @@ public class BulkLinker {
             LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(stub, ""));
 
             LLVMTypeRef target_type = toLLVMType(context, info, false);
-            LLVMValueRef target_ptr = build_const_load_ptr(builder, ptr_t(target_type), symbol_ptr);
+            LLVMValueRef target_ptr = const_ptr(context, target_type, symbol_ptr);
 
             LLVMValueRef[] args = LLVMGetParams(stub);
             var call_type = info.call_type;
@@ -398,7 +396,7 @@ public class BulkLinker {
                 args = Arrays.copyOfRange(args,
                         call_type.replaceThis ? 1 : 2, args.length);
             }
-            LLVMValueRef ret_val = build_call(builder, target_ptr, args);
+            LLVMValueRef ret_val = call(builder, target_ptr, args);
             if (info.ret == MapType.VOID) {
                 LLVMBuildRetVoid(builder);
             } else {
@@ -417,13 +415,9 @@ public class BulkLinker {
     }
 
     private static void processNativeStubs(Arena scope, SymbolInfo[] infos, MemorySegment[] symbols, int[] map) {
-        //TODO: indirect pointers may be unnecessary for some architectures
-        MemorySegment pointers = scope.allocate(ADDRESS, map.length);
         byte[][] code = new byte[map.length][];
         for (int i = 0; i < map.length; i++) {
-            long offset = i * ADDRESS.byteSize();
-            pointers.set(ADDRESS, offset, symbols[map[i]]);
-            code[i] = generateNativeStub(infos[map[i]], pointers.nativeAddress() + offset);
+            code[i] = generateNativeStub(infos[map[i]], symbols[map[i]].nativeAddress());
         }
         processASMs(scope, symbols, code, map);
     }
