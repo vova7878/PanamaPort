@@ -60,16 +60,16 @@ public class ENVGetter {
 
     private static final Function<LLVMContextRef, LLVMValueRef> JVM = intptr_factory(JNIUtils.getJavaVM());
 
-    private static final Function<LLVMContextRef, LLVMValueRef> LOG_ASSERT =
+    private static final Function<LLVMBuilderRef, LLVMValueRef> LOG_ASSERT =
             fnptr_factory(SCOPE, ART.findOrThrow("__android_log_assert"), context ->
                     var_fn_t(void_t(context), intptr_t(context),
                             intptr_t(context), intptr_t(context)));
 
-    private static final Function<LLVMContextRef, LLVMValueRef> GET_SPECIFIC =
+    private static final Function<LLVMBuilderRef, LLVMValueRef> GET_SPECIFIC =
             fnptr_factory(SCOPE, ART.findOrThrow("pthread_getspecific"), context ->
                     fn_t(intptr_t(context), int32_t(context)));
 
-    private static final Function<LLVMContextRef, LLVMValueRef> SET_SPECIFIC =
+    private static final Function<LLVMBuilderRef, LLVMValueRef> SET_SPECIFIC =
             fnptr_factory(SCOPE, ART.findOrThrow("pthread_setspecific"), context ->
                     fn_t(int32_t(context), int32_t(context), intptr_t(context)));
 
@@ -117,7 +117,7 @@ public class ENVGetter {
             LLVMPositionBuilderAtEnd(builder, abort);
             var abort_msg = LLVMBuildPhi(builder, intptr_t(context), "");
             var abort_code = LLVMBuildPhi(builder, int32_t(context), "");
-            call(builder, LOG_ASSERT.apply(context), const_intptr(context, 0),
+            call(builder, LOG_ASSERT.apply(builder), const_intptr(context, 0),
                     LOG_TAG.apply(context), abort_msg, abort_code);
             LLVMBuildUnreachable(builder);
 
@@ -129,14 +129,14 @@ public class ENVGetter {
             var cache_env_ptr = LLVMBuildPhi(builder, ptr_t(intptr_t(context)), "");
             var cache_env = LLVMBuildLoad(builder, cache_env_ptr, "");
             LLVMAddIncoming(ret_env, cache_env, cache);
-            var status = call(builder, SET_SPECIFIC.apply(context), pthread_key, cache_env);
+            var status = call(builder, SET_SPECIFIC.apply(builder), pthread_key, cache_env);
             var test = LLVMBuildICmp(builder, LLVMIntEQ, status, zero32, "");
             LLVMAddIncoming(abort_msg, LOG_SET_SPECIFIC.apply(context), cache);
             LLVMAddIncoming(abort_code, status, cache);
             LLVMBuildCondBr(builder, test, exit, abort);
 
             LLVMPositionBuilderAtEnd(builder, get_cached_env);
-            var env = call(builder, GET_SPECIFIC.apply(context), pthread_key);
+            var env = call(builder, GET_SPECIFIC.apply(builder), pthread_key);
             LLVMAddIncoming(ret_env, env, get_cached_env);
             test = LLVMBuildICmp(builder, LLVMIntEQ, env, nullptr, "");
             LLVMBuildCondBr(builder, test, get_env, exit);

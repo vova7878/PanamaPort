@@ -18,6 +18,7 @@ import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_STATIC;
 import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_VIRTUAL_REPLACE_THIS;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
+import static com.v7878.unsafe.foreign.BulkLinker.MapType.LOAD_JOBJECT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT;
@@ -492,10 +493,9 @@ public class JNIUtils {
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
         abstract void DeleteGlobalRef(long env, long ref);
 
-        // TODO
-        // @LibrarySymbol(name = "_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE")
-        // @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, OBJECT_AS_ADDRESS})
-        // abstract long NewLocalRef(long env, Object obj);
+        @LibrarySymbol(name = "_ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE")
+        @CallSignature(type = CRITICAL, ret = LONG_AS_WORD, args = {LONG_AS_WORD, LOAD_JOBJECT})
+        abstract long NewLocalRef(long env, Object obj);
 
         @LibrarySymbol(name = "_ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject")
         @CallSignature(type = CRITICAL, ret = VOID, args = {LONG_AS_WORD, LONG_AS_WORD})
@@ -551,11 +551,10 @@ public class JNIUtils {
                 Native.class, ART.or(getJNINativeInterfaceLookup()));
     }
 
-    // TODO
-    //public static long NewLocalRef(Object obj) {
-    //    long env = getCurrentEnvPtr();
-    //    return Native.INSTANCE.NewLocalRef(env, obj);
-    //}
+    public static long NewLocalRef(Object obj) {
+        long env = getCurrentEnvPtr();
+        return Native.INSTANCE.NewLocalRef(env, obj);
+    }
 
     public static void DeleteLocalRef(long ref) {
         long env = getCurrentEnvPtr();

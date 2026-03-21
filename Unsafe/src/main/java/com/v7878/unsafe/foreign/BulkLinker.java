@@ -39,7 +39,10 @@ import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
 import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.llvm.LLVMBuilder.call;
-import static com.v7878.unsafe.llvm.LLVMBuilder.const_ptr;
+import static com.v7878.unsafe.llvm.LLVMBuilder.const_fnptr;
+import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
+import static com.v7878.unsafe.llvm.LLVMBuilder.load_ptr;
+import static com.v7878.unsafe.llvm.LLVMBuilder.local_jobj_to_intptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.no_frame_pointer_elim;
 import static com.v7878.unsafe.llvm.LLVMTypes.double_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.float_t;
@@ -95,7 +98,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import dalvik.system.DexFile;
 
@@ -115,6 +117,8 @@ public class BulkLinker {
         OBJECT(false, Object.class),
 
         // extra types
+        LOAD_JOBJECT(true, Object.class), // Do not use with regular jni
+        LOAD_WORD_PTR(true, IS64BIT ? long.class : int.class, long.class),
         LONG_AS_WORD(false, IS64BIT ? long.class : int.class, long.class),
         BOOL_AS_INT(false, int.class, boolean.class);
 
@@ -182,6 +186,11 @@ public class BulkLinker {
             this.flags = flags | ACC_PRIVATE;
             this.annotations = Set.of(annotations);
         }
+
+        public int firstArg() {
+            return envType == EnvType.FULL_ENV ?
+                    (replaceThis ? 1 : 2) : 0;
+        }
     }
 
     private record SymbolInfo(String name, MapType ret, MapType[] args, SymbolSource source,
@@ -200,11 +209,12 @@ public class BulkLinker {
                 throw new IllegalArgumentException(String.format(
                         "Call type %s requires first object parameter", call_type));
             }
-            if (call_type == CallType.CRITICAL) {
-                if (Stream.concat(Stream.of(ret), Stream.of(args))
-                        .anyMatch(value -> value == MapType.OBJECT)) {
-                    throw new IllegalArgumentException("MapType.OBJECT incompatible with CallType.CRITICAL");
-                }
+            if (ret == MapType.LOAD_WORD_PTR || ret == MapType.LOAD_JOBJECT) {
+                throw new IllegalArgumentException("Invalid return type MapType." + ret);
+            }
+            if (call_type == CallType.CRITICAL && ret == MapType.OBJECT) {
+                throw new IllegalArgumentException(
+                        "MapType.OBJECT return type is incompatible with CallType.CRITICAL");
             }
             boolean requireNativeStub = call_type.requireNativeStub || ret.requireNativeStub
                     || Arrays.stream(args).anyMatch(arg -> arg.requireNativeStub);
@@ -285,7 +295,7 @@ public class BulkLinker {
                                                 regs[0] += 2;
                                                 regs[1] += 2;
                                             }
-                                            case LONG_AS_WORD -> {
+                                            case LONG_AS_WORD, LOAD_WORD_PTR -> {
                                                 if (IS64BIT) {
                                                     ib.move_wide(ib.l(regs[0]), ib.p(regs[1]));
                                                     regs[0] += 2;
@@ -297,7 +307,7 @@ public class BulkLinker {
                                                 }
                                                 regs[1] += 2;
                                             }
-                                            case OBJECT ->
+                                            case OBJECT, LOAD_JOBJECT ->
                                                     ib.move_object(ib.l(regs[0]++), ib.p(regs[1]++));
                                             default -> throw shouldNotReachHere();
                                         }
@@ -354,7 +364,7 @@ public class BulkLinker {
             case FLOAT -> float_t(context);
             case LONG -> int64_t(context);
             case DOUBLE -> double_t(context);
-            case OBJECT, LONG_AS_WORD -> intptr_t(context);
+            case OBJECT, LONG_AS_WORD, LOAD_WORD_PTR, LOAD_JOBJECT -> intptr_t(context);
         };
     }
 
@@ -387,7 +397,7 @@ public class BulkLinker {
             LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(stub, ""));
 
             LLVMTypeRef target_type = toLLVMType(context, info, false);
-            LLVMValueRef target_ptr = const_ptr(context, target_type, symbol_ptr);
+            LLVMValueRef target_ptr = const_fnptr(builder, target_type, symbol_ptr);
 
             LLVMValueRef[] args = LLVMGetParams(stub);
             var call_type = info.call_type;
@@ -395,6 +405,15 @@ public class BulkLinker {
                 // drop JNIEnv* and (optional) class or this
                 args = Arrays.copyOfRange(args,
                         call_type.replaceThis ? 1 : 2, args.length);
+            }
+            int index = call_type.firstArg();
+            for (var type : info.args) {
+                if (type == MapType.LOAD_WORD_PTR) {
+                    args[index] = load_ptr(builder, intptr_t(context), args[index]);
+                } else if (type == MapType.LOAD_JOBJECT) {
+                    args[index] = local_jobj_to_intptr(builder, args[index], const_intptr(context, 0));
+                }
+                index++;
             }
             LLVMValueRef ret_val = call(builder, target_ptr, args);
             if (info.ret == MapType.VOID) {

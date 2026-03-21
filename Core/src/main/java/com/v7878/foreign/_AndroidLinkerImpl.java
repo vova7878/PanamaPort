@@ -961,7 +961,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
             private static final Function<LLVMContextRef, LLVMValueRef> UNCAUGHT_EXCEPTION_MSG =
                     intptr_factory(SCOPE.allocateFrom("Uncaught exception in upcall:"));
 
-            private static final Function<LLVMContextRef, LLVMValueRef> INIT =
+            private static final Function<LLVMBuilderRef, LLVMValueRef> INIT =
                     fnptr_factory(SCOPE, ENVGetter.INSTANCE, context ->
                             fn_t(intptr_t(context)));
 
@@ -999,7 +999,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
             int env_index = computeEnvIndex(stub_descriptor, options);
             var env_ptr = env_index >= 0 ? stub_args[env_index] :
-                    call(builder, Holder.INIT.apply(context));
+                    call(builder, Holder.INIT.apply(builder));
             var env_iface = load_ptr(builder, intptr_t(context), env_ptr);
 
             int count = 0; // current index in target_args[] and their count
