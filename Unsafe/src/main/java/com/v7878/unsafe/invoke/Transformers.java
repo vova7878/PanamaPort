@@ -613,11 +613,11 @@ public class Transformers {
         if (ART_INDEX >= A13 || !isTransformer(target)) {
             invokeExactPlain(target, frame);
         } else {
-            var real_type = InvokeAccess.realType(target);
-            if (real_type == InvokeAccess.nominalType(target)) {
+            if (InvokeAccess.nominalType(target) == null) {
                 invokeExactPlain(target, frame);
             } else {
                 // cast nominal type to real type
+                var real_type = InvokeAccess.realType(target);
                 MHUtils.AsTypeAdapter.apply(target, real_type, frame);
             }
         }
