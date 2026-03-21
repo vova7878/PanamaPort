@@ -1,8 +1,8 @@
 [versions]
-agp = "9.0.1"
+agp = "9.1.0"
 maven-publish = "0.36.0"
 
-dexfile = "v1.3.4"
+dexfile = "v1.4.0"
 raung = "v1.0.1"
 r8-annotations = "v1.0.1"
 sun-cleaner = "v1.0.1"
