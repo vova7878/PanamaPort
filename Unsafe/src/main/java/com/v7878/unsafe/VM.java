@@ -14,7 +14,6 @@ import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
-import static com.v7878.unsafe.Reflection.fillArray;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.dcheck;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.DIRECT_AS_SUPER;
@@ -29,9 +28,8 @@ import static com.v7878.unsafe.misc.Math.ulong;
 import android.annotation.TargetApi;
 import android.os.Build;
 
-import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotOptimize;
-import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.access.AccessLinker;
 import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
@@ -41,31 +39,24 @@ import java.lang.reflect.Modifier;
 import java.util.Objects;
 
 public class VM {
-    @DoNotShrink
-    @DoNotObfuscate
-    private static class ArrayMirror {
-        public int length;
-    }
 
-    @DoNotShrink
-    @DoNotObfuscate
-    @SuppressWarnings("unused")
-    private static class StringMirror {
+    private static class _String {
         public static final boolean COMPACT_STRINGS;
 
         static {
-            var mirror = new StringMirror[1];
-            fillArray(mirror, "\uffff");
-            int test = mirror[0].count;
-            COMPACT_STRINGS = switch (test) {
+            int count = getCount("\uffff");
+            COMPACT_STRINGS = switch (count) {
                 case 3 -> true;
                 case 1 -> false;
-                default -> throw new IllegalStateException("Illegal test value: " + test);
+                default -> throw new IllegalStateException("Illegal count value: " + count);
             };
         }
 
-        public int count;
-        public int hash;
+        @AlwaysInline
+        public static int getCount(String str) {
+            Objects.requireNonNull(str);
+            return AndroidUnsafe.getIntO(str, 8);
+        }
     }
 
     @DoNotShrinkType
@@ -115,7 +106,7 @@ public class VM {
     public static final int OBJECT_FIELD_SIZE_SHIFT = 2;
     public static final int OBJECT_FIELD_SIZE = 1 << OBJECT_FIELD_SIZE_SHIFT;
 
-    public static final int STRING_HEADER_SIZE = objectSizeField(StringMirror.class);
+    public static final int STRING_HEADER_SIZE = 16;
 
     static {
         //noinspection ConstantValue
@@ -188,18 +179,14 @@ public class VM {
 
     public static int getArrayLength(Object arr) {
         check(arr.getClass().isArray(), IllegalArgumentException::new);
-        var mirror = new ArrayMirror[1];
-        fillArray(mirror, arr);
-        return mirror[0].length;
+        return getIntO(arr, 8);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setArrayLength(Object arr, int length) {
         check(arr.getClass().isArray(), IllegalArgumentException::new);
         check(length >= 0, IllegalArgumentException::new);
-        var mirror = new ArrayMirror[1];
-        fillArray(mirror, arr);
-        mirror[0].length = length;
+        AndroidUnsafe.putIntO(arr, 8, length);
     }
 
     public static int getDexClassDefIndex(Class<?> clazz) {
@@ -310,9 +297,7 @@ public class VM {
     }
 
     public static boolean isCompressedString(String s) {
-        var mirror = new StringMirror[1];
-        fillArray(mirror, s);
-        return StringMirror.COMPACT_STRINGS && ((mirror[0].count & 1) == 0);
+        return _String.COMPACT_STRINGS && ((_String.getCount(s) & 1) == 0);
     }
 
     public static int stringDataSize(String s) {
@@ -378,7 +363,7 @@ public class VM {
                     kPoisonReferences = true;
                 } else {
                     throw new AssertionError(
-                            "unknown type of poisoning: actual:" + actual + " raw:" + raw);
+                            "Unknown type of poisoning: actual:" + actual + " raw:" + raw);
                 }
             }
         }
