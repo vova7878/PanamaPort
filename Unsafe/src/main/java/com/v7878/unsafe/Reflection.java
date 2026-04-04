@@ -1,24 +1,37 @@
 package com.v7878.unsafe;
 
 import static com.v7878.dex.DexConstants.ACC_DIRECT_MASK;
+import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.ArtModifiers.kAccCopied;
+import static com.v7878.unsafe.ArtVersion.A10;
+import static com.v7878.unsafe.ArtVersion.A11;
+import static com.v7878.unsafe.ArtVersion.A12;
+import static com.v7878.unsafe.ArtVersion.A13;
+import static com.v7878.unsafe.ArtVersion.A14;
+import static com.v7878.unsafe.ArtVersion.A15;
 import static com.v7878.unsafe.ArtVersion.A16;
 import static com.v7878.unsafe.ArtVersion.A16p1;
 import static com.v7878.unsafe.ArtVersion.A17;
 import static com.v7878.unsafe.ArtVersion.A8p0;
+import static com.v7878.unsafe.ArtVersion.A8p1;
+import static com.v7878.unsafe.ArtVersion.A9;
 import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchConstructor;
 import static com.v7878.unsafe.Utils.searchField;
 import static com.v7878.unsafe.Utils.searchMethod;
+import static com.v7878.unsafe.Utils.unsupportedART;
+import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.VIRTUAL;
 import static com.v7878.unsafe.misc.Math.ulong;
 
 import com.v7878.r8.annotations.AlwaysInline;
-import com.v7878.r8.annotations.DoNotObfuscate;
-import com.v7878.r8.annotations.DoNotShrink;
+import com.v7878.r8.annotations.DoNotOptimize;
+import com.v7878.r8.annotations.DoNotShrinkType;
+import com.v7878.unsafe.access.AccessLinker;
+import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
 import com.v7878.unsafe.access.InvokeAccess;
 
 import java.lang.invoke.MethodHandle;
@@ -40,6 +53,7 @@ public class Reflection {
         check(ART_INDEX >= A8p0 && ART_INDEX <= A17, AssertionError::new);
     }
 
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     private static class Class_16p1_17 {
         @AlwaysInline
         public static long getFields(Class<?> clazz) {
@@ -54,6 +68,7 @@ public class Reflection {
         }
     }
 
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     private static class Class_16 {
         @AlwaysInline
         public static long getFields(Class<?> clazz) {
@@ -80,6 +95,7 @@ public class Reflection {
         }
     }
 
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     private static class Class_8_15 {
         @AlwaysInline
         public static long getInstanceFields(Class<?> clazz) {
@@ -120,6 +136,7 @@ public class Reflection {
                 Class_8_15.getMethods(clazz);
     }
 
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     private static class _MethodHandle {
         @AlwaysInline
         public static void setArt(MethodHandle mh, long art) {
@@ -140,74 +157,51 @@ public class Reflection {
         }
     }
 
-    @DoNotShrink
-    @DoNotObfuscate
-    private static class Test {
-        public static final Method am = nothrows_run(()
-                -> Test.class.getDeclaredMethod("a"));
-        public static final Method bm = nothrows_run(()
-                -> Test.class.getDeclaredMethod("b"));
-
-        public static final Field af = nothrows_run(()
-                -> Test.class.getDeclaredField("sa"));
-        public static final Field bf = nothrows_run(()
-                -> Test.class.getDeclaredField("sb"));
-
-        public static int sa, sb;
-
-        @SuppressWarnings("EmptyMethod")
-        public static void a() {
-        }
-
-        @SuppressWarnings("EmptyMethod")
-        public static void b() {
-        }
-    }
-
     public static final long ART_METHOD_SIZE;
     public static final long ART_METHOD_PADDING;
     public static final long ART_FIELD_SIZE;
     public static final long ART_FIELD_PADDING;
 
-    private static final MethodHandle getArtField;
+    @DoNotShrinkType
+    @DoNotOptimize
+    private abstract static class AccessI {
+        @ExecutableAccess(kind = VIRTUAL,
+                klass = "java.lang.reflect.Field",
+                name = "getArtField", args = {})
+        abstract long getArtField(Field instance);
+
+        static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
+    }
 
     static {
-        final int length_field_size = 4;
+        ART_METHOD_SIZE = switch (ART_INDEX) {
+            case A17, A16p1, A16, A15, A14, A13, A12 -> IS64BIT ? 32 : 24;
+            case A11, A10, A9 -> IS64BIT ? 40 : 28;
+            case A8p1, A8p0 -> IS64BIT ? 48 : 32;
+            default -> throw unsupportedART(ART_INDEX);
+        };
+        ART_METHOD_PADDING = IS64BIT ? 8 : 4;
 
-        long am = getArtMethod(Test.am);
-        long bm = getArtMethod(Test.bm);
-        ART_METHOD_SIZE = Math.abs(bm - am);
-        long methods = getMethodsPtr(Test.class);
-        ART_METHOD_PADDING = (am - methods - length_field_size)
-                % ART_METHOD_SIZE + length_field_size;
-
-        getArtField = unreflect(getHiddenVirtualMethod(
-                Field.class, "getArtField"));
-
-        long af = getArtField(Test.af);
-        long bf = getArtField(Test.bf);
-        ART_FIELD_SIZE = Math.abs(bf - af);
-        long fields = ART_INDEX >= A16 ? (ART_INDEX >= A16p1 ?
-                Class_16p1_17.getFields(Test.class) :
-                Class_16.getFields(Test.class)) :
-                Class_8_15.getStaticFields(Test.class);
-        ART_FIELD_PADDING = (af - fields - length_field_size)
-                % ART_FIELD_SIZE + length_field_size;
+        ART_FIELD_SIZE = 16;
+        ART_FIELD_PADDING = 4;
     }
 
     @AlwaysInline
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     public static void setAccessible(AccessibleObject ao, boolean value) {
         if (ao.isAccessible()) return;
         AndroidUnsafe.putBooleanO(ao, 8, value);
     }
 
     @AlwaysInline
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     public static long fieldOffset(Field f) {
         Objects.requireNonNull(f);
         return ulong(AndroidUnsafe.getIntO(f, 28));
     }
 
     @AlwaysInline
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     public static long getArtMethod(Executable ex) {
         Objects.requireNonNull(ex);
         return AndroidUnsafe.getLongO(ex, 24);
@@ -215,7 +209,7 @@ public class Reflection {
 
     @AlwaysInline
     public static long getArtField(Field f) {
-        return nothrows_run(() -> (long) getArtField.invokeExact(f));
+        return AccessI.INSTANCE.getArtField(f);
     }
 
     private static class Holder {
@@ -495,7 +489,7 @@ public class Reflection {
         return searchConstructor(getHiddenConstructors(clazz), params);
     }
 
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     public static Method constructorToMethod(Constructor<?> constructor) {
         Method method = allocateInstance(Method.class);
 

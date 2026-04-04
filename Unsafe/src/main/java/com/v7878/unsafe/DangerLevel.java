@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 public @interface DangerLevel {
     int VERY_CAREFUL = Integer.MAX_VALUE / 2;
     int ONLY_NONMOVABLE_OBJECTS = VERY_CAREFUL + 1;
+    int RAW_OFFSET = VERY_CAREFUL + 2;
     int MAX = Integer.MAX_VALUE;
 
     int value();

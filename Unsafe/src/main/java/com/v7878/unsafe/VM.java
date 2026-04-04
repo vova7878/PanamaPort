@@ -39,26 +39,6 @@ import java.lang.reflect.Modifier;
 import java.util.Objects;
 
 public class VM {
-
-    private static class _String {
-        public static final boolean COMPACT_STRINGS;
-
-        static {
-            int count = getCount("\uffff");
-            COMPACT_STRINGS = switch (count) {
-                case 3 -> true;
-                case 1 -> false;
-                default -> throw new IllegalStateException("Illegal count value: " + count);
-            };
-        }
-
-        @AlwaysInline
-        public static int getCount(String str) {
-            Objects.requireNonNull(str);
-            return AndroidUnsafe.getIntO(str, 8);
-        }
-    }
-
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class AccessI {
@@ -86,6 +66,9 @@ public class VM {
         @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.Class", name = "classSize")
         abstract int classSize(Class<?> instance);
 
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.String", name = "count")
+        abstract int count(String instance);
+
         static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
@@ -97,6 +80,24 @@ public class VM {
         abstract Object internalClone(Object instance);
 
         static final MAccessI INSTANCE = AccessLinker.generateImpl(MAccessI.class);
+    }
+
+    private static class _String {
+        public static final boolean COMPACT_STRINGS;
+
+        static {
+            int count = getCount("\uffff");
+            COMPACT_STRINGS = switch (count) {
+                case 3 -> true;
+                case 1 -> false;
+                default -> throw new IllegalStateException("Illegal count value: " + count);
+            };
+        }
+
+        @AlwaysInline
+        public static int getCount(String str) {
+            return AccessI.INSTANCE.count(str);
+        }
     }
 
     public static final int OBJECT_ALIGNMENT_SHIFT = 3;
@@ -177,12 +178,13 @@ public class VM {
         return addressOfNonMovableArrayData(array) - arrayBaseOffset(array.getClass());
     }
 
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     public static int getArrayLength(Object arr) {
         check(arr.getClass().isArray(), IllegalArgumentException::new);
         return getIntO(arr, 8);
     }
 
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     public static void setArrayLength(Object arr, int length) {
         check(arr.getClass().isArray(), IllegalArgumentException::new);
         check(length >= 0, IllegalArgumentException::new);
