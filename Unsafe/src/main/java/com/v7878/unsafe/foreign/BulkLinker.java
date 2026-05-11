@@ -77,6 +77,7 @@ import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.ApiSensitive;
+import com.v7878.unsafe.ArtMethodUtils;
 import com.v7878.unsafe.ClassUtils;
 import com.v7878.unsafe.InstructionSet;
 import com.v7878.unsafe.NativeCodeBlob;
@@ -778,6 +779,8 @@ public class BulkLinker {
                     "Interfaces and final classes are not allowed" + clazz);
         }
 
+        ClassUtils.makeClassPublic(clazz);
+
         Map<Class<?>, Method[]> cached_methods = new HashMap<>();
         Map<Class<?>, Field[]> cached_fields = new HashMap<>();
         Method[] sketch_methods = getDeclaredMethods(clazz);
@@ -794,6 +797,8 @@ public class BulkLinker {
             if (!Modifier.isAbstract(method.getModifiers())) {
                 throw new IllegalStateException("Method must be abstract " + method);
             }
+
+            ArtMethodUtils.makeExecutablePublic(method);
 
             LibrarySymbol[] syms = method.getDeclaredAnnotationsByType(LibrarySymbol.class);
             SymbolGenerator sym_generator = method.getDeclaredAnnotation(SymbolGenerator.class);
