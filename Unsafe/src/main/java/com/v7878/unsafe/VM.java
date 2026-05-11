@@ -14,7 +14,6 @@ import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
-import static com.v7878.unsafe.Reflection.fillArray;
 import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.dcheck;
 import static com.v7878.unsafe.access.AccessLinker.ExecutableAccessKind.DIRECT_AS_SUPER;
@@ -29,9 +28,8 @@ import static com.v7878.unsafe.misc.Math.ulong;
 import android.annotation.TargetApi;
 import android.os.Build;
 
-import com.v7878.r8.annotations.DoNotObfuscate;
+import com.v7878.r8.annotations.AlwaysInline;
 import com.v7878.r8.annotations.DoNotOptimize;
-import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.access.AccessLinker;
 import com.v7878.unsafe.access.AccessLinker.ExecutableAccess;
@@ -41,33 +39,6 @@ import java.lang.reflect.Modifier;
 import java.util.Objects;
 
 public class VM {
-    @DoNotShrink
-    @DoNotObfuscate
-    private static class ArrayMirror {
-        public int length;
-    }
-
-    @DoNotShrink
-    @DoNotObfuscate
-    @SuppressWarnings("unused")
-    private static class StringMirror {
-        public static final boolean COMPACT_STRINGS;
-
-        static {
-            var mirror = new StringMirror[1];
-            fillArray(mirror, "\uffff");
-            int test = mirror[0].count;
-            COMPACT_STRINGS = switch (test) {
-                case 3 -> true;
-                case 1 -> false;
-                default -> throw new IllegalStateException("Illegal test value: " + test);
-            };
-        }
-
-        public int count;
-        public int hash;
-    }
-
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class AccessI {
@@ -95,6 +66,9 @@ public class VM {
         @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.Class", name = "classSize")
         abstract int classSize(Class<?> instance);
 
+        @FieldAccess(kind = INSTANCE_GETTER, klass = "java.lang.String", name = "count")
+        abstract int count(String instance);
+
         static final AccessI INSTANCE = AccessLinker.generateImpl(AccessI.class);
     }
 
@@ -108,6 +82,24 @@ public class VM {
         static final MAccessI INSTANCE = AccessLinker.generateImpl(MAccessI.class);
     }
 
+    private static class _String {
+        public static final boolean COMPACT_STRINGS;
+
+        static {
+            int count = getCount("\uffff");
+            COMPACT_STRINGS = switch (count) {
+                case 3 -> true;
+                case 1 -> false;
+                default -> throw new IllegalStateException("Illegal count value: " + count);
+            };
+        }
+
+        @AlwaysInline
+        public static int getCount(String str) {
+            return AccessI.INSTANCE.count(str);
+        }
+    }
+
     public static final int OBJECT_ALIGNMENT_SHIFT = 3;
     public static final int OBJECT_ALIGNMENT = 1 << OBJECT_ALIGNMENT_SHIFT;
     public static final int OBJECT_INSTANCE_SIZE = objectSizeField(Object.class);
@@ -115,7 +107,7 @@ public class VM {
     public static final int OBJECT_FIELD_SIZE_SHIFT = 2;
     public static final int OBJECT_FIELD_SIZE = 1 << OBJECT_FIELD_SIZE_SHIFT;
 
-    public static final int STRING_HEADER_SIZE = objectSizeField(StringMirror.class);
+    public static final int STRING_HEADER_SIZE = 16;
 
     static {
         //noinspection ConstantValue
@@ -186,20 +178,17 @@ public class VM {
         return addressOfNonMovableArrayData(array) - arrayBaseOffset(array.getClass());
     }
 
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     public static int getArrayLength(Object arr) {
         check(arr.getClass().isArray(), IllegalArgumentException::new);
-        var mirror = new ArrayMirror[1];
-        fillArray(mirror, arr);
-        return mirror[0].length;
+        return getIntO(arr, 8);
     }
 
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     public static void setArrayLength(Object arr, int length) {
         check(arr.getClass().isArray(), IllegalArgumentException::new);
         check(length >= 0, IllegalArgumentException::new);
-        var mirror = new ArrayMirror[1];
-        fillArray(mirror, arr);
-        mirror[0].length = length;
+        AndroidUnsafe.putIntO(arr, 8, length);
     }
 
     public static int getDexClassDefIndex(Class<?> clazz) {
@@ -310,9 +299,7 @@ public class VM {
     }
 
     public static boolean isCompressedString(String s) {
-        var mirror = new StringMirror[1];
-        fillArray(mirror, s);
-        return StringMirror.COMPACT_STRINGS && ((mirror[0].count & 1) == 0);
+        return _String.COMPACT_STRINGS && ((_String.getCount(s) & 1) == 0);
     }
 
     public static int stringDataSize(String s) {
@@ -378,7 +365,7 @@ public class VM {
                     kPoisonReferences = true;
                 } else {
                     throw new AssertionError(
-                            "unknown type of poisoning: actual:" + actual + " raw:" + raw);
+                            "Unknown type of poisoning: actual:" + actual + " raw:" + raw);
                 }
             }
         }

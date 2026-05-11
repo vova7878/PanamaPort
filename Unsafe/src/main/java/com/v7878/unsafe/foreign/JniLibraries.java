@@ -35,6 +35,7 @@ import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.ApiSensitive;
+import com.v7878.unsafe.DangerLevel;
 import com.v7878.unsafe.JNIUtils;
 import com.v7878.unsafe.Reflection;
 import com.v7878.unsafe.cpp_std.map;
@@ -59,6 +60,7 @@ public class JniLibraries {
 
     // TODO: there must be a better way to do this
     @ApiSensitive
+    @DangerLevel(DangerLevel.RAW_OFFSET)
     private static final long libraries_offset = switch (ART_INDEX) {
         case A17, A16p1, A16, A15, A14 -> {
             long tmp = ADDRESS_SIZE * 4L;
