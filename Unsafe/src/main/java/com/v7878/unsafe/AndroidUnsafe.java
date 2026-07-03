@@ -524,60 +524,15 @@ public class AndroidUnsafe {
     }
 
     @AlwaysInline
-    public static Object getObjectO(Object obj, long offset) {
+    public static Object getObject(Object obj, long offset) {
         Objects.requireNonNull(obj);
         return SunUnsafe.getObject(obj, offset);
     }
 
     @AlwaysInline
-    public static void putObjectO(Object obj, long offset, Object value) {
+    public static void putObject(Object obj, long offset, Object value) {
         Objects.requireNonNull(obj);
         SunUnsafe.putObject(obj, offset, value);
-    }
-
-    // Android does not have operations for accessing objects by address with a null base.
-    // This is a hack that allows you to create a non-null base with constant address
-    private static class BaseHolder {
-        static final Object BASE;
-        static final long OFFSET;
-
-        static {
-            var vmc = ClassUtils.sysClass("dalvik.system.VMRuntime");
-            var vm = allocateInstance(vmc);
-            var new_array = Reflection.getDeclaredMethod(vmc, "newNonMovableArray", Class.class, int.class);
-            var address = Reflection.getDeclaredMethod(vmc, "addressOf", Object.class);
-            BASE = nothrows_run(() -> new_array.invoke(vm, int.class, 0));
-            OFFSET = (long) nothrows_run(() -> address.invoke(vm, BASE)) - ARRAY_INT_BASE_OFFSET;
-            System.out.println("OFFSET: " + OFFSET);
-        }
-    }
-
-    @AlwaysInline
-    public static Object getObjectN(long offset) {
-        return getObjectO(BaseHolder.BASE, offset - BaseHolder.OFFSET);
-    }
-
-    @AlwaysInline
-    public static void putObjectN(long offset, Object value) {
-        putObjectO(BaseHolder.BASE, offset - BaseHolder.OFFSET, value);
-    }
-
-    @AlwaysInline
-    public static Object getObject(Object obj, long offset) {
-        if (obj == null) {
-            return getObjectN(offset);
-        } else {
-            return getObjectO(obj, offset);
-        }
-    }
-
-    @AlwaysInline
-    public static void putObject(Object obj, long offset, Object value) {
-        if (obj == null) {
-            putObjectN(offset, value);
-        } else {
-            putObjectO(obj, offset, value);
-        }
     }
 
     @AlwaysInline

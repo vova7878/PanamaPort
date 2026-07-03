@@ -198,7 +198,7 @@ public class DexFileUtils {
         class Holder {
             static final long DEX_CACHE_OFFSET = 16;
         }
-        return AndroidUnsafe.getObjectO(Objects.requireNonNull(clazz), Holder.DEX_CACHE_OFFSET);
+        return AndroidUnsafe.getObject(Objects.requireNonNull(clazz), Holder.DEX_CACHE_OFFSET);
     }
 
     public static long getDexFileStruct(Class<?> clazz) {
@@ -249,12 +249,12 @@ public class DexFileUtils {
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static long[] getCookie(DexFile dex) {
-        return (long[]) AndroidUnsafe.getObjectO(Objects.requireNonNull(dex), Holder.COOKIE_OFFSET);
+        return (long[]) AndroidUnsafe.getObject(Objects.requireNonNull(dex), Holder.COOKIE_OFFSET);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setCookie(DexFile dex, long[] cookie) {
-        AndroidUnsafe.putObjectO(Objects.requireNonNull(dex), Holder.COOKIE_OFFSET, cookie);
+        AndroidUnsafe.putObject(Objects.requireNonNull(dex), Holder.COOKIE_OFFSET, cookie);
     }
 
     @ApiSensitive

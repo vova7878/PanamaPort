@@ -20,7 +20,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_LONG_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.ARRAY_SHORT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
-import static com.v7878.unsafe.AndroidUnsafe.getObjectO;
+import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.ArtVersion.A15;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.ART_INDEX;
@@ -397,7 +397,7 @@ public class JavaNioAccess {
                     .mapToLong(clazz -> Reflection.instanceFieldOffset(clazz, "bb"))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
-        return (ByteBuffer) getObjectO(buffer, Holder.OFFSET);
+        return (ByteBuffer) getObject(buffer, Holder.OFFSET);
     }
 
     public static Scope getBufferScope(Buffer buffer) {
@@ -457,7 +457,7 @@ public class JavaNioAccess {
                     .mapToLong(clazz -> Reflection.instanceFieldOffset(clazz, "hb"))
                     .reduce(JavaNioAccess::assert_same).getAsLong();
         }
-        return getObjectO(buffer, Holder.OFFSET);
+        return getObject(buffer, Holder.OFFSET);
     }
 
     public static Object getBufferUnsafeBase(Buffer buffer) {

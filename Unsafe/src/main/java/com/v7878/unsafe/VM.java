@@ -10,7 +10,7 @@ import static com.v7878.unsafe.AndroidUnsafe.arrayIndexScale;
 import static com.v7878.unsafe.AndroidUnsafe.getInt;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
-import static com.v7878.unsafe.AndroidUnsafe.getObjectO;
+import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
@@ -342,7 +342,7 @@ public class VM {
     public static Object rawIntToObject(int obj) {
         int[] arr = new int[1];
         arr[0] = obj;
-        return getObjectO(arr, ARRAY_INT_BASE_OFFSET);
+        return getObject(arr, ARRAY_INT_BASE_OFFSET);
     }
 
     @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)

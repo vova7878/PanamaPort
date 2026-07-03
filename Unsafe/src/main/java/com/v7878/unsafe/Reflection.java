@@ -5,7 +5,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
-import static com.v7878.unsafe.AndroidUnsafe.getObjectO;
+import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.ArtModifiers.kAccCopied;
 import static com.v7878.unsafe.ArtVersion.A10;
 import static com.v7878.unsafe.ArtVersion.A11;
@@ -63,8 +63,8 @@ public class Reflection {
             var f = allocateInstance(Field.class);
 
             setAccessible(f, true);
-            AndroidUnsafe.putObjectO(f, 12, declaring_class);
-            AndroidUnsafe.putObjectO(f, 16, type);
+            AndroidUnsafe.putObject(f, 12, declaring_class);
+            AndroidUnsafe.putObject(f, 16, type);
             AndroidUnsafe.putIntO(f, 20, access_flags);
             AndroidUnsafe.putIntO(f, 24, art_field_index);
             AndroidUnsafe.putIntO(f, 28, offset);
@@ -75,7 +75,7 @@ public class Reflection {
         private static Object rawIntToObject(int obj) {
             int[] arr = new int[1];
             arr[0] = obj;
-            return getObjectO(arr, ARRAY_INT_BASE_OFFSET);
+            return getObject(arr, ARRAY_INT_BASE_OFFSET);
         }
 
         public static Field createFromArtField(long art_field) {
@@ -205,7 +205,7 @@ public class Reflection {
         @AlwaysInline
         public static void setInfo(MethodHandle mh, Object info) {
             Objects.requireNonNull(mh);
-            AndroidUnsafe.putObjectO(mh, 32, info);
+            AndroidUnsafe.putObject(mh, 32, info);
         }
     }
 
@@ -550,11 +550,11 @@ public class Reflection {
         // override + hasRealParameterData + byte[2] padding
         AndroidUnsafe.putIntO(method, 8, AndroidUnsafe.getIntO(constructor, 8));
         // declaringClass
-        AndroidUnsafe.putObjectO(method, 12, getObjectO(constructor, 12));
+        AndroidUnsafe.putObject(method, 12, getObject(constructor, 12));
         // declaringClassOfOverriddenMethod
-        AndroidUnsafe.putObjectO(method, 16, getObjectO(constructor, 16));
+        AndroidUnsafe.putObject(method, 16, getObject(constructor, 16));
         // parameters
-        AndroidUnsafe.putObjectO(method, 20, getObjectO(constructor, 20));
+        AndroidUnsafe.putObject(method, 20, getObject(constructor, 20));
         // artMethod
         AndroidUnsafe.putLongO(method, 24, AndroidUnsafe.getLongO(constructor, 24));
         // accessFlags

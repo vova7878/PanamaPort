@@ -195,7 +195,7 @@ public class MethodTypeHacks {
         }
 
         Objects.requireNonNull(type);
-        Object old_form = AndroidUnsafe.getObjectO(type, Holder.FORM_OFFSET);
+        Object old_form = AndroidUnsafe.getObject(type, Holder.FORM_OFFSET);
         if (old_form instanceof MethodTypeForm0 mtf) {
             return mtf;
         }
@@ -208,7 +208,7 @@ public class MethodTypeHacks {
             new_form = newForm(type, old_form);
         }
 
-        AndroidUnsafe.putObjectO(type, Holder.FORM_OFFSET, new_form);
+        AndroidUnsafe.putObject(type, Holder.FORM_OFFSET, new_form);
         return new_form;
     }
 
