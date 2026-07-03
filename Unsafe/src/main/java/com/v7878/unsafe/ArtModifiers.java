@@ -9,6 +9,7 @@ import static com.v7878.unsafe.ArtVersion.A15;
 import static com.v7878.unsafe.ArtVersion.A16;
 import static com.v7878.unsafe.ArtVersion.A16p1;
 import static com.v7878.unsafe.ArtVersion.A17;
+import static com.v7878.unsafe.ArtVersion.A17p1;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.A8p1;
 import static com.v7878.unsafe.ArtVersion.A9;
@@ -18,20 +19,20 @@ import static com.v7878.unsafe.Utils.unsupportedART;
 public class ArtModifiers {
     @ApiSensitive
     public static final int kAccSkipAccessChecks = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14, A13, A12, A11, A10, A9, A8p1, A8p0 -> 0x00080000;
+        case A17p1, A17, A16p1, A16, A15, A14, A13, A12, A11, A10, A9, A8p1, A8p0 -> 0x00080000;
         default -> throw unsupportedART(ART_INDEX);
     };
 
     @ApiSensitive
     public static final int kAccCopied = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14, A13, A12 -> 0x01000000;
+        case A17p1, A17, A16p1, A16, A15, A14, A13, A12 -> 0x01000000;
         case A11, A10, A9, A8p1, A8p0 -> 0x00100000;
         default -> throw unsupportedART(ART_INDEX);
     };
 
     @ApiSensitive
     public static final int kAccSingleImplementation = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14, A13, A12, A11, A10, A9, A8p1, A8p0 -> 0x08000000;
+        case A17p1, A17, A16p1, A16, A15, A14, A13, A12, A11, A10, A9, A8p1, A8p0 -> 0x08000000;
         default -> throw unsupportedART(ART_INDEX);
     };
 
@@ -40,14 +41,14 @@ public class ArtModifiers {
 
     @ApiSensitive
     public static final int kAccCompileDontBother = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14, A13, A12, A11, A10, A9, A8p1 -> 0x02000000;
+        case A17p1, A17, A16p1, A16, A15, A14, A13, A12, A11, A10, A9, A8p1 -> 0x02000000;
         case A8p0 -> 0x01000000;
         default -> throw unsupportedART(ART_INDEX);
     };
 
     @ApiSensitive
     public static final int kAccPreCompiled = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14, A13, A12 -> 0x00800000;
+        case A17p1, A17, A16p1, A16, A15, A14, A13, A12 -> 0x00800000;
         case A11 -> 0x00200000;
         case A10, A9, A8p1, A8p0 -> 0;
         default -> throw unsupportedART(ART_INDEX);
@@ -55,28 +56,28 @@ public class ArtModifiers {
 
     @ApiSensitive
     public static final int kAccFastInterpreterToInterpreterInvoke = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14, A13, A9, A8p1, A8p0 -> 0;
+        case A17p1, A17, A16p1, A16, A15, A14, A13, A9, A8p1, A8p0 -> 0;
         case A12, A11, A10 -> 0x40000000;
         default -> throw unsupportedART(ART_INDEX);
     };
 
     @ApiSensitive
     public static final int kAccPublicApi = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14, A13, A12, A11, A10 -> 0x10000000;
+        case A17p1, A17, A16p1, A16, A15, A14, A13, A12, A11, A10 -> 0x10000000;
         case A9, A8p1, A8p0 -> 0;
         default -> throw unsupportedART(ART_INDEX);
     };
 
     @ApiSensitive
     public static final int kAccCorePlatformApi = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14, A13, A12, A11, A10 -> 0x20000000;
+        case A17p1, A17, A16p1, A16, A15, A14, A13, A12, A11, A10 -> 0x20000000;
         case A9, A8p1, A8p0 -> 0;
         default -> throw unsupportedART(ART_INDEX);
     };
 
     @ApiSensitive
     public static final int kAccHiddenapiBits = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14, A13, A12, A11, A10, A9 -> 0x30000000;
+        case A17p1, A17, A16p1, A16, A15, A14, A13, A12, A11, A10, A9 -> 0x30000000;
         case A8p1, A8p0 -> 0;
         default -> throw unsupportedART(ART_INDEX);
     };

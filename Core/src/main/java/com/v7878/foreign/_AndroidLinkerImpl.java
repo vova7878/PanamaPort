@@ -612,8 +612,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         var has_arena = !heap_access && Stream.of(args)
                 .anyMatch(layout -> layout instanceof GroupLayout);
         var max_arena_size = !has_arena ? -1 : Stream.of(args)
-                .filter(layout -> layout instanceof GroupLayout)
-                .mapToLong(MemoryLayout::byteSize).sum();
+                                               .filter(layout -> layout instanceof GroupLayout)
+                                               .mapToLong(MemoryLayout::byteSize).sum();
 
         int native_ins = native_stub_proto.countInputRegisters();
 

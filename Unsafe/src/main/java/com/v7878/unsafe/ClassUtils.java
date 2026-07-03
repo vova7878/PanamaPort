@@ -18,6 +18,7 @@ import static com.v7878.unsafe.ArtVersion.A15;
 import static com.v7878.unsafe.ArtVersion.A16;
 import static com.v7878.unsafe.ArtVersion.A16p1;
 import static com.v7878.unsafe.ArtVersion.A17;
+import static com.v7878.unsafe.ArtVersion.A17p1;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.A8p1;
 import static com.v7878.unsafe.ArtVersion.A9;
@@ -25,8 +26,10 @@ import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Reflection.getHiddenExecutables;
 import static com.v7878.unsafe.Reflection.getHiddenFields;
 import static com.v7878.unsafe.Utils.nothrows_run;
+import static com.v7878.unsafe.Utils.shouldNotReachHere;
 import static com.v7878.unsafe.Utils.unsupportedART;
 
+import com.v7878.dex.immutable.TypeId;
 import com.v7878.r8.annotations.DoNotShrink;
 
 import java.lang.reflect.Constructor;
@@ -62,7 +65,7 @@ public class ClassUtils {
 
         static {
             switch (ART_INDEX) {
-                case A17, A16p1, A16, A15, A14, A13, A12, A11 -> {
+                case A17p1, A17, A16p1, A16, A15, A14, A13, A12, A11 -> {
                     NotReady.value = 0;  // Zero-initialized Class object starts in this state.
                     Retired.value = 1;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = 2;
@@ -278,6 +281,26 @@ public class ClassUtils {
 
     public static Class<?> forName(String name, ClassLoader loader) {
         return forName(name, false, loader);
+    }
+
+    public static Class<?> forType(TypeId type, boolean initialize, ClassLoader loader) {
+        return switch (type.getShorty()) {
+            case 'V' -> void.class;
+            case 'Z' -> boolean.class;
+            case 'B' -> byte.class;
+            case 'S' -> short.class;
+            case 'C' -> char.class;
+            case 'I' -> int.class;
+            case 'F' -> float.class;
+            case 'J' -> long.class;
+            case 'D' -> double.class;
+            case 'L' -> forName(type.getBinaryName(), initialize, loader);
+            default -> throw shouldNotReachHere();
+        };
+    }
+
+    public static Class<?> forType(TypeId type, ClassLoader loader) {
+        return forType(type, false, loader);
     }
 
     private static ClassLoader getClassLoader(Class<?> caller) {

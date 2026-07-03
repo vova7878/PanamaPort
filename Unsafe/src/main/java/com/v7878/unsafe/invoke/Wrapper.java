@@ -59,7 +59,7 @@ public enum Wrapper {
             assert ((size & (size - 1)) == 0); // power of two
             assert ((kind == SIGNED) ? (size > 0) :
                     (kind == UNSIGNED) ? (size > 0) :
-                            kind == FLOATING && (size == 32 || size == 64));
+                    kind == FLOATING && (size == 32 || size == 64));
             assert ((slots == 2) ? (size == 64) :
                     slots == 1 && (size <= 32));
             return kind | (size << SIZE_SHIFT) | (slots << SLOT_SHIFT);

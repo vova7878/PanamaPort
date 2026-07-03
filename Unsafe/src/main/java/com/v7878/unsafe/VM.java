@@ -10,7 +10,7 @@ import static com.v7878.unsafe.AndroidUnsafe.arrayIndexScale;
 import static com.v7878.unsafe.AndroidUnsafe.getInt;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
-import static com.v7878.unsafe.AndroidUnsafe.getObject;
+import static com.v7878.unsafe.AndroidUnsafe.getObjectO;
 import static com.v7878.unsafe.AndroidUnsafe.getWordO;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putWordO;
@@ -102,7 +102,6 @@ public class VM {
 
     public static final int OBJECT_ALIGNMENT_SHIFT = 3;
     public static final int OBJECT_ALIGNMENT = 1 << OBJECT_ALIGNMENT_SHIFT;
-    public static final int OBJECT_INSTANCE_SIZE = objectSizeField(Object.class);
 
     public static final int OBJECT_FIELD_SIZE_SHIFT = 2;
     public static final int OBJECT_FIELD_SIZE = 1 << OBJECT_FIELD_SIZE_SHIFT;
@@ -114,7 +113,7 @@ public class VM {
         dcheck(ARRAY_OBJECT_INDEX_SCALE == OBJECT_FIELD_SIZE, AssertionError::new);
         //noinspection ConstantValue
         dcheck(ARRAY_INT_BASE_OFFSET == 12, AssertionError::new);
-        dcheck(OBJECT_INSTANCE_SIZE == 8, AssertionError::new);
+        // TODO: dcheck(objectSizeField(Object.class) == 8, AssertionError::new);
     }
 
     @SuppressWarnings("unchecked")
@@ -222,30 +221,32 @@ public class VM {
         return getIntO(clazz, emptyClassSize());
     }
 
-    private static final long IMTABLE_OFFSET = roundUpUL(emptyClassSize() + 4, ADDRESS_SIZE);
+    private static class Holder {
+        private static final long IMTABLE_OFFSET = roundUpUL(emptyClassSize() + 4, ADDRESS_SIZE);
+
+        private static final long VTABLE_OFFSET = IMTABLE_OFFSET + ADDRESS_SIZE;
+    }
 
     public static long getIMTable(Class<?> clazz) {
         check(shouldHaveEmbeddedVTableAndImt(clazz), IllegalArgumentException::new);
-        return getWordO(clazz, IMTABLE_OFFSET);
+        return getWordO(clazz, Holder.IMTABLE_OFFSET);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setIMTable(Class<?> clazz, long imtable) {
         check(shouldHaveEmbeddedVTableAndImt(clazz), IllegalArgumentException::new);
-        putWordO(clazz, IMTABLE_OFFSET, imtable);
+        putWordO(clazz, Holder.IMTABLE_OFFSET, imtable);
     }
-
-    private static final long VTABLE_OFFSET = IMTABLE_OFFSET + ADDRESS_SIZE;
 
     public static long getEmbeddedVTableEntry(Class<?> clazz, int index) {
         Objects.checkIndex(index, getEmbeddedVTableLength(clazz));
-        return getWordO(clazz, VTABLE_OFFSET + (long) index * ADDRESS_SIZE);
+        return getWordO(clazz, Holder.VTABLE_OFFSET + (long) index * ADDRESS_SIZE);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setEmbeddedVTableEntry(Class<?> clazz, int index, long art_method) {
         Objects.checkIndex(index, getEmbeddedVTableLength(clazz));
-        putWordO(clazz, VTABLE_OFFSET + (long) index * ADDRESS_SIZE, art_method);
+        putWordO(clazz, Holder.VTABLE_OFFSET + (long) index * ADDRESS_SIZE, art_method);
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -341,7 +342,7 @@ public class VM {
     public static Object rawIntToObject(int obj) {
         int[] arr = new int[1];
         arr[0] = obj;
-        return getObject(arr, ARRAY_INT_BASE_OFFSET);
+        return getObjectO(arr, ARRAY_INT_BASE_OFFSET);
     }
 
     @DangerLevel(DangerLevel.ONLY_NONMOVABLE_OBJECTS)

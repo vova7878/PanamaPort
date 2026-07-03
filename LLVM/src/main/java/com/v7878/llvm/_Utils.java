@@ -52,7 +52,7 @@ final class _Utils {
             static final MemorySegment EMPTY_STRING = SCOPE.allocateFrom("");
         }
         return value == null ? MemorySegment.NULL : (value.isEmpty() ?
-                Holder.EMPTY_STRING : scope.allocateFrom(value));
+                                                     Holder.EMPTY_STRING : scope.allocateFrom(value));
     }
 
     public static long stringLength(MemorySegment string) {

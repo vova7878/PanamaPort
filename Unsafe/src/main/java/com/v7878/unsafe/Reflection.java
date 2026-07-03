@@ -1,9 +1,11 @@
 package com.v7878.unsafe;
 
 import static com.v7878.dex.DexConstants.ACC_DIRECT_MASK;
+import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
+import static com.v7878.unsafe.AndroidUnsafe.getObjectO;
 import static com.v7878.unsafe.ArtModifiers.kAccCopied;
 import static com.v7878.unsafe.ArtVersion.A10;
 import static com.v7878.unsafe.ArtVersion.A11;
@@ -14,6 +16,7 @@ import static com.v7878.unsafe.ArtVersion.A15;
 import static com.v7878.unsafe.ArtVersion.A16;
 import static com.v7878.unsafe.ArtVersion.A16p1;
 import static com.v7878.unsafe.ArtVersion.A17;
+import static com.v7878.unsafe.ArtVersion.A17p1;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.A8p1;
 import static com.v7878.unsafe.ArtVersion.A9;
@@ -50,7 +53,56 @@ import java.util.stream.Stream;
 @ApiSensitive
 public class Reflection {
     static {
-        check(ART_INDEX >= A8p0 && ART_INDEX <= A17, AssertionError::new);
+        check(ART_INDEX >= A8p0 && ART_INDEX <= A17p1, AssertionError::new);
+    }
+
+    @DangerLevel(DangerLevel.RAW_OFFSET)
+    private static class Field_17x {
+        public static Field newInstance(Class<?> declaring_class, Class<?> type,
+                                        int access_flags, int art_field_index, int offset) {
+            var f = allocateInstance(Field.class);
+
+            setAccessible(f, true);
+            AndroidUnsafe.putObjectO(f, 12, declaring_class);
+            AndroidUnsafe.putObjectO(f, 16, type);
+            AndroidUnsafe.putIntO(f, 20, access_flags);
+            AndroidUnsafe.putIntO(f, 24, art_field_index);
+            AndroidUnsafe.putIntO(f, 28, offset);
+
+            return f;
+        }
+
+        private static Object rawIntToObject(int obj) {
+            int[] arr = new int[1];
+            arr[0] = obj;
+            return getObjectO(arr, ARRAY_INT_BASE_OFFSET);
+        }
+
+        public static Field createFromArtField(long art_field) {
+            // TODO: This is a terrible hack
+            var declaring_class = (Class<?>) rawIntToObject(AndroidUnsafe.getIntN(art_field));
+
+            var fields_ = Class_16p1_17.getFields(declaring_class);
+            assert fields_ != 0;
+            var long_index = (art_field - fields_ - ART_FIELD_PADDING) / ART_FIELD_SIZE;
+            var index = Math.toIntExact(long_index);
+
+            var access_flags = getIntN(art_field + 4);
+            var dex_idx = getIntN(art_field + 8);
+            var offset = getIntN(art_field + 12);
+
+            var dexfile = DexFileUtils.getDexFileStruct(declaring_class);
+            var fid = NanoDexParser.getFieldId(dexfile, dex_idx);
+
+            var loader = declaring_class.getClassLoader();
+            Class<?> type;
+            try {
+                type = ClassUtils.forType(fid.getType(), loader);
+            } catch (Throwable e) {
+                throw new NoClassDefFoundError(e.getMessage());
+            }
+            return newInstance(declaring_class, type, access_flags, index, offset);
+        }
     }
 
     @DangerLevel(DangerLevel.RAW_OFFSET)
@@ -153,7 +205,7 @@ public class Reflection {
         @AlwaysInline
         public static void setInfo(MethodHandle mh, Object info) {
             Objects.requireNonNull(mh);
-            AndroidUnsafe.putObject(mh, 32, info);
+            AndroidUnsafe.putObjectO(mh, 32, info);
         }
     }
 
@@ -175,7 +227,7 @@ public class Reflection {
 
     static {
         ART_METHOD_SIZE = switch (ART_INDEX) {
-            case A17, A16p1, A16, A15, A14, A13, A12 -> IS64BIT ? 32 : 24;
+            case A17p1, A17, A16p1, A16, A15, A14, A13, A12 -> IS64BIT ? 32 : 24;
             case A11, A10, A9 -> IS64BIT ? 40 : 28;
             case A8p1, A8p0 -> IS64BIT ? 48 : 32;
             default -> throw unsupportedART(ART_INDEX);
@@ -227,6 +279,9 @@ public class Reflection {
     }
 
     public static Field toField(long art_field) {
+        if (ART_INDEX >= A17) {
+            return Field_17x.createFromArtField(art_field);
+        }
         MethodHandle impl = allocateInstance(Holder.MH_IMPL);
         _MethodHandle.setArt(impl, art_field);
         _MethodHandle.setKind(impl, Integer.MAX_VALUE);
@@ -241,19 +296,18 @@ public class Reflection {
             return out;
         }
 
-        MethodHandle impl = allocateInstance(Holder.MH_IMPL);
-        _MethodHandle.setKind(impl, Integer.MAX_VALUE);
-
         int array_count = 0;
         for (int i = 0; i < count; i++) {
             int index = begin + i;
             long art_field = fields + ART_FIELD_PADDING + ART_FIELD_SIZE * index;
+            if (AndroidUnsafe.getIntN(art_field) == 0) {
+                // TODO: Check out what it is when the Android 17 QPR1 source code is published
+                continue;
+            }
             if (!filter.test(ArtFieldUtils.getFieldFlags(art_field))) {
                 continue;
             }
-            _MethodHandle.setArt(impl, art_field);
-            _MethodHandle.setInfo(impl, null);
-            Field tmp = MethodHandles.reflectAs(Field.class, impl);
+            Field tmp = toField(art_field);
             setAccessible(tmp, true);
             out[array_count++] = tmp;
         }
@@ -496,11 +550,11 @@ public class Reflection {
         // override + hasRealParameterData + byte[2] padding
         AndroidUnsafe.putIntO(method, 8, AndroidUnsafe.getIntO(constructor, 8));
         // declaringClass
-        AndroidUnsafe.putObject(method, 12, AndroidUnsafe.getObject(constructor, 12));
+        AndroidUnsafe.putObjectO(method, 12, getObjectO(constructor, 12));
         // declaringClassOfOverriddenMethod
-        AndroidUnsafe.putObject(method, 16, AndroidUnsafe.getObject(constructor, 16));
+        AndroidUnsafe.putObjectO(method, 16, getObjectO(constructor, 16));
         // parameters
-        AndroidUnsafe.putObject(method, 20, AndroidUnsafe.getObject(constructor, 20));
+        AndroidUnsafe.putObjectO(method, 20, getObjectO(constructor, 20));
         // artMethod
         AndroidUnsafe.putLongO(method, 24, AndroidUnsafe.getLongO(constructor, 24));
         // accessFlags

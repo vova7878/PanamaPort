@@ -26,6 +26,12 @@ public class ArtVersion {
     public static final int A16 = 10;
     public static final int A16p1 = 11;
     public static final int A17 = 12;
+    public static final int A17p1 = 13;
+
+    private static boolean is37p1() {
+        // TODO: Find the difference between Android 17 and 17 QPR1
+        return false;
+    }
 
     private static boolean is37() {
         try {
@@ -73,6 +79,7 @@ public class ArtVersion {
     }
 
     private static int computeIndex() {
+        final int MAX = 3700001;
         int tmp = SDK_INT_FULL;
 
         if (tmp < 2600000) {
@@ -81,14 +88,15 @@ public class ArtVersion {
 
         // Android 12 introduces mainline project
         if (tmp <= 3000000) return (tmp / 100000) - 26 + A8p0;
-        if (tmp > 3700000) {
-            tmp = 3700000;
+        if (tmp > MAX) {
+            tmp = MAX;
             Log.w(LOG_TAG, String.format(
                     "SDK version is too new: %s, maximum supported: %s",
-                    SDK_INT, 3700000));
+                    SDK_INT, MAX));
         }
 
-        // At the moment, there is nothing above 37
+        // At the moment, there is nothing above 37 qpr 1
+        if (tmp > 3700000 || is37p1()) return A17p1;
         if (tmp == 3700000 || is37()) return A17;
         if (tmp > 3600000 || is36p1()) return A16p1;
         if (tmp == 3600000 || is36()) return A16;

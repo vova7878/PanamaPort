@@ -6,7 +6,7 @@ import static com.v7878.foreign.ValueLayout.JAVA_INT;
 import static com.v7878.unsafe.AndroidUnsafe.fullFence;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.putIntN;
-import static com.v7878.unsafe.ArtVersion.A17;
+import static com.v7878.unsafe.ArtVersion.A17p1;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.ART_INDEX;
 import static com.v7878.unsafe.Reflection.ART_FIELD_SIZE;
@@ -35,7 +35,7 @@ public class ArtFieldUtils {
     public static final GroupLayout ARTFIELD_LAYOUT;
 
     static {
-        if (ART_INDEX >= A8p0 && ART_INDEX <= A17) {
+        if (ART_INDEX >= A8p0 && ART_INDEX <= A17p1) {
             ARTFIELD_LAYOUT = art_field_layout;
         } else {
             throw unsupportedART(ART_INDEX);

@@ -250,7 +250,7 @@ public interface SymbolLookup {
             return addr == 0L ?
                     Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr)
-                            .reinterpret(loaderArena, null));
+                                .reinterpret(loaderArena, null));
         };
     }
 
