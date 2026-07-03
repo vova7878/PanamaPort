@@ -29,8 +29,12 @@ public class ArtVersion {
     public static final int A17p1 = 13;
 
     private static boolean is37p1() {
-        // TODO: Find the difference between Android 17 and 17 QPR1
-        return false;
+        try {
+            Class.forName("jdk.internal.math.ToDecimal");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     private static boolean is37() {
