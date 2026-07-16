@@ -15,6 +15,7 @@ import static com.v7878.unsafe.ArtVersion.A15;
 import static com.v7878.unsafe.ArtVersion.A16;
 import static com.v7878.unsafe.ArtVersion.A16p1;
 import static com.v7878.unsafe.ArtVersion.A17;
+import static com.v7878.unsafe.ArtVersion.A17p1;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.A8p1;
 import static com.v7878.unsafe.ArtVersion.A9;
@@ -40,7 +41,7 @@ public class DexFileUtils {
             WORD.withName("size_")
     );
 
-    private static final GroupLayout dex_file_17_16p1_layout = paddedStructLayout(
+    private static final GroupLayout dex_file_16p1_17p1_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
             WORD.withName("unused_size_"),
@@ -87,7 +88,7 @@ public class DexFileUtils {
             JAVA_BOOLEAN.withName("is_compact_dex_"),
             JAVA_BYTE.withName("hiddenapi_domain_")
     );
-    private static final GroupLayout dex_file_13_11_layout = paddedStructLayout(
+    private static final GroupLayout dex_file_11_13_layout = paddedStructLayout(
             ADDRESS.withName("__cpp_virtual_data__"),
             ADDRESS.withName("begin_"),
             WORD.withName("size_"),
@@ -184,9 +185,9 @@ public class DexFileUtils {
 
     @ApiSensitive
     public static final GroupLayout DEXFILE_LAYOUT = switch (ART_INDEX) {
-        case A17, A16p1 -> dex_file_17_16p1_layout;
+        case A17p1, A17, A16p1 -> dex_file_16p1_17p1_layout;
         case A16, A15, A14 -> dex_file_14_16_layout;
-        case A13, A12, A11 -> dex_file_13_11_layout;
+        case A13, A12, A11 -> dex_file_11_13_layout;
         case A10 -> dex_file_10_layout;
         case A9 -> dex_file_9_layout;
         case A8p1, A8p0 -> dex_file_8xx_layout;
@@ -195,16 +196,14 @@ public class DexFileUtils {
 
     public static Object getDexCache(Class<?> clazz) {
         class Holder {
-            static final long DEX_CACHE_OFFSET = Reflection.
-                    instanceFieldOffset(Class.class, "dexCache");
+            static final long DEX_CACHE_OFFSET = 16;
         }
         return AndroidUnsafe.getObject(Objects.requireNonNull(clazz), Holder.DEX_CACHE_OFFSET);
     }
 
     public static long getDexFileStruct(Class<?> clazz) {
         class Holder {
-            static final long DEX_FILE_OFFSET = Reflection.instanceFieldOffset(
-                    ClassUtils.sysClass("java.lang.DexCache"), "dexFile");
+            static final long DEX_FILE_OFFSET = 16;
         }
         Object dexCache = Objects.requireNonNull(getDexCache(clazz));
         long address = AndroidUnsafe.getLongO(dexCache, Holder.DEX_FILE_OFFSET);
@@ -246,8 +245,6 @@ public class DexFileUtils {
     private static class Holder {
         static final long COOKIE_OFFSET = Reflection.
                 instanceFieldOffset(DexFile.class, "mCookie");
-        static final long INTERNAL_COOKIE_OFFSET = Reflection.
-                instanceFieldOffset(DexFile.class, "mInternalCookie");
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -258,16 +255,6 @@ public class DexFileUtils {
     @DangerLevel(DangerLevel.VERY_CAREFUL)
     public static void setCookie(DexFile dex, long[] cookie) {
         AndroidUnsafe.putObject(Objects.requireNonNull(dex), Holder.COOKIE_OFFSET, cookie);
-    }
-
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static long[] getInternalCookie(DexFile dex) {
-        return (long[]) AndroidUnsafe.getObject(Objects.requireNonNull(dex), Holder.INTERNAL_COOKIE_OFFSET);
-    }
-
-    @DangerLevel(DangerLevel.VERY_CAREFUL)
-    public static void setInternalCookie(DexFile dex, long[] cookie) {
-        AndroidUnsafe.putObject(Objects.requireNonNull(dex), Holder.INTERNAL_COOKIE_OFFSET, cookie);
     }
 
     @ApiSensitive

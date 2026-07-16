@@ -282,7 +282,7 @@ public class LibDLExt {
                 dlextinfo_flags.ANDROID_DLEXT_USE_LIBRARY_FD |
                         dlextinfo_flags.ANDROID_DLEXT_USE_LIBRARY_FD_OFFSET,
                 getDescriptorValue(fd), fd_offset, 0);
-        return cdlopen_ext(null, flags, info, caller_addr);
+        return cdlopen_ext("fd", flags, info, caller_addr);
     }
 
     public static long dlopen_ext(FileDescriptor fd, long fd_offset, int flags) {

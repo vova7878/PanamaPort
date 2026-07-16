@@ -15,6 +15,7 @@ import static com.v7878.unsafe.ArtVersion.A15;
 import static com.v7878.unsafe.ArtVersion.A16;
 import static com.v7878.unsafe.ArtVersion.A16p1;
 import static com.v7878.unsafe.ArtVersion.A17;
+import static com.v7878.unsafe.ArtVersion.A17p1;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.A8p1;
 import static com.v7878.unsafe.ArtVersion.A9;
@@ -47,13 +48,27 @@ import java.util.Objects;
 import java.util.function.Function;
 
 public class JniLibraries {
-    public static final GroupLayout SHARED_LIBRARY = paddedStructLayout(
+    private static final GroupLayout shared_library_17p1 = paddedStructLayout(
+            string.LAYOUT.withName("path_"),
+            ADDRESS.withName("handle_"),
+            // TODO: Check out what it is when the Android 17 QPR1 source code is published
+            ADDRESS,
+            JAVA_BOOLEAN.withName("needs_native_bridge_"),
+            JNI_OBJECT.withName("class_loader_"),
+            ADDRESS.withName("class_loader_allocator_")
+    );
+    private static final GroupLayout shared_library_8x_17 = paddedStructLayout(
             string.LAYOUT.withName("path_"),
             ADDRESS.withName("handle_"),
             JAVA_BOOLEAN.withName("needs_native_bridge_"),
             JNI_OBJECT.withName("class_loader_"),
             ADDRESS.withName("class_loader_allocator_")
     );
+    public static final GroupLayout SHARED_LIBRARY = switch (ART_INDEX) {
+        case A17p1 -> shared_library_17p1;
+        case A17, A16p1, A16, A15, A14, A13, A12, A11, A10, A9, A8p1, A8p0 -> shared_library_8x_17;
+        default -> throw unsupportedART(ART_INDEX);
+    };
     private static final AddressLayout SHARED_LIBRARY_PTR = ADDRESS.withTargetLayout(SHARED_LIBRARY);
 
     private static final map LIBS_MAP = new map(string.LAYOUT, ADDRESS);
@@ -62,7 +77,7 @@ public class JniLibraries {
     @ApiSensitive
     @DangerLevel(DangerLevel.RAW_OFFSET)
     private static final long libraries_offset = switch (ART_INDEX) {
-        case A17, A16p1, A16, A15, A14 -> {
+        case A17p1, A17, A16p1, A16, A15, A14 -> {
             long tmp = ADDRESS_SIZE * 4L;
             tmp += 3;
             tmp = Math.roundUpUL(tmp, ADDRESS_SIZE);

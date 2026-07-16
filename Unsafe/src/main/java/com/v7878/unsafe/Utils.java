@@ -108,14 +108,14 @@ public class Utils {
     private static String methodToString(String name, Class<?>[] params) {
         return name + ((params == null || params.length == 0)
                 ? "()" : Arrays.stream(params)
-                .map(c -> c == null ? "null" : c.getName())
-                .collect(Collectors.joining(",", "(", ")")));
+                         .map(c -> c == null ? "null" : c.getName())
+                         .collect(Collectors.joining(",", "(", ")")));
     }
 
     private static String methodToString(String name, String[] params) {
         return name + ((params == null || params.length == 0)
                 ? "()" : Arrays.stream(params)
-                .collect(Collectors.joining(",", "(", ")")));
+                         .collect(Collectors.joining(",", "(", ")")));
     }
 
     public static Method searchMethod(Method[] methods, String name,
