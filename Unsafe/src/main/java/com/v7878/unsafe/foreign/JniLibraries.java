@@ -216,7 +216,6 @@ public class JniLibraries {
         Objects.requireNonNull(consumer);
 
         long allocator = getLongO(loader, Holder.ALLOCATOR_OFFSET);
-        System.out.println("allocator: " + Long.toHexString(allocator));
         forEachLibraries(library -> {
             if (!library.get(JAVA_BOOLEAN, Holder.NNB_OFFSET) &&
                     library.get(ADDRESS, Holder.CLA_OFFSET).nativeAddress() == allocator) {

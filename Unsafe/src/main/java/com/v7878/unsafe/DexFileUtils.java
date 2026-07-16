@@ -242,9 +242,9 @@ public class DexFileUtils {
         return openCookie(ByteBuffer.wrap(data));
     }
 
-    @DangerLevel(DangerLevel.RAW_OFFSET)
     private static class Holder {
-        static final long COOKIE_OFFSET = 8;
+        static final long COOKIE_OFFSET = Reflection.
+                instanceFieldOffset(DexFile.class, "mCookie");
     }
 
     @DangerLevel(DangerLevel.VERY_CAREFUL)
@@ -326,5 +326,4 @@ public class DexFileUtils {
     public static String[] getClassNameList(long dexfile_struct) {
         return getClassNameList(new long[]{0, dexfile_struct});
     }
-
 }

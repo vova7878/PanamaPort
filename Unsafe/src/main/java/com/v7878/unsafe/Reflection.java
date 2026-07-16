@@ -72,16 +72,7 @@ public class Reflection {
             return f;
         }
 
-        private static Object rawIntToObject(int obj) {
-            int[] arr = new int[1];
-            arr[0] = obj;
-            return getObject(arr, ARRAY_INT_BASE_OFFSET);
-        }
-
-        public static Field createFromArtField(long art_field) {
-            // TODO: This is a terrible hack
-            var declaring_class = (Class<?>) rawIntToObject(AndroidUnsafe.getIntN(art_field));
-
+        public static Field createFromArtField(Class<?> declaring_class, long art_field) {
             var fields_ = Class_16p1_17.getFields(declaring_class);
             assert fields_ != 0;
             var long_index = (art_field - fields_ - ART_FIELD_PADDING) / ART_FIELD_SIZE;
@@ -278,9 +269,9 @@ public class Reflection {
         return tmp;
     }
 
-    public static Field toField(long art_field) {
+    public static Field toField(Class<?> declaring_class, long art_field) {
         if (ART_INDEX >= A17) {
-            return Field_17x.createFromArtField(art_field);
+            return Field_17x.createFromArtField(declaring_class, art_field);
         }
         MethodHandle impl = allocateInstance(Holder.MH_IMPL);
         _MethodHandle.setArt(impl, art_field);
@@ -290,7 +281,21 @@ public class Reflection {
         return tmp;
     }
 
-    private static Field[] getFields0(long fields, int begin, int count, IntPredicate filter) {
+    private static Object rawIntToObject(int obj) {
+        int[] arr = new int[1];
+        arr[0] = obj;
+        return getObject(arr, ARRAY_INT_BASE_OFFSET);
+    }
+
+    @DangerLevel(DangerLevel.MAX)
+    public static Field toField(long art_field) {
+        // TODO: This is a terrible hack
+        var declaring_class = (Class<?>) rawIntToObject(AndroidUnsafe.getIntN(art_field));
+        return toField(declaring_class, art_field);
+    }
+
+    private static Field[] getFields0(Class<?> declaring_class, long fields, int begin,
+                                      int count, IntPredicate filter) {
         Field[] out = new Field[count];
         if (out.length == 0) {
             return out;
@@ -307,7 +312,7 @@ public class Reflection {
             if (!filter.test(ArtFieldUtils.getFieldFlags(art_field))) {
                 continue;
             }
-            Field tmp = toField(art_field);
+            Field tmp = toField(declaring_class, art_field);
             setAccessible(tmp, true);
             out[array_count++] = tmp;
         }
@@ -316,8 +321,8 @@ public class Reflection {
 
     @SuppressWarnings("SameParameterValue")
     @AlwaysInline
-    private static Field[] getFields0(long fields, int begin, int count) {
-        return getFields0(fields, begin, count, unused -> true);
+    private static Field[] getFields0(Class<?> declaring_class, long fields, int begin, int count) {
+        return getFields0(declaring_class, fields, begin, count, unused -> true);
     }
 
     public static Field[] getHiddenInstanceFields(Class<?> clazz) {
@@ -327,7 +332,7 @@ public class Reflection {
                 return new Field[0];
             }
             int count = getIntN(fields);
-            return getFields0(fields, 0, count,
+            return getFields0(clazz, fields, 0, count,
                     flags -> !Modifier.isStatic(flags));
         } else {
             long fields = Class_8_15.getInstanceFields(clazz);
@@ -335,7 +340,7 @@ public class Reflection {
                 return new Field[0];
             }
             int count = getIntN(fields);
-            return getFields0(fields, 0, count);
+            return getFields0(clazz, fields, 0, count);
         }
     }
 
@@ -355,14 +360,14 @@ public class Reflection {
                 return new Field[0];
             }
             int count = getIntN(fields);
-            return getFields0(fields, 0, count, Modifier::isStatic);
+            return getFields0(clazz, fields, 0, count, Modifier::isStatic);
         } else {
             long fields = Class_8_15.getStaticFields(clazz);
             if (fields == 0) {
                 return new Field[0];
             }
             int count = getIntN(fields);
-            return getFields0(fields, 0, count);
+            return getFields0(clazz, fields, 0, count);
         }
     }
 
@@ -382,7 +387,7 @@ public class Reflection {
                 return new Field[0];
             }
             int count = getIntN(fields);
-            return getFields0(fields, 0, count);
+            return getFields0(clazz, fields, 0, count);
         } else {
             Field[] out1 = getHiddenInstanceFields(clazz);
             Field[] out2 = getHiddenStaticFields(clazz);

@@ -113,7 +113,7 @@ public class VM {
         dcheck(ARRAY_OBJECT_INDEX_SCALE == OBJECT_FIELD_SIZE, AssertionError::new);
         //noinspection ConstantValue
         dcheck(ARRAY_INT_BASE_OFFSET == 12, AssertionError::new);
-        // TODO: dcheck(objectSizeField(Object.class) == 8, AssertionError::new);
+        dcheck(objectSizeField(Object.class) == 8, AssertionError::new);
     }
 
     @SuppressWarnings("unchecked")
