@@ -1,30 +1,20 @@
 package com.v7878.unsafe;
 
 import static com.v7878.llvm.Core.LLVMAddFunction;
-import static com.v7878.llvm.Core.LLVMAddIncoming;
 import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
 import static com.v7878.llvm.Core.LLVMAtomicOrdering.LLVMAtomicOrderingSequentiallyConsistent;
 import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpAnd;
 import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpOr;
 import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXchg;
 import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXor;
-import static com.v7878.llvm.Core.LLVMBuildAdd;
 import static com.v7878.llvm.Core.LLVMBuildAtomicCmpXchg;
 import static com.v7878.llvm.Core.LLVMBuildAtomicRMW;
-import static com.v7878.llvm.Core.LLVMBuildCondBr;
 import static com.v7878.llvm.Core.LLVMBuildExtractValue;
-import static com.v7878.llvm.Core.LLVMBuildICmp;
-import static com.v7878.llvm.Core.LLVMBuildInBoundsGEP;
 import static com.v7878.llvm.Core.LLVMBuildLoad;
-import static com.v7878.llvm.Core.LLVMBuildPhi;
 import static com.v7878.llvm.Core.LLVMBuildRet;
 import static com.v7878.llvm.Core.LLVMBuildRetVoid;
 import static com.v7878.llvm.Core.LLVMBuildStore;
-import static com.v7878.llvm.Core.LLVMBuildSub;
-import static com.v7878.llvm.Core.LLVMGetInsertBlock;
 import static com.v7878.llvm.Core.LLVMGetParams;
-import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
-import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntULT;
 import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
 import static com.v7878.llvm.Core.LLVMSetAlignment;
 import static com.v7878.llvm.Core.LLVMSetOrdering;
@@ -41,14 +31,9 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.SHORT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
-import static com.v7878.unsafe.llvm.LLVMBuilder.call;
-import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
 import static com.v7878.unsafe.llvm.LLVMBuilder.local_jobj_to_ptr;
 import static com.v7878.unsafe.llvm.LLVMTypes.fn_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.int16_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.int1_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.int64_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.intptr_t;
 import static com.v7878.unsafe.llvm.LLVMTypes.void_t;
 import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeArray;
@@ -62,11 +47,8 @@ import static com.v7878.unsafe.misc.Math.l2d;
 
 import com.v7878.foreign.Arena;
 import com.v7878.llvm.Core.LLVMAtomicRMWBinOp;
-import com.v7878.llvm.Types.LLVMBuilderRef;
 import com.v7878.llvm.Types.LLVMContextRef;
-import com.v7878.llvm.Types.LLVMModuleRef;
 import com.v7878.llvm.Types.LLVMTypeRef;
-import com.v7878.llvm.Types.LLVMValueRef;
 import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
@@ -81,6 +63,8 @@ import com.v7878.unsafe.llvm.LLVMTypes;
 import java.util.Optional;
 import java.util.function.Function;
 
+// TODO: RISCV64
+// Compiled by clang with flags: "-O1 -ffreestanding --target=<arch>-linux-android26"
 public class ExtraMemoryAccess {
     @DoNotShrinkType
     @DoNotOptimize
@@ -88,100 +72,161 @@ public class ExtraMemoryAccess {
         @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
-        /*
-        extern "C" void memset(uintptr obj, uintptr off, uintptr bytes, char value) {
-            auto ptr = (uint32*)(obj & (~3L));
-            uintptr data = ptr ? *ptr : 0;
-            auto memory = (char*)(data + off);
-            for (uintptr i = 0; i < bytes; i++) {
-                memory[i] = value;
-            }
-        }
-        */
-        @ASM(conditions = @Conditions(arch = X86_64), code = {
-                72, -125, -25, -4, 116, 9, -117, 7, 72, -123, -46, 117, 9, -21, 23, 49,
-                -64, 72, -123, -46, 116, 16, 72, 1, -16, 49, -10, -120, 12, 48, 72, -1,
-                -58, 72, 57, -14, 117, -11, -61
-        })
-        @ASM(conditions = @Conditions(arch = X86), code = {
-                86, -117, 68, 36, 16, -117, 76, 36, 8, -125, -31, -4, 116, 8, -117, 9,
-                -123, -64, 117, 8, -21, 25, 49, -55, -123, -64, 116, 19, 15, -74, 84, 36,
-                20, 3, 76, 36, 12, 49, -10, -120, 20, 49, 70, 57, -16, 117, -8, 94, -61
-        })
-        @ASM(conditions = @Conditions(arch = ARM64), code = {
-                8, -12, 126, -14, 64, 0, 0, 84, 8, 1, 64, -71, -94, 0, 0, -76,
-                8, 1, 1, -117, 66, 4, 0, -15, 3, 21, 0, 56, -63, -1, -1, 84,
-                -64, 3, 95, -42
-        })
-        @ASM(conditions = @Conditions(arch = ARM), code = {
-                3, 0, -48, -29, 0, 0, -112, 21, 0, 0, -96, 3, 0, 72, 45, -23,
-                13, -80, -96, -31, 0, 0, 82, -29, 0, -120, -67, 8, 1, 0, -128, -32,
-                1, 48, -64, -28, 1, 32, 82, -30, -4, -1, -1, 26, 0, -120, -67, -24
-        })
-        // TODO: RISCV64
+        // extern "C" void memset(uintptr obj, uintptr off, uintptr bytes, char value) {
+        //     auto ptr = (uint32*)(obj & (~3L));
+        //     uintptr data = ptr ? *ptr : 0;
+        //     auto memory = (char*)(data + off);
+        //     for (uintptr i = 0; i < bytes; i++) {
+        //         memory[i] = value;
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPn_HQJiwdIhdJ1CesXMcBIhdJ0EEgB8DH2iAwwSP_GSDnydfXD")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "VotEJBCLTCQIg-H8dAiLCYXAdQjrGTHJhcB0Ew-2VCQUA0wkDDH2iBQxRjnwdfheww==")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "CPR-8kAAAFQIAUC5ogAAtAgBAYtCBADxAxUAOMH__1TAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDQ4wAAkBUAAKADAEgt6Q2woOEAAFLjAIi9CAEAgOABMMDkASBS4vz__xoAiL3o")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, LONG_AS_WORD, BYTE})
         abstract void memset(Object base, long offset, long bytes, byte value);
 
-        /*
-        extern "C" void memmove(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
-                                uintptr src_off, uintptr bytes) {
-            auto dst_ptr = (uint32*)(dst_obj & (~3L));
-            uintptr dst_data = ((uintptr)(dst_ptr ? *dst_ptr : 0)) + dst_off;
-            auto dst_memory = (char*)dst_data;
-            auto src_ptr = (uint32*)(src_obj & (~3L));
-            uintptr src_data = ((uintptr)(src_ptr ? *src_ptr : 0)) + src_off;
-            auto src_memory = (char*)src_data;
-            if (src_data < dst_data) {
-                for (uintptr i = 0; i < bytes; i++) {
-                    int index = bytes - 1 - i;
-                    dst_memory[index] = src_memory[index];
-                }
-            } else {
-                for (uintptr i = 0; i < bytes; i++) {
-                    dst_memory[i] = src_memory[i];
-                }
-            }
-        }
-         */
-        @ASM(conditions = @Conditions(arch = X86_64), code = {
-                72, -125, -25, -4, 116, 4, -117, 7, -21, 2, 49, -64, 72, 1, -16, 72,
-                -125, -30, -4, 116, 4, -117, 18, -21, 2, 49, -46, 72, 1, -54, 72, 57,
-                -62, 115, 51, 77, -123, -64, 116, 69, 72, -71, 0, 0, 0, 0, -1, -1,
-                -1, -1, 76, -119, -58, 72, -63, -26, 32, 72, 1, -50, 72, -119, -9, 72,
-                -63, -1, 32, 68, 15, -74, 12, 58, 68, -120, 12, 56, 72, 1, -50, 73,
-                -1, -56, 117, -24, -21, 23, 77, -123, -64, 116, 18, 49, -55, 15, -74, 52,
-                10, 64, -120, 52, 8, 72, -1, -63, 73, 57, -56, 117, -16, -61
-        })
-        @ASM(conditions = @Conditions(arch = X86), code = {
-                83, 87, 86, -117, 84, 36, 24, -117, 116, 36, 20, -117, 124, 36, 16, 49,
-                -64, -71, 0, 0, 0, 0, -125, -25, -4, 116, 2, -117, 15, 1, -15, -117,
-                116, 36, 28, -125, -30, -4, 116, 2, -117, 2, 1, -16, -117, 84, 36, 32,
-                57, -56, 115, 18, -123, -46, 116, 32, 15, -74, 92, 16, -1, -120, 92, 17,
-                -1, 74, 117, -12, -21, 18, -123, -46, 116, 14, 49, -10, 15, -74, 28, 48,
-                -120, 28, 49, 70, 57, -14, 117, -12, 94, 95, 91, -61
-        })
-        @ASM(conditions = @Conditions(arch = ARM64), code = {
-                8, -12, 126, -14, 64, 0, 0, 84, 8, 1, 64, -71, 73, -12, 126, -14,
-                8, 1, 1, -117, 64, 0, 0, 84, 41, 1, 64, -71, 41, 1, 3, -117,
-                63, 1, 8, -21, 98, 1, 0, 84, -28, 1, 0, -76, -22, 127, 96, -78,
-                75, -127, 4, -117, 108, -3, 96, -109, -124, 4, 0, -15, 107, 1, 10, -117,
-                45, 105, 108, 56, 13, 105, 44, 56, 97, -1, -1, 84, 6, 0, 0, 20,
-                -92, 0, 0, -76, 42, 21, 64, 56, -124, 4, 0, -15, 10, 21, 0, 56,
-                -95, -1, -1, 84, -64, 3, 95, -42
-        })
-        @ASM(conditions = @Conditions(arch = ARM), code = {
-                0, 72, 45, -23, 13, -80, -96, -31, 3, -32, -48, -29, 0, -64, -96, -29,
-                0, 0, -96, -29, 0, 0, -98, 21, 1, 0, -128, -32, 3, 16, -46, -29,
-                0, -64, -111, 21, 8, 16, -101, -27, 3, 32, -116, -32, 0, 0, 82, -31,
-                8, 0, 0, 42, 0, 0, 81, -29, 0, -120, -67, 8, 1, 32, 66, -30,
-                1, 0, 64, -30, 1, 48, -46, -25, 1, 48, -64, -25, 1, 16, 81, -30,
-                -5, -1, -1, 26, 5, 0, 0, -22, 0, 0, 81, -29, 3, 0, 0, 10,
-                1, 48, -46, -28, 1, 48, -64, -28, 1, 16, 81, -30, -5, -1, -1, 26,
-                0, -120, -67, -24
-        })
-        // TODO: RISCV64
+        // extern "C" void memmove(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
+        //                         uintptr src_off, uintptr bytes) {
+        //     auto dst_ptr = (uint32*)(dst_obj & (~3L));
+        //     uintptr dst_data = (uintptr)(dst_ptr ? *dst_ptr : 0);
+        //     auto dst_memory = (char*)(dst_data + dst_off);
+        //     auto src_ptr = (uint32*)(src_obj & (~3L));
+        //     uintptr src_data = (uintptr)(src_ptr ? *src_ptr : 0);
+        //     auto src_memory = (char*)(src_data + src_off);
+        //     if (src_data < dst_data) {
+        //         for (uintptr i = 0; i < bytes; i++) {
+        //             int index = bytes - 1 - i;
+        //             dst_memory[index] = src_memory[index];
+        //         }
+        //     } else {
+        //         for (uintptr i = 0; i < bytes; i++) {
+        //             dst_memory[i] = src_memory[i];
+        //         }
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAjHASA" +
+                "HwSIPi_HQEixLrAjHSSAHKSDnCczNNhcB0RUi5AAAAAP____9MicZIweYgSAHOSIn" +
+                "3SMH_IEQPtgw6RIgMOEgBzkn_yHXo6xdNhcB0EjHJD7Y0CkCINAhI_8FJOch18MM=")
+        @ASM(conditions = @Conditions(arch = X86), base64 = "U1dWi1QkGIt0" +
+                "JBSLfCQQMcC5AAAAAIPn_HQCiw8B8Yt0JByD4vx0AosCAfCLVCQgOchz" +
+                "EoXSdCAPtlwQ_4hcEf9KdfTrEoXSdA4x9g-2HDCIHDFGOfJ19F5fW8M=")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5" +
+                "SfR-8ggBAYtAAABUKQFAuSkBA4s_AQjrYgEAVOQBALTqf2CyS4EEi2z9YJOEBA" +
+                "DxawEKiy1pbDgNaSw4Yf__VAYAABSkAAC0KhVAOIQEAPEKFQA4of__VMADX9Y=")
+        @ASM(conditions = @Conditions(arch = ARM), base64 = "AEgt6Q2woOED4NDjAMCg4wA" +
+                "AoOMAAJ4VAQCA4AMQ0uMAwJEVCBCb5QMgjOAAAFLhCAAAKgAAUeMAiL0IASBC4gEAQO" +
+                "IBMNLnATDA5wEQUeL7__8aBQAA6gAAUeMDAAAKATDS5AEwwOQBEFHi-___GgCIveg=")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
+
+        // extern "C" void memmove_swap16(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
+        //                         uintptr src_off, uintptr count) {
+        //     auto dst_ptr = (uint32*)(dst_obj & (~3L));
+        //     uintptr dst_data = (uintptr)(dst_ptr ? *dst_ptr : 0);
+        //     auto dst_memory = (uint16*)(dst_data + dst_off);
+        //     auto src_ptr = (uint32*)(src_obj & (~3L));
+        //     uintptr src_data = (uintptr)(src_ptr ? *src_ptr : 0);
+        //     auto src_memory = (uint16*)(src_data + src_off);
+        //     if (src_data < dst_data) {
+        //         for (uintptr i = 0; i < count; i++) {
+        //             int index = count - 1 - i;
+        //             dst_memory[index] = __builtin_bswap16(src_memory[index]);
+        //         }
+        //     } else {
+        //         for (uintptr i = 0; i < count; i++) {
+        //             dst_memory[i] = __builtin_bswap16(src_memory[i]);
+        //         }
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAjHASAHwSIPi_HQEi" +
+                "xLrAjHSSAHKSDnCcz1NhcB0XEi5AAAAAP____9MicZIweYgSAHODx9AAEiJ90jB_x9ED7cMOmZBw" +
+                "cEIZkSJDDhIAc5J_8h14uskTYXAdB8xyWYPH4QAAAAAAA-3NEpmwcYIZok0SEj_wUk5yHXsww==")
+        @ASM(conditions = @Conditions(arch = X86), base64 = "V1aLVCQUi3QkEIt8JAwxwLk" +
+                "AAAAAg-f8dAKLDwHxi3QkGIPi_HQCiwIB8ItUJBw5yHMghdJ0OpCQkJCQkJCQkA-3dF" +
+                "D-ZsHGCGaJdFH-SnXv6x6F0nQaMfaQkJCQkJCQD7c8cGbBxwhmiTxxRjnyde9eX8M=")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5SfR-8gg" +
+                "BAYtAAABUKQFAuSkBA4s_AQjrogEAVGQCALTqf2CyS4EEi2z9X5OEBADxawEKiy1pbHit" +
+                "CcBarX0QUw1pLHgh__9UCAAAFOQAALQqJUB4hAQA8UoJwFpKfRBTCiUAeGH__1TAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 = "AEgt6Q2woOED4NDjAMCg4wAAoOMAAJ4VAR" +
+                "CA4AMA0uMAwJAVCACb5QMgjOABAFLhDAAAKgAAUOMAiL0IATDg44Awg-ADIILgAxCB4LIwUuAzP7_m" +
+                "Izig4bIwQeABAFDi-f__GgcAAOoAAFDjBQAACrIw0uAzP7_mIzig4bIwweABAFDi-f__GgCIveg=")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract void memmove_swap16(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
+
+        // extern "C" void memmove_swap32(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
+        //                         uintptr src_off, uintptr count) {
+        //     auto dst_ptr = (uint32*)(dst_obj & (~3L));
+        //     uintptr dst_data = (uintptr)(dst_ptr ? *dst_ptr : 0);
+        //     auto dst_memory = (uint32*)(dst_data + dst_off);
+        //     auto src_ptr = (uint32*)(src_obj & (~3L));
+        //     uintptr src_data = (uintptr)(src_ptr ? *src_ptr : 0);
+        //     auto src_memory = (uint32*)(src_data + src_off);
+        //     if (src_data < dst_data) {
+        //         for (uintptr i = 0; i < count; i++) {
+        //             int index = count - 1 - i;
+        //             dst_memory[index] = __builtin_bswap32(src_memory[index]);
+        //         }
+        //     } else {
+        //         for (uintptr i = 0; i < count; i++) {
+        //             dst_memory[i] = __builtin_bswap32(src_memory[i]);
+        //         }
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAjHASAHwSIPi_H" +
+                "QEixLrAjHSSAHKSDnCczlNhcB0WEi5AAAAAP____9MicZIweYgSAHODx9AAEiJ90jB_x5Eiww" +
+                "6QQ_JRIkMOEgBzkn_yHXm6yRNhcB0HzHJZmZmZi4PH4QAAAAAAIs0ig_OiTSISP_BSTnIdfDD")
+        @ASM(conditions = @Conditions(arch = X86), base64 = "V1aLVCQUi3QkEIt8JAwxwL" +
+                "kAAAAAg-f8dAKLDwHxi3QkGIPi_HQCiwIB8ItUJBw5yHMchdJ0NpCQkJCQkJCQkIt0" +
+                "kPwPzol0kfxKdfPrHoXSdBox9pCQkJCQkJCQkJCQizywD8-JPLFGOfJ1815fww==")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5SfR-" +
+                "8ggBAYtAAABUKQFAuSkBA4s_AQjrggEAVCQCALTqf2CyS4EEi2z9XpOEBADxawEKiy" +
+                "1pbLitCcBaDWksuEH__1QHAAAUxAAAtCpFQLiEBADxSgnAWgpFALiB__9UwANf1g==")
+        @ASM(conditions = @Conditions(arch = ARM), base64 = "AEgt6Q2woOED4NDjAMCg4wAAoOM" +
+                "AAJ4VARCA4AMA0uMAwJAVCACb5QMgjOABAFLhCQAAKgAAUOMAiL0IBCBC4gQQQeIAMZLnMz" +
+                "-_5gAxgecBAFDi-v__GgYAAOoAAFDjBAAACgQwkuQzP7_mBDCB5AEAUOL6__8aAIi96A==")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract void memmove_swap32(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
+
+        // extern "C" void memmove_swap64(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
+        //                         uintptr src_off, uintptr count) {
+        //     auto dst_ptr = (uint32*)(dst_obj & (~3L));
+        //     uintptr dst_data = (uintptr)(dst_ptr ? *dst_ptr : 0);
+        //     auto dst_memory = (uint64*)(dst_data + dst_off);
+        //     auto src_ptr = (uint32*)(src_obj & (~3L));
+        //     uintptr src_data = (uintptr)(src_ptr ? *src_ptr : 0);
+        //     auto src_memory = (uint64*)(src_data + src_off);
+        //     if (src_data < dst_data) {
+        //         for (uintptr i = 0; i < count; i++) {
+        //             int index = count - 1 - i;
+        //             dst_memory[index] = __builtin_bswap64(src_memory[index]);
+        //         }
+        //     } else {
+        //         for (uintptr i = 0; i < count; i++) {
+        //             dst_memory[i] = __builtin_bswap64(src_memory[i]);
+        //         }
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAjHASAHwSIPi_HQE" +
+                "ixLrAjHSSAHKSDnCczlNhcB0W0i5AAAAAP____9MicZIweYgSAHODx9AAEiJ90jB_x1Miww6SQ_" +
+                "JTIkMOEgBzkn_yHXm6ydNhcB0IjHJZmZmZi4PH4QAAAAAAEiLNMpID85IiTTISP_BSTnIde3D")
+        @ASM(conditions = @Conditions(arch = X86), base64 = "U1dWi1QkGIt0JBSLfCQQMcC5AA" +
+                "AAAIPn_HQCiw8B8Yt0JByD4vx0AosCAfCLVCQgOchzJYXSdD-QkJCQkJCQkIt00PiLfND8" +
+                "D88Pzol00fyJfNH4SnXp6x6F0nQaMfaQizzwi1zwBA_LD8-JfPEEiRzxRjnydeleX1vD")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5SfR-" +
+                "8ggBAYtAAABUKQFAuSkBA4s_AQjrggEAVCQCALTqf2CyS4EEi2z9XZOEBADxawEKiy" +
+                "1pbPitDcDaDWks-EH__1QHAAAUxAAAtCqFQPiEBADxSg3A2gqFAPiB__9UwANf1g==")
+        @ASM(conditions = @Conditions(arch = ARM), base64 = "8Egt6RCwjeID4NDjAMC" +
+                "g4wAAoOMAAJ4VARCA4AMA0uMAwJAVCACb5QMgjOABAFLhDgAAKgAAUOMWAAAKBz" +
+                "Dg44Axg-ADIILgAxCB4NBAwuE1b7_mNH-_5vBgweEIIELiCBBB4gEAUOL3__8aC" +
+                "QAA6gAAUOMHAAAK0EDC4TVvv-Y0f7_m8GDB4QggguIIEIHiAQBQ4vf__xrwiL3o")
+        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract void memmove_swap64(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
         static final EarlyNative INSTANCE = BulkLinker.generateImpl(SCOPE,
                 EarlyNative.class, name -> Optional.empty());
@@ -197,128 +242,6 @@ public class ExtraMemoryAccess {
     private abstract static class Native {
         @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
-
-        @SuppressWarnings("SameParameterValue")
-        private static LLVMValueRef gen_memmove_modify(
-                LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder, String name,
-                LLVMTypeRef element_type, int align, Function<LLVMValueRef, LLVMValueRef> action) {
-            var one = const_intptr(context, 1);
-            var zero = const_intptr(context, 0);
-
-            var type = fn_t(void_t(context), intptr_t(context),
-                    intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context));
-            var function = LLVMAddFunction(module, name, type);
-            var args = LLVMGetParams(function);
-
-            var start = LLVMAppendBasicBlock(function, "");
-            var body = LLVMAppendBasicBlock(function, "");
-            var forward = LLVMAppendBasicBlock(function, "");
-            var backward = LLVMAppendBasicBlock(function, "");
-            var end = LLVMAppendBasicBlock(function, "");
-
-            LLVMPositionBuilderAtEnd(builder, start);
-            var length = args[4];
-            var test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
-            LLVMBuildCondBr(builder, test_zero, end, body);
-
-            LLVMPositionBuilderAtEnd(builder, body);
-            var langth_m1 = LLVMBuildSub(builder, length, one, "");
-            var dst = local_jobj_to_ptr(builder, args[0], args[1], element_type);
-            var src = local_jobj_to_ptr(builder, args[2], args[3], element_type);
-            body = LLVMGetInsertBlock(builder);
-
-            var test_order = LLVMBuildICmp(builder, LLVMIntULT, dst, src, "");
-            LLVMBuildCondBr(builder, test_order, forward, backward);
-
-            {
-                LLVMPositionBuilderAtEnd(builder, forward);
-                var counter = LLVMBuildPhi(builder, intptr_t(context), "");
-                LLVMAddIncoming(counter, zero, body);
-                var src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
-                var dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
-                var load = LLVMBuildLoad(builder, src_element, "");
-                LLVMSetAlignment(load, align);
-                var value = action.apply(load);
-                var store = LLVMBuildStore(builder, value, dst_element);
-                LLVMSetAlignment(store, align);
-                var next_counter = LLVMBuildAdd(builder, counter, one, "");
-                LLVMAddIncoming(counter, next_counter, forward);
-                var test_end = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
-                LLVMBuildCondBr(builder, test_end, end, forward);
-            }
-            {
-                LLVMPositionBuilderAtEnd(builder, backward);
-                var counter = LLVMBuildPhi(builder, intptr_t(context), "");
-                LLVMAddIncoming(counter, langth_m1, body);
-                var src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
-                var dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
-                var load = LLVMBuildLoad(builder, src_element, "");
-                LLVMSetAlignment(load, align);
-                var value = action.apply(load);
-                var store = LLVMBuildStore(builder, value, dst_element);
-                LLVMSetAlignment(store, align);
-                var next_counter = LLVMBuildSub(builder, counter, one, "");
-                LLVMAddIncoming(counter, next_counter, backward);
-                var test_end = LLVMBuildICmp(builder, LLVMIntEQ, counter, zero, "");
-                LLVMBuildCondBr(builder, test_end, end, backward);
-            }
-
-            LLVMPositionBuilderAtEnd(builder, end);
-            LLVMBuildRetVoid(builder);
-
-            return function;
-        }
-
-        @ASMGenerator(method = "gen_memmove_swap_shorts")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void memmove_swap_shorts(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
-
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_memmove_swap_shorts() {
-            final String name = "memmove_swap_shorts";
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var bswap16_type = fn_t(int16_t(context), int16_t(context));
-                var bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
-                return gen_memmove_modify(context, module, builder, name, int16_t(context), 1,
-                        value -> call(builder, bswap16, value));
-            });
-        }
-
-        @ASMGenerator(method = "gen_memmove_swap_ints")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void memmove_swap_ints(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
-
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_memmove_swap_ints() {
-            final String name = "memmove_swap_ints";
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var bswap32_type = fn_t(int32_t(context), int32_t(context));
-                var bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
-                return gen_memmove_modify(context, module, builder, name, int32_t(context), 1,
-                        value -> call(builder, bswap32, value));
-            });
-        }
-
-        @ASMGenerator(method = "gen_memmove_swap_longs")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void memmove_swap_longs(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
-
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_memmove_swap_longs() {
-            final String name = "memmove_swap_longs";
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var bswap64_type = fn_t(int64_t(context), int64_t(context));
-                var bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
-                return gen_memmove_modify(context, module, builder, name, int64_t(context), 1,
-                        value -> call(builder, bswap64, value));
-            });
-        }
 
         private static byte[] gen_load_atomic(
                 String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
@@ -772,15 +695,15 @@ public class ExtraMemoryAccess {
     }
 
     public static void swapShorts(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {
-        Native.INSTANCE.memmove_swap_shorts(destBase, destOffset, srcBase, srcOffset, elements);
+        EarlyNative.INSTANCE.memmove_swap16(destBase, destOffset, srcBase, srcOffset, elements);
     }
 
     public static void swapInts(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {
-        Native.INSTANCE.memmove_swap_ints(destBase, destOffset, srcBase, srcOffset, elements);
+        EarlyNative.INSTANCE.memmove_swap32(destBase, destOffset, srcBase, srcOffset, elements);
     }
 
     public static void swapLongs(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {
-        Native.INSTANCE.memmove_swap_longs(destBase, destOffset, srcBase, srcOffset, elements);
+        EarlyNative.INSTANCE.memmove_swap64(destBase, destOffset, srcBase, srcOffset, elements);
     }
 
     public static void copySwapMemory(Object srcBase, long srcOffset, Object destBase,

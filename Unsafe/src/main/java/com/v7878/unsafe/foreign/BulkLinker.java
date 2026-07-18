@@ -94,6 +94,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -532,7 +533,9 @@ public class BulkLinker {
     public @interface ASM {
         Conditions conditions() default @Conditions();
 
-        byte[] code();
+        byte[] bytes() default {};
+
+        String base64() default "";
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -548,7 +551,7 @@ public class BulkLinker {
     @DoNotShrink
     @DoNotShrinkType
     public @interface ASMGenerator {
-        Class<?> klass() default /*search in current class*/ void.class;
+        Class<?> klass() default /* search in current class */ void.class;
 
         String field() default "";
 
@@ -623,11 +626,15 @@ public class BulkLinker {
     }
 
     private static byte[] getCode(ASM asm) {
-        byte[] code = asm.code();
-        if (code == null || code.length == 0) {
-            return null;
+        byte[] code = asm.bytes();
+        if (code != null && code.length != 0) {
+            return code;
         }
-        return code;
+        var base64 = asm.base64();
+        if (!base64.isEmpty()) {
+            return Base64.getUrlDecoder().decode(base64);
+        }
+        return null;
     }
 
     // TODO: simplify
