@@ -63,8 +63,14 @@ import com.v7878.unsafe.llvm.LLVMTypes;
 import java.util.Optional;
 import java.util.function.Function;
 
-// TODO: RISCV64
 // Compiled by clang with flags: "-O1 -ffreestanding --target=<arch>-linux-android26"
+//
+// inline uintptr obj_ptr(uintptr obj, uintptr off) {
+//     auto ptr = (uint32*)(obj & (~3L));
+//     uintptr data = ptr ? *ptr : 0;
+//     return data + off;
+// }
+// TODO: RISCV64
 public class ExtraMemoryAccess {
     @DoNotShrinkType
     @DoNotOptimize
@@ -73,17 +79,15 @@ public class ExtraMemoryAccess {
         private static final Arena SCOPE = Arena.ofAuto();
 
         // extern "C" void memset(uintptr obj, uintptr off, uintptr bytes, char value) {
-        //     auto ptr = (uint32*)(obj & (~3L));
-        //     uintptr data = ptr ? *ptr : 0;
-        //     auto memory = (char*)(data + off);
+        //     auto dst = (char*)obj_ptr(obj, off);
         //     for (uintptr i = 0; i < bytes; i++) {
-        //         memory[i] = value;
+        //         dst[i] = value;
         //     }
         // }
         @ASM(conditions = @Conditions(arch = X86_64), base64 =
-                "SIPn_HQJiwdIhdJ1CesXMcBIhdJ0EEgB8DH2iAwwSP_GSDnydfXD")
+                "SIPn_HQJiwdIhdJ1CescMcBIhdJ0FUgB8DH2Dx9EAACIDDBI_8ZIOfJ19cM=")
         @ASM(conditions = @Conditions(arch = X86), base64 =
-                "VotEJBCLTCQIg-H8dAiLCYXAdQjrGTHJhcB0Ew-2VCQUA0wkDDH2iBQxRjnwdfheww==")
+                "VotEJBCLTCQIg-H8dAiLCYXAdQjrIjHJhcB0HA-2VCQUA0wkDDH2kJCQkJCQkJCQiBQxRjnwdfheww==")
         @ASM(conditions = @Conditions(arch = ARM64), base64 =
                 "CPR-8kAAAFQIAUC5ogAAtAgBAYtCBADxAxUAOMH__1TAA1_W")
         @ASM(conditions = @Conditions(arch = ARM), base64 =
@@ -93,137 +97,128 @@ public class ExtraMemoryAccess {
 
         // extern "C" void memmove(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
         //                         uintptr src_off, uintptr bytes) {
-        //     auto dst_ptr = (uint32*)(dst_obj & (~3L));
-        //     uintptr dst_data = (uintptr)(dst_ptr ? *dst_ptr : 0);
-        //     auto dst_memory = (char*)(dst_data + dst_off);
-        //     auto src_ptr = (uint32*)(src_obj & (~3L));
-        //     uintptr src_data = (uintptr)(src_ptr ? *src_ptr : 0);
-        //     auto src_memory = (char*)(src_data + src_off);
-        //     if (src_data < dst_data) {
-        //         for (uintptr i = 0; i < bytes; i++) {
-        //             int index = bytes - 1 - i;
-        //             dst_memory[index] = src_memory[index];
+        //     auto dst_addr = obj_ptr(dst_obj, dst_off);
+        //     auto dst = (char*)dst_addr;
+        //     auto src_addr = obj_ptr(src_obj, src_off);
+        //     auto src = (char*)src_addr;
+        //     if (src_addr < dst_addr) {
+        //         for (uintptr i = bytes; i > 0; i--) {
+        //             dst[i - 1] = src[i - 1];
         //         }
         //     } else {
         //         for (uintptr i = 0; i < bytes; i++) {
-        //             dst_memory[i] = src_memory[i];
+        //             dst[i] = src[i];
         //         }
         //     }
         // }
-        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAjHASA" +
-                "HwSIPi_HQEixLrAjHSSAHKSDnCczNNhcB0RUi5AAAAAP____9MicZIweYgSAHOSIn" +
-                "3SMH_IEQPtgw6RIgMOEgBzkn_yHXo6xdNhcB0EjHJD7Y0CkCINAhI_8FJOch18MM=")
-        @ASM(conditions = @Conditions(arch = X86), base64 = "U1dWi1QkGIt0" +
-                "JBSLfCQQMcC5AAAAAIPn_HQCiw8B8Yt0JByD4vx0AosCAfCLVCQgOchz" +
-                "EoXSdCAPtlwQ_4hcEf9KdfTrEoXSdA4x9g-2HDCIHDFGOfJ19F5fW8M=")
-        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5" +
-                "SfR-8ggBAYtAAABUKQFAuSkBA4s_AQjrYgEAVOQBALTqf2CyS4EEi2z9YJOEBA" +
-                "DxawEKiy1pbDgNaSw4Yf__VAYAABSkAAC0KhVAOIQEAPEKFQA4of__VMADX9Y=")
+        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrA" +
+                "jHASAHwSIPi_HQEixLrAjHSSAHKSDnCcyJNhcB0OEyJwQ8fRAAASP_JQg-2d" +
+                "AL_Qoh0AP9Jich17esbTYXAdBYxyQ8fQAAPtjQKQIg0CEj_wUk5yHXwww==")
+        @ASM(conditions = @Conditions(arch = X86), base64 = "U1dWi1QkGIt0JBSLfCQQMc" +
+                "C5AAAAAIPn_HQCiw8B8Yt0JByD4vx0AosCAfCLVCQgOchzHIXSdDSJ1pCQkJCQkE4P" +
+                "tlwQ_4hcEf-J8nXy6xyF0nQYMfaQkJCQkJCQkJCQD7YcMIgcMUY58nX0Xl9bww==")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC" +
+                "5SfR-8ggBAYtAAABUKQFAuSkBA4s_AQjrQgEAVMQBALQpBQDRCAUA0eoDBKor" +
+                "aWQ4hAQA8QtpKjiB__9UBgAAFKQAALQqFUA4hAQA8QoVADih__9UwANf1g==")
         @ASM(conditions = @Conditions(arch = ARM), base64 = "AEgt6Q2woOED4NDjAMCg4wA" +
-                "AoOMAAJ4VAQCA4AMQ0uMAwJEVCBCb5QMgjOAAAFLhCAAAKgAAUeMAiL0IASBC4gEAQO" +
-                "IBMNLnATDA5wEQUeL7__8aBQAA6gAAUeMDAAAKATDS5AEwwOQBEFHi-___GgCIveg=")
+                "AoOMAAJ4VARCA4AMA0uMAwJAVCACb5QMgjOABAFLhCAAAKgAAUOMAiL0IARBB4gEgQu" +
+                "IAMNLnADDB5wEAUOL7__8aBQAA6gAAUOMDAAAKATDS5AEwweQBAFDi-___GgCIveg=")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        // extern "C" void memmove_swap16(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
-        //                         uintptr src_off, uintptr count) {
-        //     auto dst_ptr = (uint32*)(dst_obj & (~3L));
-        //     uintptr dst_data = (uintptr)(dst_ptr ? *dst_ptr : 0);
-        //     auto dst_memory = (uint16*)(dst_data + dst_off);
-        //     auto src_ptr = (uint32*)(src_obj & (~3L));
-        //     uintptr src_data = (uintptr)(src_ptr ? *src_ptr : 0);
-        //     auto src_memory = (uint16*)(src_data + src_off);
-        //     if (src_data < dst_data) {
-        //         for (uintptr i = 0; i < count; i++) {
-        //             int index = count - 1 - i;
-        //             dst_memory[index] = __builtin_bswap16(src_memory[index]);
+        // extern "C" void memmove_swap16(uintptr dst_obj, uintptr dst_off,
+        //                                uintptr src_obj, uintptr src_off,
+        //                                uintptr count) {
+        //     auto dst_addr = obj_ptr(dst_obj, dst_off);
+        //     auto dst = (uint16*)dst_addr;
+        //     auto src_addr = obj_ptr(src_obj, src_off);
+        //     auto src = (uint16*)src_addr;
+        //     if (src_addr < dst_addr) {
+        //         for (uintptr i = count; i > 0; i--) {
+        //             dst[i - 1] = __builtin_bswap16(src[i - 1]);
         //         }
         //     } else {
         //         for (uintptr i = 0; i < count; i++) {
-        //             dst_memory[i] = __builtin_bswap16(src_memory[i]);
+        //             dst[i] = __builtin_bswap16(src[i]);
         //         }
         //     }
         // }
-        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAjHASAHwSIPi_HQEi" +
-                "xLrAjHSSAHKSDnCcz1NhcB0XEi5AAAAAP____9MicZIweYgSAHODx9AAEiJ90jB_x9ED7cMOmZBw" +
-                "cEIZkSJDDhIAc5J_8h14uskTYXAdB8xyWYPH4QAAAAAAA-3NEpmwcYIZok0SEj_wUk5yHXsww==")
+        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAjHASAHwS" +
+                "IPi_HQEixLrAjHSSAHKSDnCcyxmZmZmLg8fhAAAAAAATYXAdD9CD7dMQv5mwcEIZkKJT" +
+                "ED-Sf_ITYXAdejrJU2FwHQgMclmLg8fhAAAAAAAD7c0SmbBxghmiTRISP_BSTnIdezD")
         @ASM(conditions = @Conditions(arch = X86), base64 = "V1aLVCQUi3QkEIt8JAwxwLk" +
                 "AAAAAg-f8dAKLDwHxi3QkGIPi_HQCiwIB8ItUJBw5yHMghdJ0OpCQkJCQkJCQkA-3dF" +
                 "D-ZsHGCGaJdFH-SnXv6x6F0nQaMfaQkJCQkJCQD7c8cGbBxwhmiTxxRjnyde9eX8M=")
-        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5SfR-8gg" +
-                "BAYtAAABUKQFAuSkBA4s_AQjrogEAVGQCALTqf2CyS4EEi2z9X5OEBADxawEKiy1pbHit" +
-                "CcBarX0QUw1pLHgh__9UCAAAFOQAALQqJUB4hAQA8UoJwFpKfRBTCiUAeGH__1TAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5SfR-8g" +
+                "gBAYtAAABUKQFAuSkBA4s_AQjrggEAVEQCALQpCQDRCAkA0St5ZHjqAwSqhAQA8WsJwF" +
+                "prfRBTC3kqeEH__1QIAAAU5AAAtColQHiEBADxSgnAWkp9EFMKJQB4Yf__VMADX9Y=")
         @ASM(conditions = @Conditions(arch = ARM), base64 = "AEgt6Q2woOED4NDjAMCg4wAAoOMAAJ4VAR" +
-                "CA4AMA0uMAwJAVCACb5QMgjOABAFLhDAAAKgAAUOMAiL0IATDg44Awg-ADIILgAxCB4LIwUuAzP7_m" +
+                "CA4AMA0uMAwJAVCACb5QMgjOABAFLhDAAAKgAAUOMAiL0IATDg44Awg-ADEIHgAyCC4LIwUuAzP7_m" +
                 "Izig4bIwQeABAFDi-f__GgcAAOoAAFDjBQAACrIw0uAzP7_mIzig4bIwweABAFDi-f__GgCIveg=")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap16(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        // extern "C" void memmove_swap32(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
-        //                         uintptr src_off, uintptr count) {
-        //     auto dst_ptr = (uint32*)(dst_obj & (~3L));
-        //     uintptr dst_data = (uintptr)(dst_ptr ? *dst_ptr : 0);
-        //     auto dst_memory = (uint32*)(dst_data + dst_off);
-        //     auto src_ptr = (uint32*)(src_obj & (~3L));
-        //     uintptr src_data = (uintptr)(src_ptr ? *src_ptr : 0);
-        //     auto src_memory = (uint32*)(src_data + src_off);
-        //     if (src_data < dst_data) {
-        //         for (uintptr i = 0; i < count; i++) {
-        //             int index = count - 1 - i;
-        //             dst_memory[index] = __builtin_bswap32(src_memory[index]);
+        // extern "C" void memmove_swap32(uintptr dst_obj, uintptr dst_off,
+        //                                uintptr src_obj, uintptr src_off,
+        //                                uintptr count) {
+        //     auto dst_addr = obj_ptr(dst_obj, dst_off);
+        //     auto dst = (uint32*)dst_addr;
+        //     auto src_addr = obj_ptr(src_obj, src_off);
+        //     auto src = (uint32*)src_addr;
+        //     if (src_addr < dst_addr) {
+        //         for (uintptr i = count; i > 0; i--) {
+        //             dst[i - 1] = __builtin_bswap32(src[i - 1]);
         //         }
         //     } else {
         //         for (uintptr i = 0; i < count; i++) {
-        //             dst_memory[i] = __builtin_bswap32(src_memory[i]);
+        //             dst[i] = __builtin_bswap32(src[i]);
         //         }
         //     }
         // }
-        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAjHASAHwSIPi_H" +
-                "QEixLrAjHSSAHKSDnCczlNhcB0WEi5AAAAAP____9MicZIweYgSAHODx9AAEiJ90jB_x5Eiww" +
-                "6QQ_JRIkMOEgBzkn_yHXm6yRNhcB0HzHJZmZmZi4PH4QAAAAAAIs0ig_OiTSISP_BSTnIdfDD")
+        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrA" +
+                "jHASAHwSIPi_HQEixLrAjHSSAHKSDnCcyNNhcB0OEyJwQ8fRAAASP_JQot0g" +
+                "vwPzkKJdID8SYnIdezrGk2FwHQVMckPHwCLNIoPzok0iEj_wUk5yHXwww==")
         @ASM(conditions = @Conditions(arch = X86), base64 = "V1aLVCQUi3QkEIt8JAwxwL" +
-                "kAAAAAg-f8dAKLDwHxi3QkGIPi_HQCiwIB8ItUJBw5yHMchdJ0NpCQkJCQkJCQkIt0" +
-                "kPwPzol0kfxKdfPrHoXSdBox9pCQkJCQkJCQkJCQizywD8-JPLFGOfJ1815fww==")
-        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5SfR-" +
-                "8ggBAYtAAABUKQFAuSkBA4s_AQjrggEAVCQCALTqf2CyS4EEi2z9XpOEBADxawEKiy" +
-                "1pbLitCcBaDWksuEH__1QHAAAUxAAAtCpFQLiEBADxSgnAWgpFALiB__9UwANf1g==")
+                "kAAAAAg-f8dAKLDwHxi3QkGIPi_HQCiwIB8ItUJBw5yHMehdJ0NonWkJCQkJCQkE6L" +
+                "fJD8D8-JfJH8ifJ18eschdJ0GDH2kJCQkJCQkJCQizywD8-JPLFGOfJ1815fww==")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5Sf" +
+                "R-8ggBAYtAAABUKQFAuSkBA4s_AQjrYgEAVAQCALQpEQDRCBEA0St5ZLjqAwSqhA" +
+                "QA8WsJwFoLeSq4Yf__VAcAABTEAAC0KkVAuIQEAPFKCcBaCkUAuIH__1TAA1_W")
         @ASM(conditions = @Conditions(arch = ARM), base64 = "AEgt6Q2woOED4NDjAMCg4wAAoOM" +
-                "AAJ4VARCA4AMA0uMAwJAVCACb5QMgjOABAFLhCQAAKgAAUOMAiL0IBCBC4gQQQeIAMZLnMz" +
+                "AAJ4VARCA4AMA0uMAwJAVCACb5QMgjOABAFLhCQAAKgAAUOMAiL0IBBBB4gQgQuIAMZLnMz" +
                 "-_5gAxgecBAFDi-v__GgYAAOoAAFDjBAAACgQwkuQzP7_mBDCB5AEAUOL6__8aAIi96A==")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap32(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        // extern "C" void memmove_swap64(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
-        //                         uintptr src_off, uintptr count) {
-        //     auto dst_ptr = (uint32*)(dst_obj & (~3L));
-        //     uintptr dst_data = (uintptr)(dst_ptr ? *dst_ptr : 0);
-        //     auto dst_memory = (uint64*)(dst_data + dst_off);
-        //     auto src_ptr = (uint32*)(src_obj & (~3L));
-        //     uintptr src_data = (uintptr)(src_ptr ? *src_ptr : 0);
-        //     auto src_memory = (uint64*)(src_data + src_off);
-        //     if (src_data < dst_data) {
-        //         for (uintptr i = 0; i < count; i++) {
-        //             int index = count - 1 - i;
-        //             dst_memory[index] = __builtin_bswap64(src_memory[index]);
+        // extern "C" void memmove_swap64(uintptr dst_obj, uintptr dst_off,
+        //                                uintptr src_obj, uintptr src_off,
+        //                                uintptr count) {
+        //     auto dst_addr = obj_ptr(dst_obj, dst_off);
+        //     auto dst = (uint64*)dst_addr;
+        //     auto src_addr = obj_ptr(src_obj, src_off);
+        //     auto src = (uint64*)src_addr;
+        //     if (src_addr < dst_addr) {
+        //         for (uintptr i = count; i > 0; i--) {
+        //             dst[i - 1] = __builtin_bswap64(src[i - 1]);
         //         }
         //     } else {
         //         for (uintptr i = 0; i < count; i++) {
-        //             dst_memory[i] = __builtin_bswap64(src_memory[i]);
+        //             dst[i] = __builtin_bswap64(src[i]);
         //         }
         //     }
         // }
-        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAjHASAHwSIPi_HQE" +
-                "ixLrAjHSSAHKSDnCczlNhcB0W0i5AAAAAP____9MicZIweYgSAHODx9AAEiJ90jB_x1Miww6SQ_" +
-                "JTIkMOEgBzkn_yHXm6ydNhcB0IjHJZmZmZi4PH4QAAAAAAEiLNMpID85IiTTISP_BSTnIde3D")
-        @ASM(conditions = @Conditions(arch = X86), base64 = "U1dWi1QkGIt0JBSLfCQQMcC5AA" +
-                "AAAIPn_HQCiw8B8Yt0JByD4vx0AosCAfCLVCQgOchzJYXSdD-QkJCQkJCQkIt00PiLfND8" +
-                "D88Pzol00fyJfNH4SnXp6x6F0nQaMfaQizzwi1zwBA_LD8-JfPEEiRzxRjnydeleX1vD")
-        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5SfR-" +
-                "8ggBAYtAAABUKQFAuSkBA4s_AQjrggEAVCQCALTqf2CyS4EEi2z9XZOEBADxawEKiy" +
-                "1pbPitDcDaDWks-EH__1QHAAAUxAAAtCqFQPiEBADxSg3A2gqFAPiB__9UwANf1g==")
+        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIPn_HQEiwfrAj" +
+                "HASAHwSIPi_HQEixLrAjHSSAHKSDnCcyRNhcB0O0yJwQ8fRAAASP_JSot0wvh" +
+                "ID85KiXTA-EmJyHXr6xxNhcB0FzHJZpBIizTKSA_OSIk0yEj_wUk5yHXtww==")
+        @ASM(conditions = @Conditions(arch = X86), base64 = "U1dWi1QkGIt0JBSLfCQQMcC5AAAAAIPn_H" +
+                "QCiw8B8Yt0JByD4vx0AosCAfCLVCQgOchzJ4XSdE-J1pCQkJCQkE6LfND4i1zQ_A_LD8-JfNH8iVzR" +
+                "-InydefrLIXSdCgx9pCQkJCQkJCQkJCQkJCQkIs88Itc8AQPyw_PiXzxBIkc8UY58nXpXl9bww==")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 = "CPR-8kAAAFQIAUC5Sf" +
+                "R-8ggBAYtAAABUKQFAuSkBA4s_AQjrYgEAVAQCALQpIQDRCCEA0St5ZPjqAwSqhA" +
+                "QA8WsNwNoLeSr4Yf__VAcAABTEAAC0KoVA-IQEAPFKDcDaCoUA-IH__1TAA1_W")
         @ASM(conditions = @Conditions(arch = ARM), base64 = "8Egt6RCwjeID4NDjAMC" +
                 "g4wAAoOMAAJ4VARCA4AMA0uMAwJAVCACb5QMgjOABAFLhDgAAKgAAUOMWAAAKBz" +
-                "Dg44Axg-ADIILgAxCB4NBAwuE1b7_mNH-_5vBgweEIIELiCBBB4gEAUOL3__8aC" +
+                "Dg44Axg-ADEIHgAyCC4NBAwuE1b7_mNH-_5vBgweEIEEHiCCBC4gEAUOL3__8aC" +
                 "QAA6gAAUOMHAAAK0EDC4TVvv-Y0f7_m8GDB4QggguIIEIHiAQBQ4vf__xrwiL3o")
         @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove_swap64(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
