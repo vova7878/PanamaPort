@@ -180,13 +180,12 @@ final class _LLVMCallingConvention {
                                 return new WrapperStorage(gl, tmp[0]);
                             }
                         } else {
-                            MemoryLayout wrapper = structLayout(tmp[0], tmp[1]);
                             int gp_needed = (isFP(tmp[0]) ? 0 : 1) + (isFP(tmp[1]) ? 0 : 1);
                             int fp_needed = (isFP(tmp[0]) ? 1 : 0) + (isFP(tmp[1]) ? 1 : 0);
                             if (arg_regs[0] >= gp_needed && arg_regs[1] >= fp_needed) {
                                 arg_regs[0] -= gp_needed;
                                 arg_regs[1] -= fp_needed;
-                                return new WrapperStorage(gl, wrapper);
+                                return new WrapperStorage(gl, structLayout(tmp[0], tmp[1]));
                             }
                         }
                     }

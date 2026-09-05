@@ -1235,7 +1235,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         Consumer<CodeBuilder> handle_exception = ib -> ib
                 .invoke(STATIC, handle_exception_id, ib.l(exception_reg))
-                // Unreachable, but you need to explicitly
+                // Unreachable, but we need to explicitly
                 //  tell the verifier that execution ends here
                 .throw_(ib.l(exception_reg));
 

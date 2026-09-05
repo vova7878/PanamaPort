@@ -14,9 +14,12 @@ This project contains 4 sublibraries:
 ### Requirements
 
 - JDK 21+
-- Gradle 8.7+
-- Android Gradle plugin 8.6.0+
-- compileSdk 35+
+- Gradle 9.3.1+
+- Android Gradle plugin 9.1.1+
+- compileSdk 37+
+
+Using versions lower than those listed may cause compilation and runtime issues.
+Older versions of R8/D8 have known bugs that prevent the library from working properly
 
 ### Get started
 
@@ -24,7 +27,7 @@ Just add this library to the list of dependencies:
 
 ```
 dependencies {
-    implementation 'io.github.vova7878.panama:Core:v0.1.0'
+    implementation 'io.github.vova7878.panama:Core:<version>'
 }
 ```
 
