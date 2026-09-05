@@ -1,38 +1,10 @@
 package com.v7878.unsafe;
 
-import static com.v7878.llvm.Core.LLVMAddFunction;
-import static com.v7878.llvm.Core.LLVMAddIncoming;
-import static com.v7878.llvm.Core.LLVMAppendBasicBlock;
-import static com.v7878.llvm.Core.LLVMAtomicOrdering.LLVMAtomicOrderingSequentiallyConsistent;
-import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpAnd;
-import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpOr;
-import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXchg;
-import static com.v7878.llvm.Core.LLVMAtomicRMWBinOp.LLVMAtomicRMWBinOpXor;
-import static com.v7878.llvm.Core.LLVMBuildAdd;
-import static com.v7878.llvm.Core.LLVMBuildAtomicCmpXchg;
-import static com.v7878.llvm.Core.LLVMBuildAtomicRMW;
-import static com.v7878.llvm.Core.LLVMBuildCondBr;
-import static com.v7878.llvm.Core.LLVMBuildExtractValue;
-import static com.v7878.llvm.Core.LLVMBuildICmp;
-import static com.v7878.llvm.Core.LLVMBuildInBoundsGEP;
-import static com.v7878.llvm.Core.LLVMBuildLoad;
-import static com.v7878.llvm.Core.LLVMBuildPhi;
-import static com.v7878.llvm.Core.LLVMBuildRet;
-import static com.v7878.llvm.Core.LLVMBuildRetVoid;
-import static com.v7878.llvm.Core.LLVMBuildStore;
-import static com.v7878.llvm.Core.LLVMBuildSub;
-import static com.v7878.llvm.Core.LLVMGetInsertBlock;
-import static com.v7878.llvm.Core.LLVMGetParams;
-import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntEQ;
-import static com.v7878.llvm.Core.LLVMIntPredicate.LLVMIntULT;
-import static com.v7878.llvm.Core.LLVMPositionBuilderAtEnd;
-import static com.v7878.llvm.Core.LLVMSetAlignment;
-import static com.v7878.llvm.Core.LLVMSetOrdering;
 import static com.v7878.unsafe.InstructionSet.ARM;
 import static com.v7878.unsafe.InstructionSet.ARM64;
 import static com.v7878.unsafe.InstructionSet.X86;
 import static com.v7878.unsafe.InstructionSet.X86_64;
-import static com.v7878.unsafe.foreign.BulkLinker.CallType.CRITICAL;
+import static com.v7878.unsafe.foreign.BulkLinker.CallType.FAST_STATIC;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BOOL;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.BYTE;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.INT;
@@ -41,17 +13,6 @@ import static com.v7878.unsafe.foreign.BulkLinker.MapType.LONG_AS_WORD;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.OBJECT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.SHORT;
 import static com.v7878.unsafe.foreign.BulkLinker.MapType.VOID;
-import static com.v7878.unsafe.llvm.LLVMBuilder.call;
-import static com.v7878.unsafe.llvm.LLVMBuilder.const_intptr;
-import static com.v7878.unsafe.llvm.LLVMBuilder.local_jobj_to_ptr;
-import static com.v7878.unsafe.llvm.LLVMTypes.fn_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.int16_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.int1_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.int32_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.int64_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.intptr_t;
-import static com.v7878.unsafe.llvm.LLVMTypes.void_t;
-import static com.v7878.unsafe.llvm.LLVMUtils.generateFunctionCodeArray;
 import static com.v7878.unsafe.misc.Math.convEndian16;
 import static com.v7878.unsafe.misc.Math.convEndian32;
 import static com.v7878.unsafe.misc.Math.convEndian64;
@@ -61,726 +22,707 @@ import static com.v7878.unsafe.misc.Math.i2f;
 import static com.v7878.unsafe.misc.Math.l2d;
 
 import com.v7878.foreign.Arena;
-import com.v7878.llvm.Core.LLVMAtomicRMWBinOp;
-import com.v7878.llvm.Types.LLVMBuilderRef;
-import com.v7878.llvm.Types.LLVMContextRef;
-import com.v7878.llvm.Types.LLVMModuleRef;
-import com.v7878.llvm.Types.LLVMTypeRef;
-import com.v7878.llvm.Types.LLVMValueRef;
-import com.v7878.r8.annotations.DoNotObfuscate;
 import com.v7878.r8.annotations.DoNotOptimize;
 import com.v7878.r8.annotations.DoNotShrink;
 import com.v7878.r8.annotations.DoNotShrinkType;
 import com.v7878.unsafe.foreign.BulkLinker;
 import com.v7878.unsafe.foreign.BulkLinker.ASM;
-import com.v7878.unsafe.foreign.BulkLinker.ASMGenerator;
 import com.v7878.unsafe.foreign.BulkLinker.CallSignature;
 import com.v7878.unsafe.foreign.BulkLinker.Conditions;
-import com.v7878.unsafe.llvm.LLVMTypes;
 
 import java.util.Optional;
-import java.util.function.Function;
 
+// Compiled by clang with flags: "-O1 -ffreestanding --target=<arch>-linux-android26"
+// For aarch64: -mno-outline-atomics -mbranch-protection=none
+// For i686: 64-bit atomics use __sync_* builtins (lock cmpxchg8b) to avoid library calls
+//
+// inline uintptr obj_ptr(uintptr obj, uintptr off) {
+//     auto ptr = (uint32*)(obj & (~3L));
+//     uintptr data = ptr ? *ptr : 0;
+//     return data + off;
+// }
+// TODO: RISCV64
 public class ExtraMemoryAccess {
+    public static boolean isInitialized() {
+        return ClassUtils.isClassInitialized(Native.class);
+    }
+
     @DoNotShrinkType
     @DoNotOptimize
-    private abstract static class EarlyNative {
-        @DoNotShrink
-        private static final Arena SCOPE = Arena.ofAuto();
-
-        /*
-        extern "C" void memset(uintptr obj, uintptr off, uintptr bytes, char value) {
-            auto ptr = (uint32*)(obj & (~3L));
-            uintptr data = ptr ? *ptr : 0;
-            auto memory = (char*)(data + off);
-            for (uintptr i = 0; i < bytes; i++) {
-                memory[i] = value;
-            }
-        }
-        */
-        @ASM(conditions = @Conditions(arch = X86_64), code = {
-                72, -125, -25, -4, 116, 9, -117, 7, 72, -123, -46, 117, 9, -21, 23, 49,
-                -64, 72, -123, -46, 116, 16, 72, 1, -16, 49, -10, -120, 12, 48, 72, -1,
-                -58, 72, 57, -14, 117, -11, -61
-        })
-        @ASM(conditions = @Conditions(arch = X86), code = {
-                86, -117, 68, 36, 16, -117, 76, 36, 8, -125, -31, -4, 116, 8, -117, 9,
-                -123, -64, 117, 8, -21, 25, 49, -55, -123, -64, 116, 19, 15, -74, 84, 36,
-                20, 3, 76, 36, 12, 49, -10, -120, 20, 49, 70, 57, -16, 117, -8, 94, -61
-        })
-        @ASM(conditions = @Conditions(arch = ARM64), code = {
-                8, -12, 126, -14, 64, 0, 0, 84, 8, 1, 64, -71, -94, 0, 0, -76,
-                8, 1, 1, -117, 66, 4, 0, -15, 3, 21, 0, 56, -63, -1, -1, 84,
-                -64, 3, 95, -42
-        })
-        @ASM(conditions = @Conditions(arch = ARM), code = {
-                3, 0, -48, -29, 0, 0, -112, 21, 0, 0, -96, 3, 0, 72, 45, -23,
-                13, -80, -96, -31, 0, 0, 82, -29, 0, -120, -67, 8, 1, 0, -128, -32,
-                1, 48, -64, -28, 1, 32, 82, -30, -4, -1, -1, 26, 0, -120, -67, -24
-        })
-        // TODO: RISCV64
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, LONG_AS_WORD, BYTE})
+    private abstract static class Native {
+        // extern "C" void memset(uintptr env, uintptr clazz, uintptr obj, uintptr off, uintptr bytes, uint8_t value) {
+        //     auto dst = (uint8_t*)obj_ptr(obj, off);
+        //     for (uintptr i = 0; i < bytes; i++) {
+        //         dst[i] = value;
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQJiwJNhcB1CesdMcBNhcB0FkgByDHJDx9EAABEiAwISP_BSTnIdfTDDx8A")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "VotEJBiLTCQQg-H8dAiLCYXAdQjrIjHJhcB0HA-2VCQcA0wkFDH2kJCQkJCQkJCQiBQxRjnwdfhew5CQkJCQkA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5pAAAtAgBA4uEBADxBRUAOMH__1TAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIAJvlAxDS4wAgkRUAIKADAABQ4wCIvQgMEJvlAyCC4AEQwuQBAFDi_P__GgCIveg")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG_AS_WORD, LONG_AS_WORD, BYTE})
         abstract void memset(Object base, long offset, long bytes, byte value);
 
-        /*
-        extern "C" void memmove(uintptr dst_obj, uintptr dst_off, uintptr src_obj,
-                                uintptr src_off, uintptr bytes) {
-            auto dst_ptr = (uint32*)(dst_obj & (~3L));
-            uintptr dst_data = ((uintptr)(dst_ptr ? *dst_ptr : 0)) + dst_off;
-            auto dst_memory = (char*)dst_data;
-            auto src_ptr = (uint32*)(src_obj & (~3L));
-            uintptr src_data = ((uintptr)(src_ptr ? *src_ptr : 0)) + src_off;
-            auto src_memory = (char*)src_data;
-            if (src_data < dst_data) {
-                for (uintptr i = 0; i < bytes; i++) {
-                    int index = bytes - 1 - i;
-                    dst_memory[index] = src_memory[index];
-                }
-            } else {
-                for (uintptr i = 0; i < bytes; i++) {
-                    dst_memory[i] = src_memory[i];
-                }
-            }
-        }
-         */
-        @ASM(conditions = @Conditions(arch = X86_64), code = {
-                72, -125, -25, -4, 116, 4, -117, 7, -21, 2, 49, -64, 72, 1, -16, 72,
-                -125, -30, -4, 116, 4, -117, 18, -21, 2, 49, -46, 72, 1, -54, 72, 57,
-                -62, 115, 51, 77, -123, -64, 116, 69, 72, -71, 0, 0, 0, 0, -1, -1,
-                -1, -1, 76, -119, -58, 72, -63, -26, 32, 72, 1, -50, 72, -119, -9, 72,
-                -63, -1, 32, 68, 15, -74, 12, 58, 68, -120, 12, 56, 72, 1, -50, 73,
-                -1, -56, 117, -24, -21, 23, 77, -123, -64, 116, 18, 49, -55, 15, -74, 52,
-                10, 64, -120, 52, 8, 72, -1, -63, 73, 57, -56, 117, -16, -61
-        })
-        @ASM(conditions = @Conditions(arch = X86), code = {
-                83, 87, 86, -117, 84, 36, 24, -117, 116, 36, 20, -117, 124, 36, 16, 49,
-                -64, -71, 0, 0, 0, 0, -125, -25, -4, 116, 2, -117, 15, 1, -15, -117,
-                116, 36, 28, -125, -30, -4, 116, 2, -117, 2, 1, -16, -117, 84, 36, 32,
-                57, -56, 115, 18, -123, -46, 116, 32, 15, -74, 92, 16, -1, -120, 92, 17,
-                -1, 74, 117, -12, -21, 18, -123, -46, 116, 14, 49, -10, 15, -74, 28, 48,
-                -120, 28, 49, 70, 57, -14, 117, -12, 94, 95, 91, -61
-        })
-        @ASM(conditions = @Conditions(arch = ARM64), code = {
-                8, -12, 126, -14, 64, 0, 0, 84, 8, 1, 64, -71, 73, -12, 126, -14,
-                8, 1, 1, -117, 64, 0, 0, 84, 41, 1, 64, -71, 41, 1, 3, -117,
-                63, 1, 8, -21, 98, 1, 0, 84, -28, 1, 0, -76, -22, 127, 96, -78,
-                75, -127, 4, -117, 108, -3, 96, -109, -124, 4, 0, -15, 107, 1, 10, -117,
-                45, 105, 108, 56, 13, 105, 44, 56, 97, -1, -1, 84, 6, 0, 0, 20,
-                -92, 0, 0, -76, 42, 21, 64, 56, -124, 4, 0, -15, 10, 21, 0, 56,
-                -95, -1, -1, 84, -64, 3, 95, -42
-        })
-        @ASM(conditions = @Conditions(arch = ARM), code = {
-                0, 72, 45, -23, 13, -80, -96, -31, 3, -32, -48, -29, 0, -64, -96, -29,
-                0, 0, -96, -29, 0, 0, -98, 21, 1, 0, -128, -32, 3, 16, -46, -29,
-                0, -64, -111, 21, 8, 16, -101, -27, 3, 32, -116, -32, 0, 0, 82, -31,
-                8, 0, 0, 42, 0, 0, 81, -29, 0, -120, -67, 8, 1, 32, 66, -30,
-                1, 0, 64, -30, 1, 48, -46, -25, 1, 48, -64, -25, 1, 16, 81, -30,
-                -5, -1, -1, 26, 5, 0, 0, -22, 0, 0, 81, -29, 3, 0, 0, 10,
-                1, 48, -46, -28, 1, 48, -64, -28, 1, 16, 81, -30, -5, -1, -1, 26,
-                0, -120, -67, -24
-        })
-        // TODO: RISCV64
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
+        // extern "C" void memmove(uintptr env, uintptr clazz, uintptr dst_obj, uintptr dst_off, uintptr src_obj,
+        //                         uintptr src_off, uintptr bytes) {
+        //     auto dst_addr = obj_ptr(dst_obj, dst_off);
+        //     auto dst = (char*)dst_addr;
+        //     auto src_addr = obj_ptr(src_obj, src_off);
+        //     auto src = (char*)src_addr;
+        //     if (src_addr < dst_addr) {
+        //         for (uintptr i = bytes; i > 0; i--) {
+        //             dst[i - 1] = src[i - 1];
+        //         }
+        //     } else {
+        //         for (uintptr i = 0; i < bytes; i++) {
+        //             dst[i] = src[i];
+        //         }
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEiwLrAjHASAHISYPg_HQFQYsI6wIxyUiLVCQITAHJSDnBcytIhdJ0QkiJ1mZmZmZmZi4PH4QAAAAAAEj_zg-2fBH_QIh8EP9IifJ17uscSIXSdBcx9g8fRAAAD7Y8MUCIPDBI_8ZIOfJ18MNmZmZmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U1dWi1QkIIt0JByLfCQYMcC5AAAAAIPn_HQCiw8B8Yt0JCSD4vx0AosCAfCLVCQoOchzHIXSdDSJ1pCQkJCQkE4PtlwQ_4hcEf-J8nXy6xyF0nQYMfaQkJCQkJCQkJCQD7YcMIgcMUY58nX0Xl9bww")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5ifR-8ggBA4tAAABUKQFAuSkBBYs_AQjrQgEAVMYBALQpBQDRCAUA0eoDBqoraWY4xgQA8QtpKjiB__9UBgAAFKYAALQqFUA4xgQA8QoVADih__9UwANf1g")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEI4JvlAwDS4wAgoOMAEKDjABCQFQzAm-UDEIHgAwDe4wAgkBUQAJvlDCCC4AEAUuEIAAAqAABQ4wCIvQgBEEHiASBC4gAw0ucAMMHnAQBQ4vv__xoFAADqAABQ4wMAAAoBMNLkATDB5AEAUOL7__8aAIi96A")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
         abstract void memmove(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-        static final EarlyNative INSTANCE = BulkLinker.generateImpl(SCOPE,
-                EarlyNative.class, name -> Optional.empty());
-    }
+        // extern "C" void memmove_swap16(uintptr env, uintptr clazz, uintptr dst_obj, uintptr dst_off,
+        //                                uintptr src_obj, uintptr src_off, uintptr count) {
+        //     auto dst_addr = obj_ptr(dst_obj, dst_off);
+        //     auto dst = (uint16*)dst_addr;
+        //     auto src_addr = obj_ptr(src_obj, src_off);
+        //     auto src = (uint16*)src_addr;
+        //     if (src_addr < dst_addr) {
+        //         for (uintptr i = count; i > 0; i--) {
+        //             dst[i - 1] = __builtin_bswap16(src[i - 1]);
+        //         }
+        //     } else {
+        //         for (uintptr i = 0; i < count; i++) {
+        //             dst[i] = __builtin_bswap16(src[i]);
+        //         }
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEiwLrAjHASAHISYPg_HQFQYsI6wIxyUiLVCQITAHJSDnBcyQPH4AAAAAASIXSdD8Pt3RR_mbBxghmiXRQ_kj_ykiF0nXq6ydIhdJ0IjH2ZmZmLg8fhAAAAAAAD7c8cWbBxwhmiTxwSP_GSDnydezDZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "V1aLVCQci3QkGIt8JBQxwLkAAAAAg-f8dAKLDwHxi3QkIIPi_HQCiwIB8ItUJCQ5yHMghdJ0OpCQkJCQkJCQkA-3dFD-ZsHGCGaJdFH-SnXv6x6F0nQaMfaQkJCQkJCQD7c8cGbBxwhmiTxxRjnyde9eX8OQkJCQkJCQkJCQkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5ifR-8ggBA4tAAABUKQFAuSkBBYs_AQjrggEAVEYCALQpCQDRCAkA0St5ZnjqAwaqxgQA8WsJwFprfRBTC3kqeEH__1QIAAAU5gAAtColQHjGBADxSgnAWkp9EFMKJQB4Yf__VMADX9Y")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEI4JvlAwDS4wAgoOMAEKDjABCQFQzAm-UDEIHgAwDe4wAgkBUQAJvlDCCC4AEAUuEMAAAqAABQ4wCIvQgBMODjgDCD4AMQgeADIILgsjBS4DM_v-YjOKDhsjBB4AEAUOL5__8aBwAA6gAAUOMFAAAKsjDS4DM_v-YjOKDhsjDB4AEAUOL5__8aAIi96A")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract void memmove_swap16(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-    public static boolean isEarlyNativeInitialized() {
-        return ClassUtils.isClassInitialized(EarlyNative.class);
-    }
+        // extern "C" void memmove_swap32(uintptr env, uintptr clazz, uintptr dst_obj, uintptr dst_off,
+        //                                uintptr src_obj, uintptr src_off, uintptr count) {
+        //     auto dst_addr = obj_ptr(dst_obj, dst_off);
+        //     auto dst = (uint32*)dst_addr;
+        //     auto src_addr = obj_ptr(src_obj, src_off);
+        //     auto src = (uint32*)src_addr;
+        //     if (src_addr < dst_addr) {
+        //         for (uintptr i = count; i > 0; i--) {
+        //             dst[i - 1] = __builtin_bswap32(src[i - 1]);
+        //         }
+        //     } else {
+        //         for (uintptr i = 0; i < count; i++) {
+        //             dst[i] = __builtin_bswap32(src[i]);
+        //         }
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEiwLrAjHASAHISYPg_HQFQYsI6wIxyUiLVCQITAHJSDnBcytIhdJ0QkiJ1mZmZmZmZi4PH4QAAAAAAEj_zot8kfwPz4l8kPxIifJ17uscSIXSdBcx9g8fRAAAizyxD8-JPLBI_8ZIOfJ18MNmZmZmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "V1aLVCQci3QkGIt8JBQxwLkAAAAAg-f8dAKLDwHxi3QkIIPi_HQCiwIB8ItUJCQ5yHMehdJ0NonWkJCQkJCQkE6LfJD8D8-JfJH8ifJ18eschdJ0GDH2kJCQkJCQkJCQizywD8-JPLFGOfJ1815fww")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5ifR-8ggBA4tAAABUKQFAuSkBBYs_AQjrYgEAVAYCALQpEQDRCBEA0St5ZrjqAwaqxgQA8WsJwFoLeSq4Yf__VAcAABTGAAC0KkVAuMYEAPFKCcBaCkUAuIH__1TAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEI4JvlAwDS4wAgoOMAEKDjABCQFQzAm-UDEIHgAwDe4wAgkBUQAJvlDCCC4AEAUuEJAAAqAABQ4wCIvQgEEEHiBCBC4gAxkuczP7_mADGB5wEAUOL6__8aBgAA6gAAUOMEAAAKBDCS5DM_v-YEMIHkAQBQ4vr__xoAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract void memmove_swap32(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
 
-    @DoNotShrinkType
-    @DoNotOptimize
-    // TODO: cache
-    private abstract static class Native {
+        // extern "C" void memmove_swap64(uintptr env, uintptr clazz, uintptr dst_obj, uintptr dst_off,
+        //                                uintptr src_obj, uintptr src_off, uintptr count) {
+        //     auto dst_addr = obj_ptr(dst_obj, dst_off);
+        //     auto dst = (uint64*)dst_addr;
+        //     auto src_addr = obj_ptr(src_obj, src_off);
+        //     auto src = (uint64*)src_addr;
+        //     if (src_addr < dst_addr) {
+        //         for (uintptr i = count; i > 0; i--) {
+        //             dst[i - 1] = __builtin_bswap64(src[i - 1]);
+        //         }
+        //     } else {
+        //         for (uintptr i = 0; i < count; i++) {
+        //             dst[i] = __builtin_bswap64(src[i]);
+        //         }
+        //     }
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEiwLrAjHASAHISYPg_HQFQYsI6wIxyUiLVCQITAHJSDnBcy5IhdJ0RUiJ1mZmZmZmZi4PH4QAAAAAAEj_zkiLfNH4SA_PSIl80PhIifJ16-scSIXSdBcx9maQSIs88UgPz0iJPPBI_8ZIOfJ17cNmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U1dWi1QkIIt0JByLfCQYMcC5AAAAAIPn_HQCiw8B8Yt0JCSD4vx0AosCAfCLVCQoOchzJ4XSdE-J1pCQkJCQkE6LfND4i1zQ_A_LD8-JfNH8iVzR-InydefrLIXSdCgx9pCQkJCQkJCQkJCQkJCQkIs88Itc8AQPyw_PiXzxBIkc8UY58nXpXl9bw5CQkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5ifR-8ggBA4tAAABUKQFAuSkBBYs_AQjrYgEAVAYCALQpIQDRCCEA0St5ZvjqAwaqxgQA8WsNwNoLeSr4Yf__VAcAABTGAAC0KoVA-MYEAPFKDcDaCoUA-IH__1TAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "8Egt6RCwjeII4JvlAwDS4wAgoOMAEKDjABCQFQzAm-UDEIHgAwDe4wAgkBUQAJvlDCCC4AEAUuEOAAAqAABQ4xYAAAoHMODjgDGD4AMQgeADIILg0EDC4TVvv-Y0f7_m8GDB4QgQQeIIIELiAQBQ4vf__xoJAADqAABQ4wcAAArQQMLhNW-_5jR_v-bwYMHhCCCC4ggQgeIBAFDi9___GvCIveg")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
+        abstract void memmove_swap64(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
+
+
         @DoNotShrink
         private static final Arena SCOPE = Arena.ofAuto();
 
-        @SuppressWarnings("SameParameterValue")
-        private static LLVMValueRef gen_memmove_modify(
-                LLVMContextRef context, LLVMModuleRef module, LLVMBuilderRef builder, String name,
-                LLVMTypeRef element_type, int align, Function<LLVMValueRef, LLVMValueRef> action) {
-            var one = const_intptr(context, 1);
-            var zero = const_intptr(context, 0);
-
-            var type = fn_t(void_t(context), intptr_t(context),
-                    intptr_t(context), intptr_t(context), intptr_t(context), intptr_t(context));
-            var function = LLVMAddFunction(module, name, type);
-            var args = LLVMGetParams(function);
-
-            var start = LLVMAppendBasicBlock(function, "");
-            var body = LLVMAppendBasicBlock(function, "");
-            var forward = LLVMAppendBasicBlock(function, "");
-            var backward = LLVMAppendBasicBlock(function, "");
-            var end = LLVMAppendBasicBlock(function, "");
-
-            LLVMPositionBuilderAtEnd(builder, start);
-            var length = args[4];
-            var test_zero = LLVMBuildICmp(builder, LLVMIntEQ, length, zero, "");
-            LLVMBuildCondBr(builder, test_zero, end, body);
-
-            LLVMPositionBuilderAtEnd(builder, body);
-            var langth_m1 = LLVMBuildSub(builder, length, one, "");
-            var dst = local_jobj_to_ptr(builder, args[0], args[1], element_type);
-            var src = local_jobj_to_ptr(builder, args[2], args[3], element_type);
-            body = LLVMGetInsertBlock(builder);
-
-            var test_order = LLVMBuildICmp(builder, LLVMIntULT, dst, src, "");
-            LLVMBuildCondBr(builder, test_order, forward, backward);
-
-            {
-                LLVMPositionBuilderAtEnd(builder, forward);
-                var counter = LLVMBuildPhi(builder, intptr_t(context), "");
-                LLVMAddIncoming(counter, zero, body);
-                var src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
-                var dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
-                var load = LLVMBuildLoad(builder, src_element, "");
-                LLVMSetAlignment(load, align);
-                var value = action.apply(load);
-                var store = LLVMBuildStore(builder, value, dst_element);
-                LLVMSetAlignment(store, align);
-                var next_counter = LLVMBuildAdd(builder, counter, one, "");
-                LLVMAddIncoming(counter, next_counter, forward);
-                var test_end = LLVMBuildICmp(builder, LLVMIntEQ, next_counter, length, "");
-                LLVMBuildCondBr(builder, test_end, end, forward);
-            }
-            {
-                LLVMPositionBuilderAtEnd(builder, backward);
-                var counter = LLVMBuildPhi(builder, intptr_t(context), "");
-                LLVMAddIncoming(counter, langth_m1, body);
-                var src_element = LLVMBuildInBoundsGEP(builder, src, new LLVMValueRef[]{counter}, "");
-                var dst_element = LLVMBuildInBoundsGEP(builder, dst, new LLVMValueRef[]{counter}, "");
-                var load = LLVMBuildLoad(builder, src_element, "");
-                LLVMSetAlignment(load, align);
-                var value = action.apply(load);
-                var store = LLVMBuildStore(builder, value, dst_element);
-                LLVMSetAlignment(store, align);
-                var next_counter = LLVMBuildSub(builder, counter, one, "");
-                LLVMAddIncoming(counter, next_counter, backward);
-                var test_end = LLVMBuildICmp(builder, LLVMIntEQ, counter, zero, "");
-                LLVMBuildCondBr(builder, test_end, end, backward);
-            }
-
-            LLVMPositionBuilderAtEnd(builder, end);
-            LLVMBuildRetVoid(builder);
-
-            return function;
-        }
-
-        @ASMGenerator(method = "gen_memmove_swap_shorts")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void memmove_swap_shorts(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
-
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_memmove_swap_shorts() {
-            final String name = "memmove_swap_shorts";
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var bswap16_type = fn_t(int16_t(context), int16_t(context));
-                var bswap16 = LLVMAddFunction(module, "llvm.bswap.i16", bswap16_type);
-                return gen_memmove_modify(context, module, builder, name, int16_t(context), 1,
-                        value -> call(builder, bswap16, value));
-            });
-        }
-
-        @ASMGenerator(method = "gen_memmove_swap_ints")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void memmove_swap_ints(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
-
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_memmove_swap_ints() {
-            final String name = "memmove_swap_ints";
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var bswap32_type = fn_t(int32_t(context), int32_t(context));
-                var bswap32 = LLVMAddFunction(module, "llvm.bswap.i32", bswap32_type);
-                return gen_memmove_modify(context, module, builder, name, int32_t(context), 1,
-                        value -> call(builder, bswap32, value));
-            });
-        }
-
-        @ASMGenerator(method = "gen_memmove_swap_longs")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, OBJECT, LONG_AS_WORD, LONG_AS_WORD})
-        abstract void memmove_swap_longs(Object dst_base, long dst_offset, Object src_base, long src_offset, long count);
-
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_memmove_swap_longs() {
-            final String name = "memmove_swap_longs";
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var bswap64_type = fn_t(int64_t(context), int64_t(context));
-                var bswap64 = LLVMAddFunction(module, "llvm.bswap.i64", bswap64_type);
-                return gen_memmove_modify(context, module, builder, name, int64_t(context), 1,
-                        value -> call(builder, bswap64, value));
-            });
-        }
-
-        private static byte[] gen_load_atomic(
-                String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var var_type = type.apply(context);
-                var f_type = fn_t(var_type, intptr_t(context), intptr_t(context));
-                var function = LLVMAddFunction(module, name, f_type);
-                var args = LLVMGetParams(function);
-
-                LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                var pointer = local_jobj_to_ptr(builder, args[0], args[1], var_type);
-                var load = LLVMBuildLoad(builder, pointer, "");
-                LLVMSetAlignment(load, alignment);
-                LLVMSetOrdering(load, LLVMAtomicOrderingSequentiallyConsistent);
-
-                LLVMBuildRet(builder, load);
-
-                return function;
-            });
-        }
-
-        @ASMGenerator(method = "gen_load_byte_atomic")
-        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT, LONG_AS_WORD})
+        // extern "C" uint8_t load_byte_atomic(uintptr env, uintptr clazz, uintptr obj, uintptr off) {
+        //     auto ptr = (uint8_t*)obj_ptr(obj, off);
+        //     return __atomic_load_n(ptr, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQHiwIPtgQIwzHAD7YECMNmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "i0QkEItMJAyD4fx0B4sJD7YEAcMxyQ-2BAHDkJCQkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD93wjAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEDANLjAACQFQAAoAMDANDnW_B_9QCIveg")
+        @CallSignature(type = FAST_STATIC, ret = BYTE, args = {OBJECT, LONG_AS_WORD})
         abstract byte load_byte_atomic(Object base, long offset);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_load_byte_atomic() {
-            return gen_load_atomic("load_byte_atomic", LLVMTypes::int8_t, 1);
-        }
-
-        @ASMGenerator(method = "gen_load_short_atomic")
-        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT, LONG_AS_WORD})
+        // extern "C" uint16_t load_short_atomic(uintptr env, uintptr clazz, uintptr obj, uintptr off) {
+        //     auto ptr = (uint16_t*)obj_ptr(obj, off);
+        //     return __atomic_load_n(ptr, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQHiwIPtwQIwzHAD7cECMNmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "i0QkEItMJAyD4fx0B4sJD7cEAcMxyQ-3BAHDkJCQkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD930jAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEDANLjAACQFQAAoAMDAIDgsADQ4Vvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = SHORT, args = {OBJECT, LONG_AS_WORD})
         abstract short load_short_atomic(Object base, long offset);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_load_short_atomic() {
-            return gen_load_atomic("load_short_atomic", LLVMTypes::int16_t, 2);
-        }
-
-        @ASMGenerator(method = "gen_load_int_atomic")
-        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT, LONG_AS_WORD})
+        // extern "C" uint32_t load_int_atomic(uintptr env, uintptr clazz, uintptr obj, uintptr off) {
+        //     auto ptr = (uint32_t*)obj_ptr(obj, off);
+        //     return __atomic_load_n(ptr, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQGiwKLBAjDMcCLBAjDZmZmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "i0QkEItMJAyD4fx0BosJiwQBwzHJiwQBw5CQkJCQkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD934jAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEDANLjAACQFQAAoAMDAJDnW_B_9QCIveg")
+        @CallSignature(type = FAST_STATIC, ret = INT, args = {OBJECT, LONG_AS_WORD})
         abstract int load_int_atomic(Object base, long offset);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_load_int_atomic() {
-            return gen_load_atomic("load_int_atomic", LLVMTypes::int32_t, 4);
-        }
-
-        @ASMGenerator(method = "gen_load_long_atomic")
-        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT, LONG_AS_WORD})
+        // extern "C" uint64_t load_long_atomic(uintptr env, uintptr clazz, uintptr obj, uintptr off) {
+        //     auto ptr = (uint64_t*)obj_ptr(obj, off);
+        //     return __atomic_load_n(ptr, __ATOMIC_SEQ_CST);
+        // }
+        // For i686: __sync_fetch_and_add(ptr, 0)
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQHiwJIiwQIwzHASIsECMNmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U1dWi3QkHItEJBiD4Px0BIs46wIx_4sEN4tUNwSQkJCJ0YnD8A_HDDd19V5fW8OQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD938jAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEDANLjAACQFQAAoAMDAIDgnw-w4R_wf_Vb8H_1AIi96A")
+        @CallSignature(type = FAST_STATIC, ret = LONG, args = {OBJECT, LONG_AS_WORD})
         abstract long load_long_atomic(Object base, long offset);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_load_long_atomic() {
-            return gen_load_atomic("load_long_atomic", LLVMTypes::int64_t, 8);
-        }
-
-        private static byte[] gen_store_atomic(
-                String name, Function<LLVMContextRef, LLVMTypeRef> type, int alignment) {
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var var_type = type.apply(context);
-                var f_type = fn_t(void_t(context), intptr_t(context), intptr_t(context), var_type);
-                var function = LLVMAddFunction(module, name, f_type);
-                var args = LLVMGetParams(function);
-
-                LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                var pointer = local_jobj_to_ptr(builder, args[0], args[1], var_type);
-                var store = LLVMBuildStore(builder, args[2], pointer);
-                LLVMSetAlignment(store, alignment);
-                LLVMSetOrdering(store, LLVMAtomicOrderingSequentiallyConsistent);
-
-                LLVMBuildRetVoid(builder);
-
-                return function;
-            });
-        }
-
-        @ASMGenerator(method = "gen_store_byte_atomic")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, BYTE})
+        // extern "C" void store_byte_atomic(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint8_t value) {
+        //     auto ptr = (uint8_t*)obj_ptr(obj, off);
+        //     __atomic_store_n(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQHiwJEhgQIwzHARIYECMNmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "D7ZEJBSLTCQQi1QkDIPi_HQGixKGBArDMdKGBArDkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwT9nwjAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIAJvlAxDS4wAQkRUAEKADW_B_9QMAwedb8H_1AIi96A")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG_AS_WORD, BYTE})
         abstract void store_byte_atomic(Object base, long offset, byte value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_store_byte_atomic() {
-            return gen_store_atomic("store_byte_atomic", LLVMTypes::int8_t, 1);
-        }
-
-        @ASMGenerator(method = "gen_store_short_atomic")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, SHORT})
+        // extern "C" void store_short_atomic(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint16_t value) {
+        //     auto ptr = (uint16_t*)obj_ptr(obj, off);
+        //     __atomic_store_n(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQIiwJmRIcECMMxwGZEhwQIw2YuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "D7dEJBSLTCQQi1QkDIPi_HQHixJmhwQKwzHSZocECsM")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwT9n0jAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIAJvlAxDS4wAQkRUAEKADAxCB4Fvwf_WwAMHhW_B_9QCIveg")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG_AS_WORD, SHORT})
         abstract void store_short_atomic(Object base, long offset, short value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_store_short_atomic() {
-            return gen_store_atomic("store_short_atomic", LLVMTypes::int16_t, 2);
-        }
-
-        @ASMGenerator(method = "gen_store_int_atomic")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, INT})
+        // extern "C" void store_int_atomic(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint32_t value) {
+        //     auto ptr = (uint32_t*)obj_ptr(obj, off);
+        //     __atomic_store_n(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQHiwJEhwQIwzHARIcECMNmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "i0QkFItMJBCLVCQMg-L8dAaLEocECsMx0ocECsOQkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwT9n4jAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIAJvlAxDS4wAQkRUAEKADW_B_9QMAgedb8H_1AIi96A")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG_AS_WORD, INT})
         abstract void store_int_atomic(Object base, long offset, int value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_store_int_atomic() {
-            return gen_store_atomic("store_int_atomic", LLVMTypes::int32_t, 4);
-        }
-
-        @ASMGenerator(method = "gen_store_long_atomic")
-        @CallSignature(type = CRITICAL, ret = VOID, args = {OBJECT, LONG_AS_WORD, LONG})
+        // extern "C" void store_long_atomic(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint64_t value) {
+        //     auto ptr = (uint64_t*)obj_ptr(obj, off);
+        //     __atomic_store_n(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        // For i686: __sync_lock_test_and_set(ptr, value)
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQHiwJMhwQIwzHATIcECMNmZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U1dWi3QkHItEJBiD4Px0BIs46wIx_4tMJCSLXCQgiwQ3i1Q3BJCQkJCQkJCQkJCQ8A_HDDd1-V5fW8OQkJCQkA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwT9n8jAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "MEgt6QiwjeIMEJvlCACb5QMg0uMAIJIVACCgAwMgguBb8H_1n0-y4ZA_ouEAAFPj-___Glvwf_UwiL3o")
+        @CallSignature(type = FAST_STATIC, ret = VOID, args = {OBJECT, LONG_AS_WORD, LONG})
         abstract void store_long_atomic(Object base, long offset, long value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_store_long_atomic() {
-            return gen_store_atomic("store_long_atomic", LLVMTypes::int64_t, 8);
-        }
-
-        private static byte[] gen_atomic_rmw(
-                String name, Function<LLVMContextRef, LLVMTypeRef> type, LLVMAtomicRMWBinOp op) {
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var var_type = type.apply(context);
-                var f_type = fn_t(var_type, intptr_t(context), intptr_t(context), var_type);
-                var function = LLVMAddFunction(module, name, f_type);
-                var args = LLVMGetParams(function);
-
-                LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                var pointer = local_jobj_to_ptr(builder, args[0], args[1], var_type);
-                var rmw = LLVMBuildAtomicRMW(builder, op, pointer, args[2],
-                        LLVMAtomicOrderingSequentiallyConsistent, false);
-
-                LLVMBuildRet(builder, rmw);
-
-                return function;
-            });
-        }
-
-        @ASMGenerator(method = "gen_atomic_exchange_byte")
-        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE})
+        // extern "C" uint8_t atomic_exchange_byte(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint8_t value) {
+        //     auto ptr = (uint8_t*)obj_ptr(obj, off);
+        //     return __atomic_exchange_n(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "RInASIPi_HQGixKGBArDMdKGBArDZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "D7ZEJBSLTCQQi1QkDIPi_HQGixKGBArDMdKGBArDkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9XwgE_QkIyf__NcADX9Y")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIEJvlAyCA4Fvwf_WfD9LhkT_C4QAAU-P7__8aW_B_9QCIveg")
+        @CallSignature(type = FAST_STATIC, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE})
         abstract byte atomic_exchange_byte(Object base, long offset, byte value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_exchange_byte() {
-            return gen_atomic_rmw("atomic_exchange_byte", LLVMTypes::int8_t, LLVMAtomicRMWBinOpXchg);
-        }
-
-        @ASMGenerator(method = "gen_atomic_exchange_short")
-        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT})
+        // extern "C" uint16_t atomic_exchange_short(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint16_t value) {
+        //     auto ptr = (uint16_t*)obj_ptr(obj, off);
+        //     return __atomic_exchange_n(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "RInASIPi_HQHixJmhwQKwzHSZocECsNmDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "D7dEJBSLTCQQi1QkDIPi_HQHixJmhwQKwzHSZocECsM")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X0gE_QlIyf__NcADX9Y")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIEJvlAyCA4Fvwf_WfD_LhkT_i4QAAU-P7__8aW_B_9QCIveg")
+        @CallSignature(type = FAST_STATIC, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT})
         abstract short atomic_exchange_short(Object base, long offset, short value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_exchange_short() {
-            return gen_atomic_rmw("atomic_exchange_short", LLVMTypes::int16_t, LLVMAtomicRMWBinOpXchg);
-        }
-
-        @ASMGenerator(method = "gen_atomic_exchange_int")
-        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT, LONG_AS_WORD, INT})
+        // extern "C" uint32_t atomic_exchange_int(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint32_t value) {
+        //     auto ptr = (uint32_t*)obj_ptr(obj, off);
+        //     return __atomic_exchange_n(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "RInASIPi_HQGixKHBArDMdKHBArDZmYuDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "i0QkFItMJBCLVCQMg-L8dAaLEocECsMx0ocECsOQkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X4gE_QmIyf__NcADX9Y")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIEJvlAyCA4Fvwf_WfD5LhkT-C4QAAU-P7__8aW_B_9QCIveg")
+        @CallSignature(type = FAST_STATIC, ret = INT, args = {OBJECT, LONG_AS_WORD, INT})
         abstract int atomic_exchange_int(Object base, long offset, int value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_exchange_int() {
-            return gen_atomic_rmw("atomic_exchange_int", LLVMTypes::int32_t, LLVMAtomicRMWBinOpXchg);
-        }
-
-        @ASMGenerator(method = "gen_atomic_exchange_long")
-        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG})
+        // extern "C" uint64_t atomic_exchange_long(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint64_t value) {
+        //     auto ptr = (uint64_t*)obj_ptr(obj, off);
+        //     return __atomic_exchange_n(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        // For i686: __sync_lock_test_and_set(ptr, value)
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "TInASIPi_HQHixJIhwQKwzHSSIcECsNmDx-EAAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U1dWi3QkHItEJBiD4Px0BIs46wIx_4tMJCSLXCQgiwQ3i1Q3BJCQkJCQkJCQkJCQ8A_HDDd1-V5fW8OQkJCQkA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X8gE_QnIyf__NcADX9Y")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "MEgt6QiwjeIMUJvlCECb5QMA0uMAAJAVAACgAwMggOBb8H_1nw-y4ZQ_ouEAAFPj-___Glvwf_UwiL3o")
+        @CallSignature(type = FAST_STATIC, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG})
         abstract long atomic_exchange_long(Object base, long offset, long value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_exchange_long() {
-            return gen_atomic_rmw("atomic_exchange_long", LLVMTypes::int64_t, LLVMAtomicRMWBinOpXchg);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_and_byte")
-        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE})
+        // extern "C" uint8_t atomic_fetch_and_byte(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint8_t value) {
+        //     auto ptr = (uint8_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_and(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSD7YEConGRCDG8EAPsDQKdfPDZpA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U4tMJBSLRCQQg-D8dASLEOsCMdKKZCQYigQKkJCQkJCJwyDj8A-wHAp19VvDkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9XwgJAAQKCf0KCKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIwJvlAyCA4Fvwf_WfD9LhDDAA4JMfwuEAAFHj-v__Glvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_and_byte(Object base, long offset, byte value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_and_byte() {
-            return gen_atomic_rmw("atomic_fetch_and_byte", LLVMTypes::int8_t, LLVMAtomicRMWBinOpAnd);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_and_short")
-        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT})
+        // extern "C" uint16_t atomic_fetch_and_short(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint16_t value) {
+        //     auto ptr = (uint16_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_and(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSD7cEConGRCHGZvAPsTQKdfPDZpA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "V1YPt0wkHItUJBiLRCQUg-D8dASLMOsCMfYPtwQWkJCJxyHPZvAPsTwWdfReX8OQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X0gJAAQKCf0KSKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIwJvlAyCA4Fvwf_WfD_LhDDAA4JMf4uEAAFHj-v__Glvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_and_short(Object base, long offset, short value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_and_short() {
-            return gen_atomic_rmw("atomic_fetch_and_short", LLVMTypes::int16_t, LLVMAtomicRMWBinOpAnd);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_and_int")
-        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT, LONG_AS_WORD, INT})
+        // extern "C" uint32_t atomic_fetch_and_int(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint32_t value) {
+        //     auto ptr = (uint32_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_and(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSiwQKkInGRCHG8A-xNAp19MMPHwA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "V1aLTCQYi0QkFIPg_HQEixDrAjHSi3QkHIsECpCQkJCJxyH38A-xPAp19V5fw5CQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X4gJAAQKCf0KiKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIwJvlAyCA4Fvwf_WfD5LhDDAA4JMfguEAAFHj-v__Glvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = INT, args = {OBJECT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_and_int(Object base, long offset, int value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_and_int() {
-            return gen_atomic_rmw("atomic_fetch_and_int", LLVMTypes::int32_t, LLVMAtomicRMWBinOpAnd);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_add_long")
-        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG})
+        // extern "C" uint64_t atomic_fetch_and_long(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint64_t value) {
+        //     auto ptr = (uint64_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_and(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        // For i686: __sync_fetch_and_and(ptr, value)
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSSIsECkiJxkwhxvBID7E0CnXyw5A")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "VVNXVotsJCCLRCQcg-D8dASLOOsCMf-LdCQkiwQvi1QvBJCQkJCQkJCQkJCQkJCQicMh84nRI0wkKPAPxwwvde9eX1tdw5CQkJCQkJCQkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X8gJAASKCf0KyKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADMEgt6QiwjeIMwJvlCOCb5QMwgOBb8H_1nw-z4Q5AAOAMUAHglC-j4QAAUuP5__8aW_B_9TCIveg")
+        @CallSignature(type = FAST_STATIC, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_and_long(Object base, long offset, long value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_add_long() {
-            return gen_atomic_rmw("atomic_fetch_and_long", LLVMTypes::int64_t, LLVMAtomicRMWBinOpAnd);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_or_byte")
-        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE})
+        // extern "C" uint8_t atomic_fetch_or_byte(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint8_t value) {
+        //     auto ptr = (uint8_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_or(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSD7YEConGRAjG8EAPsDQKdfPDZpA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U4tMJBSLRCQQg-D8dASLEOsCMdKKZCQYigQKkJCQkJCJwwjj8A-wHAp19VvDkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9XwgJAAQqCf0KCKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIwJvlAyCA4Fvwf_WfD9LhDDCA4ZMfwuEAAFHj-v__Glvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_or_byte(Object base, long offset, byte value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_or_byte() {
-            return gen_atomic_rmw("atomic_fetch_or_byte", LLVMTypes::int8_t, LLVMAtomicRMWBinOpOr);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_or_short")
-        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT})
+        // extern "C" uint16_t atomic_fetch_or_short(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint16_t value) {
+        //     auto ptr = (uint16_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_or(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSD7cEConGRAnGZvAPsTQKdfPDZpA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "V1YPt0wkHItUJBiLRCQUg-D8dASLMOsCMfYPtwQWkJCJxwnPZvAPsTwWdfReX8OQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X0gJAAQqCf0KSKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIwJvlAyCA4Fvwf_WfD_LhDDCA4ZMf4uEAAFHj-v__Glvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_or_short(Object base, long offset, short value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_or_short() {
-            return gen_atomic_rmw("atomic_fetch_or_short", LLVMTypes::int16_t, LLVMAtomicRMWBinOpOr);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_or_int")
-        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT, LONG_AS_WORD, INT})
+        // extern "C" uint32_t atomic_fetch_or_int(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint32_t value) {
+        //     auto ptr = (uint32_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_or(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSiwQKkInGRAnG8A-xNAp19MMPHwA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "V1aLTCQYi0QkFIPg_HQEixDrAjHSi3QkHIsECpCQkJCJxwn38A-xPAp19V5fw5CQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X4gJAAQqCf0KiKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIwJvlAyCA4Fvwf_WfD5LhDDCA4ZMfguEAAFHj-v__Glvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = INT, args = {OBJECT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_or_int(Object base, long offset, int value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_or_int() {
-            return gen_atomic_rmw("atomic_fetch_or_int", LLVMTypes::int32_t, LLVMAtomicRMWBinOpOr);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_or_long")
-        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG})
+        // extern "C" uint64_t atomic_fetch_or_long(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint64_t value) {
+        //     auto ptr = (uint64_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_or(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        // For i686: __sync_fetch_and_or(ptr, value)
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSSIsECkiJxkwJxvBID7E0CnXyw5A")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "VVNXVotsJCCLRCQcg-D8dASLOOsCMf-LdCQkiwQvi1QvBJCQkJCQkJCQkJCQkJCQicMJ84nRC0wkKPAPxwwvde9eX1tdw5CQkJCQkJCQkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X8gJAASqCf0KyKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADMEgt6QiwjeIMwJvlCOCb5QMwgOBb8H_1nw-z4Q5AgOEMUIHhlC-j4QAAUuP5__8aW_B_9TCIveg")
+        @CallSignature(type = FAST_STATIC, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_or_long(Object base, long offset, long value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_or_long() {
-            return gen_atomic_rmw("atomic_fetch_or_long", LLVMTypes::int64_t, LLVMAtomicRMWBinOpOr);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_xor_byte")
-        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE})
+        // extern "C" uint8_t atomic_fetch_xor_byte(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint8_t value) {
+        //     auto ptr = (uint8_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_xor(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSD7YEConGRDDG8EAPsDQKdfPDZpA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U4tMJBSLRCQQg-D8dASLEOsCMdKKZCQYigQKkJCQkJCJwzDj8A-wHAp19VvDkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9XwgJAARKCf0KCKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIwJvlAyCA4Fvwf_WfD9LhDDAg4JMfwuEAAFHj-v__Glvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE})
         abstract byte atomic_fetch_xor_byte(Object base, long offset, byte value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_xor_byte() {
-            return gen_atomic_rmw("atomic_fetch_xor_byte", LLVMTypes::int8_t, LLVMAtomicRMWBinOpXor);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_xor_short")
-        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT})
+        // extern "C" uint16_t atomic_fetch_xor_short(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint16_t value) {
+        //     auto ptr = (uint16_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_xor(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSD7cEConGRDHGZvAPsTQKdfPDZpA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "V1YPt0wkHItUJBiLRCQUg-D8dASLMOsCMfYPtwQWkJCJxzHPZvAPsTwWdfReX8OQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X0gJAARKCf0KSKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIwJvlAyCA4Fvwf_WfD_LhDDAg4JMf4uEAAFHj-v__Glvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT})
         abstract short atomic_fetch_xor_short(Object base, long offset, short value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_xor_short() {
-            return gen_atomic_rmw("atomic_fetch_xor_short", LLVMTypes::int16_t, LLVMAtomicRMWBinOpXor);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_xor_int")
-        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT, LONG_AS_WORD, INT})
+        // extern "C" uint32_t atomic_fetch_xor_int(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint32_t value) {
+        //     auto ptr = (uint32_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_xor(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSiwQKkInGRDHG8A-xNAp19MMPHwA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "V1aLTCQYi0QkFIPg_HQEixDrAjHSi3QkHIsECpCQkJCJxzH38A-xPAp19V5fw5CQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X4gJAARKCf0KiKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADAEgt6Q2woOEIwJvlAyCA4Fvwf_WfD5LhDDAg4JMfguEAAFHj-v__Glvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = INT, args = {OBJECT, LONG_AS_WORD, INT})
         abstract int atomic_fetch_xor_int(Object base, long offset, int value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_xor_int() {
-            return gen_atomic_rmw("atomic_fetch_xor_int", LLVMTypes::int32_t, LLVMAtomicRMWBinOpXor);
-        }
-
-        @ASMGenerator(method = "gen_atomic_fetch_xor_long")
-        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG})
+        // extern "C" uint64_t atomic_fetch_xor_long(uintptr env, uintptr clazz, uintptr obj, uintptr off, uint64_t value) {
+        //     auto ptr = (uint64_t*)obj_ptr(obj, off);
+        //     return __atomic_fetch_xor(ptr, value, __ATOMIC_SEQ_CST);
+        // }
+        // For i686: __sync_fetch_and_xor(ptr, value)
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "SIPi_HQEixLrAjHSSIsECkiJxkwxxvBID7E0CnXyw5A")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "VVNXVotsJCCLRCQcg-D8dASLOOsCMf-LdCQkiwQvi1QvBJCQkJCQkJCQkJCQkJCQicMx84nRM0wkKPAPxwwvde9eX1tdw5CQkJCQkJCQkJA")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X8gJAATKCf0KyKr__zXAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AwDS4wAAkBUAAKADMEgt6QiwjeIMwJvlCOCb5QMwgOBb8H_1nw-z4Q5AIOAMUCHglC-j4QAAUuP5__8aW_B_9TCIveg")
+        @CallSignature(type = FAST_STATIC, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG})
         abstract long atomic_fetch_xor_long(Object base, long offset, long value);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_fetch_xor_long() {
-            return gen_atomic_rmw("atomic_fetch_xor_long", LLVMTypes::int64_t, LLVMAtomicRMWBinOpXor);
-        }
-
-        //TODO: weak version?
-        private static byte[] gen_atomic_compare_and_exchange(
-                String name, Function<LLVMContextRef, LLVMTypeRef> type, boolean ret_value) {
-            return generateFunctionCodeArray((context, module, builder) -> {
-                var var_type = type.apply(context);
-                var r_type = ret_value ? var_type : int1_t(context);
-                var f_type = fn_t(r_type, intptr_t(context), intptr_t(context), var_type, var_type);
-                var function = LLVMAddFunction(module, name, f_type);
-                var args = LLVMGetParams(function);
-
-                LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, ""));
-                var pointer = local_jobj_to_ptr(builder, args[0], args[1], var_type);
-                var cmpxchg = LLVMBuildAtomicCmpXchg(builder, pointer, args[2],
-                        args[3], LLVMAtomicOrderingSequentiallyConsistent,
-                        LLVMAtomicOrderingSequentiallyConsistent, false);
-                var ret = LLVMBuildExtractValue(builder, cmpxchg, ret_value ? 0 : 1, "");
-
-                LLVMBuildRet(builder, ret);
-
-                return function;
-            });
-        }
-
-        @ASMGenerator(method = "gen_atomic_compare_and_exchange_byte")
-        @CallSignature(type = CRITICAL, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE, BYTE})
+        // extern "C" uint8_t atomic_compare_and_exchange_byte(uintptr env, uintptr clazz, uintptr obj, uintptr off,
+        //                                                     uint8_t expected, uint8_t desired) {
+        //     auto ptr = (uint8_t*)obj_ptr(obj, off);
+        //     uint8_t old = expected;
+        //     __atomic_compare_exchange_n(ptr, &old, desired, false,
+        //                                __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        //     return old;
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "RInASIPi_HQJixLwRA-wDArDMdLwRA-wDArDDx9EAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "Vg-2TCQcD7ZEJBiLVCQUi3QkEIPm_HQEizbrAjH28A-wDBZew5CQkJCQkJCQkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8mAAAFQJAUC5AgAAFOkDH6qIHAASKQEDiyD9XwgfAAhrgQAAVCX9CgiK__81wANf1l8_A9XAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIwJvlAxDS4wAQkRUAEKADAyCB4J8f0uEMAFHhBwAAGgwwm-Vb8H_1kw_C4QAAUOMDAAAKnx_S4QwAUeH5__8KH_B_9XEA7-Zb8H_1AIi96A")
+        @CallSignature(type = FAST_STATIC, ret = BYTE, args = {OBJECT, LONG_AS_WORD, BYTE, BYTE})
         abstract byte atomic_compare_and_exchange_byte(Object base, long offset, byte expected, byte desired);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_compare_and_exchange_byte() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_byte", LLVMTypes::int8_t, true);
-        }
-
-        @ASMGenerator(method = "gen_atomic_compare_and_exchange_short")
-        @CallSignature(type = CRITICAL, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT, SHORT})
+        // extern "C" uint16_t atomic_compare_and_exchange_short(uintptr env, uintptr clazz, uintptr obj, uintptr off,
+        //                                                       uint16_t expected, uint16_t desired) {
+        //     auto ptr = (uint16_t*)obj_ptr(obj, off);
+        //     uint16_t old = expected;
+        //     __atomic_compare_exchange_n(ptr, &old, desired, false,
+        //                                __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        //     return old;
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "RInASIPi_HQKixJm8EQPsQwKwzHSZvBED7EMCsMPHwA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "Vg-3TCQcD7dEJBiLVCQUi3QkEIPm_HQEizbrAjH2ZvAPsQwWXsOQkJCQkJCQkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8mAAAFQJAUC5AgAAFOkDH6qIPAASKQEDiyD9X0gfAAhrgQAAVCX9CkiK__81wANf1l8_A9XAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIwJvlAxDS4wAQkRUAEKADAyCB4J8f8uEMAFHhBwAAGgwwm-Vb8H_1kw_i4QAAUOMDAAAKnx_y4QwAUeH5__8KH_B_9XEA_-Zb8H_1AIi96A")
+        @CallSignature(type = FAST_STATIC, ret = SHORT, args = {OBJECT, LONG_AS_WORD, SHORT, SHORT})
         abstract short atomic_compare_and_exchange_short(Object base, long offset, short expected, short desired);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_compare_and_exchange_short() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_short", LLVMTypes::int16_t, true);
-        }
-
-        @ASMGenerator(method = "gen_atomic_compare_and_exchange_int")
-        @CallSignature(type = CRITICAL, ret = INT, args = {OBJECT, LONG_AS_WORD, INT, INT})
+        // extern "C" uint32_t atomic_compare_and_exchange_int(uintptr env, uintptr clazz, uintptr obj, uintptr off,
+        //                                                     uint32_t expected, uint32_t desired) {
+        //     auto ptr = (uint32_t*)obj_ptr(obj, off);
+        //     uint32_t old = expected;
+        //     __atomic_compare_exchange_n(ptr, &old, desired, false,
+        //                                __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        //     return old;
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "RInASIPi_HQJixLwRA-xDArDMdLwRA-xDArDDx9EAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "VotMJByLRCQYi1QkFIt0JBCD5vx0BIs26wIx9vAPsQwWXsOQkJCQkJCQkJCQkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X4gfAARrgQAAVAX9CYiJ__81wANf1l8_A9XAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIwJvlAwDS4wAAkBUAAKADAyCA4J8PkuEMAFDhBwAAGgwwm-Vb8H_1kx-C4QAAUeMDAAAKnw-S4QwAUOH5__8KH_B_9Vvwf_UAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = INT, args = {OBJECT, LONG_AS_WORD, INT, INT})
         abstract int atomic_compare_and_exchange_int(Object base, long offset, int expected, int desired);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_compare_and_exchange_int() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_int", LLVMTypes::int32_t, true);
-        }
-
-        @ASMGenerator(method = "gen_atomic_compare_and_exchange_long")
-        @CallSignature(type = CRITICAL, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG, LONG})
+        // extern "C" uint64_t atomic_compare_and_exchange_long(uintptr env, uintptr clazz, uintptr obj, uintptr off,
+        //                                                      uint64_t expected, uint64_t desired) {
+        //     auto ptr = (uint64_t*)obj_ptr(obj, off);
+        //     uint64_t old = expected;
+        //     __atomic_compare_exchange_n(ptr, &old, desired, false,
+        //                                __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        //     return old;
+        // }
+        // For i686: __sync_val_compare_and_swap(ptr, expected, desired)
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "TInASIPi_HQJixLwTA-xDArDMdLwTA-xDArDDx9EAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U1dWi0wkLItcJCiLVCQki0QkIIt0JByLfCQYg-f8dASLP-sCMf_wD8cMN15fW8OQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwD9X8gfAATrgQAAVAX9CciJ__81wANf1l8_A9XAA1_W")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "cEwt6RCwjeIMwJvlCOCb5QMA0uMAAJAVAACgAwMggOCfD7LhDDAh4A5AIOADMJThCgAAGhRQm-UQQJvlW_B_9ZQ_ouEAAFPjBQAACp8PsuEOMCDgDGAh4AYwk-H3__8KH_B_9Vvwf_VwjL3o")
+        @CallSignature(type = FAST_STATIC, ret = LONG, args = {OBJECT, LONG_AS_WORD, LONG, LONG})
         abstract long atomic_compare_and_exchange_long(Object base, long offset, long expected, long desired);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_compare_and_exchange_long() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_exchange_long", LLVMTypes::int64_t, true);
-        }
-
-        @ASMGenerator(method = "gen_atomic_compare_and_set_byte")
-        @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT, LONG_AS_WORD, BYTE, BYTE})
+        // extern "C" bool atomic_compare_and_set_byte(uintptr env, uintptr clazz, uintptr obj, uintptr off,
+        //                                             uint8_t expected, uint8_t desired) {
+        //     auto ptr = (uint8_t*)obj_ptr(obj, off);
+        //     uint8_t old = expected;
+        //     return __atomic_compare_exchange_n(ptr, &old, desired, false,
+        //                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "RInASIPi_HQEixLrAjHS8EQPsAwKD5TAww8fgAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "Vg-2TCQcD7ZEJBiLVCQUi3QkEIPm_HQEizbrAjH28A-wDBYPlMBew5CQkJCQkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8mAAAFQJAUC5AgAAFOkDH6qIHAASKQEDiyr9XwhfAQhroQAAVCX9CgiK__81IACAUsADX9bgAx8qXz8D1cADX9Y")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIwJvlAwDS4wAAkBUAAKADAyCA4J8P0uEMAFDhCAAAGgwwm-Vb8H_1kx_C4QEAoOMAAFHjBAAACp8P0uEMAFDh-P__Ch_wf_UAAKDjW_B_9QCIveg")
+        @CallSignature(type = FAST_STATIC, ret = BOOL, args = {OBJECT, LONG_AS_WORD, BYTE, BYTE})
         abstract boolean atomic_compare_and_set_byte(Object base, long offset, byte expected, byte desired);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_compare_and_set_byte() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_set_byte", LLVMTypes::int8_t, false);
-        }
-
-        @ASMGenerator(method = "gen_atomic_compare_and_set_short")
-        @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT, LONG_AS_WORD, SHORT, SHORT})
+        // extern "C" bool atomic_compare_and_set_short(uintptr env, uintptr clazz, uintptr obj, uintptr off,
+        //                                              uint16_t expected, uint16_t desired) {
+        //     auto ptr = (uint16_t*)obj_ptr(obj, off);
+        //     uint16_t old = expected;
+        //     return __atomic_compare_exchange_n(ptr, &old, desired, false,
+        //                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "RInASIPi_HQEixLrAjHSZvBED7EMCg-UwMNmDx9EAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "Vg-3TCQcD7dEJBiLVCQUi3QkEIPm_HQEizbrAjH2ZvAPsQwWD5TAXsOQkJCQkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8mAAAFQJAUC5AgAAFOkDH6qIPAASKQEDiyr9X0hfAQhroQAAVCX9CkiK__81IACAUsADX9bgAx8qXz8D1cADX9Y")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIwJvlAwDS4wAAkBUAAKADAyCA4J8P8uEMAFDhCAAAGgwwm-Vb8H_1kx_i4QEAoOMAAFHjBAAACp8P8uEMAFDh-P__Ch_wf_UAAKDjW_B_9QCIveg")
+        @CallSignature(type = FAST_STATIC, ret = BOOL, args = {OBJECT, LONG_AS_WORD, SHORT, SHORT})
         abstract boolean atomic_compare_and_set_short(Object base, long offset, short expected, short desired);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_compare_and_set_short() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_set_short", LLVMTypes::int16_t, false);
-        }
-
-        @ASMGenerator(method = "gen_atomic_compare_and_set_int")
-        @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT, LONG_AS_WORD, INT, INT})
+        // extern "C" bool atomic_compare_and_set_int(uintptr env, uintptr clazz, uintptr obj, uintptr off,
+        //                                            uint32_t expected, uint32_t desired) {
+        //     auto ptr = (uint32_t*)obj_ptr(obj, off);
+        //     uint32_t old = expected;
+        //     return __atomic_compare_exchange_n(ptr, &old, desired, false,
+        //                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        // }
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "RInASIPi_HQEixLrAjHS8EQPsQwKD5TAww8fgAAAAAA")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "VotMJByLRCQYi1QkFIt0JBCD5vx0BIs26wIx9vAPsQwWD5TAXsOQkJCQkJCQkJCQ")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwn9X4g_AQRroQAAVAX9CYiJ__81IACAUsADX9bgAx8qXz8D1cADX9Y")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "AEgt6Q2woOEIwJvlAwDS4wAAkBUAAKADAyCA4J8PkuEMAFDhCAAAGgwwm-Vb8H_1kx-C4QEAoOMAAFHjBAAACp8PkuEMAFDh-P__Ch_wf_UAAKDjW_B_9QCIveg")
+        @CallSignature(type = FAST_STATIC, ret = BOOL, args = {OBJECT, LONG_AS_WORD, INT, INT})
         abstract boolean atomic_compare_and_set_int(Object base, long offset, int expected, int desired);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_compare_and_set_int() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_set_int", LLVMTypes::int32_t, false);
-        }
-
-        @ASMGenerator(method = "gen_atomic_compare_and_set_long")
-        @CallSignature(type = CRITICAL, ret = BOOL, args = {OBJECT, LONG_AS_WORD, LONG, LONG})
+        // extern "C" bool atomic_compare_and_set_long(uintptr env, uintptr clazz, uintptr obj, uintptr off,
+        //                                             uint64_t expected, uint64_t desired) {
+        //     auto ptr = (uint64_t*)obj_ptr(obj, off);
+        //     uint64_t old = expected;
+        //     return __atomic_compare_exchange_n(ptr, &old, desired, false,
+        //                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        // }
+        // For i686: __sync_bool_compare_and_swap(ptr, expected, desired)
+        @ASM(conditions = @Conditions(arch = X86_64), base64 =
+                "TInASIPi_HQEixLrAjHS8EwPsQwKD5TAww8fADHAww")
+        @ASM(conditions = @Conditions(arch = X86), base64 =
+                "U1dWi0wkLItcJCiLVCQki0QkIIt0JByLfCQYg-f8dASLP-sCMf_wD8cMNw-UwF5fW8OQkDHAww")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 =
+                "SPR-8kAAAFQIAUC5CAEDiwn9X8g_AQTroQAAVAX9CciJ__81IACAUsADX9bgAx8qXz8D1cADX9bgAx8qwANf1g")
+        @ASM(conditions = @Conditions(arch = ARM), base64 =
+                "8Egt6RCwjeIMwJvlCBCb5QMA0uMAAJAVAACgAwMggOCfT7LhDAAl4AEwJOAAAJPhCwAAGhRQm-UQQJvlW_B_9ZQ_ouEBAKDjAABT4wYAAAqfb7LhAQAm4AwwJ-ADAJDh9v__Ch_wf_UAAKDjW_B_9fCIvegASC3pDbCg4QAAoOMAiL3o")
+        @CallSignature(type = FAST_STATIC, ret = BOOL, args = {OBJECT, LONG_AS_WORD, LONG, LONG})
         abstract boolean atomic_compare_and_set_long(Object base, long offset, long expected, long desired);
 
-        @DoNotShrink
-        @DoNotObfuscate
-        @SuppressWarnings("unused")
-        private static byte[] gen_atomic_compare_and_set_long() {
-            return gen_atomic_compare_and_exchange("atomic_compare_and_set_long", LLVMTypes::int64_t, false);
-        }
-
-        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE, Native.class);
+        static final Native INSTANCE = BulkLinker.generateImpl(SCOPE,
+                Native.class, name -> Optional.empty());
     }
 
     public static void setMemory(Object base, long offset, long bytes, byte value) {
         if (bytes == 0) {
             return;
         }
-        EarlyNative.INSTANCE.memset(base, offset, bytes, value);
+        Native.INSTANCE.memset(base, offset, bytes, value);
     }
 
     public static void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes) {
         if (bytes == 0) {
             return;
         }
-        EarlyNative.INSTANCE.memmove(destBase, destOffset, srcBase, srcOffset, bytes);
+        Native.INSTANCE.memmove(destBase, destOffset, srcBase, srcOffset, bytes);
     }
 
     public static void swapShorts(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {
-        Native.INSTANCE.memmove_swap_shorts(destBase, destOffset, srcBase, srcOffset, elements);
+        Native.INSTANCE.memmove_swap16(destBase, destOffset, srcBase, srcOffset, elements);
     }
 
     public static void swapInts(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {
-        Native.INSTANCE.memmove_swap_ints(destBase, destOffset, srcBase, srcOffset, elements);
+        Native.INSTANCE.memmove_swap32(destBase, destOffset, srcBase, srcOffset, elements);
     }
 
     public static void swapLongs(Object srcBase, long srcOffset, Object destBase, long destOffset, long elements) {
-        Native.INSTANCE.memmove_swap_longs(destBase, destOffset, srcBase, srcOffset, elements);
+        Native.INSTANCE.memmove_swap64(destBase, destOffset, srcBase, srcOffset, elements);
     }
 
     public static void copySwapMemory(Object srcBase, long srcOffset, Object destBase,

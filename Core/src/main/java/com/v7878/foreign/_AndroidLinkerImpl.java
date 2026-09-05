@@ -612,8 +612,8 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
         var has_arena = !heap_access && Stream.of(args)
                 .anyMatch(layout -> layout instanceof GroupLayout);
         var max_arena_size = !has_arena ? -1 : Stream.of(args)
-                                               .filter(layout -> layout instanceof GroupLayout)
-                                               .mapToLong(MemoryLayout::byteSize).sum();
+                .filter(layout -> layout instanceof GroupLayout)
+                .mapToLong(MemoryLayout::byteSize).sum();
 
         int native_ins = native_stub_proto.countInputRegisters();
 
@@ -1235,7 +1235,7 @@ final class _AndroidLinkerImpl extends _AbstractAndroidLinker {
 
         Consumer<CodeBuilder> handle_exception = ib -> ib
                 .invoke(STATIC, handle_exception_id, ib.l(exception_reg))
-                // Unreachable, but you need to explicitly
+                // Unreachable, but we need to explicitly
                 //  tell the verifier that execution ends here
                 .throw_(ib.l(exception_reg));
 

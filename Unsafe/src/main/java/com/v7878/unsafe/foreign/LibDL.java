@@ -30,6 +30,7 @@ import com.v7878.unsafe.io.Maps.MMapEntry;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 public class LibDL {
     public static final int RTLD_LOCAL = 0;
@@ -74,7 +75,16 @@ public class LibDL {
 
         static {
             String linker_name = IS64BIT ? "linker64" : "linker";
-            MMapEntry linker = Maps.findFirstByPath("/\\S+/" + linker_name);
+            var pattern = Pattern.compile("/\\S+/" + linker_name);
+            MMapEntry linker = Maps.findFirst(entry -> {
+                if (entry.perms().contains("s")) {
+                    return false;
+                }
+                if (entry.path() == null) {
+                    return false;
+                }
+                return pattern.matcher(entry.path()).matches();
+            });
             SymTab symbols = ELF.readSymTab(linker.path(), ART_INDEX >= A9);
 
             s_dladdr = symbols.findFunction(ART_INDEX < A9 ? "__dl__Z8__dladdrPKvP7Dl_info" : "__loader_dladdr", linker.start());

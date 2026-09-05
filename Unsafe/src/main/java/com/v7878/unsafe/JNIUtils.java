@@ -344,11 +344,11 @@ public class JNIUtils {
     @DoNotShrinkType
     @DoNotOptimize
     private abstract static class ENV {
-        @ASM(conditions = @Conditions(arch = X86_64), code = {72, -119, -8, -61})
-        @ASM(conditions = @Conditions(arch = X86), code = {-117, 68, 36, 4, -61})
-        @ASM(conditions = @Conditions(arch = ARM64), code = {-64, 3, 95, -42})
-        @ASM(conditions = @Conditions(arch = ARM), code = {30, -1, 47, -31})
-        //TODO: @ASM(conditions = @Conditions(arch = RISCV64), code = {})
+        @ASM(conditions = @Conditions(arch = X86_64), base64 = "SIn4ww==")
+        @ASM(conditions = @Conditions(arch = X86), base64 = "i0QkBMM=")
+        @ASM(conditions = @Conditions(arch = ARM64), base64 = "wANf1g==")
+        @ASM(conditions = @Conditions(arch = ARM), base64 = "Hv8v4Q==")
+        //TODO: @ASM(conditions = @Conditions(arch = RISCV64), base64 = "")
         @CallSignature(type = FAST_STATIC, ret = LONG_AS_WORD, args = {})
         abstract long current();
 

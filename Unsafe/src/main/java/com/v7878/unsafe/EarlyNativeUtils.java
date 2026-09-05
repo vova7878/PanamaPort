@@ -14,7 +14,7 @@ import java.util.Arrays;
 public class EarlyNativeUtils {
     public static MemorySegment allocString(Arena arena, String value) {
         if (value == null) return MemorySegment.NULL;
-        if (ExtraMemoryAccess.isEarlyNativeInitialized()) {
+        if (ExtraMemoryAccess.isInitialized()) {
             return arena.allocateFrom(value);
         }
 
@@ -28,7 +28,7 @@ public class EarlyNativeUtils {
 
     public static String segmentToString(MemorySegment segment) {
         if (MemorySegment.NULL.equals(segment)) return null;
-        if (ExtraMemoryAccess.isEarlyNativeInitialized()) {
+        if (ExtraMemoryAccess.isInitialized()) {
             return segment.reinterpret(Long.MAX_VALUE).getString(0);
         }
 
@@ -50,7 +50,7 @@ public class EarlyNativeUtils {
         if (bytes == 0) {
             return;
         }
-        if (ExtraMemoryAccess.isEarlyNativeInitialized()) {
+        if (ExtraMemoryAccess.isInitialized()) {
             MemorySegment.copy(srcSegment, srcOffset, dstSegment, dstOffset, bytes);
         } else {
             Object src_base = JavaForeignAccess.unsafeGetBase(srcSegment);
