@@ -319,6 +319,7 @@ public class AccessLinker {
         var target = searchField(cached_fields.computeIfAbsent(
                 target_class, Reflection::getHiddenFields), annotation.name());
         makeFieldPublic(target);
+        makeClassPublic(target.getDeclaringClass());
         if (kind == INSTANCE_SETTER || kind == STATIC_SETTER) {
             makeFieldNonFinal(target);
         }
@@ -399,6 +400,7 @@ public class AccessLinker {
         var target = searchExecutable(cached_executables.computeIfAbsent(target_class,
                 Reflection::getHiddenExecutables), annotation.name(), annotation.args());
         if (kind != DIRECT_HOOK_VTABLE && kind != DIRECT_AS_SUPER) {
+            makeClassPublic(target.getDeclaringClass());
             makeExecutablePublic(target);
         }
 
