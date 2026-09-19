@@ -16,6 +16,7 @@ import static com.v7878.unsafe.ArtVersion.A16;
 import static com.v7878.unsafe.ArtVersion.A16p1;
 import static com.v7878.unsafe.ArtVersion.A17;
 import static com.v7878.unsafe.ArtVersion.A17p1;
+import static com.v7878.unsafe.ArtVersion.A17p2;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.A8p1;
 import static com.v7878.unsafe.ArtVersion.A9;
@@ -185,7 +186,7 @@ public class DexFileUtils {
 
     @ApiSensitive
     public static final GroupLayout DEXFILE_LAYOUT = switch (ART_INDEX) {
-        case A17p1, A17, A16p1 -> dex_file_16p1_17p1_layout;
+        case A17p2, A17p1, A17, A16p1 -> dex_file_16p1_17p1_layout;
         case A16, A15, A14 -> dex_file_14_16_layout;
         case A13, A12, A11 -> dex_file_11_13_layout;
         case A10 -> dex_file_10_layout;

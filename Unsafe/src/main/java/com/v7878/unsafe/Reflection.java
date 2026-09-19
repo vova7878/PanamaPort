@@ -5,6 +5,7 @@ import static com.v7878.unsafe.AndroidUnsafe.ARRAY_INT_BASE_OFFSET;
 import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
+import static com.v7878.unsafe.AndroidUnsafe.getIntO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
 import static com.v7878.unsafe.ArtModifiers.kAccCopied;
 import static com.v7878.unsafe.ArtVersion.A10;
@@ -17,11 +18,11 @@ import static com.v7878.unsafe.ArtVersion.A16;
 import static com.v7878.unsafe.ArtVersion.A16p1;
 import static com.v7878.unsafe.ArtVersion.A17;
 import static com.v7878.unsafe.ArtVersion.A17p1;
+import static com.v7878.unsafe.ArtVersion.A17p2;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.A8p1;
 import static com.v7878.unsafe.ArtVersion.A9;
 import static com.v7878.unsafe.ArtVersion.ART_INDEX;
-import static com.v7878.unsafe.Utils.check;
 import static com.v7878.unsafe.Utils.nothrows_run;
 import static com.v7878.unsafe.Utils.searchConstructor;
 import static com.v7878.unsafe.Utils.searchField;
@@ -52,10 +53,6 @@ import java.util.stream.Stream;
 
 @ApiSensitive
 public class Reflection {
-    static {
-        check(ART_INDEX >= A8p0 && ART_INDEX <= A17p1, AssertionError::new);
-    }
-
     @DangerLevel(DangerLevel.RAW_OFFSET)
     private static class Field_17x {
         public static Field newInstance(Class<?> declaring_class, Class<?> type,
@@ -73,13 +70,19 @@ public class Reflection {
         }
 
         public static Field createFromArtField(Class<?> declaring_class, long art_field) {
-            var fields_ = Class_16p1_17.getFields(declaring_class);
+            var fields_ = Class_16p1_17p2.getFields(declaring_class);
             assert fields_ != 0;
             var long_index = (art_field - fields_ - ART_FIELD_PADDING) / ART_FIELD_SIZE;
             var index = Math.toIntExact(long_index);
 
             var access_flags = getIntN(art_field + 4);
-            var dex_idx = getIntN(art_field + 8);
+            int dex_idx;
+            if (ART_INDEX >= A17p2) {
+                int first_field_idx = getIntO(declaring_class, 80);
+                dex_idx = first_field_idx + index;
+            } else {
+                dex_idx = getIntN(art_field + 8);
+            }
             var offset = getIntN(art_field + 12);
 
             var dexfile = DexFileUtils.getDexFileStruct(declaring_class);
@@ -97,7 +100,7 @@ public class Reflection {
     }
 
     @DangerLevel(DangerLevel.RAW_OFFSET)
-    private static class Class_16p1_17 {
+    private static class Class_16p1_17p2 {
         @AlwaysInline
         public static long getFields(Class<?> clazz) {
             Objects.requireNonNull(clazz);
@@ -174,7 +177,7 @@ public class Reflection {
     @AlwaysInline
     private static long getMethodsPtr(Class<?> clazz) {
         return ART_INDEX >= A16 ? (ART_INDEX >= A16p1 ?
-                Class_16p1_17.getMethods(clazz) :
+                Class_16p1_17p2.getMethods(clazz) :
                 Class_16.getMethods(clazz)) :
                 Class_8_15.getMethods(clazz);
     }
@@ -218,7 +221,7 @@ public class Reflection {
 
     static {
         ART_METHOD_SIZE = switch (ART_INDEX) {
-            case A17p1, A17, A16p1, A16, A15, A14, A13, A12 -> IS64BIT ? 32 : 24;
+            case A17p2, A17p1, A17, A16p1, A16, A15, A14, A13, A12 -> IS64BIT ? 32 : 24;
             case A11, A10, A9 -> IS64BIT ? 40 : 28;
             case A8p1, A8p0 -> IS64BIT ? 48 : 32;
             default -> throw unsupportedART(ART_INDEX);
@@ -240,7 +243,7 @@ public class Reflection {
     @DangerLevel(DangerLevel.RAW_OFFSET)
     public static long fieldOffset(Field f) {
         Objects.requireNonNull(f);
-        return ulong(AndroidUnsafe.getIntO(f, 28));
+        return ulong(getIntO(f, 28));
     }
 
     @AlwaysInline
@@ -327,7 +330,7 @@ public class Reflection {
 
     public static Field[] getHiddenInstanceFields(Class<?> clazz) {
         if (ART_INDEX >= A16) {
-            long fields = ART_INDEX >= A16p1 ? Class_16p1_17.getFields(clazz) : Class_16.getFields(clazz);
+            long fields = ART_INDEX >= A16p1 ? Class_16p1_17p2.getFields(clazz) : Class_16.getFields(clazz);
             if (fields == 0) {
                 return new Field[0];
             }
@@ -355,7 +358,7 @@ public class Reflection {
 
     public static Field[] getHiddenStaticFields(Class<?> clazz) {
         if (ART_INDEX >= A16) {
-            long fields = ART_INDEX >= A16p1 ? Class_16p1_17.getFields(clazz) : Class_16.getFields(clazz);
+            long fields = ART_INDEX >= A16p1 ? Class_16p1_17p2.getFields(clazz) : Class_16.getFields(clazz);
             if (fields == 0) {
                 return new Field[0];
             }
@@ -382,7 +385,7 @@ public class Reflection {
 
     public static Field[] getHiddenFields(Class<?> clazz) {
         if (ART_INDEX >= A16) {
-            long fields = ART_INDEX >= A16p1 ? Class_16p1_17.getFields(clazz) : Class_16.getFields(clazz);
+            long fields = ART_INDEX >= A16p1 ? Class_16p1_17p2.getFields(clazz) : Class_16.getFields(clazz);
             if (fields == 0) {
                 return new Field[0];
             }
@@ -553,7 +556,7 @@ public class Reflection {
         Method method = allocateInstance(Method.class);
 
         // override + hasRealParameterData + byte[2] padding
-        AndroidUnsafe.putIntO(method, 8, AndroidUnsafe.getIntO(constructor, 8));
+        AndroidUnsafe.putIntO(method, 8, getIntO(constructor, 8));
         // declaringClass
         AndroidUnsafe.putObject(method, 12, getObject(constructor, 12));
         // declaringClassOfOverriddenMethod
@@ -563,9 +566,9 @@ public class Reflection {
         // artMethod
         AndroidUnsafe.putLongO(method, 24, AndroidUnsafe.getLongO(constructor, 24));
         // accessFlags
-        AndroidUnsafe.putIntO(method, 32, AndroidUnsafe.getIntO(constructor, 32));
+        AndroidUnsafe.putIntO(method, 32, getIntO(constructor, 32));
         // dexMethodIndex
-        AndroidUnsafe.putIntO(method, 36, AndroidUnsafe.getIntO(constructor, 36));
+        AndroidUnsafe.putIntO(method, 36, getIntO(constructor, 36));
 
         return method;
     }

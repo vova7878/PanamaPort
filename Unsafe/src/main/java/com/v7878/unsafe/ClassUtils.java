@@ -19,6 +19,7 @@ import static com.v7878.unsafe.ArtVersion.A16;
 import static com.v7878.unsafe.ArtVersion.A16p1;
 import static com.v7878.unsafe.ArtVersion.A17;
 import static com.v7878.unsafe.ArtVersion.A17p1;
+import static com.v7878.unsafe.ArtVersion.A17p2;
 import static com.v7878.unsafe.ArtVersion.A8p0;
 import static com.v7878.unsafe.ArtVersion.A8p1;
 import static com.v7878.unsafe.ArtVersion.A9;
@@ -65,7 +66,7 @@ public class ClassUtils {
 
         static {
             switch (ART_INDEX) {
-                case A17p1, A17, A16p1, A16, A15, A14, A13, A12, A11 -> {
+                case A17p2, A17p1, A17, A16p1, A16, A15, A14, A13, A12, A11 -> {
                     NotReady.value = 0;  // Zero-initialized Class object starts in this state.
                     Retired.value = 1;  // Retired, should not be used. Use the newly cloned one instead.
                     ErrorResolved.value = 2;
