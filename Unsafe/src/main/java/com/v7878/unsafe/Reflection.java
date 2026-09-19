@@ -6,7 +6,14 @@ import static com.v7878.unsafe.AndroidUnsafe.IS64BIT;
 import static com.v7878.unsafe.AndroidUnsafe.allocateInstance;
 import static com.v7878.unsafe.AndroidUnsafe.getIntN;
 import static com.v7878.unsafe.AndroidUnsafe.getIntO;
+import static com.v7878.unsafe.AndroidUnsafe.getLongO;
 import static com.v7878.unsafe.AndroidUnsafe.getObject;
+import static com.v7878.unsafe.AndroidUnsafe.getShortO;
+import static com.v7878.unsafe.AndroidUnsafe.putBooleanO;
+import static com.v7878.unsafe.AndroidUnsafe.putIntO;
+import static com.v7878.unsafe.AndroidUnsafe.putLongO;
+import static com.v7878.unsafe.AndroidUnsafe.putObject;
+import static com.v7878.unsafe.AndroidUnsafe.throwException;
 import static com.v7878.unsafe.ArtModifiers.kAccCopied;
 import static com.v7878.unsafe.ArtVersion.A10;
 import static com.v7878.unsafe.ArtVersion.A11;
@@ -60,11 +67,11 @@ public class Reflection {
             var f = allocateInstance(Field.class);
 
             setAccessible(f, true);
-            AndroidUnsafe.putObject(f, 12, declaring_class);
-            AndroidUnsafe.putObject(f, 16, type);
-            AndroidUnsafe.putIntO(f, 20, access_flags);
-            AndroidUnsafe.putIntO(f, 24, art_field_index);
-            AndroidUnsafe.putIntO(f, 28, offset);
+            putObject(f, 12, declaring_class);
+            putObject(f, 16, type);
+            putIntO(f, 20, access_flags);
+            putIntO(f, 24, art_field_index);
+            putIntO(f, 28, offset);
 
             return f;
         }
@@ -104,13 +111,13 @@ public class Reflection {
         @AlwaysInline
         public static long getFields(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getLongO(clazz, 40);
+            return getLongO(clazz, 40);
         }
 
         @AlwaysInline
         public static long getMethods(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getLongO(clazz, 48);
+            return getLongO(clazz, 48);
         }
     }
 
@@ -119,25 +126,25 @@ public class Reflection {
         @AlwaysInline
         public static long getFields(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getLongO(clazz, 40);
+            return getLongO(clazz, 40);
         }
 
         @AlwaysInline
         public static long getMethods(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getLongO(clazz, 48);
+            return getLongO(clazz, 48);
         }
 
         @AlwaysInline
         public static int getCopiedMethodsOffset(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getShortO(clazz, 108) & 0xffff;
+            return getShortO(clazz, 108) & 0xffff;
         }
 
         @AlwaysInline
         public static int getVirtualMethodsOffset(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getShortO(clazz, 110) & 0xffff;
+            return getShortO(clazz, 110) & 0xffff;
         }
     }
 
@@ -146,31 +153,31 @@ public class Reflection {
         @AlwaysInline
         public static long getInstanceFields(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getLongO(clazz, 40);
+            return getLongO(clazz, 40);
         }
 
         @AlwaysInline
         public static long getStaticFields(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getLongO(clazz, 56);
+            return getLongO(clazz, 56);
         }
 
         @AlwaysInline
         public static long getMethods(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getLongO(clazz, 48);
+            return getLongO(clazz, 48);
         }
 
         @AlwaysInline
         public static int getCopiedMethodsOffset(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getShortO(clazz, 116) & 0xffff;
+            return getShortO(clazz, 116) & 0xffff;
         }
 
         @AlwaysInline
         public static int getVirtualMethodsOffset(Class<?> clazz) {
             Objects.requireNonNull(clazz);
-            return AndroidUnsafe.getShortO(clazz, 118) & 0xffff;
+            return getShortO(clazz, 118) & 0xffff;
         }
     }
 
@@ -187,19 +194,19 @@ public class Reflection {
         @AlwaysInline
         public static void setArt(MethodHandle mh, long art) {
             Objects.requireNonNull(mh);
-            AndroidUnsafe.putLongO(mh, 24, art);
+            putLongO(mh, 24, art);
         }
 
         @AlwaysInline
         public static void setKind(MethodHandle mh, int kind) {
             Objects.requireNonNull(mh);
-            AndroidUnsafe.putIntO(mh, 20, kind);
+            putIntO(mh, 20, kind);
         }
 
         @AlwaysInline
         public static void setInfo(MethodHandle mh, Object info) {
             Objects.requireNonNull(mh);
-            AndroidUnsafe.putObject(mh, 32, info);
+            putObject(mh, 32, info);
         }
     }
 
@@ -221,7 +228,8 @@ public class Reflection {
 
     static {
         ART_METHOD_SIZE = switch (ART_INDEX) {
-            case A17p2, A17p1, A17, A16p1, A16, A15, A14, A13, A12 -> IS64BIT ? 32 : 24;
+            case A17p2, A17p1, A17, A16p1, A16, A15,
+                 A14, A13, A12 -> IS64BIT ? 32 : 24;
             case A11, A10, A9 -> IS64BIT ? 40 : 28;
             case A8p1, A8p0 -> IS64BIT ? 48 : 32;
             default -> throw unsupportedART(ART_INDEX);
@@ -236,7 +244,7 @@ public class Reflection {
     @DangerLevel(DangerLevel.RAW_OFFSET)
     public static void setAccessible(AccessibleObject ao, boolean value) {
         if (ao.isAccessible()) return;
-        AndroidUnsafe.putBooleanO(ao, 8, value);
+        putBooleanO(ao, 8, value);
     }
 
     @AlwaysInline
@@ -250,7 +258,7 @@ public class Reflection {
     @DangerLevel(DangerLevel.RAW_OFFSET)
     public static long getArtMethod(Executable ex) {
         Objects.requireNonNull(ex);
-        return AndroidUnsafe.getLongO(ex, 24);
+        return getLongO(ex, 24);
     }
 
     @AlwaysInline
@@ -293,7 +301,7 @@ public class Reflection {
     @DangerLevel(DangerLevel.MAX)
     public static Field toField(long art_field) {
         // TODO: This is a terrible hack
-        var declaring_class = (Class<?>) rawIntToObject(AndroidUnsafe.getIntN(art_field));
+        var declaring_class = (Class<?>) rawIntToObject(getIntN(art_field));
         return toField(declaring_class, art_field);
     }
 
@@ -308,8 +316,7 @@ public class Reflection {
         for (int i = 0; i < count; i++) {
             int index = begin + i;
             long art_field = fields + ART_FIELD_PADDING + ART_FIELD_SIZE * index;
-            if (AndroidUnsafe.getIntN(art_field) == 0) {
-                // TODO: Check out what it is when the Android 17 QPR1 source code is published
+            if (getIntN(art_field) == 0) {
                 continue;
             }
             if (!filter.test(ArtFieldUtils.getFieldFlags(art_field))) {
@@ -556,19 +563,19 @@ public class Reflection {
         Method method = allocateInstance(Method.class);
 
         // override + hasRealParameterData + byte[2] padding
-        AndroidUnsafe.putIntO(method, 8, getIntO(constructor, 8));
+        putIntO(method, 8, getIntO(constructor, 8));
         // declaringClass
-        AndroidUnsafe.putObject(method, 12, getObject(constructor, 12));
+        putObject(method, 12, getObject(constructor, 12));
         // declaringClassOfOverriddenMethod
-        AndroidUnsafe.putObject(method, 16, getObject(constructor, 16));
+        putObject(method, 16, getObject(constructor, 16));
         // parameters
-        AndroidUnsafe.putObject(method, 20, getObject(constructor, 20));
+        putObject(method, 20, getObject(constructor, 20));
         // artMethod
-        AndroidUnsafe.putLongO(method, 24, AndroidUnsafe.getLongO(constructor, 24));
+        putLongO(method, 24, getLongO(constructor, 24));
         // accessFlags
-        AndroidUnsafe.putIntO(method, 32, getIntO(constructor, 32));
+        putIntO(method, 32, getIntO(constructor, 32));
         // dexMethodIndex
-        AndroidUnsafe.putIntO(method, 36, getIntO(constructor, 36));
+        putIntO(method, 36, getIntO(constructor, 36));
 
         return method;
     }
@@ -597,7 +604,7 @@ public class Reflection {
             setAccessible(out, true);
             return out;
         } catch (Throwable th) {
-            return AndroidUnsafe.throwException(th);
+            return throwException(th);
         }
     }
 
@@ -613,7 +620,7 @@ public class Reflection {
             setAccessible(out, true);
             return out;
         } catch (Throwable th) {
-            return AndroidUnsafe.throwException(th);
+            return throwException(th);
         }
     }
 
@@ -629,7 +636,7 @@ public class Reflection {
             setAccessible(out, true);
             return out;
         } catch (Throwable th) {
-            return AndroidUnsafe.throwException(th);
+            return throwException(th);
         }
     }
 
